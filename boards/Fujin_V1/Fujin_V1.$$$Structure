@@ -1,0 +1,4 @@
+Record=TopLevelDocument|FileName=Fujin_Connectors.SchDoc|SheetNumber=4
+Record=NoMainPathDocument|SourceDocument=Fujin_Connectors.SchDoc|FileName=Fujin_Main.SchDoc|SheetNumber=1
+Record=NoMainPathDocument|SourceDocument=Fujin_Connectors.SchDoc|FileName=Fujin_Motors.SchDoc|SheetNumber=3
+Record=NoMainPathDocument|SourceDocument=Fujin_Connectors.SchDoc|FileName=Fujin_Peripherals.SchDoc|SheetNumber=2
