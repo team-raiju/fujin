@@ -159,6 +159,10 @@ DItemRevisionGUID=
 GenerateClassCluster=0
 DocumentUniqueId=VLEWLQOM
 
+[GeneratedDocument1]
+DocumentPath=Project Outputs for Fujin_V1\Design Rule Check - Fujin_Body.html
+DItemRevisionGUID=
+
 [Configuration1]
 Name=Sources
 ParameterCount=0
