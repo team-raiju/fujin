@@ -1,0 +1,36 @@
+{
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "default",
+            "hidden": true,
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "STM32G474",
+            "inherits": "default",
+            "cacheVariables": {
+                "LINKER_SCRIPT_SRC": "${sourceDir}/cube/STM32G474RCT6/STM32G474RCTx_FLASH.ld",
+                "STM32_BUILD": "true",
+                "OPT_LEVEL": "-Ofast"
+            }
+        },
+        {
+            "name": "STM32G474-Release",
+            "inherits": "default",
+            "cacheVariables": {
+                "LINKER_SCRIPT_SRC": "${sourceDir}/cube/STM32G474RCT6/STM32G474RCTx_FLASH.ld",
+                "STM32_BUILD": "true",
+                "RELEASE_BUILD": "true",
+                "OPT_LEVEL": "-Ofast",
+                "QNASSERT": "-DQ_NASSERT",
+                "NDEBUG": "-DNDEBUG"
+            }
+        }
+    ]
+}

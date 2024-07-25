@@ -1,0 +1,98 @@
+build/
+build_spy/*
+
+write_map/
+read_map/
+draw_map/
+
+-g
+.jlink-flash
+.cube
+
+# Created by https://www.gitignore.io/api/visualstudiocode,c
+
+### C ###
+# Prerequisites
+*.d
+
+# Object files
+*.o
+*.ko
+*.obj
+*.elf
+
+# Linker output
+*.ilk
+*.map
+*.exp
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Libraries
+*.lib
+*.la
+*.lo
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+*.bin
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Kernel Module Compile Results
+*.mod*
+*.cmd
+.tmp_versions/
+modules.order
+Module.symvers
+Mkfile.old
+dkms.conf
+
+### VisualStudioCode ###
+.vscode/settings.json
+
+
+
+qview/__pycache__/**
+# End of https://www.gitignore.io/api/visualstudiocode,c
+simulated_eeprom.txt
+eeprom_0.txt
+eeprom_1.txt
+
+# Python Files
+*.pyc
+logs.log
+
+
+### CMake ###
+.cmake
+.ninja_deps
+.ninja_log
+build.ninja
+CMakeLists.txt.user
+CMakeCache.txt
+CMakeFiles
+CMakeScripts
+Testing
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+# CTestTestfile.cmake
+# _deps
