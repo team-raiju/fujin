@@ -6,11 +6,10 @@
 #include "dma.h"
 #include "tim.h"
 #include "adc.h"
-// #include "bsp_i2c.h"
-// #include "driving_service.h"
-// #include "bsp_brushless.h"
-// #include "buzzer_service.h"
-// #include "bsp_vcp.h"
+#include "bsp_i2c.h"
+#include "driving_service.h"
+#include "buzzer_service.h"
+#include "bsp_vcp.h"
 
 __weak void SystemClock_Config(void);
 
@@ -22,13 +21,13 @@ void BSP_init(void)
     SystemCoreClockUpdate();
 
     MX_GPIO_Init();
-    // MX_DMA_Init();
+    MX_DMA_Init();
 
-    // bsp_i2c_init(IO_I2C_2);
-    // bsp_i2c_init(IO_I2C_3);
+    bsp_i2c_init(IO_I2C_2);
+    bsp_i2c_init(IO_I2C_3);
 
-    // MX_TIM5_Init();
-    // HAL_TIM_Base_Start(&htim5);
+    MX_TIM5_Init();
+    HAL_TIM_Base_Start(&htim5);
 
     BSP_delay(20);
 }
@@ -55,9 +54,9 @@ void BSP_delay(uint32_t ms)
 
 void BSP_Assert()
 {
-    // drive_m_s(0, 0);
+    drive_m_s(0, 0);
     // bsp_brushless_set(0);
-    // buzzer_start();
+    buzzer_start();
 
     volatile uint32_t timeout = 10000000;
     while (timeout > 0) {

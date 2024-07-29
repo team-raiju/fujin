@@ -86,41 +86,41 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     }
 
     // Encoders
-    // if (GPIO_Pin == BSP_GPIO_Pin_Mapping(ENCODER_LEFT_A_PIN)) {
-    //     if (encoder_l_callback_function != NULL) {
-    //         encoder_l_callback_function(0);
-    //     }
-    //     return;
-    // }
+    if (GPIO_Pin == BSP_GPIO_Pin_Mapping(ENCODER_LEFT_A_PIN)) {
+        if (encoder_l_callback_function != NULL) {
+            encoder_l_callback_function(0);
+        }
+        return;
+    }
 
-    // if (GPIO_Pin == BSP_GPIO_Pin_Mapping(ENCODER_LEFT_B_PIN)) {
-    //     if (encoder_l_callback_function != NULL) {
-    //         if (BSP_GPIO_Read_Pin(ENCODER_LEFT_B_PORT, ENCODER_LEFT_B_PIN) == IO_HIGH) {
-    //             encoder_l_callback_function(1);
-    //         } else {
-    //             encoder_l_callback_function(2);
-    //         }
-    //     }
-    //     return;
-    // }
+    if (GPIO_Pin == BSP_GPIO_Pin_Mapping(ENCODER_LEFT_B_PIN)) {
+        if (encoder_l_callback_function != NULL) {
+            if (BSP_GPIO_Read_Pin(ENCODER_LEFT_B_PORT, ENCODER_LEFT_B_PIN) == IO_HIGH) {
+                encoder_l_callback_function(1);
+            } else {
+                encoder_l_callback_function(2);
+            }
+        }
+        return;
+    }
 
-    // if (GPIO_Pin == BSP_GPIO_Pin_Mapping(ENCODER_RIGHT_A_PIN)) {
-    //     if (encoder_r_callback_function != NULL) {
-    //         encoder_r_callback_function(0);
-    //     }
-    //     return;
-    // }
+    if (GPIO_Pin == BSP_GPIO_Pin_Mapping(ENCODER_RIGHT_A_PIN)) {
+        if (encoder_r_callback_function != NULL) {
+            encoder_r_callback_function(0);
+        }
+        return;
+    }
 
-    // if (GPIO_Pin == BSP_GPIO_Pin_Mapping(ENCODER_RIGHT_B_PIN)) {
-    //     if (encoder_r_callback_function != NULL) {
-    //         if (BSP_GPIO_Read_Pin(ENCODER_RIGHT_B_PORT, ENCODER_RIGHT_B_PIN) == IO_HIGH) {
-    //             encoder_r_callback_function(1);
-    //         } else {
-    //             encoder_r_callback_function(2);
-    //         }
-    //     }
-    //     return;
-    // }
+    if (GPIO_Pin == BSP_GPIO_Pin_Mapping(ENCODER_RIGHT_B_PIN)) {
+        if (encoder_r_callback_function != NULL) {
+            if (BSP_GPIO_Read_Pin(ENCODER_RIGHT_B_PORT, ENCODER_RIGHT_B_PIN) == IO_HIGH) {
+                encoder_r_callback_function(1);
+            } else {
+                encoder_r_callback_function(2);
+            }
+        }
+        return;
+    }
 }
 
 /***************************************************************************************************
