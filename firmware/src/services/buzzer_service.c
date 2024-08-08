@@ -9,7 +9,7 @@ void buzzer_service_init()
 {
     BSP_buzzerInit();
     buzzer_set_intensity(20);
-    buzzer_set_frequency(2400);
+    buzzer_set_frequency(3500);
     buzzer_on = false;
 }
 

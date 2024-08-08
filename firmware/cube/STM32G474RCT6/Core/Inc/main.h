@@ -59,6 +59,7 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define BUTTON_2_Pin GPIO_PIN_13
 #define BUTTON_2_GPIO_Port GPIOC
+#define BUTTON_2_EXTI_IRQn EXTI15_10_IRQn
 #define MOT_R_DIR_Pin GPIO_PIN_0
 #define MOT_R_DIR_GPIO_Port GPIOC
 #define MOT_R_PWM_Pin GPIO_PIN_1
@@ -73,8 +74,10 @@ void Error_Handler(void);
 #define SEN_L_F_GPIO_Port GPIOA
 #define ENCODER_L_A_Pin GPIO_PIN_2
 #define ENCODER_L_A_GPIO_Port GPIOA
+#define ENCODER_L_A_EXTI_IRQn EXTI2_IRQn
 #define ENCODER_L_B_Pin GPIO_PIN_3
 #define ENCODER_L_B_GPIO_Port GPIOA
+#define ENCODER_L_B_EXTI_IRQn EXTI3_IRQn
 #define MOT_L_CURRENT_Pin GPIO_PIN_4
 #define MOT_L_CURRENT_GPIO_Port GPIOA
 #define ADC_BAT_Pin GPIO_PIN_0
@@ -93,10 +96,12 @@ void Error_Handler(void);
 #define LED_GPIO_Port GPIOB
 #define ENCODER_R_B_Pin GPIO_PIN_15
 #define ENCODER_R_B_GPIO_Port GPIOB
+#define ENCODER_R_B_EXTI_IRQn EXTI15_10_IRQn
 #define BUZZER_Pin GPIO_PIN_6
 #define BUZZER_GPIO_Port GPIOC
 #define ENCODER_R_A_Pin GPIO_PIN_7
 #define ENCODER_R_A_GPIO_Port GPIOC
+#define ENCODER_R_A_EXTI_IRQn EXTI9_5_IRQn
 #define I2C3_SCL_EE_Pin GPIO_PIN_8
 #define I2C3_SCL_EE_GPIO_Port GPIOC
 #define I2C3_SDA_EE_Pin GPIO_PIN_9
@@ -119,6 +124,7 @@ void Error_Handler(void);
 #define TIM3_CH2_FAN_GPIO_Port GPIOB
 #define BUTTON_1_Pin GPIO_PIN_9
 #define BUTTON_1_GPIO_Port GPIOB
+#define BUTTON_1_EXTI_IRQn EXTI9_5_IRQn
 
 /* USER CODE BEGIN Private defines */
 
