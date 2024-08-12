@@ -65,27 +65,29 @@ as5047_result_t as5047_write_register(as5047_obj_t *as5047_instance, as5047p_reg
 {
 
     as5047_result_t ret;
-    uint16_t write_tx_frame = reg_addr & 0x3FFF;
-    uint16_t rx_frame;
+    uint16_t write_tx_frame = reg_addr;
+    uint16_t rx_frame = 0;
 
-    if (calculate_parity_bit(write_tx_frame) == 1) {
+    if (calculate_parity_bit(write_tx_frame & 0x3FFF) == 1) {
         write_tx_frame |= 0x8000;
     }
 
     as5047_select(as5047_instance); 
     ret = as5047_instance->spi_transmit_receive((uint8_t *)&write_tx_frame, (uint8_t *)&rx_frame, 1);
-    as5047_unselect(as5047_instance);   
+    as5047_unselect(as5047_instance);  
+    as5047_instance->delay_us(1); 
 
     if (ret != AS5047_RES_OK) {
         return AS5047_RES_ERROR;
     }
 
-    write_tx_frame = data & 0x3fff;
+    write_tx_frame = data;
 
-    if (calculate_parity_bit(write_tx_frame) == 1) {
+    if (calculate_parity_bit(write_tx_frame & 0x3FFF) == 1) {
         write_tx_frame |= 0x8000;
     }
 
+    rx_frame = 0;
     as5047_select(as5047_instance); 
     ret = as5047_instance->spi_transmit_receive((uint8_t *)&write_tx_frame, (uint8_t *)&rx_frame, 1);
     as5047_unselect(as5047_instance);  
@@ -99,28 +101,32 @@ as5047_result_t as5047_write_register(as5047_obj_t *as5047_instance, as5047p_reg
 
 as5047_result_t as5047_read_register(as5047_obj_t *as5047_instance, as5047p_registers_t reg_addr, uint16_t *data)
 {
-    uint16_t read_tx_frame;
-    uint16_t rx_frame;
+    uint16_t rx_frame = 0;
     as5047_result_t ret;
+    uint16_t read_tx_frame = reg_addr;
 
 
-    read_tx_frame = reg_addr | AS5047_COMMAND_READ;
-
-    if (calculate_parity_bit(read_tx_frame) == 1) {
+    if (calculate_parity_bit(read_tx_frame) == 0) {
         read_tx_frame |= 0x8000;
     }
 
-    // Size = 1 because we must configure the SPI to have 16 bits frame
+    read_tx_frame |= AS5047_COMMAND_READ;
+
     as5047_select(as5047_instance); 
     ret = as5047_instance->spi_transmit_receive((uint8_t *)&read_tx_frame, (uint8_t *)&rx_frame, 1);
-    as5047_unselect(as5047_instance);       
+    as5047_unselect(as5047_instance);   
+    as5047_instance->delay_us(1); 
 
     if (ret != AS5047_RES_OK) {
         return AS5047_RES_ERROR;
     }
 
+    rx_frame = 0;
     read_tx_frame = AS5047P_VOL_NOP_ADDR;
+    as5047_select(as5047_instance); 
     ret = as5047_instance->spi_transmit_receive((uint8_t *)&read_tx_frame, (uint8_t *)&rx_frame, 1);
+    as5047_unselect(as5047_instance);   
+
     if (ret != AS5047_RES_OK) {
         return AS5047_RES_ERROR;
     }

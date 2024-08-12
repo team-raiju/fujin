@@ -1,6 +1,7 @@
 #ifndef AS5047P_H
 #define AS5047P_H
 
+#include <stdint.h>
 #include "bsp_gpio.h"
 
 
@@ -9,7 +10,10 @@ typedef enum {
     AS5047_RES_ERROR,
 } as5047_result_t;
 
+// as5047_spi_transmit_receive must be a function that transmits and receives data over SPI.
+// SPI data should be 16bit frame, MSB first and CPOL=0, CPHA=1 (2nd edge)
 typedef as5047_result_t (*as5047_spi_transmit_receive)(uint8_t *tx_data, uint8_t *rx_data, uint16_t size);
+typedef void (*as5047_delay_us)(uint32_t delay_us);
 
 typedef struct {
     io_port_t port;
@@ -19,6 +23,7 @@ typedef struct {
 typedef struct {
     cs_pin_t cs_pin;
     as5047_spi_transmit_receive spi_transmit_receive;
+    as5047_delay_us delay_us;
 } as5047_obj_t;
 
 
@@ -38,6 +43,13 @@ typedef enum {
     AS5047P_nVOL_SETTINGS1_ADDR = 0x0018,
     AS5047P_nVOL_SETTINGS2_ADDR = 0x0019
 } as5047p_registers_t;
+
+
+void as5047_select(as5047_obj_t *as5047_instance);
+void as5047_unselect(as5047_obj_t *as5047_instance);
+as5047_result_t as5047_init(as5047_obj_t *as5047_instance);
+as5047_result_t as5047_write_register(as5047_obj_t *as5047_instance, as5047p_registers_t reg_addr, uint16_t data);
+as5047_result_t as5047_read_register(as5047_obj_t *as5047_instance, as5047p_registers_t reg_addr, uint16_t *data);
 
 
 #endif /* AS5047P_H */

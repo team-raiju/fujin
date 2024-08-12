@@ -42,4 +42,12 @@
 #define GPIO_LED_IR_R_S_PIN  IO_PIN_2
 #define GPIO_LED_IR_R_S_PORT IO_PORTD
 
+// AS5047
+#define SPI_CS_1_PIN       IO_PIN_1
+#define SPI_CS_1_PORT      IO_PORTB
+
+#define SPI_CS_2_PIN       IO_PIN_10
+#define SPI_CS_2_PORT      IO_PORTB
+
+
 #endif /* BSP_GPIO_MAPPING_H */
