@@ -13,6 +13,7 @@ void BSP_init(void);
 uint32_t BSP_GetTick();
 uint32_t BSP_Get1usTick();
 uint32_t BSP_Get10usTick();
+void BSP_delay_us(uint32_t delay_us);
 void BSP_Assert();
 void BSP_delay();
 

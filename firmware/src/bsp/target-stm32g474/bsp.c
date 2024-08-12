@@ -52,6 +52,21 @@ void BSP_delay(uint32_t ms)
     HAL_Delay(ms);
 }
 
+void BSP_delay_us(uint32_t delay_us)
+{
+  uint32_t tickstart = BSP_Get1usTick();
+  volatile uint32_t wait = delay_us;
+
+  /* Add a freq to guarantee minimum wait */
+  if (wait < HAL_MAX_DELAY) {
+    wait += 1;
+  }
+
+  while ((BSP_Get1usTick() - tickstart) < wait)
+  {
+  }
+}
+
 void BSP_Assert()
 {
     drive_m_s(0, 0);
