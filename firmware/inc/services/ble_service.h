@@ -1,8 +1,8 @@
 #ifndef BLE_SERVICE_H
 #define BLE_SERVICE_H
 
-#include <stdint.h>
 #include "bsp_ble.h"
+#include <stdint.h>
 
 #define BLE_PACKET_TRANSMIT_SIZE 20
 

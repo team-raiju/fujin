@@ -1,18 +1,20 @@
 /***************************************************************************************************
  * INCLUDES
  **************************************************************************************************/
-#include <stdbool.h>
 #include "bsp_ws2812.h"
-#include "main.h"
-#include "gpio.h"
 #include "dma.h"
+#include "gpio.h"
+#include "main.h"
 #include "tim.h"
+#include <stdbool.h>
 
 /***************************************************************************************************
  * LOCAL DEFINES
  **************************************************************************************************/
 #define WS2812_PACKET_SIZE 24
-#define FINAL_PADDING_SIZE 2 /* Used to guarantee that no extra bits will be sent at the final of the data stream */
+#define FINAL_PADDING_SIZE \
+    2 /* Used to guarantee that no extra bits will be sent at the final of the   \
+       data stream */
 
 #define WS2812_PWM_SIZE ((WS2812_PACKET_SIZE * WS2812_MAX_LED_AMOUNT) + FINAL_PADDING_SIZE)
 

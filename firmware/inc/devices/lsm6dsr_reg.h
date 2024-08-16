@@ -1,21 +1,21 @@
 /**
-  ******************************************************************************
-  * @file    lsm6dsr_reg.h
-  * @author  Sensors Software Solution Team
-  * @brief   This file contains all the functions prototypes for the
-  *          lsm6dsr_reg.c driver.
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2019 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file    lsm6dsr_reg.h
+ * @author  Sensors Software Solution Team
+ * @brief   This file contains all the functions prototypes for the
+ *          lsm6dsr_reg.c driver.
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2019 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef LSM6DSR_REGS_H
@@ -26,19 +26,19 @@ extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include <stdint.h>
-#include <stddef.h>
 #include <math.h>
+#include <stddef.h>
+#include <stdint.h>
 
 /** @addtogroup LSM6DSR
-  * @{
-  *
-  */
+ * @{
+ *
+ */
 
 /** @defgroup  Endianness definitions
-  * @{
-  *
-  */
+ * @{
+ *
+ */
 
 #ifndef DRV_BYTE_ORDER
 #ifndef __BYTE_ORDER__
@@ -47,8 +47,8 @@ extern "C" {
 #define DRV_BIG_ENDIAN    4321
 
 /** if _BYTE_ORDER is not defined, choose the endianness of your architecture
-  * by uncommenting the define which fits your platform endianness
-  */
+ * by uncommenting the define which fits your platform endianness
+ */
 //#define DRV_BYTE_ORDER    DRV_BIG_ENDIAN
 #define DRV_BYTE_ORDER DRV_LITTLE_ENDIAN
 
@@ -62,14 +62,14 @@ extern "C" {
 #endif /* DRV_BYTE_ORDER */
 
 /**
-  * @}
-  *
-  */
+ * @}
+ *
+ */
 
 /** @defgroup STMicroelectronics sensors common types
-  * @{
-  *
-  */
+ * @{
+ *
+ */
 
 #ifndef MEMS_SHARED_TYPES
 #define MEMS_SHARED_TYPES
@@ -100,12 +100,12 @@ typedef struct {
 #define PROPERTY_ENABLE  (1U)
 
 /** @addtogroup  Interfaces_Functions
-  * @brief       This section provide a set of functions used to read and
-  *              write a generic register of the device.
-  *              MANDATORY: return 0 -> no Error.
-  * @{
-  *
-  */
+ * @brief       This section provide a set of functions used to read and
+ *              write a generic register of the device.
+ *              MANDATORY: return 0 -> no Error.
+ * @{
+ *
+ */
 
 typedef int32_t (*stmdev_write_ptr)(void *, uint8_t, uint8_t *, uint16_t);
 typedef int32_t (*stmdev_read_ptr)(void *, uint8_t, uint8_t *, uint16_t);
@@ -122,9 +122,9 @@ typedef struct {
 } stmdev_ctx_t;
 
 /**
-  * @}
-  *
-  */
+ * @}
+ *
+ */
 
 #endif /* MEMS_SHARED_TYPES */
 
@@ -132,15 +132,15 @@ typedef struct {
 #define MEMS_UCF_SHARED_TYPES
 
 /** @defgroup    Generic address-data structure definition
-  * @brief       This structure is useful to load a predefined configuration
-  *              of a sensor.
-  *              You can create a sensor configuration by your own or using
-  *              Unico / Unicleo tools available on STMicroelectronics
-  *              web site.
-  *
-  * @{
-  *
-  */
+ * @brief       This structure is useful to load a predefined configuration
+ *              of a sensor.
+ *              You can create a sensor configuration by your own or using
+ *              Unico / Unicleo tools available on STMicroelectronics
+ *              web site.
+ *
+ * @{
+ *
+ */
 
 typedef struct {
     uint8_t address;
@@ -148,21 +148,21 @@ typedef struct {
 } ucf_line_t;
 
 /**
-  * @}
-  *
-  */
+ * @}
+ *
+ */
 
 #endif /* MEMS_UCF_SHARED_TYPES */
 
 /**
-  * @}
-  *
-  */
+ * @}
+ *
+ */
 
 /** @defgroup LSM6DSR Infos
-  * @{
-  *
-  */
+ * @{
+ *
+ */
 
 /** I2C Device Address 8 bit format  if SA0=0 -> D5 if SA0=1 -> D7 **/
 #define LSM6DSR_I2C_ADD_L 0xD5U
@@ -172,9 +172,9 @@ typedef struct {
 #define LSM6DSR_ID 0x6BU
 
 /**
-  * @}
-  *
-  */
+ * @}
+ *
+ */
 
 #define LSM6DSR_FUNC_CFG_ACCESS 0x01U
 typedef struct {
@@ -2493,17 +2493,17 @@ typedef struct {
 } lsm6dsr_status_master_t;
 
 /**
-  * @defgroup LSM6DSR_Register_Union
-  * @brief    This union group all the registers having a bit-field
-  *           description.
-  *           This union is useful but it's not needed by the driver.
-  *
-  *           REMOVING this union you are compliant with:
-  *           MISRA-C 2012 [Rule 19.2] -> " Union are not allowed "
-  *
-  * @{
-  *
-  */
+ * @defgroup LSM6DSR_Register_Union
+ * @brief    This union group all the registers having a bit-field
+ *           description.
+ *           This union is useful but it's not needed by the driver.
+ *
+ *           REMOVING this union you are compliant with:
+ *           MISRA-C 2012 [Rule 19.2] -> " Union are not allowed "
+ *
+ * @{
+ *
+ */
 typedef union {
     lsm6dsr_func_cfg_access_t func_cfg_access;
     lsm6dsr_pin_ctrl_t pin_ctrl;
@@ -2635,9 +2635,9 @@ typedef union {
 } lsm6dsr_reg_t;
 
 /**
-  * @}
-  *
-  */
+ * @}
+ *
+ */
 
 int32_t lsm6dsr_read_reg(stmdev_ctx_t *ctx, uint8_t reg, uint8_t *data, uint16_t len);
 int32_t lsm6dsr_write_reg(stmdev_ctx_t *ctx, uint8_t reg, uint8_t *data, uint16_t len);
@@ -3691,9 +3691,9 @@ int32_t lsm6dsr_s4s_dt_set(stmdev_ctx_t *ctx, uint8_t val);
 int32_t lsm6dsr_s4s_dt_get(stmdev_ctx_t *ctx, uint8_t *val);
 
 /**
-  *@}
-  *
-  */
+ *@}
+ *
+ */
 
 #ifdef __cplusplus
 }

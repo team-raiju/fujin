@@ -1,6 +1,6 @@
-#include <stdlib.h>
-#include "usart.h"
 #include "bsp_uart.h"
+#include "usart.h"
+#include <stdlib.h>
 
 static bsp_uart_callback_t uart_custom_callbacks[MAX_UART_NUM];
 static bsp_uart_callback_t uart_custom_error_callbacks[MAX_UART_NUM];

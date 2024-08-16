@@ -1,7 +1,7 @@
-#include <stdbool.h>
 #include "buzzer_service.h"
 #include "bsp_buzzer.h"
 #include "utils.h"
+#include <stdbool.h>
 
 bool buzzer_on;
 

@@ -4,9 +4,9 @@
 
 #include "bsp_fan.h"
 #include "adc_service.h"
-#include "utils.h"
-#include "tim.h"
 #include "bsp.h"
+#include "tim.h"
+#include "utils.h"
 /***************************************************************************************************
  * LOCAL DEFINES
  **************************************************************************************************/
@@ -82,15 +82,12 @@ void bsp_fan_set(uint8_t speed)
 
 void bsp_fan_init_routine(uint8_t speed)
 {
-    
 }
 
 void bsp_fan_set_with_bat(uint16_t bat_mv, uint8_t speed)
 {
-    
 }
 
 void bsp_fan_stop_routine()
 {
-    
 }

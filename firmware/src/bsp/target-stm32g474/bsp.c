@@ -1,15 +1,15 @@
 #include <stdlib.h> /* for exit() */
 
-#include "bsp.h" /* Board Support Package interface */
-#include "main.h"
-#include "gpio.h"
-#include "dma.h"
-#include "tim.h"
 #include "adc.h"
+#include "bsp.h" /* Board Support Package interface */
 #include "bsp_i2c.h"
-#include "driving_service.h"
-#include "buzzer_service.h"
 #include "bsp_vcp.h"
+#include "buzzer_service.h"
+#include "dma.h"
+#include "driving_service.h"
+#include "gpio.h"
+#include "main.h"
+#include "tim.h"
 
 __weak void SystemClock_Config(void);
 
@@ -54,17 +54,16 @@ void BSP_delay(uint32_t ms)
 
 void BSP_delay_us(uint32_t delay_us)
 {
-  uint32_t tickstart = BSP_Get1usTick();
-  volatile uint32_t wait = delay_us;
+    uint32_t tickstart = BSP_Get1usTick();
+    volatile uint32_t wait = delay_us;
 
-  /* Add a freq to guarantee minimum wait */
-  if (wait < HAL_MAX_DELAY) {
-    wait += 1;
-  }
+    /* Add a freq to guarantee minimum wait */
+    if (wait < HAL_MAX_DELAY) {
+        wait += 1;
+    }
 
-  while ((BSP_Get1usTick() - tickstart) < wait)
-  {
-  }
+    while ((BSP_Get1usTick() - tickstart) < wait) {
+    }
 }
 
 void BSP_Assert()

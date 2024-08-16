@@ -2,22 +2,23 @@
  * INCLUDES
  **************************************************************************************************/
 
-#include <stdint.h>
-#include <stddef.h>
 #include "imu_service.h"
 #include "bsp.h"
+#include "bsp_crc.h"
 #include "bsp_gpio_mapping.h"
 #include "bsp_i2c.h"
+#include "bsp_vcp.h"
 #include "lsm6dsr.h"
 #include "lsm6dsr_reg.h"
-#include "bsp_crc.h"
-#include "bsp_vcp.h"
 #include "motion_gc.h"
+#include <stddef.h>
+#include <stdint.h>
 
 /***************************************************************************************************
  * LOCAL DEFINES
  **************************************************************************************************/
-// When using frequencies higher than 415hz, gyro error is so big that it is not possible to calibrate
+// When using frequencies higher than 415hz, gyro error is so big that it is not
+// possible to calibrate
 #define OUTPUT_DATA_RATE_HZ 415
 
 #define LSM6DSR_I2C_ADDR    0xD4

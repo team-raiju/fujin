@@ -9,8 +9,8 @@
  **************************************************************************************************/
 #include <stdint.h>
 
-#include "bsp_motors.h"
 #include "bsp_gpio.h"
+#include "bsp_motors.h"
 #include "tim.h"
 #include "utils.h"
 
@@ -46,25 +46,29 @@ typedef struct motor {
  * LOCAL VARIABLES
  **************************************************************************************************/
 static motor_t left_motor = {
-    .pwm_pin = {
-        .htim = &htim1,
-        .channel = TIM_CHANNEL_4,
-    },
-    .dir_gpio = {
-        .port = IO_PORTC,
-        .pin = IO_PIN_2,
-    },
+    .pwm_pin =
+        {
+            .htim = &htim1,
+            .channel = TIM_CHANNEL_4,
+        },
+    .dir_gpio =
+        {
+            .port = IO_PORTC,
+            .pin = IO_PIN_2,
+        },
 };
 
 static motor_t right_motor = {
-    .pwm_pin = {
-        .htim = &htim1,
-        .channel = TIM_CHANNEL_2,
-    },
-    .dir_gpio = {
-        .port = IO_PORTC,
-        .pin = IO_PIN_0,
-    },
+    .pwm_pin =
+        {
+            .htim = &htim1,
+            .channel = TIM_CHANNEL_2,
+        },
+    .dir_gpio =
+        {
+            .port = IO_PORTC,
+            .pin = IO_PIN_0,
+        },
 };
 /***************************************************************************************************
  * GLOBAL VARIABLES

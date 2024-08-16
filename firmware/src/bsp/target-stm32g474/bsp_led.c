@@ -1,7 +1,7 @@
-#include <stdbool.h>
 #include "bsp_led.h"
 #include "bsp_gpio.h"
 #include "bsp_gpio_mapping.h"
+#include <stdbool.h>
 
 void BSP_ledInit(void)
 {

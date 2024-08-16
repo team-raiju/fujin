@@ -3,9 +3,9 @@
  **************************************************************************************************/
 #include "bsp.h"
 
-#include "button.h"
 #include "bsp_gpio.h"
 #include "bsp_gpio_mapping.h"
+#include "button.h"
 
 // #include "robot_fsm.h"
 

@@ -1,9 +1,9 @@
 /***************************************************************************************************
  * INCLUDES
  **************************************************************************************************/
-#include <stdint.h>
 #include "AS5047P.h"
 #include "bsp_spi.h"
+#include <stdint.h>
 /***************************************************************************************************
  * LOCAL DEFINES
  **************************************************************************************************/
@@ -38,23 +38,22 @@ static uint16_t calculate_parity_bit(uint32_t val)
 
 static bool is_received_parity_ok(uint16_t frameRx)
 {
-  uint32_t parityReceived;
-  uint32_t parityCalculated;
+    uint32_t parityReceived;
+    uint32_t parityCalculated;
 
-  //--- Calculate parity for Rx frame
-  parityReceived = (frameRx & AS5047P_FRAME_PARD) >> 15;
-  parityCalculated = calculate_parity_bit(frameRx & (AS5047P_FRAME_DATA | AS5047P_FRAME_EF));
+    //--- Calculate parity for Rx frame
+    parityReceived = (frameRx & AS5047P_FRAME_PARD) >> 15;
+    parityCalculated = calculate_parity_bit(frameRx & (AS5047P_FRAME_DATA | AS5047P_FRAME_EF));
 
-  //--- Parity check
-  if (parityCalculated == parityReceived){
-    return true;
-  } else {
-    return false;
-  }
+    //--- Parity check
+    if (parityCalculated == parityReceived) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
-
-static as5047_result_t as5047_read_write_raw(as5047_obj_t *as5047_instance, uint16_t dataTx, bool rw, uint16_t * out_data_rx)
+static as5047_result_t as5047_read_write_raw(as5047_obj_t *as5047_instance, uint16_t dataTx, bool rw, uint16_t *out_data_rx)
 {
     as5047_result_t ret;
     int16_t frameTx;
@@ -74,14 +73,12 @@ static as5047_result_t as5047_read_write_raw(as5047_obj_t *as5047_instance, uint
     as5047_instance->delay_us(1);
 
     //--- Low level SPI access returned error
-    if (ret != AS5047_RES_OK)
-    {
+    if (ret != AS5047_RES_OK) {
         return AS5047_RES_ERROR;
     }
 
     //--- Parity bit error occurred in Rx frame
-    if (!is_received_parity_ok(buffRx))
-    {
+    if (!is_received_parity_ok(buffRx)) {
         *out_data_rx = (buffRx & AS5047P_FRAME_DATA);
         return AS5047_RES_ERROR;
     }
@@ -89,10 +86,7 @@ static as5047_result_t as5047_read_write_raw(as5047_obj_t *as5047_instance, uint
     *out_data_rx = (buffRx & AS5047P_FRAME_DATA);
 
     return AS5047_RES_OK;
-
 }
-
-
 
 /***************************************************************************************************
  * GLOBAL FUNCTIONS
@@ -107,7 +101,6 @@ void as5047_unselect(as5047_obj_t *as5047_instance)
 {
     BSP_GPIO_Write_Pin(as5047_instance->cs_pin.port, as5047_instance->cs_pin.pin, IO_HIGH);
 }
-
 
 as5047_result_t as5047_init(as5047_obj_t *as5047_instance)
 {

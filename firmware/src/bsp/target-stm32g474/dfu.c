@@ -2,10 +2,10 @@
  * INCLUDES
  **************************************************************************************************/
 #include "dfu.h"
-#include "main.h"
 #include "bsp_gpio.h"
 #include "bsp_gpio_mapping.h"
 #include "bsp_vcp.h"
+#include "main.h"
 /***************************************************************************************************
  * LOCAL DEFINES
  **************************************************************************************************/
@@ -70,9 +70,11 @@ void prepare_dfu()
 
     HAL_FLASHEx_OBGetConfig(&flash_option_bytes);
 
-    /* Check/Apply nBoot0 = 0  **********************************************************/
+    /* Check/Apply nBoot0 = 0
+   * **********************************************************/
 
-    /* Boot from system memory in next boot when nBoot0 = 0; nSWBOOT0 = 0 and nBoot1 = 1*/
+    /* Boot from system memory in next boot when nBoot0 = 0; nSWBOOT0 = 0 and
+   * nBoot1 = 1*/
     flash_option_bytes.OptionType = OPTIONBYTE_USER;
     flash_option_bytes.USERType = OB_USER_nBOOT0;
     flash_option_bytes.USERConfig = OB_nBOOT0_RESET;
@@ -91,7 +93,7 @@ void prepare_dfu()
     }
 
     /* Lock the Flash to disable the flash control register access (recommended
-    to protect the FLASH memory against possible unwanted operation) *********/
+  to protect the FLASH memory against possible unwanted operation) *********/
     ret = HAL_FLASH_Lock();
     if (ret != HAL_OK) {
         DEBUG_PRINT(" - HAL_FLASH_Lock ret = %d\r\n", ret);

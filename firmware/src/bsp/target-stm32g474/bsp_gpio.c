@@ -2,12 +2,12 @@
  * INCLUDES
  **************************************************************************************************/
 
+#include "bsp_gpio.h"
+#include "bsp_gpio_mapping.h"
+#include "gpio.h"
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include "bsp_gpio.h"
-#include "gpio.h"
-#include "bsp_gpio_mapping.h"
 
 /***************************************************************************************************
  * LOCAL DEFINES
@@ -54,10 +54,10 @@ static uint16_t BSP_GPIO_Pin_Mapping(io_pin_t io_pin)
 static GPIO_TypeDef *BSP_GPIO_Port_Mapping(io_port_t io_port)
 {
     GPIO_TypeDef *hardware_port_num[] = {
-        GPIOA, //IO_PORTA
-        GPIOB, //IO_PORTB
-        GPIOC, //IO_PORTC
-        GPIOD, //IO_PORTD
+        GPIOA, // IO_PORTA
+        GPIOB, // IO_PORTB
+        GPIOC, // IO_PORTC
+        GPIOD, // IO_PORTD
     };
 
     if (io_port < sizeof(hardware_port_num) / sizeof(GPIO_TypeDef *)) {
@@ -167,8 +167,8 @@ void BSP_GPIO_Register_IR_Callback(ir_callback_t callback_function)
 
 void BSP_GPIO_USBD_Reset_On_Host(void)
 {
-    // By pulling the USB DP pin down for few milliseconds the host computer disconnects
-    // the USB device if it was connected before reset
+    // By pulling the USB DP pin down for few milliseconds the host computer
+    // disconnects the USB device if it was connected before reset
 
     /* Rendering hardware reset harmless (no need to replug USB cable): */
     GPIO_InitTypeDef GPIO_InitStruct = { 0 };

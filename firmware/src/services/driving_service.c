@@ -1,10 +1,9 @@
 #include "driving_service.h"
-#include "bsp_motors.h"
 #include "adc_service.h"
+#include "bsp_motors.h"
 #include "utils.h"
 
 #define M_S_TO_DUTY_CYCLE 175.0f
-
 
 void driving_init()
 {

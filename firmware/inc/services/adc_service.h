@@ -1,10 +1,10 @@
 #ifndef ADC_SERVICE_H
 #define ADC_SERVICE_H
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
-#define NUM_OF_IR_SENSORS 4
+#define NUM_OF_IR_SENSORS      4
 #define NUM_OF_CURRENT_SENSORS 2
 
 // Position of sensor on ADC DMA buffer
@@ -28,6 +28,5 @@ bool adc_get_low_pwr_bat(void);
 uint16_t adc_get_pwr_bat_mv(void);
 void adc_dist_sensor_set_mask(uint8_t mask);
 uint32_t adc_get_raw_dist(dist_sensor_t position);
-
 
 #endif /* ADC_SERVICE_H */

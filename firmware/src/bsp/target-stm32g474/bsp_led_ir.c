@@ -1,17 +1,15 @@
-#include <stdbool.h>
 #include "bsp_led_ir.h"
 #include "bsp_gpio.h"
 #include "bsp_gpio_mapping.h"
+#include <stdbool.h>
 
 void bsp_leds_ir_init(void)
 {
-
 }
 
 void bsp_led_ir_on(bsp_led_ir_t led)
 {
-    switch (led)
-    {
+    switch (led) {
     case BSP_LED_IR_L_S:
         BSP_GPIO_Write_Pin(GPIO_LED_IR_L_S_PORT, GPIO_LED_IR_L_S_PIN, IO_HIGH);
         break;
@@ -29,8 +27,7 @@ void bsp_led_ir_on(bsp_led_ir_t led)
 
 void bsp_led_ir_off(bsp_led_ir_t led)
 {
-    switch (led)
-    {
+    switch (led) {
     case BSP_LED_IR_L_S:
         BSP_GPIO_Write_Pin(GPIO_LED_IR_L_S_PORT, GPIO_LED_IR_L_S_PIN, IO_LOW);
         break;

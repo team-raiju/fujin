@@ -6,10 +6,10 @@
 
 #include "adc_service.h"
 #include "bsp_adc_dma.h"
+#include "bsp_motors.h"
 #include "bsp_vcp.h"
 #include "driving_service.h"
 #include "utils.h"
-#include "bsp_motors.h"
 
 #include <string.h>
 /***************************************************************************************************
@@ -42,7 +42,6 @@ typedef enum dist_sensor_pos_in_adc {
     DIST_POS_R_S = 3,
 } dist_sensor_pos_in_adc_t;
 
-
 // typedef enum motor_current_pos_in_adc {
 //     MOTOR_CURRENT_POS_R = 0,
 //     MOTOR_CURRENT_POS_L = 1
@@ -67,10 +66,8 @@ static volatile float last_motor_current_r_ma = 0; // Measured in mA
 static uint8_t dist_sensors_mask = 0xff;
 static uint16_t seeing_threshold = 1000;
 
-
 static volatile uint32_t last_adc_1_raw[NUM_OF_IR_SENSORS];
 // static volatile uint32_t last_adc_2_raw[NUM_OF_CURRENT_SENSORS];
-
 
 /***************************************************************************************************
  * GLOBAL VARIABLES
@@ -85,7 +82,6 @@ static void pwr_battery_value_update(uint16_t bat_raw_adc)
 
     pwr_bat_voltage_mv = (measured_voltage * PWR_BAT_VOLTAGE_MULTIPLIER);
 }
-
 
 static void dist_sensor_update(uint32_t *adc_1_raw_data)
 {
@@ -103,8 +99,6 @@ static void dist_sensor_update(uint32_t *adc_1_raw_data)
         dist_sensor_is_seeing_last[i] = dist_sensor_is_seeing[i];
     }
 }
-
-
 
 // This interrupt is currently called every 45.2us due to ADC configurations
 // Aproximately 22kHz
@@ -140,7 +134,7 @@ static void adc_2_data_interrupt(uint32_t *out_data)
         aux_readings[j] /= (ADC_2_DMA_HALF_BUFFER_SIZE / ADC_2_DMA_CHANNELS);
     }
 
-//     motor_current_update(aux_readings);
+    //     motor_current_update(aux_readings);
 }
 
 /***************************************************************************************************

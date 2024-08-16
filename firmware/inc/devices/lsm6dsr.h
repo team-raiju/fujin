@@ -1,20 +1,20 @@
 /**
-  ******************************************************************************
-  * @file    lsm6dsr.h
-  * @author  MEMS Software Solutions Team
-  * @brief   LSM6DSR header driver file
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2019 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file    lsm6dsr.h
+ * @author  MEMS Software Solutions Team
+ * @brief   LSM6DSR header driver file
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2019 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef LSM6DSR_H
@@ -29,20 +29,20 @@ extern "C" {
 #include <string.h>
 
 /** @addtogroup BSP BSP
-  * @{
-  */
+ * @{
+ */
 
 /** @addtogroup Component Component
-  * @{
-  */
+ * @{
+ */
 
 /** @addtogroup LSM6DSR LSM6DSR
-  * @{
-  */
+ * @{
+ */
 
 /** @defgroup LSM6DSR_Exported_Types LSM6DSR Exported Types
-  * @{
-  */
+ * @{
+ */
 
 typedef int32_t (*LSM6DSR_Init_Func)(void);
 typedef int32_t (*LSM6DSR_DeInit_Func)(void);
@@ -165,12 +165,12 @@ typedef union {
 } lsm6dsr_axis1bit32_t;
 
 /**
-  * @}
-  */
+ * @}
+ */
 
 /** @defgroup LSM6DSR_Exported_Constants LSM6DSR Exported Constants
-  * @{
-  */
+ * @{
+ */
 
 #define LSM6DSR_OK    0
 #define LSM6DSR_ERROR -1
@@ -192,12 +192,12 @@ typedef union {
 #define LSM6DSR_GYRO_SENSITIVITY_FS_4000DPS 140.000f
 
 /**
-  * @}
-  */
+ * @}
+ */
 
 /** @addtogroup LSM6DSR_Exported_Functions LSM6DSR Exported Functions
-  * @{
-  */
+ * @{
+ */
 
 int32_t LSM6DSR_RegisterBusIO(LSM6DSR_Object_t *pObj, LSM6DSR_IO_t *pIO);
 int32_t LSM6DSR_Init(LSM6DSR_Object_t *pObj);
@@ -289,20 +289,20 @@ int32_t LSM6DSR_FIFO_GYRO_Get_Axes(LSM6DSR_Object_t *pObj, LSM6DSR_Axes_t *Angul
 int32_t LSM6DSR_FIFO_GYRO_Set_BDR(LSM6DSR_Object_t *pObj, float Bdr);
 
 /**
-  * @}
-  */
+ * @}
+ */
 
 /** @addtogroup LSM6DSR_Exported_Variables LSM6DSR Exported Variables
-  * @{
-  */
+ * @{
+ */
 
 extern LSM6DSR_CommonDrv_t LSM6DSR_COMMON_Driver;
 extern LSM6DSR_ACC_Drv_t LSM6DSR_ACC_Driver;
 extern LSM6DSR_GYRO_Drv_t LSM6DSR_GYRO_Driver;
 
 /**
-  * @}
-  */
+ * @}
+ */
 
 #ifdef __cplusplus
 }
@@ -311,13 +311,13 @@ extern LSM6DSR_GYRO_Drv_t LSM6DSR_GYRO_Driver;
 #endif
 
 /**
-  * @}
-  */
+ * @}
+ */
 
 /**
-  * @}
-  */
+ * @}
+ */
 
 /**
-  * @}
-  */
+ * @}
+ */

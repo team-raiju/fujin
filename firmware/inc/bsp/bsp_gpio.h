@@ -1,8 +1,8 @@
 #ifndef BSP_GPIO_H
 #define BSP_GPIO_H
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 typedef enum io_level {
     IO_LOW,

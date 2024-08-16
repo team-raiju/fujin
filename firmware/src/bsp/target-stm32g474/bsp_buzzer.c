@@ -1,8 +1,8 @@
-#include <stdint.h>
 #include "bsp_buzzer.h"
 #include "tim.h"
+#include <stdint.h>
 
-#define CPU_FREQUENCY  (170000000UL) //SystemCoreClock
+#define CPU_FREQUENCY  (170000000UL) // SystemCoreClock
 #define COUNTER_PERIOD (100)
 
 void BSP_buzzerInit()

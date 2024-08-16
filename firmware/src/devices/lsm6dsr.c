@@ -1,39 +1,39 @@
 /**
-  ******************************************************************************
-  * @file    lsm6dsr.c
-  * @author  MEMS Software Solutions Team
-  * @brief   LSM6DSR driver file
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2019 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file    lsm6dsr.c
+ * @author  MEMS Software Solutions Team
+ * @brief   LSM6DSR driver file
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2019 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 
 /* Includes ------------------------------------------------------------------*/
 #include "lsm6dsr.h"
 
 /** @addtogroup BSP BSP
-  * @{
-  */
+ * @{
+ */
 
 /** @addtogroup Component Component
-  * @{
-  */
+ * @{
+ */
 
 /** @defgroup LSM6DSR LSM6DSR
-  * @{
-  */
+ * @{
+ */
 
 /** @defgroup LSM6DSR_Exported_Variables LSM6DSR Exported Variables
-  * @{
-  */
+ * @{
+ */
 
 LSM6DSR_CommonDrv_t LSM6DSR_COMMON_Driver = {
     LSM6DSR_Init,
@@ -67,12 +67,13 @@ LSM6DSR_GYRO_Drv_t LSM6DSR_GYRO_Driver = {
 };
 
 /**
-  * @}
-  */
+ * @}
+ */
 
-/** @defgroup LSM6DSR_Private_Function_Prototypes LSM6DSR Private Function Prototypes
-  * @{
-  */
+/** @defgroup LSM6DSR_Private_Function_Prototypes LSM6DSR Private Function
+ * Prototypes
+ * @{
+ */
 
 static int32_t ReadRegWrap(void *Handle, uint8_t Reg, uint8_t *pData, uint16_t Length);
 static int32_t WriteRegWrap(void *Handle, uint8_t Reg, uint8_t *pData, uint16_t Length);
@@ -82,18 +83,18 @@ static int32_t LSM6DSR_GYRO_SetOutputDataRate_When_Enabled(LSM6DSR_Object_t *pOb
 static int32_t LSM6DSR_GYRO_SetOutputDataRate_When_Disabled(LSM6DSR_Object_t *pObj, float Odr);
 
 /**
-  * @}
-  */
+ * @}
+ */
 
 /** @defgroup LSM6DSR_Exported_Functions LSM6DSR Exported Functions
-  * @{
-  */
+ * @{
+ */
 
 /**
-  * @brief  Register Component Bus IO operations
-  * @param  pObj the device pObj
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Register Component Bus IO operations
+ * @param  pObj the device pObj
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_RegisterBusIO(LSM6DSR_Object_t *pObj, LSM6DSR_IO_t *pIO)
 {
     int32_t ret = LSM6DSR_OK;
@@ -138,10 +139,10 @@ int32_t LSM6DSR_RegisterBusIO(LSM6DSR_Object_t *pObj, LSM6DSR_IO_t *pIO)
 }
 
 /**
-  * @brief  Initialize the LSM6DSR sensor
-  * @param  pObj the device pObj
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Initialize the LSM6DSR sensor
+ * @param  pObj the device pObj
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_Init(LSM6DSR_Object_t *pObj)
 {
     /* Disable I3C */
@@ -150,7 +151,7 @@ int32_t LSM6DSR_Init(LSM6DSR_Object_t *pObj)
     }
 
     /* Enable register address automatically incremented during a multiple byte
-  access with a serial interface. */
+access with a serial interface. */
     if (lsm6dsr_auto_increment_set(&(pObj->Ctx), PROPERTY_ENABLE) != LSM6DSR_OK) {
         return LSM6DSR_ERROR;
     }
@@ -197,10 +198,10 @@ int32_t LSM6DSR_Init(LSM6DSR_Object_t *pObj)
 }
 
 /**
-  * @brief  Deinitialize the LSM6DSR sensor
-  * @param  pObj the device pObj
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Deinitialize the LSM6DSR sensor
+ * @param  pObj the device pObj
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_DeInit(LSM6DSR_Object_t *pObj)
 {
     /* Disable the component */
@@ -222,11 +223,11 @@ int32_t LSM6DSR_DeInit(LSM6DSR_Object_t *pObj)
 }
 
 /**
-  * @brief  Read component ID
-  * @param  pObj the device pObj
-  * @param  Id the WHO_AM_I value
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Read component ID
+ * @param  pObj the device pObj
+ * @param  Id the WHO_AM_I value
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ReadID(LSM6DSR_Object_t *pObj, uint8_t *Id)
 {
     if (lsm6dsr_device_id_get(&(pObj->Ctx), Id) != LSM6DSR_OK) {
@@ -237,11 +238,11 @@ int32_t LSM6DSR_ReadID(LSM6DSR_Object_t *pObj, uint8_t *Id)
 }
 
 /**
-  * @brief  Get LSM6DSR sensor capabilities
-  * @param  pObj Component object pointer
-  * @param  Capabilities pointer to LSM6DSR sensor capabilities
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Get LSM6DSR sensor capabilities
+ * @param  pObj Component object pointer
+ * @param  Capabilities pointer to LSM6DSR sensor capabilities
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_GetCapabilities(LSM6DSR_Object_t *pObj, LSM6DSR_Capabilities_t *Capabilities)
 {
     /* Prevent unused argument(s) compilation warning */
@@ -261,10 +262,10 @@ int32_t LSM6DSR_GetCapabilities(LSM6DSR_Object_t *pObj, LSM6DSR_Capabilities_t *
 }
 
 /**
-  * @brief  Enable the LSM6DSR accelerometer sensor
-  * @param  pObj the device pObj
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Enable the LSM6DSR accelerometer sensor
+ * @param  pObj the device pObj
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_Enable(LSM6DSR_Object_t *pObj)
 {
     /* Check if the component is already enabled */
@@ -283,10 +284,10 @@ int32_t LSM6DSR_ACC_Enable(LSM6DSR_Object_t *pObj)
 }
 
 /**
-  * @brief  Disable the LSM6DSR accelerometer sensor
-  * @param  pObj the device pObj
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Disable the LSM6DSR accelerometer sensor
+ * @param  pObj the device pObj
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_Disable(LSM6DSR_Object_t *pObj)
 {
     /* Check if the component is already disabled */
@@ -310,11 +311,11 @@ int32_t LSM6DSR_ACC_Disable(LSM6DSR_Object_t *pObj)
 }
 
 /**
-  * @brief  Get the LSM6DSR accelerometer sensor sensitivity
-  * @param  pObj the device pObj
-  * @param  Sensitivity pointer
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Get the LSM6DSR accelerometer sensor sensitivity
+ * @param  pObj the device pObj
+ * @param  Sensitivity pointer
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_GetSensitivity(LSM6DSR_Object_t *pObj, float *Sensitivity)
 {
     int32_t ret = LSM6DSR_OK;
@@ -352,11 +353,11 @@ int32_t LSM6DSR_ACC_GetSensitivity(LSM6DSR_Object_t *pObj, float *Sensitivity)
 }
 
 /**
-  * @brief  Get the LSM6DSR accelerometer sensor output data rate
-  * @param  pObj the device pObj
-  * @param  Odr pointer where the output data rate is written
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Get the LSM6DSR accelerometer sensor output data rate
+ * @param  pObj the device pObj
+ * @param  Odr pointer where the output data rate is written
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_GetOutputDataRate(LSM6DSR_Object_t *pObj, float *Odr)
 {
     int32_t ret = LSM6DSR_OK;
@@ -421,11 +422,11 @@ int32_t LSM6DSR_ACC_GetOutputDataRate(LSM6DSR_Object_t *pObj, float *Odr)
 }
 
 /**
-  * @brief  Set the LSM6DSR accelerometer sensor output data rate
-  * @param  pObj the device pObj
-  * @param  Odr the output data rate value to be set
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Set the LSM6DSR accelerometer sensor output data rate
+ * @param  pObj the device pObj
+ * @param  Odr the output data rate value to be set
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_SetOutputDataRate(LSM6DSR_Object_t *pObj, float Odr)
 {
     /* Check if the component is enabled */
@@ -437,11 +438,11 @@ int32_t LSM6DSR_ACC_SetOutputDataRate(LSM6DSR_Object_t *pObj, float Odr)
 }
 
 /**
-  * @brief  Get the LSM6DSR accelerometer sensor full scale
-  * @param  pObj the device pObj
-  * @param  FullScale pointer where the full scale is written
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Get the LSM6DSR accelerometer sensor full scale
+ * @param  pObj the device pObj
+ * @param  FullScale pointer where the full scale is written
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_GetFullScale(LSM6DSR_Object_t *pObj, int32_t *FullScale)
 {
     int32_t ret = LSM6DSR_OK;
@@ -478,17 +479,18 @@ int32_t LSM6DSR_ACC_GetFullScale(LSM6DSR_Object_t *pObj, int32_t *FullScale)
 }
 
 /**
-  * @brief  Set the LSM6DSR accelerometer sensor full scale
-  * @param  pObj the device pObj
-  * @param  FullScale the functional full scale to be set
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Set the LSM6DSR accelerometer sensor full scale
+ * @param  pObj the device pObj
+ * @param  FullScale the functional full scale to be set
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_SetFullScale(LSM6DSR_Object_t *pObj, int32_t FullScale)
 {
     lsm6dsr_fs_xl_t new_fs;
 
-    /* Seems like MISRA C-2012 rule 14.3a violation but only from single file statical analysis point of view because
-     the parameter passed to the function is not known at the moment of analysis */
+    /* Seems like MISRA C-2012 rule 14.3a violation but only from single file
+   statical analysis point of view because the parameter passed to the function
+   is not known at the moment of analysis */
     new_fs = (FullScale <= 2) ? LSM6DSR_2g : (FullScale <= 4) ? LSM6DSR_4g : (FullScale <= 8) ? LSM6DSR_8g : LSM6DSR_16g;
 
     if (lsm6dsr_xl_full_scale_set(&(pObj->Ctx), new_fs) != LSM6DSR_OK) {
@@ -499,11 +501,11 @@ int32_t LSM6DSR_ACC_SetFullScale(LSM6DSR_Object_t *pObj, int32_t FullScale)
 }
 
 /**
-  * @brief  Get the LSM6DSR accelerometer sensor raw axes
-  * @param  pObj the device pObj
-  * @param  Value pointer where the raw values of the axes are written
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Get the LSM6DSR accelerometer sensor raw axes
+ * @param  pObj the device pObj
+ * @param  Value pointer where the raw values of the axes are written
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_GetAxesRaw(LSM6DSR_Object_t *pObj, LSM6DSR_AxesRaw_t *Value)
 {
     lsm6dsr_axis3bit16_t data_raw;
@@ -522,11 +524,11 @@ int32_t LSM6DSR_ACC_GetAxesRaw(LSM6DSR_Object_t *pObj, LSM6DSR_AxesRaw_t *Value)
 }
 
 /**
-  * @brief  Get the LSM6DSR accelerometer sensor axes in mg
-  * @param  pObj the device pObj
-  * @param  Acceleration pointer where the values of the axes are written
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Get the LSM6DSR accelerometer sensor axes in mg
+ * @param  pObj the device pObj
+ * @param  Acceleration pointer where the values of the axes are written
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_GetAxes(LSM6DSR_Object_t *pObj, LSM6DSR_Axes_t *Acceleration)
 {
     lsm6dsr_axis3bit16_t data_raw;
@@ -551,10 +553,10 @@ int32_t LSM6DSR_ACC_GetAxes(LSM6DSR_Object_t *pObj, LSM6DSR_Axes_t *Acceleration
 }
 
 /**
-  * @brief  Enable the LSM6DSR gyroscope sensor
-  * @param  pObj the device pObj
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Enable the LSM6DSR gyroscope sensor
+ * @param  pObj the device pObj
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_GYRO_Enable(LSM6DSR_Object_t *pObj)
 {
     /* Check if the component is already enabled */
@@ -573,10 +575,10 @@ int32_t LSM6DSR_GYRO_Enable(LSM6DSR_Object_t *pObj)
 }
 
 /**
-  * @brief  Disable the LSM6DSR gyroscope sensor
-  * @param  pObj the device pObj
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Disable the LSM6DSR gyroscope sensor
+ * @param  pObj the device pObj
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_GYRO_Disable(LSM6DSR_Object_t *pObj)
 {
     /* Check if the component is already disabled */
@@ -600,11 +602,11 @@ int32_t LSM6DSR_GYRO_Disable(LSM6DSR_Object_t *pObj)
 }
 
 /**
-  * @brief  Get the LSM6DSR gyroscope sensor sensitivity
-  * @param  pObj the device pObj
-  * @param  Sensitivity pointer
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Get the LSM6DSR gyroscope sensor sensitivity
+ * @param  pObj the device pObj
+ * @param  Sensitivity pointer
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_GYRO_GetSensitivity(LSM6DSR_Object_t *pObj, float *Sensitivity)
 {
     int32_t ret = LSM6DSR_OK;
@@ -650,11 +652,11 @@ int32_t LSM6DSR_GYRO_GetSensitivity(LSM6DSR_Object_t *pObj, float *Sensitivity)
 }
 
 /**
-  * @brief  Get the LSM6DSR gyroscope sensor output data rate
-  * @param  pObj the device pObj
-  * @param  Odr pointer where the output data rate is written
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Get the LSM6DSR gyroscope sensor output data rate
+ * @param  pObj the device pObj
+ * @param  Odr pointer where the output data rate is written
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_GYRO_GetOutputDataRate(LSM6DSR_Object_t *pObj, float *Odr)
 {
     int32_t ret = LSM6DSR_OK;
@@ -719,11 +721,11 @@ int32_t LSM6DSR_GYRO_GetOutputDataRate(LSM6DSR_Object_t *pObj, float *Odr)
 }
 
 /**
-  * @brief  Set the LSM6DSR gyroscope sensor output data rate
-  * @param  pObj the device pObj
-  * @param  Odr the output data rate value to be set
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Set the LSM6DSR gyroscope sensor output data rate
+ * @param  pObj the device pObj
+ * @param  Odr the output data rate value to be set
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_GYRO_SetOutputDataRate(LSM6DSR_Object_t *pObj, float Odr)
 {
     /* Check if the component is enabled */
@@ -735,11 +737,11 @@ int32_t LSM6DSR_GYRO_SetOutputDataRate(LSM6DSR_Object_t *pObj, float Odr)
 }
 
 /**
-  * @brief  Get the LSM6DSR gyroscope sensor full scale
-  * @param  pObj the device pObj
-  * @param  FullScale pointer where the full scale is written
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Get the LSM6DSR gyroscope sensor full scale
+ * @param  pObj the device pObj
+ * @param  FullScale pointer where the full scale is written
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_GYRO_GetFullScale(LSM6DSR_Object_t *pObj, int32_t *FullScale)
 {
     int32_t ret = LSM6DSR_OK;
@@ -784,11 +786,11 @@ int32_t LSM6DSR_GYRO_GetFullScale(LSM6DSR_Object_t *pObj, int32_t *FullScale)
 }
 
 /**
-  * @brief  Set the LSM6DSR gyroscope sensor full scale
-  * @param  pObj the device pObj
-  * @param  FullScale the functional full scale to be set
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Set the LSM6DSR gyroscope sensor full scale
+ * @param  pObj the device pObj
+ * @param  FullScale the functional full scale to be set
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_GYRO_SetFullScale(LSM6DSR_Object_t *pObj, int32_t FullScale)
 {
     lsm6dsr_fs_g_t new_fs;
@@ -808,11 +810,11 @@ int32_t LSM6DSR_GYRO_SetFullScale(LSM6DSR_Object_t *pObj, int32_t FullScale)
 }
 
 /**
-  * @brief  Get the LSM6DSR gyroscope sensor raw axes
-  * @param  pObj the device pObj
-  * @param  Value pointer where the raw values of the axes are written
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Get the LSM6DSR gyroscope sensor raw axes
+ * @param  pObj the device pObj
+ * @param  Value pointer where the raw values of the axes are written
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_GYRO_GetAxesRaw(LSM6DSR_Object_t *pObj, LSM6DSR_AxesRaw_t *Value)
 {
     lsm6dsr_axis3bit16_t data_raw;
@@ -831,11 +833,11 @@ int32_t LSM6DSR_GYRO_GetAxesRaw(LSM6DSR_Object_t *pObj, LSM6DSR_AxesRaw_t *Value
 }
 
 /**
-  * @brief  Get the LSM6DSR gyroscope sensor axes in mdps
-  * @param  pObj the device pObj
-  * @param  AngularRate pointer where the values of the axes are written
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Get the LSM6DSR gyroscope sensor axes in mdps
+ * @param  pObj the device pObj
+ * @param  AngularRate pointer where the values of the axes are written
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_GYRO_GetAxes(LSM6DSR_Object_t *pObj, LSM6DSR_Axes_t *AngularRate)
 {
     lsm6dsr_axis3bit16_t data_raw;
@@ -860,12 +862,12 @@ int32_t LSM6DSR_GYRO_GetAxes(LSM6DSR_Object_t *pObj, LSM6DSR_Axes_t *AngularRate
 }
 
 /**
-  * @brief  Get the LSM6DSR register value
-  * @param  pObj the device pObj
-  * @param  Reg address to be read
-  * @param  Data pointer where the value is written
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Get the LSM6DSR register value
+ * @param  pObj the device pObj
+ * @param  Reg address to be read
+ * @param  Data pointer where the value is written
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_Read_Reg(LSM6DSR_Object_t *pObj, uint8_t Reg, uint8_t *Data)
 {
     if (lsm6dsr_read_reg(&(pObj->Ctx), Reg, Data, 1) != LSM6DSR_OK) {
@@ -876,12 +878,12 @@ int32_t LSM6DSR_Read_Reg(LSM6DSR_Object_t *pObj, uint8_t Reg, uint8_t *Data)
 }
 
 /**
-  * @brief  Set the LSM6DSR register value
-  * @param  pObj the device pObj
-  * @param  Reg address to be written
-  * @param  Data value to be written
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Set the LSM6DSR register value
+ * @param  pObj the device pObj
+ * @param  Reg address to be written
+ * @param  Data value to be written
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_Write_Reg(LSM6DSR_Object_t *pObj, uint8_t Reg, uint8_t Data)
 {
     if (lsm6dsr_write_reg(&(pObj->Ctx), Reg, &Data, 1) != LSM6DSR_OK) {
@@ -892,11 +894,11 @@ int32_t LSM6DSR_Write_Reg(LSM6DSR_Object_t *pObj, uint8_t Reg, uint8_t Data)
 }
 
 /**
-  * @brief  Set the interrupt latch
-  * @param  pObj the device pObj
-  * @param  Status value to be written
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Set the interrupt latch
+ * @param  pObj the device pObj
+ * @param  Status value to be written
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_Set_Interrupt_Latch(LSM6DSR_Object_t *pObj, uint8_t Status)
 {
     if (Status > 1U) {
@@ -911,11 +913,11 @@ int32_t LSM6DSR_Set_Interrupt_Latch(LSM6DSR_Object_t *pObj, uint8_t Status)
 }
 
 /**
-  * @brief  Enable free fall detection
-  * @param  pObj the device pObj
-  * @param  IntPin interrupt pin line to be used
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Enable free fall detection
+ * @param  pObj the device pObj
+ * @param  IntPin interrupt pin line to be used
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_Enable_Free_Fall_Detection(LSM6DSR_Object_t *pObj, LSM6DSR_SensorIntPin_t IntPin)
 {
     int32_t ret = LSM6DSR_OK;
@@ -987,10 +989,10 @@ int32_t LSM6DSR_ACC_Enable_Free_Fall_Detection(LSM6DSR_Object_t *pObj, LSM6DSR_S
 }
 
 /**
-  * @brief  Disable free fall detection
-  * @param  pObj the device pObj
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Disable free fall detection
+ * @param  pObj the device pObj
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_Disable_Free_Fall_Detection(LSM6DSR_Object_t *pObj)
 {
     lsm6dsr_pin_int1_route_t val1;
@@ -1031,11 +1033,11 @@ int32_t LSM6DSR_ACC_Disable_Free_Fall_Detection(LSM6DSR_Object_t *pObj)
 }
 
 /**
-  * @brief  Set free fall threshold
-  * @param  pObj the device pObj
-  * @param  Threshold free fall detection threshold
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Set free fall threshold
+ * @param  pObj the device pObj
+ * @param  Threshold free fall detection threshold
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_Set_Free_Fall_Threshold(LSM6DSR_Object_t *pObj, uint8_t Threshold)
 {
     if (lsm6dsr_ff_threshold_set(&(pObj->Ctx), (lsm6dsr_ff_ths_t)Threshold) != LSM6DSR_OK) {
@@ -1046,11 +1048,11 @@ int32_t LSM6DSR_ACC_Set_Free_Fall_Threshold(LSM6DSR_Object_t *pObj, uint8_t Thre
 }
 
 /**
-  * @brief  Set free fall duration
-  * @param  pObj the device pObj
-  * @param  Duration free fall detection duration
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Set free fall duration
+ * @param  pObj the device pObj
+ * @param  Duration free fall detection duration
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_Set_Free_Fall_Duration(LSM6DSR_Object_t *pObj, uint8_t Duration)
 {
     if (lsm6dsr_ff_dur_set(&(pObj->Ctx), Duration) != LSM6DSR_OK) {
@@ -1061,10 +1063,10 @@ int32_t LSM6DSR_ACC_Set_Free_Fall_Duration(LSM6DSR_Object_t *pObj, uint8_t Durat
 }
 
 /**
-  * @brief  Enable pedometer
-  * @param  pObj the device pObj
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Enable pedometer
+ * @param  pObj the device pObj
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_Enable_Pedometer(LSM6DSR_Object_t *pObj)
 {
     lsm6dsr_pin_int1_route_t val;
@@ -1099,10 +1101,10 @@ int32_t LSM6DSR_ACC_Enable_Pedometer(LSM6DSR_Object_t *pObj)
 }
 
 /**
-  * @brief  Disable pedometer
-  * @param  pObj the device pObj
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Disable pedometer
+ * @param  pObj the device pObj
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_Disable_Pedometer(LSM6DSR_Object_t *pObj)
 {
     lsm6dsr_pin_int1_route_t val1;
@@ -1127,11 +1129,11 @@ int32_t LSM6DSR_ACC_Disable_Pedometer(LSM6DSR_Object_t *pObj)
 }
 
 /**
-  * @brief  Get step count
-  * @param  pObj the device pObj
-  * @param  StepCount step counter
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Get step count
+ * @param  pObj the device pObj
+ * @param  StepCount step counter
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_Get_Step_Count(LSM6DSR_Object_t *pObj, uint16_t *StepCount)
 {
     if (lsm6dsr_number_of_steps_get(&(pObj->Ctx), StepCount) != LSM6DSR_OK) {
@@ -1142,10 +1144,10 @@ int32_t LSM6DSR_ACC_Get_Step_Count(LSM6DSR_Object_t *pObj, uint16_t *StepCount)
 }
 
 /**
-  * @brief  Enable step counter reset
-  * @param  pObj the device pObj
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Enable step counter reset
+ * @param  pObj the device pObj
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_Step_Counter_Reset(LSM6DSR_Object_t *pObj)
 {
     if (lsm6dsr_steps_reset(&(pObj->Ctx)) != LSM6DSR_OK) {
@@ -1156,11 +1158,11 @@ int32_t LSM6DSR_ACC_Step_Counter_Reset(LSM6DSR_Object_t *pObj)
 }
 
 /**
-  * @brief  Enable tilt detection
-  * @param  pObj the device pObj
-  * @param  IntPin interrupt pin line to be used
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Enable tilt detection
+ * @param  pObj the device pObj
+ * @param  IntPin interrupt pin line to be used
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_Enable_Tilt_Detection(LSM6DSR_Object_t *pObj, LSM6DSR_SensorIntPin_t IntPin)
 {
     int32_t ret = LSM6DSR_OK;
@@ -1217,10 +1219,10 @@ int32_t LSM6DSR_ACC_Enable_Tilt_Detection(LSM6DSR_Object_t *pObj, LSM6DSR_Sensor
 }
 
 /**
-  * @brief  Disable tilt detection
-  * @param  pObj the device pObj
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Disable tilt detection
+ * @param  pObj the device pObj
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_Disable_Tilt_Detection(LSM6DSR_Object_t *pObj)
 {
     lsm6dsr_pin_int1_route_t val1;
@@ -1256,11 +1258,11 @@ int32_t LSM6DSR_ACC_Disable_Tilt_Detection(LSM6DSR_Object_t *pObj)
 }
 
 /**
-  * @brief  Enable wake up detection
-  * @param  pObj the device pObj
-  * @param  IntPin interrupt pin line to be used
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Enable wake up detection
+ * @param  pObj the device pObj
+ * @param  IntPin interrupt pin line to be used
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_Enable_Wake_Up_Detection(LSM6DSR_Object_t *pObj, LSM6DSR_SensorIntPin_t IntPin)
 {
     int32_t ret = LSM6DSR_OK;
@@ -1322,10 +1324,10 @@ int32_t LSM6DSR_ACC_Enable_Wake_Up_Detection(LSM6DSR_Object_t *pObj, LSM6DSR_Sen
 }
 
 /**
-  * @brief  Disable wake up detection
-  * @param  pObj the device pObj
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Disable wake up detection
+ * @param  pObj the device pObj
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_Disable_Wake_Up_Detection(LSM6DSR_Object_t *pObj)
 {
     lsm6dsr_pin_int1_route_t val1;
@@ -1366,11 +1368,11 @@ int32_t LSM6DSR_ACC_Disable_Wake_Up_Detection(LSM6DSR_Object_t *pObj)
 }
 
 /**
-  * @brief  Set wake up threshold
-  * @param  pObj the device pObj
-  * @param  Threshold wake up detection threshold
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Set wake up threshold
+ * @param  pObj the device pObj
+ * @param  Threshold wake up detection threshold
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_Set_Wake_Up_Threshold(LSM6DSR_Object_t *pObj, uint8_t Threshold)
 {
     /* Set wake up threshold. */
@@ -1382,11 +1384,11 @@ int32_t LSM6DSR_ACC_Set_Wake_Up_Threshold(LSM6DSR_Object_t *pObj, uint8_t Thresh
 }
 
 /**
-  * @brief  Set wake up duration
-  * @param  pObj the device pObj
-  * @param  Duration wake up detection duration
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Set wake up duration
+ * @param  pObj the device pObj
+ * @param  Duration wake up detection duration
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_Set_Wake_Up_Duration(LSM6DSR_Object_t *pObj, uint8_t Duration)
 {
     /* Set wake up duration. */
@@ -1398,11 +1400,11 @@ int32_t LSM6DSR_ACC_Set_Wake_Up_Duration(LSM6DSR_Object_t *pObj, uint8_t Duratio
 }
 
 /**
-  * @brief  Enable single tap detection
-  * @param  pObj the device pObj
-  * @param  IntPin interrupt pin line to be used
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Enable single tap detection
+ * @param  pObj the device pObj
+ * @param  IntPin interrupt pin line to be used
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_Enable_Single_Tap_Detection(LSM6DSR_Object_t *pObj, LSM6DSR_SensorIntPin_t IntPin)
 {
     int32_t ret = LSM6DSR_OK;
@@ -1451,7 +1453,8 @@ int32_t LSM6DSR_ACC_Enable_Single_Tap_Detection(LSM6DSR_Object_t *pObj, LSM6DSR_
 
     /* _NOTE_: Tap duration time window - don't care for single tap. */
 
-    /* _NOTE_: Single/Double Tap event - don't care of this flag for single tap. */
+    /* _NOTE_: Single/Double Tap event - don't care of this flag for single tap.
+   */
 
     /* Enable single tap event on either INT1 or INT2 pin */
     switch (IntPin) {
@@ -1488,10 +1491,10 @@ int32_t LSM6DSR_ACC_Enable_Single_Tap_Detection(LSM6DSR_Object_t *pObj, LSM6DSR_
 }
 
 /**
-  * @brief  Disable single tap detection
-  * @param  pObj the device pObj
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Disable single tap detection
+ * @param  pObj the device pObj
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_Disable_Single_Tap_Detection(LSM6DSR_Object_t *pObj)
 {
     lsm6dsr_pin_int1_route_t val1;
@@ -1552,11 +1555,11 @@ int32_t LSM6DSR_ACC_Disable_Single_Tap_Detection(LSM6DSR_Object_t *pObj)
 }
 
 /**
-  * @brief  Enable double tap detection
-  * @param  pObj the device pObj
-  * @param  IntPin interrupt pin line to be used
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Enable double tap detection
+ * @param  pObj the device pObj
+ * @param  IntPin interrupt pin line to be used
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_Enable_Double_Tap_Detection(LSM6DSR_Object_t *pObj, LSM6DSR_SensorIntPin_t IntPin)
 {
     int32_t ret = LSM6DSR_OK;
@@ -1648,10 +1651,10 @@ int32_t LSM6DSR_ACC_Enable_Double_Tap_Detection(LSM6DSR_Object_t *pObj, LSM6DSR_
 }
 
 /**
-  * @brief  Disable double tap detection
-  * @param  pObj the device pObj
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Disable double tap detection
+ * @param  pObj the device pObj
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_Disable_Double_Tap_Detection(LSM6DSR_Object_t *pObj)
 {
     lsm6dsr_pin_int1_route_t val1;
@@ -1722,11 +1725,11 @@ int32_t LSM6DSR_ACC_Disable_Double_Tap_Detection(LSM6DSR_Object_t *pObj)
 }
 
 /**
-  * @brief  Set tap threshold
-  * @param  pObj the device pObj
-  * @param  Threshold tap threshold
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Set tap threshold
+ * @param  pObj the device pObj
+ * @param  Threshold tap threshold
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_Set_Tap_Threshold(LSM6DSR_Object_t *pObj, uint8_t Threshold)
 {
     /* Set tap threshold. */
@@ -1738,11 +1741,11 @@ int32_t LSM6DSR_ACC_Set_Tap_Threshold(LSM6DSR_Object_t *pObj, uint8_t Threshold)
 }
 
 /**
-  * @brief  Set tap shock time
-  * @param  pObj the device pObj
-  * @param  Time tap shock time
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Set tap shock time
+ * @param  pObj the device pObj
+ * @param  Time tap shock time
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_Set_Tap_Shock_Time(LSM6DSR_Object_t *pObj, uint8_t Time)
 {
     /* Set tap shock time window. */
@@ -1754,11 +1757,11 @@ int32_t LSM6DSR_ACC_Set_Tap_Shock_Time(LSM6DSR_Object_t *pObj, uint8_t Time)
 }
 
 /**
-  * @brief  Set tap quiet time
-  * @param  pObj the device pObj
-  * @param  Time tap quiet time
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Set tap quiet time
+ * @param  pObj the device pObj
+ * @param  Time tap quiet time
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_Set_Tap_Quiet_Time(LSM6DSR_Object_t *pObj, uint8_t Time)
 {
     /* Set tap quiet time window. */
@@ -1770,11 +1773,11 @@ int32_t LSM6DSR_ACC_Set_Tap_Quiet_Time(LSM6DSR_Object_t *pObj, uint8_t Time)
 }
 
 /**
-  * @brief  Set tap duration time
-  * @param  pObj the device pObj
-  * @param  Time tap duration time
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Set tap duration time
+ * @param  pObj the device pObj
+ * @param  Time tap duration time
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_Set_Tap_Duration_Time(LSM6DSR_Object_t *pObj, uint8_t Time)
 {
     /* Set tap duration time window. */
@@ -1786,11 +1789,11 @@ int32_t LSM6DSR_ACC_Set_Tap_Duration_Time(LSM6DSR_Object_t *pObj, uint8_t Time)
 }
 
 /**
-  * @brief  Enable 6D orientation detection
-  * @param  pObj the device pObj
-  * @param  IntPin interrupt pin line to be used
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Enable 6D orientation detection
+ * @param  pObj the device pObj
+ * @param  IntPin interrupt pin line to be used
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_Enable_6D_Orientation(LSM6DSR_Object_t *pObj, LSM6DSR_SensorIntPin_t IntPin)
 {
     int32_t ret = LSM6DSR_OK;
@@ -1847,10 +1850,10 @@ int32_t LSM6DSR_ACC_Enable_6D_Orientation(LSM6DSR_Object_t *pObj, LSM6DSR_Sensor
 }
 
 /**
-  * @brief  Disable 6D orientation detection
-  * @param  pObj the device pObj
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Disable 6D orientation detection
+ * @param  pObj the device pObj
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_Disable_6D_Orientation(LSM6DSR_Object_t *pObj)
 {
     lsm6dsr_pin_int1_route_t val1;
@@ -1886,11 +1889,11 @@ int32_t LSM6DSR_ACC_Disable_6D_Orientation(LSM6DSR_Object_t *pObj)
 }
 
 /**
-  * @brief  Set 6D orientation threshold
-  * @param  pObj the device pObj
-  * @param  Threshold 6D Orientation detection threshold
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Set 6D orientation threshold
+ * @param  pObj the device pObj
+ * @param  Threshold 6D Orientation detection threshold
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_Set_6D_Orientation_Threshold(LSM6DSR_Object_t *pObj, uint8_t Threshold)
 {
     if (lsm6dsr_6d_threshold_set(&(pObj->Ctx), (lsm6dsr_sixd_ths_t)Threshold) != LSM6DSR_OK) {
@@ -1901,11 +1904,11 @@ int32_t LSM6DSR_ACC_Set_6D_Orientation_Threshold(LSM6DSR_Object_t *pObj, uint8_t
 }
 
 /**
-  * @brief  Get the status of XLow orientation
-  * @param  pObj the device pObj
-  * @param  XLow the status of XLow orientation
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Get the status of XLow orientation
+ * @param  pObj the device pObj
+ * @param  XLow the status of XLow orientation
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_Get_6D_Orientation_XL(LSM6DSR_Object_t *pObj, uint8_t *XLow)
 {
     lsm6dsr_d6d_src_t data;
@@ -1920,11 +1923,11 @@ int32_t LSM6DSR_ACC_Get_6D_Orientation_XL(LSM6DSR_Object_t *pObj, uint8_t *XLow)
 }
 
 /**
-  * @brief  Get the status of XHigh orientation
-  * @param  pObj the device pObj
-  * @param  XHigh the status of XHigh orientation
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Get the status of XHigh orientation
+ * @param  pObj the device pObj
+ * @param  XHigh the status of XHigh orientation
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_Get_6D_Orientation_XH(LSM6DSR_Object_t *pObj, uint8_t *XHigh)
 {
     lsm6dsr_d6d_src_t data;
@@ -1939,11 +1942,11 @@ int32_t LSM6DSR_ACC_Get_6D_Orientation_XH(LSM6DSR_Object_t *pObj, uint8_t *XHigh
 }
 
 /**
-  * @brief  Get the status of YLow orientation
-  * @param  pObj the device pObj
-  * @param  YLow the status of YLow orientation
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Get the status of YLow orientation
+ * @param  pObj the device pObj
+ * @param  YLow the status of YLow orientation
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_Get_6D_Orientation_YL(LSM6DSR_Object_t *pObj, uint8_t *YLow)
 {
     lsm6dsr_d6d_src_t data;
@@ -1958,11 +1961,11 @@ int32_t LSM6DSR_ACC_Get_6D_Orientation_YL(LSM6DSR_Object_t *pObj, uint8_t *YLow)
 }
 
 /**
-  * @brief  Get the status of YHigh orientation
-  * @param  pObj the device pObj
-  * @param  YHigh the status of YHigh orientation
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Get the status of YHigh orientation
+ * @param  pObj the device pObj
+ * @param  YHigh the status of YHigh orientation
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_Get_6D_Orientation_YH(LSM6DSR_Object_t *pObj, uint8_t *YHigh)
 {
     lsm6dsr_d6d_src_t data;
@@ -1977,11 +1980,11 @@ int32_t LSM6DSR_ACC_Get_6D_Orientation_YH(LSM6DSR_Object_t *pObj, uint8_t *YHigh
 }
 
 /**
-  * @brief  Get the status of ZLow orientation
-  * @param  pObj the device pObj
-  * @param  ZLow the status of ZLow orientation
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Get the status of ZLow orientation
+ * @param  pObj the device pObj
+ * @param  ZLow the status of ZLow orientation
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_Get_6D_Orientation_ZL(LSM6DSR_Object_t *pObj, uint8_t *ZLow)
 {
     lsm6dsr_d6d_src_t data;
@@ -1996,11 +1999,11 @@ int32_t LSM6DSR_ACC_Get_6D_Orientation_ZL(LSM6DSR_Object_t *pObj, uint8_t *ZLow)
 }
 
 /**
-  * @brief  Get the status of ZHigh orientation
-  * @param  pObj the device pObj
-  * @param  ZHigh the status of ZHigh orientation
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Get the status of ZHigh orientation
+ * @param  pObj the device pObj
+ * @param  ZHigh the status of ZHigh orientation
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_Get_6D_Orientation_ZH(LSM6DSR_Object_t *pObj, uint8_t *ZHigh)
 {
     lsm6dsr_d6d_src_t data;
@@ -2015,11 +2018,11 @@ int32_t LSM6DSR_ACC_Get_6D_Orientation_ZH(LSM6DSR_Object_t *pObj, uint8_t *ZHigh
 }
 
 /**
-  * @brief  Get the LSM6DSR ACC data ready bit value
-  * @param  pObj the device pObj
-  * @param  Status the status of data ready bit
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Get the LSM6DSR ACC data ready bit value
+ * @param  pObj the device pObj
+ * @param  Status the status of data ready bit
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_Get_DRDY_Status(LSM6DSR_Object_t *pObj, uint8_t *Status)
 {
     if (lsm6dsr_xl_flag_data_ready_get(&(pObj->Ctx), Status) != LSM6DSR_OK) {
@@ -2030,11 +2033,11 @@ int32_t LSM6DSR_ACC_Get_DRDY_Status(LSM6DSR_Object_t *pObj, uint8_t *Status)
 }
 
 /**
-  * @brief  Get the status of all hardware events
-  * @param  pObj the device pObj
-  * @param  Status the status of all hardware events
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Get the status of all hardware events
+ * @param  pObj the device pObj
+ * @param  Status the status of all hardware events
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_Get_Event_Status(LSM6DSR_Object_t *pObj, LSM6DSR_Event_Status_t *Status)
 {
     uint8_t tilt_ia;
@@ -2139,11 +2142,11 @@ int32_t LSM6DSR_ACC_Get_Event_Status(LSM6DSR_Object_t *pObj, LSM6DSR_Event_Statu
 }
 
 /**
-  * @brief  Set self test
-  * @param  pObj the device pObj
-  * @param  val the value of st_xl in reg CTRL5_C
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Set self test
+ * @param  pObj the device pObj
+ * @param  val the value of st_xl in reg CTRL5_C
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_ACC_Set_SelfTest(LSM6DSR_Object_t *pObj, uint8_t val)
 {
     lsm6dsr_st_xl_t reg;
@@ -2161,11 +2164,11 @@ int32_t LSM6DSR_ACC_Set_SelfTest(LSM6DSR_Object_t *pObj, uint8_t val)
 }
 
 /**
-  * @brief  Get the LSM6DSR GYRO data ready bit value
-  * @param  pObj the device pObj
-  * @param  Status the status of data ready bit
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Get the LSM6DSR GYRO data ready bit value
+ * @param  pObj the device pObj
+ * @param  Status the status of data ready bit
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_GYRO_Get_DRDY_Status(LSM6DSR_Object_t *pObj, uint8_t *Status)
 {
     if (lsm6dsr_gy_flag_data_ready_get(&(pObj->Ctx), Status) != LSM6DSR_OK) {
@@ -2176,11 +2179,11 @@ int32_t LSM6DSR_GYRO_Get_DRDY_Status(LSM6DSR_Object_t *pObj, uint8_t *Status)
 }
 
 /**
-  * @brief  Set self test
-  * @param  pObj the device pObj
-  * @param  val the value of st_xl in reg CTRL5_C
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Set self test
+ * @param  pObj the device pObj
+ * @param  val the value of st_xl in reg CTRL5_C
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_GYRO_Set_SelfTest(LSM6DSR_Object_t *pObj, uint8_t val)
 {
     lsm6dsr_st_g_t reg;
@@ -2198,11 +2201,11 @@ int32_t LSM6DSR_GYRO_Set_SelfTest(LSM6DSR_Object_t *pObj, uint8_t val)
 }
 
 /**
-  * @brief  Get the LSM6DSR FIFO number of samples
-  * @param  pObj the device pObj
-  * @param  NumSamples number of samples
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Get the LSM6DSR FIFO number of samples
+ * @param  pObj the device pObj
+ * @param  NumSamples number of samples
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_FIFO_Get_Num_Samples(LSM6DSR_Object_t *pObj, uint16_t *NumSamples)
 {
     if (lsm6dsr_fifo_data_level_get(&(pObj->Ctx), NumSamples) != LSM6DSR_OK) {
@@ -2213,11 +2216,11 @@ int32_t LSM6DSR_FIFO_Get_Num_Samples(LSM6DSR_Object_t *pObj, uint16_t *NumSample
 }
 
 /**
-  * @brief  Get the LSM6DSR FIFO full status
-  * @param  pObj the device pObj
-  * @param  Status FIFO full status
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Get the LSM6DSR FIFO full status
+ * @param  pObj the device pObj
+ * @param  Status FIFO full status
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_FIFO_Get_Full_Status(LSM6DSR_Object_t *pObj, uint8_t *Status)
 {
     lsm6dsr_reg_t reg;
@@ -2232,11 +2235,11 @@ int32_t LSM6DSR_FIFO_Get_Full_Status(LSM6DSR_Object_t *pObj, uint8_t *Status)
 }
 
 /**
-  * @brief  Set the LSM6DSR FIFO full interrupt on INT1 pin
-  * @param  pObj the device pObj
-  * @param  Status FIFO full interrupt on INT1 pin status
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Set the LSM6DSR FIFO full interrupt on INT1 pin
+ * @param  pObj the device pObj
+ * @param  Status FIFO full interrupt on INT1 pin status
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_FIFO_Set_INT1_FIFO_Full(LSM6DSR_Object_t *pObj, uint8_t Status)
 {
     lsm6dsr_reg_t reg;
@@ -2255,11 +2258,11 @@ int32_t LSM6DSR_FIFO_Set_INT1_FIFO_Full(LSM6DSR_Object_t *pObj, uint8_t Status)
 }
 
 /**
-  * @brief  Set the LSM6DSR FIFO watermark level
-  * @param  pObj the device pObj
-  * @param  Watermark FIFO watermark level
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Set the LSM6DSR FIFO watermark level
+ * @param  pObj the device pObj
+ * @param  Watermark FIFO watermark level
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_FIFO_Set_Watermark_Level(LSM6DSR_Object_t *pObj, uint16_t Watermark)
 {
     if (lsm6dsr_fifo_watermark_set(&(pObj->Ctx), Watermark) != LSM6DSR_OK) {
@@ -2270,11 +2273,11 @@ int32_t LSM6DSR_FIFO_Set_Watermark_Level(LSM6DSR_Object_t *pObj, uint16_t Waterm
 }
 
 /**
-  * @brief  Set the LSM6DSR FIFO stop on watermark
-  * @param  pObj the device pObj
-  * @param  Status FIFO stop on watermark status
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Set the LSM6DSR FIFO stop on watermark
+ * @param  pObj the device pObj
+ * @param  Status FIFO stop on watermark status
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_FIFO_Set_Stop_On_Fth(LSM6DSR_Object_t *pObj, uint8_t Status)
 {
     if (lsm6dsr_fifo_stop_on_wtm_set(&(pObj->Ctx), Status) != LSM6DSR_OK) {
@@ -2285,11 +2288,11 @@ int32_t LSM6DSR_FIFO_Set_Stop_On_Fth(LSM6DSR_Object_t *pObj, uint8_t Status)
 }
 
 /**
-  * @brief  Set the LSM6DSR FIFO mode
-  * @param  pObj the device pObj
-  * @param  Mode FIFO mode
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Set the LSM6DSR FIFO mode
+ * @param  pObj the device pObj
+ * @param  Mode FIFO mode
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_FIFO_Set_Mode(LSM6DSR_Object_t *pObj, uint8_t Mode)
 {
     int32_t ret = LSM6DSR_OK;
@@ -2320,11 +2323,11 @@ int32_t LSM6DSR_FIFO_Set_Mode(LSM6DSR_Object_t *pObj, uint8_t Mode)
 }
 
 /**
-  * @brief  Get the LSM6DSR FIFO tag
-  * @param  pObj the device pObj
-  * @param  Tag FIFO tag
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Get the LSM6DSR FIFO tag
+ * @param  pObj the device pObj
+ * @param  Tag FIFO tag
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_FIFO_Get_Tag(LSM6DSR_Object_t *pObj, uint8_t *Tag)
 {
     lsm6dsr_fifo_tag_t tag_local;
@@ -2339,11 +2342,11 @@ int32_t LSM6DSR_FIFO_Get_Tag(LSM6DSR_Object_t *pObj, uint8_t *Tag)
 }
 
 /**
-  * @brief  Get the LSM6DSR FIFO raw data
-  * @param  pObj the device pObj
-  * @param  Data FIFO raw data array [6]
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Get the LSM6DSR FIFO raw data
+ * @param  pObj the device pObj
+ * @param  Data FIFO raw data array [6]
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_FIFO_Get_Data(LSM6DSR_Object_t *pObj, uint8_t *Data)
 {
     if (lsm6dsr_read_reg(&(pObj->Ctx), LSM6DSR_FIFO_DATA_OUT_X_L, Data, 6) != LSM6DSR_OK) {
@@ -2354,11 +2357,12 @@ int32_t LSM6DSR_FIFO_Get_Data(LSM6DSR_Object_t *pObj, uint8_t *Data)
 }
 
 /**
-  * @brief  Get the LSM6DSR FIFO accelero single sample (16-bit data per 3 axes) and calculate acceleration [mg]
-  * @param  pObj the device pObj
-  * @param  Acceleration FIFO accelero axes [mg]
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Get the LSM6DSR FIFO accelero single sample (16-bit data per 3 axes)
+ * and calculate acceleration [mg]
+ * @param  pObj the device pObj
+ * @param  Acceleration FIFO accelero axes [mg]
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_FIFO_ACC_Get_Axes(LSM6DSR_Object_t *pObj, LSM6DSR_Axes_t *Acceleration)
 {
     uint8_t data[6];
@@ -2390,11 +2394,11 @@ int32_t LSM6DSR_FIFO_ACC_Get_Axes(LSM6DSR_Object_t *pObj, LSM6DSR_Axes_t *Accele
 }
 
 /**
-  * @brief  Set the LSM6DSR FIFO accelero BDR value
-  * @param  pObj the device pObj
-  * @param  Bdr FIFO accelero BDR value
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Set the LSM6DSR FIFO accelero BDR value
+ * @param  pObj the device pObj
+ * @param  Bdr FIFO accelero BDR value
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_FIFO_ACC_Set_BDR(LSM6DSR_Object_t *pObj, float Bdr)
 {
     lsm6dsr_bdr_xl_t new_bdr;
@@ -2419,11 +2423,12 @@ int32_t LSM6DSR_FIFO_ACC_Set_BDR(LSM6DSR_Object_t *pObj, float Bdr)
 }
 
 /**
-  * @brief  Get the LSM6DSR FIFO gyro single sample (16-bit data per 3 axes) and calculate angular velocity [mDPS]
-  * @param  pObj the device pObj
-  * @param  AngularVelocity FIFO gyro axes [mDPS]
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Get the LSM6DSR FIFO gyro single sample (16-bit data per 3 axes) and
+ * calculate angular velocity [mDPS]
+ * @param  pObj the device pObj
+ * @param  AngularVelocity FIFO gyro axes [mDPS]
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_FIFO_GYRO_Get_Axes(LSM6DSR_Object_t *pObj, LSM6DSR_Axes_t *AngularVelocity)
 {
     uint8_t data[6];
@@ -2455,11 +2460,11 @@ int32_t LSM6DSR_FIFO_GYRO_Get_Axes(LSM6DSR_Object_t *pObj, LSM6DSR_Axes_t *Angul
 }
 
 /**
-  * @brief  Set the LSM6DSR FIFO gyro BDR value
-  * @param  pObj the device pObj
-  * @param  Bdr FIFO gyro BDR value
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Set the LSM6DSR FIFO gyro BDR value
+ * @param  pObj the device pObj
+ * @param  Bdr FIFO gyro BDR value
+ * @retval 0 in case of success, an error code otherwise
+ */
 int32_t LSM6DSR_FIFO_GYRO_Set_BDR(LSM6DSR_Object_t *pObj, float Bdr)
 {
     lsm6dsr_bdr_gy_t new_bdr;
@@ -2484,19 +2489,19 @@ int32_t LSM6DSR_FIFO_GYRO_Set_BDR(LSM6DSR_Object_t *pObj, float Bdr)
 }
 
 /**
-  * @}
-  */
+ * @}
+ */
 
 /** @defgroup LSM6DSR_Private_Functions LSM6DSR Private Functions
-  * @{
-  */
+ * @{
+ */
 
 /**
-  * @brief  Set the LSM6DSR accelerometer sensor output data rate when enabled
-  * @param  pObj the device pObj
-  * @param  Odr the functional output data rate to be set
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Set the LSM6DSR accelerometer sensor output data rate when enabled
+ * @param  pObj the device pObj
+ * @param  Odr the functional output data rate to be set
+ * @retval 0 in case of success, an error code otherwise
+ */
 static int32_t LSM6DSR_ACC_SetOutputDataRate_When_Enabled(LSM6DSR_Object_t *pObj, float Odr)
 {
     lsm6dsr_odr_xl_t new_odr;
@@ -2521,11 +2526,11 @@ static int32_t LSM6DSR_ACC_SetOutputDataRate_When_Enabled(LSM6DSR_Object_t *pObj
 }
 
 /**
-  * @brief  Set the LSM6DSR accelerometer sensor output data rate when disabled
-  * @param  pObj the device pObj
-  * @param  Odr the functional output data rate to be set
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Set the LSM6DSR accelerometer sensor output data rate when disabled
+ * @param  pObj the device pObj
+ * @param  Odr the functional output data rate to be set
+ * @retval 0 in case of success, an error code otherwise
+ */
 static int32_t LSM6DSR_ACC_SetOutputDataRate_When_Disabled(LSM6DSR_Object_t *pObj, float Odr)
 {
     pObj->acc_odr = (Odr <= 12.5f)   ? LSM6DSR_XL_ODR_12Hz5 :
@@ -2543,11 +2548,11 @@ static int32_t LSM6DSR_ACC_SetOutputDataRate_When_Disabled(LSM6DSR_Object_t *pOb
 }
 
 /**
-  * @brief  Set the LSM6DSR gyroscope sensor output data rate when enabled
-  * @param  pObj the device pObj
-  * @param  Odr the functional output data rate to be set
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Set the LSM6DSR gyroscope sensor output data rate when enabled
+ * @param  pObj the device pObj
+ * @param  Odr the functional output data rate to be set
+ * @retval 0 in case of success, an error code otherwise
+ */
 static int32_t LSM6DSR_GYRO_SetOutputDataRate_When_Enabled(LSM6DSR_Object_t *pObj, float Odr)
 {
     lsm6dsr_odr_g_t new_odr;
@@ -2572,11 +2577,11 @@ static int32_t LSM6DSR_GYRO_SetOutputDataRate_When_Enabled(LSM6DSR_Object_t *pOb
 }
 
 /**
-  * @brief  Set the LSM6DSR gyroscope sensor output data rate when disabled
-  * @param  pObj the device pObj
-  * @param  Odr the functional output data rate to be set
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Set the LSM6DSR gyroscope sensor output data rate when disabled
+ * @param  pObj the device pObj
+ * @param  Odr the functional output data rate to be set
+ * @retval 0 in case of success, an error code otherwise
+ */
 static int32_t LSM6DSR_GYRO_SetOutputDataRate_When_Disabled(LSM6DSR_Object_t *pObj, float Odr)
 {
     pObj->gyro_odr = (Odr <= 12.5f)   ? LSM6DSR_GY_ODR_12Hz5 :
@@ -2594,13 +2599,13 @@ static int32_t LSM6DSR_GYRO_SetOutputDataRate_When_Disabled(LSM6DSR_Object_t *pO
 }
 
 /**
-  * @brief  Wrap Read register component function to Bus IO function
-  * @param  Handle the device handler
-  * @param  Reg the register address
-  * @param  pData the stored data pointer
-  * @param  Length the length
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Wrap Read register component function to Bus IO function
+ * @param  Handle the device handler
+ * @param  Reg the register address
+ * @param  pData the stored data pointer
+ * @param  Length the length
+ * @retval 0 in case of success, an error code otherwise
+ */
 static int32_t ReadRegWrap(void *Handle, uint8_t Reg, uint8_t *pData, uint16_t Length)
 {
     LSM6DSR_Object_t *pObj = (LSM6DSR_Object_t *)Handle;
@@ -2609,13 +2614,13 @@ static int32_t ReadRegWrap(void *Handle, uint8_t Reg, uint8_t *pData, uint16_t L
 }
 
 /**
-  * @brief  Wrap Write register component function to Bus IO function
-  * @param  Handle the device handler
-  * @param  Reg the register address
-  * @param  pData the stored data pointer
-  * @param  Length the length
-  * @retval 0 in case of success, an error code otherwise
-  */
+ * @brief  Wrap Write register component function to Bus IO function
+ * @param  Handle the device handler
+ * @param  Reg the register address
+ * @param  pData the stored data pointer
+ * @param  Length the length
+ * @retval 0 in case of success, an error code otherwise
+ */
 static int32_t WriteRegWrap(void *Handle, uint8_t Reg, uint8_t *pData, uint16_t Length)
 {
     LSM6DSR_Object_t *pObj = (LSM6DSR_Object_t *)Handle;
@@ -2624,17 +2629,17 @@ static int32_t WriteRegWrap(void *Handle, uint8_t Reg, uint8_t *pData, uint16_t 
 }
 
 /**
-  * @}
-  */
+ * @}
+ */
 
 /**
-  * @}
-  */
+ * @}
+ */
 
 /**
-  * @}
-  */
+ * @}
+ */
 
 /**
-  * @}
-  */
+ * @}
+ */

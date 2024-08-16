@@ -2,8 +2,8 @@
  * INCLUDES
  **************************************************************************************************/
 #include <stdbool.h>
-#include <string.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "ble_service.h"
 #include "bsp_ble.h"

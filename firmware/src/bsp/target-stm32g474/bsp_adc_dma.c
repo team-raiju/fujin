@@ -2,8 +2,8 @@
 
 #include <stdbool.h>
 
-#include "bsp_adc_dma.h"
 #include "adc.h"
+#include "bsp_adc_dma.h"
 #include "dma.h"
 #include "utils.h"
 
