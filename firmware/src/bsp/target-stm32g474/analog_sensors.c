@@ -32,7 +32,7 @@ static bsp_analog_ready_callback_t reading_ready_callback;
 
 static uint32_t ir_readings[4];
 static uint32_t battery_reading;
-static uint32_t current_reading = -1;
+static uint32_t current_reading[2];
 
 /// @section Interface implementation
 
@@ -67,6 +67,71 @@ uint32_t bsp_analog_sensors_battery_latest_reading(void) {
     return battery_reading;
 }
 
-uint32_t bsp_analog_sensors_current_latest_reading(void) {
+uint32_t* bsp_analog_sensors_current_latest_reading(void) {
     return current_reading;
+}
+
+/// @section Private functions
+
+void adc1_callback(uint32_t* data) {
+    uint32_t aux_readings[ADC_1_DMA_CHANNELS] = {0};
+
+    for (uint16_t i = 0; i < (ADC_1_DMA_HALF_BUFFER_SIZE - 1); i += ADC_1_DMA_CHANNELS) {
+        for (uint16_t j = 0; j < ADC_1_DMA_CHANNELS; j++) {
+            aux_readings[j] += data[i + j];
+        }
+    }
+
+    for (uint16_t j = 0; j < ADC_1_DMA_CHANNELS; j++) {
+        aux_readings[j] /= (ADC_1_DMA_HALF_BUFFER_SIZE / ADC_1_DMA_CHANNELS);
+    }
+
+    ir_readings[0] = aux_readings[0];
+    ir_readings[1] = aux_readings[1];
+    ir_readings[2] = aux_readings[2];
+    ir_readings[3] = aux_readings[3];
+    battery_reading = aux_readings[4];
+}
+
+void adc2_callback(uint32_t* data) {
+    uint32_t aux_readings[ADC_2_DMA_CHANNELS] = {0};
+
+    for (uint16_t i = 0; i < (ADC_2_DMA_HALF_BUFFER_SIZE - 1); i += ADC_2_DMA_CHANNELS) {
+        for (uint16_t j = 0; j < ADC_2_DMA_CHANNELS; j++) {
+            aux_readings[j] += data[i + j];
+        }
+    }
+
+    for (uint16_t j = 0; j < ADC_2_DMA_CHANNELS; j++) {
+        aux_readings[j] /= (ADC_2_DMA_HALF_BUFFER_SIZE / ADC_2_DMA_CHANNELS);
+    }
+
+    current_reading[0] = aux_readings[0];
+    current_reading[1] = aux_readings[1];
+}
+
+/// @section HAL callbacks
+
+void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc) {
+    if (hadc->Instance == ADC1) {
+        adc1_callback(&adc_1_dma_buffer[0]);
+    } else if (hadc->Instance == ADC2) {
+        adc2_callback(&adc_2_dma_buffer[0]);
+    }
+
+    if (reading_ready_callback != NULL) {
+        reading_ready_callback();
+    }
+}
+
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) {
+    if (hadc->Instance == ADC1) {
+        adc1_callback(&adc_1_dma_buffer[ADC_1_DMA_HALF_BUFFER_SIZE]);
+    } else if (hadc->Instance == ADC2) {
+        adc2_callback(&adc_2_dma_buffer[ADC_2_DMA_HALF_BUFFER_SIZE]);
+    }
+
+    if (reading_ready_callback != NULL) {
+        reading_ready_callback();
+    }
 }

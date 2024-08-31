@@ -6,6 +6,8 @@ extern "C" {
 
 void bsp_fan_init(void);
 
+void bsp_fan_set(uint8_t speed);
+
 #ifdef __cplusplus
 }
 #endif

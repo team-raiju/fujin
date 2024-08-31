@@ -27,7 +27,7 @@ void bsp_analog_sensors_register_callback(bsp_analog_ready_callback_t callback);
 
 uint32_t* bsp_analog_sensors_ir_latest_reading(void);
 uint32_t bsp_analog_sensors_battery_latest_reading(void);
-uint32_t bsp_analog_sensors_current_latest_reading(void);
+uint32_t* bsp_analog_sensors_current_latest_reading(void);
 
 #ifdef __cplusplus
 }

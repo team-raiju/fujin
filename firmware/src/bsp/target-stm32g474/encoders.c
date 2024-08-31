@@ -2,6 +2,8 @@
 
 #include "bsp/encoders.h"
 
+/// @section Interface implementation
+
 void bsp_encoders_init() {
     MX_SPI1_Init();
 }

@@ -10,8 +10,8 @@ extern "C" {
 
 void bsp_timers_init(void);
 
-void bsp_get_tick_ms(void);
-void bsp_get_tick_us(void);
+uint32_t bsp_get_tick_ms(void);
+uint32_t bsp_get_tick_us(void);
 void bsp_delay_ms(uint32_t ms);
 void bsp_delay_us(uint32_t us);
 

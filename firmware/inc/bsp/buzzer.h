@@ -4,6 +4,8 @@
 extern "C" {
 #endif
 
+#include <stdint.h>
+
 /// @section Interface definition
 
 /// @brief Initializes Buzzer peripheral
@@ -15,6 +17,10 @@ void bsp_buzzer_start(void);
 
 /// @brief Stops the buzzer
 void bsp_buzzer_stop(void);
+
+void bsp_buzzer_set_volume(uint8_t volume);
+
+void bsp_buzzer_set_frequency(uint16_t hz);
 
 #ifdef __cplusplus
 }
