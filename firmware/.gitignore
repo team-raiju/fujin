@@ -1,15 +1,13 @@
 build/
-build_spy/*
 
-write_map/
-read_map/
-draw_map/
+cube/*
+!cube/*.ioc
+!cube/*.ld
 
--g
-.jlink-flash
 .cube
 
-# Created by https://www.gitignore.io/api/visualstudiocode,c
+# Created by https://www.toptal.com/developers/gitignore/api/visualstudiocode,c,c++,cmake
+# Edit at https://www.toptal.com/developers/gitignore?templates=visualstudiocode,c,c++,cmake
 
 ### C ###
 # Prerequisites
@@ -32,6 +30,7 @@ draw_map/
 
 # Libraries
 *.lib
+*.a
 *.la
 *.lo
 
@@ -48,7 +47,6 @@ draw_map/
 *.i*86
 *.x86_64
 *.hex
-*.bin
 
 # Debug files
 *.dSYM/
@@ -65,34 +63,59 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
-### VisualStudioCode ###
-.vscode/settings.json
+### C++ ###
+# Prerequisites
 
+# Compiled Object files
+*.slo
 
+# Precompiled Headers
 
-qview/__pycache__/**
-# End of https://www.gitignore.io/api/visualstudiocode,c
-simulated_eeprom.txt
-eeprom_0.txt
-eeprom_1.txt
+# Compiled Dynamic libraries
 
-# Python Files
-*.pyc
-logs.log
+# Fortran module files
+*.mod
+*.smod
 
+# Compiled Static libraries
+*.lai
+
+# Executables
 
 ### CMake ###
-.cmake
-.ninja_deps
-.ninja_log
-build.ninja
 CMakeLists.txt.user
 CMakeCache.txt
 CMakeFiles
 CMakeScripts
 Testing
+Makefile
 cmake_install.cmake
 install_manifest.txt
 compile_commands.json
-# CTestTestfile.cmake
-# _deps
+CTestTestfile.cmake
+_deps
+
+### CMake Patch ###
+# External projects
+*-prefix/
+
+### VisualStudioCode ###
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+
+# Local History for Visual Studio Code
+.history/
+
+# Built Visual Studio Code Extensions
+*.vsix
+
+### VisualStudioCode Patch ###
+# Ignore all local history of files
+.history
+.ionide
+
+# End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,c,c++,cmake

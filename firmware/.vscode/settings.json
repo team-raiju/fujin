@@ -1,0 +1,17 @@
+{
+    "cSpell.words": [
+        "EEPROM",
+        "EXTI",
+        "GPIO",
+        "hadc",
+        "hdma",
+        "hpcd",
+        "hspi",
+        "htim",
+        "huart",
+        "leds",
+        "NVIC",
+        "usart"
+    ],
+    "C_Cpp.autoAddFileAssociations": false,
+}

@@ -15,21 +15,16 @@
             "name": "STM32G474",
             "inherits": "default",
             "cacheVariables": {
-                "LINKER_SCRIPT_SRC": "${sourceDir}/cube/STM32G474RCT6/STM32G474RCTx_FLASH.ld",
-                "STM32_BUILD": "true",
-                "OPT_LEVEL": "-Ofast"
+                "PC_BUILD": "false",
+                "TARGET": "STM32G474"
             }
         },
         {
-            "name": "STM32G474-Release",
+            "name": "PC",
             "inherits": "default",
             "cacheVariables": {
-                "LINKER_SCRIPT_SRC": "${sourceDir}/cube/STM32G474RCT6/STM32G474RCTx_FLASH.ld",
-                "STM32_BUILD": "true",
-                "RELEASE_BUILD": "true",
-                "OPT_LEVEL": "-Ofast",
-                "QNASSERT": "-DQ_NASSERT",
-                "NDEBUG": "-DNDEBUG"
+                "PC_BUILD": "true",
+                "TARGET": "PC"
             }
         }
     ]
