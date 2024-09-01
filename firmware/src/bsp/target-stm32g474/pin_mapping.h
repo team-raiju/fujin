@@ -35,10 +35,10 @@
  *                  |  SPI_MISO    |  PA6   |  SPI1_MISO
  *                  |  SPI_MOSI    |  PA7   |  SPI1_MOSI
  *                  |  ENC_1_A     |  PA2   |  GPIO_EXTI2
- *                  |  ENC_1_B     |  PA3   |  GPIO_EXTI3
+ *                  |  ENC_1_B     |  PA3   |  GPIO_Input
  * Encoder          |  SPI_CS_2    |  PB10  |  GPIO_Output
  *                  |  ENC_2_A     |  PC7   |  GPIO_EXTI7
- *                  |  ENC_2_B     |  PB15  |  GPIO_EXTI15
+ *                  |  ENC_2_B     |  PB15  |  GPIO_Input
  * Fan              |  MOT_FAN     |  PB5   |  TIM3_CH2 (PWM Generation)
  * USB              |  USB_D-      |  PA11  |  USB_DM
  *                  |  USB_D+      |  PA12  |  USB_DP
