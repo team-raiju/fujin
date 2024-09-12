@@ -1,5 +1,5 @@
 #include "eeprom_24lc512.h"
-#include "utils.h"
+#include "utils/math.h"
 #include <stdint.h>
 
 #define HIGHEST_ADDR 0xFFFF

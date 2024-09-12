@@ -2,6 +2,7 @@
     "cSpell.words": [
         "EEPROM",
         "EXTI",
+        "fujin",
         "GPIO",
         "hadc",
         "hdma",
@@ -13,5 +14,5 @@
         "NVIC",
         "usart"
     ],
-    "C_Cpp.autoAddFileAssociations": false,
+    "C_Cpp.autoAddFileAssociations": false
 }

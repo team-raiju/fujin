@@ -109,19 +109,19 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     ${BSP_PATH}/st/src/usbd_desc.c
 
 
-    ${BSP_PATH}/core.c
-    ${BSP_PATH}/analog_sensors.c
-    ${BSP_PATH}/ble.c
-    ${BSP_PATH}/buttons.c
-    ${BSP_PATH}/buzzer.c
-    ${BSP_PATH}/eeprom.c
-    ${BSP_PATH}/encoders.c
-    ${BSP_PATH}/fan.c
-    ${BSP_PATH}/imu.c
-    ${BSP_PATH}/leds.c
-    ${BSP_PATH}/motors.c
-    ${BSP_PATH}/timers.c
-    ${BSP_PATH}/usb.c
+    ${BSP_PATH}/core.cpp
+    ${BSP_PATH}/analog_sensors.cpp
+    ${BSP_PATH}/ble.cpp
+    ${BSP_PATH}/buttons.cpp
+    ${BSP_PATH}/buzzer.cpp
+    ${BSP_PATH}/eeprom.cpp
+    ${BSP_PATH}/encoders.cpp
+    ${BSP_PATH}/fan.cpp
+    ${BSP_PATH}/imu.cpp
+    ${BSP_PATH}/leds.cpp
+    ${BSP_PATH}/motors.cpp
+    ${BSP_PATH}/timers.cpp
+    ${BSP_PATH}/usb.cpp
 
     ${DRIVERS_PATH}/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pcd.c
     ${DRIVERS_PATH}/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pcd_ex.c

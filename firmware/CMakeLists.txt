@@ -28,6 +28,9 @@ endif()
 
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     src/main.cpp
+
+    src/fsm/fsm.cpp
+    src/fsm/states/idle.cpp
 )
 
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
