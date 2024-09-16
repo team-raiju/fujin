@@ -11,7 +11,7 @@ set(CMAKE_EXECUTABLE_SUFFIX_ASM     ".out")
 set(CMAKE_EXECUTABLE_SUFFIX_C       ".out")
 set(CMAKE_EXECUTABLE_SUFFIX_CXX     ".out")
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wpedantic -fdata-sections -ffunction-sections")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wpedantic")
 
 if(CMAKE_BUILD_TYPE MATCHES Debug)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0 -g3")

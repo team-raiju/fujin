@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 
 namespace bsp::ble {
 
@@ -12,7 +13,7 @@ namespace bsp::ble {
 /// @section Custom types
 
 /// @brief callback function for BLE received data
-typedef void (*bsp_uart_ble_callback_t)(uint8_t* ble_data, uint8_t rcv_size);
+typedef std::function<void(uint8_t*, uint8_t)> BleCallback;
 
 /// @section Interface definition
 
@@ -33,6 +34,6 @@ void transmit(uint8_t* data, uint8_t size);
 
 /// @brief Register a callback to be called when data is received
 /// @param callback_function callback function for BLE received data
-void register_callback(bsp_uart_ble_callback_t callback);
+void register_callback(BleCallback callback);
 
 }

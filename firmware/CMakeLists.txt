@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.22)
 set(CMAKE_C_STANDARD                23)
 set(CMAKE_C_STANDARD_REQUIRED       ON)
 set(CMAKE_C_EXTENSIONS              ON)
-set(CMAKE_CXX_STANDARD              20)
+set(CMAKE_CXX_STANDARD              23)
 set(CMAKE_CXX_STANDARD_REQUIRED     ON)
 set(CMAKE_CXX_EXTENSIONS            ON)
 
@@ -31,13 +31,14 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
 
     src/fsm/fsm.cpp
     src/fsm/states/idle.cpp
+    src/fsm/states/run.cpp
+    src/fsm/states/search.cpp
 )
 
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     inc
     inc/devices
     inc/services
-    inc/utils
 )
 
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE

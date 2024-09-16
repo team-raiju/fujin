@@ -1,5 +1,6 @@
 #include <iostream>
 
+#include "bsp/debug.hpp"
 #include "bsp/eeprom.hpp"
 
 namespace bsp::eeprom {
@@ -7,7 +8,6 @@ namespace bsp::eeprom {
 /// @section Interface implementation
 
 EepromResult init() {
-    std::cout << "bsp::eeprom::init() called" << std::endl;
     return OK;
 }
 

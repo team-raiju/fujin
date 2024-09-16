@@ -13,7 +13,7 @@ namespace bsp::ble {
 
 static bool is_running = false;
 static uint8_t raw_data[BLE_RECEIVE_PACKET_SIZE];
-static bsp_uart_ble_callback_t external_callback;
+static BleCallback external_callback;
 
 /// @section Interface implementation
 
@@ -40,7 +40,7 @@ void transmit(uint8_t* data, uint8_t size) {
     HAL_UART_Transmit(&huart1, data, size_to_send, UART_BLE_TIMEOUT);
 }
 
-void register_callback(bsp_uart_ble_callback_t callback) {
+void register_callback(BleCallback callback) {
     external_callback = callback;
 }
 

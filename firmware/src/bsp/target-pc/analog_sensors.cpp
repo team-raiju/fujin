@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "bsp/analog_sensors.hpp"
+#include "bsp/debug.hpp"
 
 namespace bsp::analog_sensors {
 
@@ -10,17 +11,11 @@ static uint32_t dummy_readings[4];
 
 /// @section Interface implementation
 
-void init(void) {
-    std::cout << "bsp::analog_sensors::init called" << std::endl;
-}
+void init(void) {}
 
-void start(void) {
-    std::cout << "bsp::analog_sensors::start called" << std::endl;
-}
+void start(void) {}
 
-void stop(void) {
-    std::cout << "bsp::analog_sensors::stop called" << std::endl;
-}
+void stop(void) {}
 
 void register_callback(bsp_analog_ready_callback_t callback) {
     reading_ready_callback = callback;

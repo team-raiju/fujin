@@ -1,15 +1,18 @@
 #pragma once
 
+#include <variant>
+
 namespace fsm {
 
-struct Event {};
+struct BleCommand {};
+struct UsbCommand {};
 
-struct BleCommand : Event {};
-
-struct ButtonPressed : Event {
-    enum { BUTTON1, BUTTON2 } button;
+struct ButtonPressed {
+    enum { SHORT1, SHORT2, LONG1, LONG2 } button;
 };
 
-struct Timeout : Event {};
+struct Timeout {};
+
+using Event = std::variant<BleCommand, UsbCommand, ButtonPressed, Timeout>;
 
 }

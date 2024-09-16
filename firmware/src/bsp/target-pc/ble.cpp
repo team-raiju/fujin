@@ -1,29 +1,28 @@
 #include <iostream>
 
 #include "bsp/ble.hpp"
+#include "bsp/debug.hpp"
 
 namespace bsp::ble {
 
-static bsp_uart_ble_callback_t external_callback;
+static BleCallback external_callback = NULL;
 
-void init() {
-    std::cout << "bsp::ble::init called" << std::endl;
-}
+void init() {}
 
-void start(void) {
-    std::cout << "bsp::ble::start called" << std::endl;
-}
+void start(void) {}
 
-void stop(void) {
-    std::cout << "bsp::ble::stop called" << std::endl;
-}
+void stop(void) {}
 
-void transmit(uint8_t* data, uint8_t size) {
-    std::cout << "bsp::ble::transmit called" << std::endl;
-}
+void transmit(uint8_t*, uint8_t) {}
 
-void register_callback(bsp_uart_ble_callback_t callback) {
+void register_callback(BleCallback callback) {
     external_callback = callback;
+}
+
+void received() {
+    if (external_callback) {
+        external_callback(NULL, 0);
+    }
 }
 
 } // namespace
