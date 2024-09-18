@@ -8,6 +8,5 @@ namespace bsp::usb {
 
 void init(void) {}
 
-void reset_on_host(void) {}
 
 } // namespace

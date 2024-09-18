@@ -1,4 +1,4 @@
-#include <stdio.h>
+#include <cstdio>
 #include "st/hal.h"
 
 #include "bsp/analog_sensors.hpp"
@@ -56,7 +56,7 @@ void init() {
 }
 
 void debug::print(const char* s) {
-    printf("%s\r\n", s);
+    std::printf("%s\r\n", s);
 }
 
 void prepare_dfu() {
