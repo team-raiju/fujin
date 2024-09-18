@@ -29,10 +29,11 @@
 #include <time.h>
 #include <sys/time.h>
 #include <sys/times.h>
+#include "usb_device.h"
+#include "usbd_cdc_if.h"
 
 
 /* Variables */
-extern int __io_putchar(int ch) __attribute__((weak));
 extern int __io_getchar(void) __attribute__((weak));
 
 
@@ -43,6 +44,16 @@ char **environ = __env;
 /* Functions */
 void initialise_monitor_handles()
 {
+}
+
+int __io_putchar(int ch) {
+    uint8_t c[1];
+    c[0] = ch & 0x00FF;
+    uint8_t ret = CDC_Transmit_FS(c, 1);
+    if (ret != 0) {
+        return -1;
+    }
+    return ch;
 }
 
 int _getpid(void)
@@ -77,16 +88,22 @@ __attribute__((weak)) int _read(int file, char *ptr, int len)
   return len;
 }
 
-__attribute__((weak)) int _write(int file, char *ptr, int len)
+int _write(int file, char *ptr, int len)
 {
-  (void)file;
-  int DataIdx;
+    UNUSED(file);
+    uint8_t ret = CDC_Transmit_FS((uint8_t *)(ptr), len);
 
-  for (DataIdx = 0; DataIdx < len; DataIdx++)
-  {
-    __io_putchar(*ptr++);
-  }
-  return len;
+    int timeout = 0;
+    while (ret != 0 && timeout < 100) {
+        timeout++;
+        ret = CDC_Transmit_FS((uint8_t *)(ptr), len);
+    }
+
+    if (timeout >= 100) {
+        return -1;
+    }
+
+    return len;
 }
 
 int _close(int file)

@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "st/hal.h"
 
 #include "bsp/analog_sensors.hpp"
@@ -14,6 +15,7 @@
 #include "bsp/timers.hpp"
 #include "bsp/usb.hpp"
 #include "pin_mapping.h"
+#include "bsp/debug.hpp"
 
 namespace bsp {
 
@@ -51,6 +53,10 @@ void init() {
     }
 
     delay_ms(20);
+}
+
+void debug::print(const char* s) {
+    printf("%s\r\n", s);
 }
 
 void prepare_dfu() {
