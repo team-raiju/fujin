@@ -18,7 +18,7 @@ void FSM::start() {
         });
     });
 
-    bsp::buttons::register_callback_button1([this](auto type) {
+    bsp::buttons::register_callback_button2([this](auto type) {
         dispatch(ButtonPressed{
             .button = type == bsp::buttons::PressType::SHORT ? ButtonPressed::SHORT2 : ButtonPressed::LONG2,
         });
