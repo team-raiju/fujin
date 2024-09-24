@@ -22,6 +22,7 @@
 #include "utils/RingBuffer.hpp"
 
 using bsp::eeprom::EepromResult;
+using bsp::imu::ImuResult;
 
 namespace bsp {
 
@@ -42,11 +43,14 @@ void init() {
     buzzer::init();
     encoders::init();
     fan::init();
-    imu::init();
     leds::init();
     motors::init();
     timers::init();
     usb::init();
+
+    if (imu::init() != ImuResult::OK) {
+        std::cerr << "Failed to initialize imu" << std::endl;
+    }
 
     if (eeprom::init() != EepromResult::OK) {
         std::cerr << "Failed to initialize eeprom" << std::endl;

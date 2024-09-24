@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cmath>
 #include <stdint.h>
 
 /**
@@ -63,4 +64,9 @@ static inline uint16_t map_u16(uint16_t x, uint16_t in_min, uint16_t in_max, uin
 
 static inline int16_t map_i16(int16_t x, int16_t in_min, int16_t in_max, int16_t out_min, int16_t out_max) {
     return constrain((x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min, out_min, out_max);
+}
+
+static inline double deg2rad(double degrees) {
+    static constexpr double pi_on_180 = M_PI / 180.0;
+    return degrees * pi_on_180;
 }

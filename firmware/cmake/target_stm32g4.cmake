@@ -91,6 +91,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     ${DRIVERS_PATH}/CMSIS/Include
     ${MIDDLEWARES_PATH}/STM32_USB_Device_Library/Core/Inc
     ${MIDDLEWARES_PATH}/STM32_USB_Device_Library/Class/CDC/Inc
+    ${MEMS_DRIVERS_PATH}/BSP/Components/lsm6dsr
     ${MEMS_MIDDLEWARES_PATH}/STM32_MotionGC_Library/Inc
 )
 

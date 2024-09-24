@@ -1,4 +1,5 @@
 #include <cstdio>
+
 #include "st/hal.h"
 
 #include "bsp/analog_sensors.hpp"
@@ -6,6 +7,7 @@
 #include "bsp/buttons.hpp"
 #include "bsp/buzzer.hpp"
 #include "bsp/core.hpp"
+#include "bsp/debug.hpp"
 #include "bsp/eeprom.hpp"
 #include "bsp/encoders.hpp"
 #include "bsp/fan.hpp"
@@ -15,7 +17,6 @@
 #include "bsp/timers.hpp"
 #include "bsp/usb.hpp"
 #include "pin_mapping.h"
-#include "bsp/debug.hpp"
 
 namespace bsp {
 
@@ -42,11 +43,14 @@ void init() {
     buzzer::init();
     encoders::init();
     fan::init();
-    imu::init();
     leds::init();
     motors::init();
     timers::init();
     usb::init();
+
+    if (imu::init() != imu::ImuResult::OK) {
+        Error_Handler();
+    }
 
     if (eeprom::init() != eeprom::EepromResult::OK) {
         Error_Handler();

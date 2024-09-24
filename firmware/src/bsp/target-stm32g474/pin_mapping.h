@@ -92,6 +92,9 @@ extern "C" {
 #define SPI_CS_2_PIN GPIO_PIN_10
 #define SPI_CS_2_PORT GPIOB
 
+// IMU
+#define LSM6DSR_I2C_ADDR 0xD4
+
 #ifdef __cplusplus
 }
 #endif
