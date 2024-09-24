@@ -188,13 +188,18 @@ ImuResult update() {
 
     φ += ω * δt;
 
-    /* Filter angle Z*/
-    while (φ > 360.0f) {
-        φ -= 360.0f;
+    // Return to first revolution
+    while (φ > M_TWOPI) {
+        φ -= M_TWOPI;
     }
 
     while (φ < 0.0f) {
-        φ += 360.0f;
+        φ += M_TWOPI;
+    }
+
+    // Convert from 0-360 to -180-180
+    if (φ > M_PI) {
+        φ -= M_TWOPI;
     }
 
     return OK;
