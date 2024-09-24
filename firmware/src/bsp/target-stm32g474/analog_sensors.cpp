@@ -49,12 +49,12 @@ void init(void) {
 
 void start(void) {
     HAL_ADC_Start_DMA(&hadc1, adc_1_dma_buffer, ADC_1_DMA_BUFFER_SIZE);
-    HAL_ADC_Start_DMA(&hadc2, adc_2_dma_buffer, ADC_2_DMA_BUFFER_SIZE);
+    //HAL_ADC_Start_DMA(&hadc2, adc_2_dma_buffer, ADC_2_DMA_BUFFER_SIZE);
 }
 
 void stop(void) {
     HAL_ADC_Stop_DMA(&hadc1);
-    HAL_ADC_Stop_DMA(&hadc2);
+    //HAL_ADC_Stop_DMA(&hadc2);
 }
 
 void register_callback(bsp_analog_ready_callback_t callback) {

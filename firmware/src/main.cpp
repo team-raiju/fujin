@@ -4,10 +4,11 @@
 #include "bsp/timers.hpp"
 #include "fsm/fsm.hpp"
 #include "fsm/state.hpp"
+#include "bsp/analog_sensors.hpp"
 
 void startup() {
-    bsp::buzzer::set_frequency(5000);
-    bsp::buzzer::set_volume(50);
+    bsp::buzzer::set_frequency(2500);
+    bsp::buzzer::set_volume(25);
     bsp::buzzer::start();
 
     for (int i = 0; i < 10; i++) {
@@ -17,6 +18,7 @@ void startup() {
 
     bsp::leds::indication_off();
     bsp::buzzer::stop();
+    bsp::analog_sensors::start();
 }
 
 int main() {
