@@ -1,6 +1,7 @@
 #include <cstdio>
 
 #include "st/hal.h"
+#include "st/inc/stm32g4xx_it.h"
 
 #include "bsp/analog_sensors.hpp"
 #include "bsp/ble.hpp"
