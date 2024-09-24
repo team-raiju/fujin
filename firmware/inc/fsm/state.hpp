@@ -45,6 +45,7 @@ public:
 
     State* react(BleCommand const&) override;
     State* react(ButtonPressed const&) override;
+    State* react(Timeout const&) override;
 };
 
 class PreSearch : public State {

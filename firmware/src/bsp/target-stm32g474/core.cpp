@@ -17,6 +17,7 @@
 #include "bsp/timers.hpp"
 #include "bsp/usb.hpp"
 #include "pin_mapping.h"
+#include "utils/soft_timer.hpp"
 
 namespace bsp {
 
@@ -125,4 +126,11 @@ void prepare_dfu() {
     // DEBUG_PRINT("\r\n");
 }
 
+
+}
+
+void SysTick_Handler(void)
+{
+    HAL_IncTick();
+    soft_timer::tick();
 }

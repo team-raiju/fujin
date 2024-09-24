@@ -33,6 +33,8 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     src/fsm/states/idle.cpp
     src/fsm/states/run.cpp
     src/fsm/states/search.cpp
+
+    src/utils/soft_timer.cpp
 )
 
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
