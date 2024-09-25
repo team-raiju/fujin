@@ -100,18 +100,21 @@ State* Search::react(Timeout const&) {
             } else if (sensor_side_right < 1200){
                 last_empty_wall_right = true;
                 error = sensor_side_left - 1650;
+            } else if (sensor_side_right > 2800 || sensor_side_left > 2800) {
+                error = 0;
             } else {
                 error = sensor_side_left - sensor_side_right;
             }
 
             float derivative = error - last_error;
             float kp = 0.02;
-            float kd = 0.04;
+            float kd = 0.08;
 
             rotation_ratio = kp * error + kd * derivative;
             last_error = error;
 
             if (sensor_front_left > 3500 || sensor_front_right > 3500) {
+                bsp::leds::indication_off();
                 search_state = START_TURN;
                 counter = 0;
             }
@@ -119,22 +122,25 @@ State* Search::react(Timeout const&) {
             break;
         }
         case START_TURN: {
-            if (counter++ < 500){
-                rotation_ratio = 0;
-                target_speed = 0;
-            } else {
+            float error = sensor_front_right - sensor_front_left;
+            rotation_ratio = 0.05 * error;
+            target_speed = 0;
+
+            if (counter++ > 500){
                 if (last_empty_wall_right) {
                     search_state = TURN_RIGHT;
                 } else {
                     search_state = TURN_LEFT;
                 }
+                bsp::leds::indication_on();
             }
             break;
         }
         case TURN_RIGHT:{
             target_speed = 0;
-            rotation_ratio = 30;
-            if (utils_abs(bsp::imu::get_angle()) > M_PI_2 - 0.3) {
+            float angle_diff = M_PI_2 - utils_abs(bsp::imu::get_angle());
+            rotation_ratio = 60 * angle_diff;
+            if (utils_abs(bsp::imu::get_angle()) > M_PI_2 - 0.4) {
                 bsp::imu::reset_angle();
                 search_state = STRAIGHT;
             }
@@ -142,8 +148,9 @@ State* Search::react(Timeout const&) {
         }
         case TURN_LEFT:{
             target_speed = 0;
-            rotation_ratio = -30;
-            if (utils_abs(bsp::imu::get_angle()) > M_PI_2 - 0.3) {
+            float angle_diff = M_PI_2 - utils_abs(bsp::imu::get_angle());
+            rotation_ratio = -60 * angle_diff;
+            if (utils_abs(bsp::imu::get_angle()) > M_PI_2 - 0.4) {
                 bsp::imu::reset_angle();
                 search_state = STRAIGHT;
             }
