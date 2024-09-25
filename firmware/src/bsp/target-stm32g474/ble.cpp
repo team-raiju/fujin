@@ -36,7 +36,7 @@ void stop(void) {
 }
 
 void transmit(uint8_t* data, uint8_t size) {
-    uint8_t size_to_send = min(size, BLE_MAX_PACKET_SIZE);
+    uint8_t size_to_send = utils_min(size, BLE_MAX_PACKET_SIZE);
     HAL_UART_Transmit(&huart1, data, size_to_send, UART_BLE_TIMEOUT);
 }
 

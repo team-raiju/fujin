@@ -1,6 +1,7 @@
 #include "fsm/fsm.hpp"
 #include "bsp/ble.hpp"
 #include "bsp/buttons.hpp"
+#include "utils/soft_timer.hpp"
 
 #include <variant>
 
@@ -25,6 +26,10 @@ void FSM::start() {
     });
 
     bsp::ble::register_callback([this](uint8_t*, uint8_t) { dispatch(BleCommand()); });
+
+    soft_timer::register_callback([this]() { dispatch(Timeout()); });
+
+    current_state->enter();
 }
 
 void FSM::spin() {

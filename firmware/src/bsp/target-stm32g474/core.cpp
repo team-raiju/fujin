@@ -1,6 +1,7 @@
 #include <cstdio>
 
 #include "st/hal.h"
+#include "st/inc/stm32g4xx_it.h"
 
 #include "bsp/analog_sensors.hpp"
 #include "bsp/ble.hpp"
@@ -17,6 +18,7 @@
 #include "bsp/timers.hpp"
 #include "bsp/usb.hpp"
 #include "pin_mapping.h"
+#include "utils/soft_timer.hpp"
 
 namespace bsp {
 
@@ -133,6 +135,13 @@ void prepare_dfu() {
     // DEBUG_PRINT("\r\n");
 }
 
+
+}
+
+void SysTick_Handler(void)
+{
+    HAL_IncTick();
+    soft_timer::tick();
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {

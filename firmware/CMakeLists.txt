@@ -13,12 +13,13 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Debug")
 endif()
 
-enable_language(C CXX ASM)
 
 #### Project ####
 project(fujin)
 add_executable(${CMAKE_PROJECT_NAME})
 message("CMAKE_BUILD_TYPE: " ${CMAKE_BUILD_TYPE})
+
+enable_language(C CXX ASM)
 
 if(PC_BUILD)
     include("cmake/target_pc.cmake")
@@ -33,6 +34,8 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     src/fsm/states/idle.cpp
     src/fsm/states/run.cpp
     src/fsm/states/search.cpp
+
+    src/utils/soft_timer.cpp
 )
 
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE

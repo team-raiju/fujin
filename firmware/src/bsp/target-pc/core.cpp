@@ -20,6 +20,7 @@
 #include "fsm/event.hpp"
 #include "fsm/fsm.hpp"
 #include "utils/RingBuffer.hpp"
+#include "utils/soft_timer.hpp"
 
 using bsp::eeprom::EepromResult;
 using bsp::imu::ImuResult;
@@ -59,17 +60,24 @@ void init() {
     // Testing
     delay_ms(20);
 
-    std::thread([] {
-        for (;;) {
-            delay_ms(2000);
-            buttons::button_1_pressed();
-        }
-    }).detach();
+    // std::thread([] {
+    //     for (;;) {
+    //         delay_ms(2000);
+    //         buttons::button_1_pressed();
+    //     }
+    // }).detach();
+
+    // std::thread([] {
+    //     for (;;) {
+    //         delay_ms(5000);
+    //         ble::received();
+    //     }
+    // }).detach();
 
     std::thread([] {
         for (;;) {
-            delay_ms(5000);
-            ble::received();
+            delay_ms(1);
+            soft_timer::tick();
         }
     }).detach();
 }

@@ -12,7 +12,7 @@ void init(void);
 
 } // namespace bsp::timers
 
-// For convenience, the generic delay and ticks can bve accessed directly from bsp namespace
+// For convenience, the generic delay and ticks can be accessed directly from bsp namespace
 
 uint32_t get_tick_ms(void);
 uint32_t get_tick_us(void);

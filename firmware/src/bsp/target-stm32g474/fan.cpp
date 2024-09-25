@@ -22,7 +22,7 @@ void init() {
 }
 
 void set(uint8_t speed) {
-    speed = min(speed, MAX_SPEED);
+    speed = utils_min(speed, MAX_SPEED);
 
     uint32_t counter_value = map(speed, 0, MAX_SPEED, 0, COUNTER_PERIOD_MAX);
     __HAL_TIM_SET_COMPARE(&htim3, PWM_CH, counter_value);

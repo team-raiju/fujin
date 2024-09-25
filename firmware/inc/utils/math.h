@@ -6,21 +6,21 @@
 /**
  * @brief Returns x absolute value.
  */
-#ifndef abs
-#define abs(x) ((x) > 0 ? (x) : (-x))
+#ifndef utils_abs
+#define utils_abs(x) ((x) > 0 ? (x) : (-x))
 #endif
 /**
  * @brief Returns maximum value between x and y.
  */
-#ifndef max
-#define max(x, y) ((x) > (y) ? (x) : (y))
+#ifndef utils_max
+#define utils_max(x, y) ((x) > (y) ? (x) : (y))
 #endif
 
 /**
  * @brief Returns minimum value between x and y.
  */
-#ifndef min
-#define min(x, y) ((x) < (y) ? (x) : (y))
+#ifndef utils_min
+#define utils_min(x, y) ((x) < (y) ? (x) : (y))
 #endif
 
 /**

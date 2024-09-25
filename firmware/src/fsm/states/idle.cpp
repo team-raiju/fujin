@@ -2,6 +2,7 @@
 #include "bsp/leds.hpp"
 #include "bsp/motors.hpp"
 #include "fsm/state.hpp"
+#include "utils/soft_timer.hpp"
 
 namespace fsm {
 
@@ -26,6 +27,10 @@ State* Idle::react(ButtonPressed const& event) {
         return &State::get<PreSearch>();
     }
 
+    return nullptr;
+}
+
+State *Idle::react(Timeout const&) {
     return nullptr;
 }
 
