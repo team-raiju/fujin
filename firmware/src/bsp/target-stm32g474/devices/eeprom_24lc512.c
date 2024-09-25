@@ -17,7 +17,7 @@ ext_eeprom_result_t eeprom_24lc512_write(eeprom_24lc512_obj_t* eeprom_instance, 
     }
 
     while (size > 0) {
-        int bytes_to_write = min(WRITE_SIZE - (write_addr % WRITE_SIZE), (int)size);
+        int bytes_to_write = utils_min(WRITE_SIZE - (write_addr % WRITE_SIZE), (int)size);
 
         do {
             ret = eeprom_instance->write_i2c(eeprom_instance->addr, write_addr, data, bytes_to_write);
@@ -49,7 +49,7 @@ ext_eeprom_result_t eeprom_24lc512_read(eeprom_24lc512_obj_t* eeprom_instance, u
     int offset = 0;
 
     while (size > 0) {
-        int bytes_to_read = min((int)READ_SIZE, (int)size);
+        int bytes_to_read = utils_min((int)READ_SIZE, (int)size);
 
         do {
             ret = eeprom_instance->read_i2c(eeprom_instance->addr, addr, (read_data + offset), bytes_to_read);

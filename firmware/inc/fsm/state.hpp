@@ -56,6 +56,30 @@ public:
     State* react(ButtonPressed const&) override;
 };
 
+class Search : public State {
+public:
+    void enter() override;
+    void exit() override;
+
+    State* react(BleCommand const&) override;
+    State* react(ButtonPressed const&) override;
+    State* react(Timeout const&) override;
+private:
+    typedef enum {
+        STRAIGHT,
+        START_TURN,
+        TURN_RIGHT,
+        TURN_LEFT,
+    } search_state_t;
+
+    float last_error;
+    search_state_t search_state;
+    int counter;
+    int stop_counter;
+    bool last_empty_wall_right;
+
+};
+
 class PreRun : public State {
 public:
     void enter() override;

@@ -25,7 +25,7 @@ void stop(void) {
 }
 
 void set_volume(uint8_t volume) {
-    volume = min(volume, 100);
+    volume = utils_min(volume, 100);
 
     __HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_1, volume);
 }
