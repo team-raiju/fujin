@@ -36,6 +36,8 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     src/fsm/states/search.cpp
 
     src/utils/soft_timer.cpp
+
+    src/services/position_service.cpp
 )
 
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE

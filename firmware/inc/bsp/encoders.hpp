@@ -8,7 +8,9 @@ namespace bsp::encoders {
 /// @section Custom types
 
 // TODO: Enum the type
-typedef std::function<void(uint8_t type)> EncoderCallback;
+enum DirectionType { CW, CCW };
+
+typedef std::function<void(DirectionType type)> EncoderCallback;
 
 /// @section Interface definitions
 
