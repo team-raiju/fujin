@@ -20,6 +20,14 @@
 
 namespace bsp {
 
+namespace buttons {
+void gpio_exti_callback(uint16_t GPIO_Pin);
+}
+
+namespace encoders {
+void gpio_exti_callback(uint16_t GPIO_Pin);
+}
+
 /// @section Private variables
 
 static uint8_t dfu_mode = 0;
@@ -125,4 +133,9 @@ void prepare_dfu() {
     // DEBUG_PRINT("\r\n");
 }
 
+}
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+    bsp::buttons::gpio_exti_callback(GPIO_Pin);
+    bsp::encoders::gpio_exti_callback(GPIO_Pin);
 }

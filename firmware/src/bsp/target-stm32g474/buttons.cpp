@@ -28,15 +28,13 @@ void register_callback_button2(ButtonCallback callback) {
     button_2_callback = callback;
 }
 
-} // namespace
-
 static uint32_t b1_timer = 0;
 static uint32_t b2_timer = 0;
 
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+void gpio_exti_callback(uint16_t GPIO_Pin) {
     // Button 1
     if (GPIO_Pin == GPIO_BUTTON_1_PIN) {
-        if (!bsp::buttons::button_1_callback) {
+        if (!button_1_callback) {
             return;
         }
 
@@ -45,16 +43,16 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
         } else {
             uint32_t passed = bsp::get_tick_ms() - b1_timer;
             if (passed > LONG_PRESS_MS) {
-                bsp::buttons::button_1_callback(bsp::buttons::PressType::LONG);
+                button_1_callback(PressType::LONG);
             } else if (passed > SHORT_PRESS_MS) {
-                bsp::buttons::button_1_callback(bsp::buttons::PressType::SHORT);
+                button_1_callback(PressType::SHORT);
             }
         }
     }
 
     // Button 2
     if (GPIO_Pin == GPIO_BUTTON_2_PIN) {
-        if (!bsp::buttons::button_2_callback) {
+        if (!button_2_callback) {
             return;
         }
 
@@ -63,10 +61,12 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
         } else {
             uint32_t passed = bsp::get_tick_ms() - b2_timer;
             if (passed > LONG_PRESS_MS) {
-                bsp::buttons::button_2_callback(bsp::buttons::PressType::LONG);
+                button_2_callback(PressType::LONG);
             } else if (passed > SHORT_PRESS_MS) {
-                bsp::buttons::button_2_callback(bsp::buttons::PressType::SHORT);
+                button_2_callback(PressType::SHORT);
             }
         }
     }
 }
+
+} // namespace

@@ -1,18 +1,20 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 
 namespace bsp::encoders {
 
 /// @section Custom types
 
-typedef void (*bsp_gpio_encoder_callback_t)(uint8_t type);
+// TODO: Enum the type
+typedef std::function<void(uint8_t type)> EncoderCallback;
 
 /// @section Interface definitions
 
-void init(void);
+void init();
 
-void register_callback_encoder1(bsp_gpio_encoder_callback_t callback);
-void register_callback_encoder2(bsp_gpio_encoder_callback_t callback);
+void register_callback_encoder_left(EncoderCallback callback);
+void register_callback_encoder_right(EncoderCallback callback);
 
 }

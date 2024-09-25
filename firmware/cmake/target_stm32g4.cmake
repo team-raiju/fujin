@@ -96,7 +96,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
 )
 
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
-    # ${BSP_PATH}/devices/AS5047P.c
+    ${BSP_PATH}/devices/AS5047P.cpp
     # ${BSP_PATH}/devices/eeprom_24lc512.c
 
     ${BSP_PATH}/st/src/config.c
