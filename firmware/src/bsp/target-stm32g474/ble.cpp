@@ -51,7 +51,13 @@ void register_callback(BleCallback callback) {
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart) {
     if (huart->Instance == huart1.Instance) {
         if (bsp::ble::external_callback != NULL) {
-            bsp::ble::external_callback(bsp::ble::raw_data, BLE_RECEIVE_PACKET_SIZE);
+
+            if (bsp::ble::raw_data[0] > bsp::ble::BLE_BUTTON_2_LONG) {
+                return;
+            }
+
+            bsp::ble::ble_header header = static_cast<bsp::ble::ble_header>(bsp::ble::raw_data[0]);
+            bsp::ble::external_callback(header);
         }
     }
 }

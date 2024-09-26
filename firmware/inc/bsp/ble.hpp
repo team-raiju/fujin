@@ -12,8 +12,18 @@ namespace bsp::ble {
 
 /// @section Custom types
 
+enum ble_header {
+    BLE_STOP_SIG,
+    BLE_REQUEST_DATA,
+    BLE_UPDATE_PARAMETERS,
+    BLE_BUTTON_1_SHORT,
+    BLE_BUTTON_2_SHORT,
+    BLE_BUTTON_1_LONG,
+    BLE_BUTTON_2_LONG,
+};
+
 /// @brief callback function for BLE received data
-typedef std::function<void(uint8_t*, uint8_t)> BleCallback;
+typedef std::function<void(ble_header)> BleCallback;
 
 /// @section Interface definition
 

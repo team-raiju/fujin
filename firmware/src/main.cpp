@@ -5,6 +5,7 @@
 #include "fsm/fsm.hpp"
 #include "fsm/state.hpp"
 #include "bsp/analog_sensors.hpp"
+#include "bsp/ble.hpp"
 
 void startup() {
     bsp::buzzer::set_frequency(2500);
@@ -19,6 +20,7 @@ void startup() {
     bsp::leds::indication_off();
     bsp::buzzer::stop();
     bsp::analog_sensors::start();
+    bsp::ble::start();
 }
 
 int main() {
