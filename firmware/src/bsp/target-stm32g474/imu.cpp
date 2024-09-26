@@ -214,7 +214,7 @@ void reset_angle() {
     φ = 0;
 }
 
-float get_rps() {
+float get_rad_per_s() {
     return ω;
 }
 

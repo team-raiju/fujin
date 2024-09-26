@@ -19,7 +19,7 @@ ImuResult update();
 // All angles are related to the Z axis
 float get_angle();
 void reset_angle();
-float get_rps();
+float get_rad_per_s();
 
 void update_g_bias();
 void set_g_bias(int32_t bias);

@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include "fsm/event.hpp"
+#include "utils/pid.hpp"
 
 namespace fsm {
 
@@ -58,6 +59,8 @@ public:
 
 class Search : public State {
 public:
+    Search() : angular_vel_pid(0.0f, 0.0f, 0.0f, 0.0f) {}
+    
     void enter() override;
     void exit() override;
 
@@ -65,19 +68,8 @@ public:
     State* react(ButtonPressed const&) override;
     State* react(Timeout const&) override;
 private:
-    typedef enum {
-        STRAIGHT,
-        START_TURN,
-        TURN_RIGHT,
-        TURN_LEFT,
-    } search_state_t;
-
-    float last_error;
-    search_state_t search_state;
-    int counter;
     int stop_counter;
-    bool last_empty_wall_right;
-
+    PID<float> angular_vel_pid;
 };
 
 class PreRun : public State {
