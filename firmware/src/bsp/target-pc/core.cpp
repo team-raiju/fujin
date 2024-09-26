@@ -39,7 +39,6 @@ void received();
 
 void init() {
     analog_sensors::init();
-    ble::init();
     buttons::init();
     buzzer::init();
     encoders::init();

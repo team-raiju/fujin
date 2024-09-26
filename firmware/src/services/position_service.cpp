@@ -1,5 +1,7 @@
 #include "services/position_service.hpp"
 #include "bsp/encoders.hpp"
+#include <cstdio>
+
 
 namespace services::position {
 
@@ -13,7 +15,7 @@ static int32_t encoder_left_counter;
 /// @section Private Functions
 
 static void cb_encoder_l(bsp::encoders::DirectionType type) {
-    if (type == bsp::encoders::DirectionType::CW) {
+    if (type == bsp::encoders::DirectionType::CCW) {
         encoder_left_counter++;
     } else {
         encoder_left_counter--;
@@ -21,7 +23,7 @@ static void cb_encoder_l(bsp::encoders::DirectionType type) {
 }
 
 static void cb_encoder_r(bsp::encoders::DirectionType type) {
-    if (type == bsp::encoders::DirectionType::CW) {
+    if (type == bsp::encoders::DirectionType::CCW) {
         encoder_right_counter++;
     } else {
         encoder_right_counter--;
@@ -57,6 +59,12 @@ void update(void) {
     travelled_dist += delta_x_cm;
     encoder_left_counter = 0;
     encoder_right_counter = 0;
+
+    // static int cnt = 0;
+    // if (cnt++ % 100 == 0){
+    //     std::printf("Travelled distance: (%f) cm\r\n", travelled_dist);
+    // }
+
 }
 
 float get_travelled_dist_cm(void) {

@@ -27,9 +27,9 @@ void gpio_exti_callback(uint16_t GPIO_Pin) {
         }
 
         if (HAL_GPIO_ReadPin(ENCODER_LEFT_B_PORT, ENCODER_LEFT_B_PIN) == GPIO_PIN_SET) {
-            cb_encoder_l(CW);
-        } else {
             cb_encoder_l(CCW);
+        } else {
+            cb_encoder_l(CW);
         }
     }
 

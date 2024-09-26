@@ -6,6 +6,7 @@
 #include "fsm/state.hpp"
 #include "bsp/analog_sensors.hpp"
 #include "bsp/ble.hpp"
+#include "services/position_service.hpp"
 
 void startup() {
     bsp::buzzer::set_frequency(2500);
@@ -20,8 +21,12 @@ void startup() {
     bsp::leds::indication_off();
     bsp::buzzer::stop();
     bsp::analog_sensors::start();
+    bsp::ble::init();
     bsp::ble::start();
+    services::position::init();
+
 }
+
 
 int main() {
     bsp::init();
