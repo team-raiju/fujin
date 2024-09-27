@@ -1,5 +1,8 @@
 #pragma once
 #include "utils/math.h"
+#include "utils/navigation_types.hpp"
+
+using namespace navigation;
 
 namespace services::position {
 
@@ -25,9 +28,20 @@ void reset(void);
 /// @brief  @brief Updates the position variables
 void update(void);
 
-
 /// @brief Returns the travelled distance in cm
 float get_travelled_dist_cm(void);
+
+/// @brief Returns the robot direction
+Direction get_robot_direction(void);
+
+// @brief Sets the robot direction
+void set_robot_direction(Direction dir);
+
+/// @brief Returns current cell position of the robot
+Position get_robot_position(void);
+
+/// @brief Incerases the robot position based on the direction
+void increase_robot_position(Direction dir);
 
 
 }

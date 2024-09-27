@@ -10,6 +10,8 @@ namespace services::position {
 static float travelled_dist = 0;
 static int32_t encoder_right_counter;
 static int32_t encoder_left_counter;
+static Position current_position;
+static Direction current_direction;
 
 
 /// @section Private Functions
@@ -42,7 +44,8 @@ void reset(void) {
     travelled_dist = 0;
     encoder_left_counter = 0;
     encoder_right_counter = 0;
-
+    current_position = {0, 0};
+    current_direction = NORTH;
 }
 
 void update(void) {
@@ -69,6 +72,29 @@ void update(void) {
 
 float get_travelled_dist_cm(void) {
     return travelled_dist;
+}
+
+Position get_robot_position(void) {
+    return current_position;
+}
+
+void increase_robot_position(Direction dir) {
+    switch (dir) {
+    case NORTH:
+        current_position.y++;
+        break;
+    case EAST:
+        current_position.x++;
+        break;
+    case SOUTH:
+        current_position.y--;
+        break;
+    case WEST:
+        current_position.x--;
+        break;
+    default:
+        break;
+    }
 }
 
 }

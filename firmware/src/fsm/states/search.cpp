@@ -1,16 +1,20 @@
-#include <cstdio>
+#include "bsp/analog_sensors.hpp"
+#include "bsp/buzzer.hpp"
+#include "bsp/core.hpp"
 #include "bsp/debug.hpp"
+#include "bsp/imu.hpp"
 #include "bsp/leds.hpp"
 #include "bsp/motors.hpp"
-#include "fsm/state.hpp"
-#include "bsp/core.hpp"
 #include "bsp/timers.hpp"
-#include "bsp/buzzer.hpp"
-#include "bsp/analog_sensors.hpp"
-#include "utils/math.h"
-#include "bsp/imu.hpp"
-#include "utils/soft_timer.hpp"
+#include "fsm/state.hpp"
+#include "services/maze.hpp"
 #include "services/position_service.hpp"
+#include "utils/math.h"
+#include "utils/pid.hpp"
+#include "utils/soft_timer.hpp"
+#include <cstdio>
+
+using namespace services::position;
 
 namespace fsm {
 
@@ -41,7 +45,6 @@ State* PreSearch::react(ButtonPressed const& event) {
     }
 
     return nullptr;
-
 }
 
 void Search::enter() {
@@ -58,7 +61,8 @@ void Search::enter() {
     stop_counter = 0;
     angular_vel_pid.reset();
     angular_vel_pid.update_parameters(10.0, 0.0, 0.0, 0.0);
-    
+    maze.init_step_map({Maze::GOAL_X_POS, Maze::GOAL_Y_POS});
+    maze.calculate_step_map({Maze::GOAL_X_POS, Maze::GOAL_Y_POS}, Maze::SEARCH);
 }
 
 State* Search::react(BleCommand const&) {
@@ -98,9 +102,34 @@ State* Search::react(Timeout const&) {
     //     return &State::get<Idle>();
     // }
 
+    // if movement is complete call update maze and update current position and direction
+
     if (stop_counter++ > 300) {
         return &State::get<PreSearch>();
     }
+
+    return nullptr;
+}
+
+State* Search::react(UpdateMaze const&) {
+    // if current position == goal stop
+    // else
+
+    // 1. read sensors
+    // 2. update wall map
+    // 3. init step map
+    // 4. update step map
+    // 5. get target cell direction
+    // 6. get next movement
+
+    maze.init_step_map({Maze::GOAL_X_POS, Maze::GOAL_Y_POS});
+    maze.calculate_step_map({Maze::GOAL_X_POS, Maze::GOAL_Y_POS}, Maze::SEARCH);
+
+    Direction next_direction = maze.get_target_cell_dir(services::position::get_robot_position(),
+                                                        services::position::get_robot_direction(), Maze::SEARCH);
+    Movement next_movement = maze.get_target_movement(services::position::get_robot_direction(), next_direction);
+
+    // 7. prepare velocity and params for next movement
 
     return nullptr;
 }
@@ -110,6 +139,5 @@ void Search::exit() {
     bsp::leds::ir_emmiter_all_off();
     bsp::leds::indication_off();
 }
-
 
 }

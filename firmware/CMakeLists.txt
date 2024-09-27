@@ -38,6 +38,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     src/utils/soft_timer.cpp
 
     src/services/position_service.cpp
+    src/services/maze.cpp
 )
 
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
