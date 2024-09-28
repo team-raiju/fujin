@@ -26,6 +26,8 @@ namespace bsp::analog_sensors {
 #define ADC_2_DMA_BUFFER_SIZE ADC_2_DMA_CHANNELS* READINGS_PER_ADC_2
 #define ADC_2_DMA_HALF_BUFFER_SIZE (ADC_2_DMA_BUFFER_SIZE / 2)
 
+#define WALL_THRESHOLD 1400
+
 /// @section Private variables
 
 static uint32_t adc_1_dma_buffer[ADC_1_DMA_BUFFER_SIZE];
@@ -72,6 +74,15 @@ uint32_t battery_latest_reading(void) {
 uint32_t* current_latest_reading(void) {
     return current_reading;
 }
+
+uint32_t ir_reading(SensingDirection direction) {
+    return ir_readings[direction];
+}
+
+bool ir_reading_wall(SensingDirection direction) {
+    return (ir_readings[direction] > WALL_THRESHOLD);
+}
+
 
 /// @section Private functions
 
