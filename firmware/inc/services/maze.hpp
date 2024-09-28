@@ -12,6 +12,8 @@ public:
     static constexpr int MAX_STEP_VALUE = 255;
     static constexpr int GOAL_X_POS = 0;
     static constexpr int GOAL_Y_POS = 6;
+    static constexpr float CELL_SIZE_CM = 18.0;
+    static constexpr float HALF_CELL_SIZE_CM = 9.0;
 
     enum StepMapType {
         SEARCH,

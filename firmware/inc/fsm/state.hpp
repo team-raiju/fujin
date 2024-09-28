@@ -77,6 +77,7 @@ private:
     int stop_counter;
     PID<float> angular_vel_pid;
     Maze maze;
+    Movement current_movement;
 };
 
 class SearchFront : public Search {
