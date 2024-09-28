@@ -74,6 +74,14 @@ float get_travelled_dist_cm(void) {
     return travelled_dist;
 }
 
+Direction get_robot_direction(void) {
+    return current_direction;
+}
+
+void set_robot_direction(Direction dir) {
+    current_direction = dir;
+}
+
 Position get_robot_position(void) {
     return current_position;
 }
