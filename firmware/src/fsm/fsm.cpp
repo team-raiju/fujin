@@ -25,22 +25,22 @@ void FSM::start() {
         });
     });
 
-    bsp::ble::register_callback([this](bsp::ble::ble_header packet) { 
+    bsp::ble::register_callback([this](bsp::ble::BleHeader packet) {
         switch (packet) {
-            case bsp::ble::BLE_BUTTON_1_SHORT:
-                dispatch(ButtonPressed{.button = ButtonPressed::SHORT1});
-                break;
-            case bsp::ble::BLE_BUTTON_2_SHORT:
-                dispatch(ButtonPressed{.button = ButtonPressed::SHORT2});
-                break;
-            case bsp::ble::BLE_BUTTON_1_LONG:
-                dispatch(ButtonPressed{.button = ButtonPressed::LONG1});
-                break;
-            case bsp::ble::BLE_BUTTON_2_LONG:
-                dispatch(ButtonPressed{.button = ButtonPressed::LONG2});
-                break;
-            default:
-                break;
+        case bsp::ble::BLE_BUTTON_1_SHORT:
+            dispatch(ButtonPressed{.button = ButtonPressed::SHORT1});
+            break;
+        case bsp::ble::BLE_BUTTON_2_SHORT:
+            dispatch(ButtonPressed{.button = ButtonPressed::SHORT2});
+            break;
+        case bsp::ble::BLE_BUTTON_1_LONG:
+            dispatch(ButtonPressed{.button = ButtonPressed::LONG1});
+            break;
+        case bsp::ble::BLE_BUTTON_2_LONG:
+            dispatch(ButtonPressed{.button = ButtonPressed::LONG2});
+            break;
+        default:
+            break;
         }
     });
 

@@ -10,7 +10,9 @@ static EncoderCallback cb_encoder_r;
 
 /// @section Interface implementation
 
-void init() {}
+void init() {
+    MX_SPI1_Init();
+}
 
 void register_callback_encoder_left(EncoderCallback callback) {
     cb_encoder_l = callback;

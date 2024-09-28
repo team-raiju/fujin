@@ -14,18 +14,15 @@
 #include "utils/soft_timer.hpp"
 #include <cstdio>
 
-using namespace services::position;
-using namespace bsp;
-
 namespace fsm {
 
 void PreSearch::enter() {
-    debug::print("state:PreSearch");
+    bsp::debug::print("state:PreSearch");
 
-    leds::stripe_set(0, 0, 255, 0);
-    leds::stripe_set(1, 0, 0, 0);
+    bsp::leds::stripe_set(0, 0, 255, 0);
+    bsp::leds::stripe_set(1, 0, 0, 0);
 
-    motors::set(0, 0);
+    bsp::motors::set(0, 0);
 }
 
 State* PreSearch::react(BleCommand const&) {
@@ -49,16 +46,18 @@ State* PreSearch::react(ButtonPressed const& event) {
 }
 
 void Search::enter() {
-    debug::print("state:Search");
-    leds::indication_on();
+    bsp::debug::print("state:Search");
+    bsp::leds::indication_on();
 
-    buzzer::start();
-    delay_ms(2000);
-    buzzer::stop();
+    bsp::buzzer::start();
+    bsp::delay_ms(2000);
+    bsp::buzzer::stop();
 
-    leds::ir_emmiter_all_on();
-    imu::reset_angle();
+    bsp::leds::ir_emitter_all_on();
+    bsp::imu::reset_angle();
+
     soft_timer::start(1, soft_timer::CONTINUOUS);
+
     stop_counter = 0;
     current_movement = FORWARD;
     angular_vel_pid.reset();
@@ -88,37 +87,37 @@ State* Search::react(Timeout const&) {
     float target_speed = 0;
     float rotation_ratio = 0;
     services::position::update();
-    imu::update();
+    bsp::imu::update();
 
     switch (current_movement) {
     case FORWARD:
         target_speed = 50;
-        rotation_ratio = angular_vel_pid.calculate(0.0, imu::get_rad_per_s());
-        if (get_travelled_dist_cm() > Maze::CELL_SIZE_CM) {
+        rotation_ratio = angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
+        if (services::position::get_travelled_dist_cm() > Maze::CELL_SIZE_CM) {
             // dispatch(UpdateMaze());
         }
         break;
-    
+
     case RIGHT:
         target_speed = 0;
         rotation_ratio = 30;
-        if (utils_abs(bsp::imu::get_angle()) > (M_PI_2 - 0.2)) {
+        if (std::abs(bsp::imu::get_angle()) > (M_PI_2 - 0.2)) {
             // dispatch(UpdateMaze());
         }
         break;
-    
+
     case LEFT:
         target_speed = 0;
         rotation_ratio = -30;
-        if (utils_abs(bsp::imu::get_angle()) > (M_PI_2 - 0.2)) {
+        if (std::abs(bsp::imu::get_angle()) > (M_PI_2 - 0.2)) {
             // dispatch(UpdateMaze());
         }
         break;
-    
+
     case BACKWARD:
         target_speed = 0;
         rotation_ratio = -30;
-        if (utils_abs(bsp::imu::get_angle()) > (M_PI - 0.4)) {
+        if (std::abs(bsp::imu::get_angle()) > (M_PI - 0.4)) {
             // dispatch(UpdateMaze());
         }
         break;
@@ -129,7 +128,7 @@ State* Search::react(Timeout const&) {
 
     float speed_l = target_speed + rotation_ratio;
     float speed_r = target_speed - rotation_ratio;
-    motors::set(speed_l, speed_r);
+    bsp::motors::set(speed_l, speed_r);
 
     // if (stop_counter++ > 300) {
     //     return &State::get<PreSearch>();
@@ -139,13 +138,15 @@ State* Search::react(Timeout const&) {
 }
 
 State* Search::react(UpdateMaze const&) {
-    bool front_seeing = analog_sensors::ir_reading_wall(analog_sensors::FRONT_LEFT) ||
-                        analog_sensors::ir_reading_wall(analog_sensors::FRONT_RIGHT);
-    bool right_seeing = analog_sensors::ir_reading_wall(analog_sensors::RIGHT);
-    bool left_seeing = analog_sensors::ir_reading_wall(analog_sensors::LEFT);
+    using bsp::analog_sensors::ir_reading_wall;
+    using bsp::analog_sensors::SensingDirection;
 
-    Position robot_pos = get_robot_position();
-    Direction robot_dir = get_robot_direction();
+    bool front_seeing = ir_reading_wall(SensingDirection::FRONT_LEFT) || ir_reading_wall(SensingDirection::FRONT_RIGHT);
+    bool right_seeing = ir_reading_wall(SensingDirection::RIGHT);
+    bool left_seeing = ir_reading_wall(SensingDirection::LEFT);
+
+    Position robot_pos = services::position::get_robot_position();
+    Direction robot_dir = services::position::get_robot_direction();
 
     // Goal reached
     if (robot_pos.x == Maze::GOAL_X_POS && robot_pos.y == Maze::GOAL_Y_POS) {
@@ -165,9 +166,9 @@ State* Search::react(UpdateMaze const&) {
 }
 
 void Search::exit() {
-    motors::set(0, 0);
-    leds::ir_emmiter_all_off();
-    leds::indication_off();
+    bsp::motors::set(0, 0);
+    bsp::leds::ir_emitter_all_off();
+    bsp::leds::indication_off();
 }
 
 }

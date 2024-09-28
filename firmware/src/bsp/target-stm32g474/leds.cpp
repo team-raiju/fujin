@@ -25,54 +25,52 @@ void indication_toggle(void) {
     HAL_GPIO_TogglePin(GPIO_LED_PORT, GPIO_LED_PIN);
 }
 
-void ir_emmiter_on(bsp_led_ir_t led) {
-    switch (led)
-    {
-    case  EMMITER_IR_LEFT_SIDE:
+void ir_emitter_on(Emitter led) {
+    switch (led) {
+    case LEFT_SIDE:
         HAL_GPIO_WritePin(GPIO_LED_IR_L_S_PORT, GPIO_LED_IR_L_S_PIN, GPIO_PIN_SET);
         break;
-    case  EMMITER_IR_LEFT_FRONT:
+    case LEFT_FRONT:
         HAL_GPIO_WritePin(GPIO_LED_IR_L_F_PORT, GPIO_LED_IR_L_F_PIN, GPIO_PIN_SET);
         break;
-    case  EMMITER_IR_RIGHT_FRONT:
+    case RIGHT_FRONT:
         HAL_GPIO_WritePin(GPIO_LED_IR_R_F_PORT, GPIO_LED_IR_R_F_PIN, GPIO_PIN_SET);
         break;
-    case  EMMITER_IR_RIGHT_SIDE:
+    case RIGHT_SIDE:
         HAL_GPIO_WritePin(GPIO_LED_IR_R_S_PORT, GPIO_LED_IR_R_S_PIN, GPIO_PIN_SET);
         break;
     }
 }
 
-void ir_emmiter_off(bsp_led_ir_t led) {
-    switch (led)
-    {
-    case EMMITER_IR_LEFT_SIDE:
+void ir_emitter_off(Emitter led) {
+    switch (led) {
+    case LEFT_SIDE:
         HAL_GPIO_WritePin(GPIO_LED_IR_L_S_PORT, GPIO_LED_IR_L_S_PIN, GPIO_PIN_RESET);
         break;
-    case EMMITER_IR_LEFT_FRONT:
+    case LEFT_FRONT:
         HAL_GPIO_WritePin(GPIO_LED_IR_L_F_PORT, GPIO_LED_IR_L_F_PIN, GPIO_PIN_RESET);
         break;
-    case EMMITER_IR_RIGHT_FRONT:
+    case RIGHT_FRONT:
         HAL_GPIO_WritePin(GPIO_LED_IR_R_F_PORT, GPIO_LED_IR_R_F_PIN, GPIO_PIN_RESET);
         break;
-    case EMMITER_IR_RIGHT_SIDE:
+    case RIGHT_SIDE:
         HAL_GPIO_WritePin(GPIO_LED_IR_R_S_PORT, GPIO_LED_IR_R_S_PIN, GPIO_PIN_RESET);
         break;
     }
 }
 
-void ir_emmiter_all_on(void) {
-    ir_emmiter_on(EMMITER_IR_LEFT_FRONT);
-    ir_emmiter_on(EMMITER_IR_LEFT_SIDE);
-    ir_emmiter_on(EMMITER_IR_RIGHT_FRONT);
-    ir_emmiter_on(EMMITER_IR_RIGHT_SIDE);
+void ir_emitter_all_on(void) {
+    ir_emitter_on(LEFT_FRONT);
+    ir_emitter_on(LEFT_SIDE);
+    ir_emitter_on(RIGHT_FRONT);
+    ir_emitter_on(RIGHT_SIDE);
 }
 
-void ir_emmiter_all_off(void) {
-    ir_emmiter_off(EMMITER_IR_LEFT_FRONT);
-    ir_emmiter_off(EMMITER_IR_LEFT_SIDE);
-    ir_emmiter_off(EMMITER_IR_RIGHT_FRONT);
-    ir_emmiter_off(EMMITER_IR_RIGHT_SIDE);
+void ir_emitter_all_off(void) {
+    ir_emitter_off(LEFT_FRONT);
+    ir_emitter_off(LEFT_SIDE);
+    ir_emitter_off(RIGHT_FRONT);
+    ir_emitter_off(RIGHT_SIDE);
 }
 
 void stripe_set(uint8_t num, uint8_t r, uint8_t g, uint8_t b) {

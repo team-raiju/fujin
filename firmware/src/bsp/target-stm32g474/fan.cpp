@@ -7,8 +7,8 @@ namespace bsp::fan {
 
 /// @section Constants
 
-#define MAX_SPEED (100)
-#define COUNTER_PERIOD_MAX (999)
+static constexpr uint8_t max_speed = 100;
+static constexpr int counter_period_max = 999;
 
 #define PWM_CH TIM_CHANNEL_2
 
@@ -22,9 +22,9 @@ void init() {
 }
 
 void set(uint8_t speed) {
-    speed = utils_min(speed, MAX_SPEED);
+    speed = std::min(speed, max_speed);
 
-    uint32_t counter_value = map(speed, 0, MAX_SPEED, 0, COUNTER_PERIOD_MAX);
+    uint32_t counter_value = map(speed, 0, max_speed, 0, counter_period_max);
     __HAL_TIM_SET_COMPARE(&htim3, PWM_CH, counter_value);
 }
 

@@ -7,23 +7,23 @@ namespace bsp::ble {
 
 /// @section Constants
 
-#define BLE_RECEIVE_PACKET_SIZE 12
-#define BLE_MAX_PACKET_SIZE 20
+constexpr uint8_t receive_packet_size = 12;
+constexpr uint8_t max_packet_size = 20;
 
 /// @section Custom types
 
-enum ble_header {
-    BLE_STOP_SIG,
-    BLE_REQUEST_DATA,
-    BLE_UPDATE_PARAMETERS,
-    BLE_BUTTON_1_SHORT,
-    BLE_BUTTON_2_SHORT,
-    BLE_BUTTON_1_LONG,
-    BLE_BUTTON_2_LONG,
+enum BleHeader : uint8_t {
+    BLE_STOP_SIG = 0x00,
+    BLE_REQUEST_DATA = 0x01,
+    BLE_UPDATE_PARAMETERS = 0x02,
+    BLE_BUTTON_1_SHORT = 0x03,
+    BLE_BUTTON_2_SHORT = 0x04,
+    BLE_BUTTON_1_LONG = 0x05,
+    BLE_BUTTON_2_LONG = 0x06,
 };
 
 /// @brief callback function for BLE received data
-typedef std::function<void(ble_header)> BleCallback;
+typedef std::function<void(BleHeader)> BleCallback;
 
 /// @section Interface definition
 

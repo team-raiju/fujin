@@ -50,7 +50,6 @@ void AS5047::deselect() {
 }
 
 AS5047::Result AS5047::init() {
-    MX_SPI1_Init();
     deselect();
     return OK;
 }

@@ -8,13 +8,12 @@ namespace bsp::leds {
 
 #define LED_STRIPE_AMOUNT 2 ///< Number of LEDs in the stripe
 
-typedef enum {
-    EMMITER_IR_LEFT_SIDE,
-    EMMITER_IR_LEFT_FRONT,
-    EMMITER_IR_RIGHT_FRONT,
-    EMMITER_IR_RIGHT_SIDE,
-} bsp_led_ir_t;
-
+enum Emitter {
+    LEFT_SIDE,
+    LEFT_FRONT,
+    RIGHT_FRONT,
+    RIGHT_SIDE,
+};
 
 /// @section Interface definition
 
@@ -26,10 +25,10 @@ void indication_on(void);
 void indication_off(void);
 void indication_toggle(void);
 
-void ir_emmiter_on(bsp_led_ir_t led);
-void ir_emmiter_off(bsp_led_ir_t led);
-void ir_emmiter_all_on(void);
-void ir_emmiter_all_off(void);
+void ir_emitter_on(Emitter led);
+void ir_emitter_off(Emitter led);
+void ir_emitter_all_on(void);
+void ir_emitter_all_off(void);
 
 /// @brief Sets the color of a LED in the stripe
 /// @param num LED number [0, LED_STRIPE_AMOUNT)

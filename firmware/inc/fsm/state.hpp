@@ -3,8 +3,8 @@
 #include <iostream>
 
 #include "fsm/event.hpp"
-#include "utils/pid.hpp"
 #include "services/maze.hpp"
+#include "utils/pid.hpp"
 
 namespace fsm {
 
@@ -62,10 +62,20 @@ public:
     State* react(ButtonPressed const&) override;
 };
 
+class PreRun : public State {
+public:
+    void enter() override;
+
+    State* react(BleCommand const&) override;
+    State* react(ButtonPressed const&) override;
+};
+
+/// @section Search States
+
 class Search : public State {
 public:
     Search() : angular_vel_pid(0.0f, 0.0f, 0.0f, 0.0f) {}
-    
+
     void enter() override;
     void exit() override;
 
@@ -73,6 +83,7 @@ public:
     State* react(ButtonPressed const&) override;
     State* react(Timeout const&) override;
     State* react(UpdateMaze const&) override;
+
 private:
     int stop_counter;
     PID<float> angular_vel_pid;
@@ -89,17 +100,5 @@ public:
     State* react(ButtonPressed const&) override;
     State* react(Timeout const&) override;
 };
-
-
-
-class PreRun : public State {
-public:
-    void enter() override;
-
-    State* react(BleCommand const&) override;
-    State* react(ButtonPressed const&) override;
-};
-
-/// @section Run States
 
 }

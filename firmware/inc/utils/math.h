@@ -4,26 +4,6 @@
 #include <stdint.h>
 
 /**
- * @brief Returns x absolute value.
- */
-#ifndef utils_abs
-#define utils_abs(x) ((x) > 0 ? (x) : (-x))
-#endif
-/**
- * @brief Returns maximum value between x and y.
- */
-#ifndef utils_max
-#define utils_max(x, y) ((x) > (y) ? (x) : (y))
-#endif
-
-/**
- * @brief Returns minimum value between x and y.
- */
-#ifndef utils_min
-#define utils_min(x, y) ((x) < (y) ? (x) : (y))
-#endif
-
-/**
  * @brief Constrains v between x and y, returning at least x and at most y.
  */
 #define constrain(v, x, y) ((v) < (x) ? (x) : ((v) > (y) ? (y) : (v)))
