@@ -1,14 +1,21 @@
 #include "fsm/fsm.hpp"
 #include "bsp/ble.hpp"
 #include "bsp/buttons.hpp"
+#include "services/position.hpp"
 #include "utils/soft_timer.hpp"
 
+#include <map>
 #include <variant>
 
 namespace fsm {
 
 FSM::FSM() {
     current_state = &State::get<Idle>();
+
+    position_service = services::Position::instance();
+    maze_service = services::Maze::instance();
+
+    position_service->init();
 }
 
 void FSM::start() {
@@ -26,22 +33,14 @@ void FSM::start() {
     });
 
     bsp::ble::register_callback([this](bsp::ble::BleHeader packet) {
-        switch (packet) {
-        case bsp::ble::BLE_BUTTON_1_SHORT:
-            dispatch(ButtonPressed{.button = ButtonPressed::SHORT1});
-            break;
-        case bsp::ble::BLE_BUTTON_2_SHORT:
-            dispatch(ButtonPressed{.button = ButtonPressed::SHORT2});
-            break;
-        case bsp::ble::BLE_BUTTON_1_LONG:
-            dispatch(ButtonPressed{.button = ButtonPressed::LONG1});
-            break;
-        case bsp::ble::BLE_BUTTON_2_LONG:
-            dispatch(ButtonPressed{.button = ButtonPressed::LONG2});
-            break;
-        default:
-            break;
-        }
+        static std::map<bsp::ble::BleHeader, ButtonPressed::Type> b{
+            {bsp::ble::BLE_BUTTON_1_SHORT, ButtonPressed::SHORT1},
+            {bsp::ble::BLE_BUTTON_2_SHORT, ButtonPressed::SHORT2},
+            {bsp::ble::BLE_BUTTON_1_LONG, ButtonPressed::LONG1},
+            {bsp::ble::BLE_BUTTON_2_LONG, ButtonPressed::LONG2},
+        };
+
+        dispatch(ButtonPressed{.button = b[packet]});
     });
 
     soft_timer::register_callback([this]() { dispatch(Timeout()); });

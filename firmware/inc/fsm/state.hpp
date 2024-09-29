@@ -2,9 +2,9 @@
 
 #include <iostream>
 
+#include "algorithms/pid.hpp"
 #include "fsm/event.hpp"
 #include "services/maze.hpp"
-#include "utils/pid.hpp"
 
 namespace fsm {
 
@@ -86,9 +86,8 @@ public:
 
 private:
     int stop_counter;
-    PID<float> angular_vel_pid;
-    Maze maze;
-    Movement current_movement;
+    algorithm::PID angular_vel_pid;
+    services::Movement current_movement;
 };
 
 class SearchFront : public Search {

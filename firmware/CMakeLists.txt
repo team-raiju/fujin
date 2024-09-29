@@ -35,16 +35,16 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     src/fsm/states/run.cpp
     src/fsm/states/search.cpp
 
+    src/algorithms/pid.cpp
+
     src/utils/soft_timer.cpp
 
-    src/services/position_service.cpp
+    src/services/position.cpp
     src/services/maze.cpp
 )
 
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     inc
-    inc/devices
-    inc/services
 )
 
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE

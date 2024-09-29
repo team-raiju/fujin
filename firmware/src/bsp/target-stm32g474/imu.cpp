@@ -6,7 +6,7 @@
 #include "bsp/imu.hpp"
 #include "bsp/timers.hpp"
 #include "pin_mapping.h"
-#include "utils/math.h"
+#include "utils/math.hpp"
 
 namespace bsp::imu {
 

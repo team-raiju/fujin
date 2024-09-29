@@ -20,6 +20,7 @@
 /**
  * @brief Maps an integer value from one scale to another.
  *
+ * @param T Integer type
  * @param former_value Value in former scale.
  * @param former_min   Former scale minimum value.
  * @param former_max   Former scale maximum value.
@@ -28,25 +29,18 @@
  *
  * @return Value in new scale
  */
-static inline int map(int former_value, int former_min, int former_max, int new_min, int new_max) {
+template <typename T>
+static constexpr T map(T former_value, T former_min, T former_max, T new_min, T new_max) {
     long int new_value;
 
     new_value = (long int)(former_value - former_min) * (new_max - new_min);
     new_value /= (former_max - former_min);
     new_value += new_min;
 
-    return (int)new_value;
+    return (T)new_value;
 }
 
-static inline uint16_t map_u16(uint16_t x, uint16_t in_min, uint16_t in_max, uint16_t out_min, uint16_t out_max) {
-    return constrain((x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min, out_min, out_max);
-}
-
-static inline int16_t map_i16(int16_t x, int16_t in_min, int16_t in_max, int16_t out_min, int16_t out_max) {
-    return constrain((x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min, out_min, out_max);
-}
-
-static inline double deg2rad(double degrees) {
+static constexpr double deg2rad(double degrees) {
     static constexpr double pi_on_180 = M_PI / 180.0;
     return degrees * pi_on_180;
 }

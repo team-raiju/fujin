@@ -1,7 +1,7 @@
 #include "st/hal.h"
 
 #include "bsp/ble.hpp"
-#include "utils/math.h"
+#include "utils/math.hpp"
 
 namespace bsp::ble {
 

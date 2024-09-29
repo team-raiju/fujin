@@ -1,9 +1,10 @@
 #pragma once
 
 #include <cstdint>
-#include "utils/navigation_types.hpp"
 
-using namespace navigation;
+#include "navigation.hpp"
+
+namespace services {
 
 class Maze {
 public:
@@ -33,29 +34,34 @@ public:
         WallInfo west : 2;
     };
 
-    Maze();
+    static Maze* instance();
 
     /// @brief  Initialize the step map
-    void init_step_map(Position goal);
+    void init_step_map(Point goal);
 
     /// @brief  Calculate the step map using flood fill algorithm
-    void calculate_step_map(Position goal, StepMapType type);
+    void calculate_step_map(Point goal, StepMapType type);
 
     /// @brief Update wall map based on current sensor readings
-    void update_wall_map(Position robot_pos, Direction robot_dir, bool front_seeing, bool right_seeing,
-                         bool left_seeing);
+    void update_wall_map(Point robot_pos, Direction robot_dir, bool front_seeing, bool right_seeing, bool left_seeing);
 
-    Direction get_target_cell_dir(Position robot_pos, Direction robot_dir, StepMapType type);
+    Direction get_target_cell_dir(Point robot_pos, Direction robot_dir, StepMapType type);
 
     Movement get_target_movement(Direction robot_dir, Direction target_dir);
 
     /// @brief prints wall map
     void print_maze();
 
+    Maze(const Maze&) = delete;
+
 private:
-    bool cell_is_valid(Position pos);
-    int get_cell_priority(Direction robot_dir, Position desired_pos, Direction desired_dir) ;
-    bool cell_is_unexplored(Position pos);
+    Maze();
+
+    bool cell_is_valid(Point pos);
+    int get_cell_priority(Direction robot_dir, Point desired_pos, Direction desired_dir);
+    bool cell_is_unexplored(Point pos);
     Cell wall_map[MAX_CELLS_X][MAX_CELLS_Y];
     uint8_t step_map[MAX_CELLS_X][MAX_CELLS_Y];
 };
+
+}

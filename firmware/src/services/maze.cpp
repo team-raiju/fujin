@@ -2,15 +2,20 @@
 #include <cstdio>
 #include <functional>
 
-#include "maze.hpp"
+#include "services/maze.hpp"
 
-using namespace navigation;
+namespace services {
 
-bool Maze::cell_is_valid(Position pos) {
-    return (pos.x >= 0) && (pos.x < MAX_CELLS_X) && (pos.y >= 0) && (pos.y < MAX_CELLS_Y);
+Maze* Maze::instance() {
+    static Maze m;
+    return &m;
 }
 
-bool Maze::cell_is_unexplored(Position pos) {
+bool Maze::cell_is_valid(Point pos) {
+    return pos.x > 0 && pos.x < MAX_CELLS_X && pos.y > 0 && pos.y < MAX_CELLS_Y;
+}
+
+bool Maze::cell_is_unexplored(Point pos) {
     int x = pos.x;
     int y = pos.y;
 
@@ -22,7 +27,7 @@ bool Maze::cell_is_unexplored(Position pos) {
     }
 }
 
-int Maze::get_cell_priority(Direction robot_dir, Position desired_pos, Direction desired_dir) {
+int Maze::get_cell_priority(Direction robot_dir, Point desired_pos, Direction desired_dir) {
     int priority;
     Movement desired_movement = get_target_movement(robot_dir, desired_dir);
 
@@ -68,7 +73,7 @@ Maze::Maze() {
     wall_map[1][0].west = WALL;
 }
 
-void Maze::init_step_map(Position goal) {
+void Maze::init_step_map(Point goal) {
     for (int x = 0; x < MAX_CELLS_X; x++) {
         for (int y = 0; y < MAX_CELLS_Y; y++) {
             step_map[x][y] = MAX_STEP_VALUE;
@@ -78,26 +83,25 @@ void Maze::init_step_map(Position goal) {
     step_map[goal.x][goal.y] = 0;
 }
 
-void Maze::calculate_step_map(Position goal, StepMapType type) // Create a step count Map
-{
+void Maze::calculate_step_map(Point goal, StepMapType type) {
     // Create a static queue for Breadth-First Search (BFS)
-    Position queue[MAX_CELLS_X * MAX_CELLS_Y];
+    Point queue[MAX_CELLS_X * MAX_CELLS_Y];
     int front = 0;
     int rear = 1;
 
     // Start from the goal
     queue[0] = goal;
 
-    int dx[DIRECTION_MAX] = {0, 1, 0, -1};
-    int dy[DIRECTION_MAX] = {1, 0, -1, 0};
+    int8_t dx[4] = {0, 1, 0, -1};
+    int8_t dy[4] = {1, 0, -1, 0};
 
     while (front < rear) {
-        Position current_cell = queue[front];
+        Point current_cell = queue[front];
         front++;
         int current_step = step_map[current_cell.x][current_cell.y];
 
-        for (int d = 0; d < DIRECTION_MAX; d++) {
-            Position cell_to_check = {.x = (current_cell.x + dx[d]), .y = (current_cell.y + dy[d])};
+        for (int d = 0; d < 4; d++) {
+            Point cell_to_check = {.x = (current_cell.x + dx[d]), .y = (current_cell.y + dy[d])};
 
             if (cell_is_valid(cell_to_check)) {
                 int wall_to_check = 0;
@@ -131,7 +135,7 @@ void Maze::calculate_step_map(Position goal, StepMapType type) // Create a step 
     }
 }
 
-void Maze::update_wall_map(Position robot_pos, Direction robot_dir, bool front_seeing, bool right_seeing,
+void Maze::update_wall_map(Point robot_pos, Direction robot_dir, bool front_seeing, bool right_seeing,
                            bool left_seeing) {
 
     int x = robot_pos.x;
@@ -200,7 +204,7 @@ void Maze::update_wall_map(Position robot_pos, Direction robot_dir, bool front_s
     }
 }
 
-Direction Maze::get_target_cell_dir(Position robot_pos, Direction robot_dir, StepMapType type) {
+Direction Maze::get_target_cell_dir(Point robot_pos, Direction robot_dir, StepMapType type) {
 
     int priority = 0;
     int tmp_priority;
@@ -213,7 +217,7 @@ Direction Maze::get_target_cell_dir(Position robot_pos, Direction robot_dir, Ste
     int dy[] = {1, 0, -1, 0};
 
     for (int d = 0; d < 4; d++) {
-        Position neighbour_cell = {.x = (robot_pos.x + dx[d]), .y = (robot_pos.y + dy[d])};
+        Point neighbour_cell = {.x = (robot_pos.x + dx[d]), .y = (robot_pos.y + dy[d])};
         Direction neighbour_dir = directions[d];
 
         WallInfo wall_to_check = UNKNOWN_WALL;
@@ -274,6 +278,7 @@ void Maze::print_maze() {
             std::printf("+   ");
         }
     }
+
     std::printf("+\r\n");
 
     for (int y = (MAX_CELLS_Y - 1); y >= 0; y--) {
@@ -306,4 +311,6 @@ void Maze::print_maze() {
         }
         std::printf("+\r\n");
     }
+}
+
 }

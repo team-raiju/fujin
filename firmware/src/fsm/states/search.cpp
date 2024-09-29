@@ -1,3 +1,4 @@
+#include "algorithms/pid.hpp"
 #include "bsp/analog_sensors.hpp"
 #include "bsp/buzzer.hpp"
 #include "bsp/core.hpp"
@@ -8,11 +9,14 @@
 #include "bsp/timers.hpp"
 #include "fsm/state.hpp"
 #include "services/maze.hpp"
-#include "services/position_service.hpp"
-#include "utils/math.h"
-#include "utils/pid.hpp"
+#include "services/position.hpp"
+#include "utils/math.hpp"
 #include "utils/soft_timer.hpp"
 #include <cstdio>
+
+using services::Maze;
+using services::Movement;
+using services::Position;
 
 namespace fsm {
 
@@ -59,11 +63,16 @@ void Search::enter() {
     soft_timer::start(1, soft_timer::CONTINUOUS);
 
     stop_counter = 0;
-    current_movement = FORWARD;
+
     angular_vel_pid.reset();
-    angular_vel_pid.update_parameters(10.0, 0.0, 0.0, 0.0);
-    maze.init_step_map({Maze::GOAL_X_POS, Maze::GOAL_Y_POS});
-    maze.calculate_step_map({Maze::GOAL_X_POS, Maze::GOAL_Y_POS}, Maze::SEARCH);
+    angular_vel_pid.kp = 10.0;
+    angular_vel_pid.ki = 0;
+    angular_vel_pid.kd = 0;
+    angular_vel_pid.integral_limit = 0;
+
+    auto maze = Maze::instance();
+    maze->init_step_map({Maze::GOAL_X_POS, Maze::GOAL_Y_POS});
+    maze->calculate_step_map({Maze::GOAL_X_POS, Maze::GOAL_Y_POS}, Maze::SEARCH);
 }
 
 State* Search::react(BleCommand const&) {
@@ -83,22 +92,23 @@ State* Search::react(ButtonPressed const& event) {
 }
 
 State* Search::react(Timeout const&) {
+    auto position = Position::instance();
 
     float target_speed = 0;
     float rotation_ratio = 0;
-    services::position::update();
+    position->update();
     bsp::imu::update();
 
     switch (current_movement) {
-    case FORWARD:
+    case Movement::FORWARD:
         target_speed = 50;
         rotation_ratio = angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
-        if (services::position::get_travelled_dist_cm() > Maze::CELL_SIZE_CM) {
+        if (position->get_traveled_cm() > Maze::CELL_SIZE_CM) {
             // dispatch(UpdateMaze());
         }
         break;
 
-    case RIGHT:
+    case Movement::RIGHT:
         target_speed = 0;
         rotation_ratio = 30;
         if (std::abs(bsp::imu::get_angle()) > (M_PI_2 - 0.2)) {
@@ -106,7 +116,7 @@ State* Search::react(Timeout const&) {
         }
         break;
 
-    case LEFT:
+    case Movement::LEFT:
         target_speed = 0;
         rotation_ratio = -30;
         if (std::abs(bsp::imu::get_angle()) > (M_PI_2 - 0.2)) {
@@ -114,13 +124,14 @@ State* Search::react(Timeout const&) {
         }
         break;
 
-    case BACKWARD:
+    case Movement::BACKWARD:
         target_speed = 0;
         rotation_ratio = -30;
         if (std::abs(bsp::imu::get_angle()) > (M_PI - 0.4)) {
             // dispatch(UpdateMaze());
         }
         break;
+
     default:
         return &State::get<PreSearch>();
         break;
@@ -145,20 +156,23 @@ State* Search::react(UpdateMaze const&) {
     bool right_seeing = ir_reading_wall(SensingDirection::RIGHT);
     bool left_seeing = ir_reading_wall(SensingDirection::LEFT);
 
-    Position robot_pos = services::position::get_robot_position();
-    Direction robot_dir = services::position::get_robot_direction();
+    auto maze = Maze::instance();
+    auto position = Position::instance();
+
+    auto robot_pos = position->get_robot_position();
+    auto robot_dir = position->get_robot_direction();
 
     // Goal reached
     if (robot_pos.x == Maze::GOAL_X_POS && robot_pos.y == Maze::GOAL_Y_POS) {
         return &State::get<PreSearch>();
     }
 
-    maze.update_wall_map(robot_pos, robot_dir, front_seeing, right_seeing, left_seeing);
-    maze.init_step_map({Maze::GOAL_X_POS, Maze::GOAL_Y_POS});
-    maze.calculate_step_map({Maze::GOAL_X_POS, Maze::GOAL_Y_POS}, Maze::SEARCH);
+    maze->update_wall_map(robot_pos, robot_dir, front_seeing, right_seeing, left_seeing);
+    maze->init_step_map({Maze::GOAL_X_POS, Maze::GOAL_Y_POS});
+    maze->calculate_step_map({Maze::GOAL_X_POS, Maze::GOAL_Y_POS}, Maze::SEARCH);
 
-    Direction next_direction = maze.get_target_cell_dir(robot_pos, robot_dir, Maze::SEARCH);
-    current_movement = maze.get_target_movement(robot_dir, next_direction);
+    auto next_direction = maze->get_target_cell_dir(robot_pos, robot_dir, Maze::SEARCH);
+    current_movement = maze->get_target_movement(robot_dir, next_direction);
 
     // 7. prepare velocity and params for next movement
 
