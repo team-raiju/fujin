@@ -1,6 +1,7 @@
-#include "services/position.hpp"
+#include "services/navigation.hpp"
 #include "bsp/encoders.hpp"
 #include "services/navigation.hpp"
+#include "utils/math.hpp"
 #include <cstdio>
 
 #define WHEEL_RADIUS_CM (1.27)
@@ -16,12 +17,12 @@
 
 namespace services {
 
-Position* Position::instance() {
-    static Position p;
+Navigation* Navigation::instance() {
+    static Navigation p;
     return &p;
 }
 
-void Position::init(void) {
+void Navigation::init(void) {
     reset();
 
     bsp::encoders::register_callback_encoder_left(
@@ -31,7 +32,7 @@ void Position::init(void) {
         [this](auto type) { encoder_right_counter += type == bsp::encoders::DirectionType::CCW ? 1 : -1; });
 }
 
-void Position::reset(void) {
+void Navigation::reset(void) {
     traveled_dist = 0;
     encoder_left_counter = 0;
     encoder_right_counter = 0;
@@ -39,7 +40,7 @@ void Position::reset(void) {
     current_direction = NORTH;
 }
 
-void Position::update(void) {
+void Navigation::update(void) {
     if (encoder_left_counter == 0 && encoder_right_counter == 0) {
         return;
     }
@@ -59,39 +60,24 @@ void Position::update(void) {
     // }
 }
 
-float Position::get_traveled_cm(void) {
+float Navigation::get_traveled_cm(void) {
     return traveled_dist;
 }
 
-Direction Position::get_robot_direction(void) {
+Direction Navigation::get_robot_direction(void) {
     return current_direction;
 }
 
-void Position::set_robot_direction(Direction dir) {
+void Navigation::set_robot_direction(Direction dir) {
     current_direction = dir;
 }
 
-Point Position::get_robot_position(void) {
+Point Navigation::get_robot_position(void) {
     return current_position;
 }
 
-void Position::increase_robot_position(Direction dir) {
-    switch (dir) {
-    case NORTH:
-        current_position.y++;
-        break;
-    case EAST:
-        current_position.x++;
-        break;
-    case SOUTH:
-        current_position.y--;
-        break;
-    case WEST:
-        current_position.x--;
-        break;
-    default:
-        break;
-    }
+void Navigation::move(Movement) {
+    // Actually move the robot here and update its position
 }
 
 }

@@ -3,7 +3,7 @@
 #include "fsm/event.hpp"
 #include "fsm/state.hpp"
 #include "services/maze.hpp"
-#include "services/position.hpp"
+#include "services/navigation.hpp"
 #include "utils/RingBuffer.hpp"
 
 namespace fsm {
@@ -21,7 +21,7 @@ private:
     State* current_state;
     RingBuffer<Event, 16> event_queue;
 
-    services::Position* position_service;
+    services::Navigation* navigation_service;
     services::Maze* maze_service;
 };
 

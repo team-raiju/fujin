@@ -21,7 +21,7 @@ void register_callback(BleCallback callback) {
 
 void received() {
     if (external_callback) {
-        external_callback(NULL, 0);
+        external_callback(BLE_STOP_SIG);
     }
 }
 

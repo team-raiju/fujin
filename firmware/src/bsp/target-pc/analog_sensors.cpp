@@ -33,4 +33,8 @@ uint32_t* current_latest_reading(void) {
     return dummy_readings;
 }
 
+bool ir_reading_wall(SensingDirection) {
+    return true;
+}
+
 } // namespace

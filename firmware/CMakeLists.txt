@@ -39,13 +39,15 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
 
     src/utils/soft_timer.cpp
 
-    src/services/position.cpp
+    src/services/navigation.cpp
     src/services/maze.cpp
 )
 
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     inc
 )
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -include 'utils/types.hpp'")
 
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
     $<$<CONFIG:Debug>:DEBUG>

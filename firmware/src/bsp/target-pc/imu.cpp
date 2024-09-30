@@ -22,6 +22,10 @@ float get_rps() {
     return 0;
 }
 
+float get_rad_per_s() {
+    return 0;
+}
+
 void update_g_bias() {}
 
 void set_g_bias(int32_t) {}

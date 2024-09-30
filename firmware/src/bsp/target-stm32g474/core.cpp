@@ -22,6 +22,7 @@
 
 namespace bsp {
 
+// Private stuff from other bsps
 namespace buttons {
 void gpio_exti_callback(uint16_t GPIO_Pin);
 }
@@ -135,11 +136,9 @@ void prepare_dfu() {
     // DEBUG_PRINT("\r\n");
 }
 
-
 }
 
-void SysTick_Handler(void)
-{
+void SysTick_Handler(void) {
     HAL_IncTick();
     soft_timer::tick();
 }

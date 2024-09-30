@@ -2,66 +2,41 @@
 
 #include <cstdint>
 
+#include "algorithms/flood_fill.hpp"
 #include "navigation.hpp"
 
 namespace services {
 
+// TODO: not here, physical stuff
+// static constexpr float CELL_SIZE_CM = 18.0;
+// static constexpr float HALF_CELL_SIZE_CM = 9.0;
+
 class Maze {
 public:
-    static constexpr int MAX_CELLS_X = 4;
-    static constexpr int MAX_CELLS_Y = 7;
-    static constexpr int MAX_STEP_VALUE = 255;
-    static constexpr int GOAL_X_POS = 0;
-    static constexpr int GOAL_Y_POS = 6;
-    static constexpr float CELL_SIZE_CM = 18.0;
-    static constexpr float HALF_CELL_SIZE_CM = 9.0;
+    static constexpr int CELLS_X = 16;
+    static constexpr int CELLS_Y = 16;
 
-    enum StepMapType {
-        SEARCH,
-        RUN,
-    };
-
-    enum WallInfo {
-        NO_WALL,
-        WALL,
-        UNKNOWN_WALL,
-    };
-
-    struct Cell {
-        WallInfo north : 2;
-        WallInfo east : 2;
-        WallInfo south : 2;
-        WallInfo west : 2;
-    };
+    static constexpr Point ORIGIN = {0, 0};
+    static constexpr Point GOAL_POS = {8, 8};
 
     static Maze* instance();
 
-    /// @brief  Initialize the step map
-    void init_step_map(Point goal);
+    /// @brief This method receives information about a cell's walls and return
+    ///        the next cell that should be visited
+    /// @param current_position Current cell coordinates
+    /// @param walls Current cell wall information
+    /// @return Next cell to be visited
+    Direction next_step(Point const& current_position, uint8_t walls, bool returning = false);
 
-    /// @brief  Calculate the step map using flood fill algorithm
-    void calculate_step_map(Point goal, StepMapType type);
-
-    /// @brief Update wall map based on current sensor readings
-    void update_wall_map(Point robot_pos, Direction robot_dir, bool front_seeing, bool right_seeing, bool left_seeing);
-
-    Direction get_target_cell_dir(Point robot_pos, Direction robot_dir, StepMapType type);
-
-    Movement get_target_movement(Direction robot_dir, Direction target_dir);
-
-    /// @brief prints wall map
-    void print_maze();
+    /// @brief Prints the maze for debugging purpose
+    void print(Point const& curr);
 
     Maze(const Maze&) = delete;
 
+    algorithm::Grid<CELLS_X, CELLS_Y> map;
+
 private:
     Maze();
-
-    bool cell_is_valid(Point pos);
-    int get_cell_priority(Direction robot_dir, Point desired_pos, Direction desired_dir);
-    bool cell_is_unexplored(Point pos);
-    Cell wall_map[MAX_CELLS_X][MAX_CELLS_Y];
-    uint8_t step_map[MAX_CELLS_X][MAX_CELLS_Y];
 };
 
 }

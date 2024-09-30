@@ -87,7 +87,7 @@ public:
 private:
     int stop_counter;
     algorithm::PID angular_vel_pid;
-    services::Movement current_movement;
+    Movement current_movement;
 };
 
 class SearchFront : public Search {

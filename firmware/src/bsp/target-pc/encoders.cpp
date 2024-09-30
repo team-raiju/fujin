@@ -8,11 +8,11 @@ namespace bsp::encoders {
 
 void init() {}
 
-void register_callback_encoder1(bsp_gpio_encoder_callback_t callback) {
+void register_callback_encoder_left(EncoderCallback callback) {
     (void)callback;
 }
 
-void register_callback_encoder2(bsp_gpio_encoder_callback_t callback) {
+void register_callback_encoder_right(EncoderCallback callback) {
     (void)callback;
 }
 

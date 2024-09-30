@@ -32,6 +32,14 @@ public:
         return true;
     }
 
+    bool empty() {
+        return tail == head;
+    }
+
+    void reset() {
+        tail = head = 0;
+    }
+
 private:
     constexpr static size_t idx_mask = size - 1;
 

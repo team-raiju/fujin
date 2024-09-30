@@ -11,7 +11,8 @@ static EncoderCallback cb_encoder_r;
 /// @section Interface implementation
 
 void init() {
-    MX_SPI1_Init();
+    // We are not using the SPI interface, only the interruptions
+    // MX_SPI1_Init();
 }
 
 void register_callback_encoder_left(EncoderCallback callback) {
@@ -28,11 +29,7 @@ void gpio_exti_callback(uint16_t GPIO_Pin) {
             return;
         }
 
-        if (HAL_GPIO_ReadPin(ENCODER_LEFT_B_PORT, ENCODER_LEFT_B_PIN) == GPIO_PIN_SET) {
-            cb_encoder_l(CCW);
-        } else {
-            cb_encoder_l(CW);
-        }
+        cb_encoder_l(HAL_GPIO_ReadPin(ENCODER_LEFT_B_PORT, ENCODER_LEFT_B_PIN) == GPIO_PIN_SET ? CCW : CW);
     }
 
     if (GPIO_Pin == ENCODER_RIGHT_A_PIN) {
@@ -40,11 +37,7 @@ void gpio_exti_callback(uint16_t GPIO_Pin) {
             return;
         }
 
-        if (HAL_GPIO_ReadPin(ENCODER_RIGHT_B_PORT, ENCODER_RIGHT_B_PIN) == GPIO_PIN_SET) {
-            cb_encoder_r(CW);
-        } else {
-            cb_encoder_r(CCW);
-        }
+        cb_encoder_r(HAL_GPIO_ReadPin(ENCODER_RIGHT_B_PORT, ENCODER_RIGHT_B_PIN) == GPIO_PIN_SET ? CW : CCW);
     }
 }
 

@@ -1,7 +1,7 @@
 #include "fsm/fsm.hpp"
 #include "bsp/ble.hpp"
 #include "bsp/buttons.hpp"
-#include "services/position.hpp"
+#include "services/navigation.hpp"
 #include "utils/soft_timer.hpp"
 
 #include <map>
@@ -12,10 +12,10 @@ namespace fsm {
 FSM::FSM() {
     current_state = &State::get<Idle>();
 
-    position_service = services::Position::instance();
+    navigation_service = services::Navigation::instance();
     maze_service = services::Maze::instance();
 
-    position_service->init();
+    navigation_service->init();
 }
 
 void FSM::start() {
