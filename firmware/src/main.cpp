@@ -1,4 +1,4 @@
-#include <print>
+#include <cstdio>
 
 #include "bsp/analog_sensors.hpp"
 #include "bsp/ble.hpp"
@@ -74,7 +74,7 @@ int main() {
 
             std::printf("\033c");
             maze->print(pos);
-            std::println("");
+            std::printf("\r\n");
 
             switch (dir) {
             case NORTH:
@@ -106,7 +106,7 @@ int main() {
 
     // Run version would be this
     algorithm::flood_fill(maze->map, services::Maze::GOAL_POS);
-    std::println("");
+    std::printf("\r\n");
     maze->print(pos);
 
     return 0;

@@ -1,7 +1,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <functional>
-#include <print>
+#include <cstdio>
 #include <queue>
 
 #include "services/maze.hpp"
@@ -92,7 +92,6 @@ Direction Maze::next_step(Point const& current_position, uint8_t walls, bool ret
         }
     }
 
-    std::println("");
     return next_direction;
 }
 
@@ -100,15 +99,15 @@ void Maze::print(Point const& curr) {
     for (int y = (CELLS_Y - 1); y >= 0; y--) {
         // Top
         for (int x = 0; x < CELLS_X; x++) {
-            std::printf(map[x][y].visited ? "\033[33m" : "\033[31m");
+            std::printf(map[x][y].visited ? "\033[33m" : "\033[34m");
             std::printf(map[x][y].walls & N ? "+---+" : "+   +");
         }
 
-        std::println("");
+        std::printf("\r\n");
 
         // Left, value, right
         for (int x = 0; x < CELLS_X; x++) {
-            std::printf(map[x][y].visited ? "\033[33m" : "\033[31m");
+            std::printf(map[x][y].visited ? "\033[33m" : "\033[34m");
             std::printf(map[x][y].walls & W ? "|" : " ");
 
             if (curr == Point{x, y}) {
@@ -117,19 +116,19 @@ void Maze::print(Point const& curr) {
 
             std::printf("%- 3d", map[x][y].value);
 
-            std::printf(map[x][y].visited ? "\033[33m" : "\033[31m");
+            std::printf(map[x][y].visited ? "\033[33m" : "\033[34m");
             std::printf(map[x][y].walls & E ? "|" : " ");
         }
 
-        std::println("");
+        std::printf("\r\n");
 
         // Print bottom borders
         for (int x = 0; x < CELLS_X; x++) {
-            std::printf(map[x][y].visited ? "\033[33m" : "\033[31m");
+            std::printf(map[x][y].visited ? "\033[33m" : "\033[34m");
             std::printf(map[x][y].walls & S ? "+---+" : "+   +");
         }
 
-        std::println("");
+        std::printf("\r\n");
         std::printf("\033[39m");
     }
 }
