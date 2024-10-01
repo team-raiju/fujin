@@ -4,6 +4,7 @@ namespace algorithm {
 
 class PID {
 public:
+    PID() {};
     PID(float kp, float ki, float kd, float integral_limit);
 
     // Freely updatable constants

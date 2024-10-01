@@ -5,12 +5,13 @@
 #include <functional>
 
 #include "utils/RingBuffer.hpp"
+#include "utils/math.hpp"
 
-enum Walls {
+enum Walls : uint8_t {
     N = 1 << Direction::NORTH,
+    W = 1 << Direction::WEST,
     E = 1 << Direction::EAST,
     S = 1 << Direction::SOUTH,
-    W = 1 << Direction::WEST,
 };
 
 namespace algorithm {
@@ -62,7 +63,7 @@ void flood_fill(Grid<width, height>& grid, Point const& target) {
     RingBuffer<Point, 32> to_visit;
     to_visit.put(target);
 
-    static constexpr Point Δ[4] = {{0, 1}, {1, 0}, {0, -1}, {-1, 0}};
+    static constexpr Point Δ[4] = {{0, 1}, {-1, 0}, {0, -1}, {1, 0}};
 
     while (!to_visit.empty()) {
         Point pos;
@@ -71,7 +72,7 @@ void flood_fill(Grid<width, height>& grid, Point const& target) {
 
         // Iterate every direction
         for (auto& d : Directions) {
-            Point next = pos + Δ[d];
+            Point next = pos + Δ[std::to_underlying(d)];
 
             // out of bounds
             if (next.x < 0 || next.x >= width || next.y < 0 || next.y >= height) {

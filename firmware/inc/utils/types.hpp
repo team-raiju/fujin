@@ -2,20 +2,35 @@
 
 #pragma once
 
-enum Direction {
+#include <cstdint>
+#include <utility>
+
+enum class Direction : uint8_t {
     NORTH,
-    EAST,
-    SOUTH,
     WEST,
+    SOUTH,
+    EAST,
 };
 
-static constexpr Direction Directions[] = {NORTH, EAST, SOUTH, WEST};
+static constexpr Direction Directions[] = {
+    Direction::NORTH,
+    Direction::WEST,
+    Direction::SOUTH,
+    Direction::EAST,
+};
+
+/// @brief This is a circular 4 bit shift to be used with Directions
+static constexpr uint8_t operator<<(uint8_t x, const Direction n) {
+    const uint8_t _n = std::to_underlying(n);
+    return 0xF & ((x << _n) | (x >> (4 - _n)));
+}
 
 enum Movement {
     FORWARD,
     RIGHT,
     TURN_AROUND,
     LEFT,
+    STOP,
 };
 
 struct Point {

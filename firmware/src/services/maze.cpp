@@ -1,13 +1,12 @@
 #include <cstdint>
 #include <cstdio>
 #include <functional>
-#include <cstdio>
 #include <queue>
 
+#include "bsp/timers.hpp"
 #include "services/maze.hpp"
 #include "utils/RingBuffer.hpp"
 #include "utils/math.hpp"
-#include "bsp/timers.hpp"
 
 namespace services {
 
@@ -48,7 +47,7 @@ Direction Maze::next_step(Point const& current_position, uint8_t walls, bool ret
 
     // The only option in the origin is always north, don't waste time calculating
     if (current_position == ORIGIN) {
-        return NORTH;
+        return Direction::NORTH;
     }
 
     // Update our grid
@@ -64,13 +63,13 @@ Direction Maze::next_step(Point const& current_position, uint8_t walls, bool ret
     }
 
     // Check all directions for the best option
-    static constexpr Point Δ[4] = {{0, 1}, {1, 0}, {0, -1}, {-1, 0}};
+    static constexpr Point Δ[4] = {{0, 1}, {-1, 0}, {0, -1}, {1, 0}};
 
     int prio = 0;
     int tprio;
 
     uint8_t smallest = 255;
-    Direction next_direction = NORTH;
+    Direction next_direction = Direction::NORTH;
     for (auto& d : Directions) {
         // We can't go this direction, check next
         if ((cell.walls & (1 << d)) != 0) {
@@ -78,10 +77,11 @@ Direction Maze::next_step(Point const& current_position, uint8_t walls, bool ret
         }
 
         // If we got here, we are always inside the bounds ~hopefully~
-        Point position = current_position + Δ[d];
+        Point position = current_position + Δ[std::to_underlying(d)];
         auto& neighbour = map[position.x][position.y];
 
         // TODO: Prioritize the current direction
+        // We prioritize cells with smallest values and then unvisited cells if there's a tie
         tprio = neighbour.visited ? 1 : 2;
         if (neighbour.value < smallest) {
             smallest = neighbour.value;
@@ -105,7 +105,7 @@ void Maze::print(Point const& curr) {
         }
 
         std::printf("\r\n");
-        bsp::delay_ms(2);
+        // bsp::delay_ms(2);
 
         // Left, value, right
         for (int x = 0; x < CELLS_X; x++) {
@@ -123,8 +123,7 @@ void Maze::print(Point const& curr) {
         }
 
         std::printf("\r\n");
-        bsp::delay_ms(2);
-
+        // bsp::delay_ms(2);
 
         // Print bottom borders
         for (int x = 0; x < CELLS_X; x++) {
@@ -134,7 +133,7 @@ void Maze::print(Point const& curr) {
 
         std::printf("\r\n");
         std::printf("\033[39m");
-        bsp::delay_ms(2);
+        // bsp::delay_ms(2);
     }
 }
 

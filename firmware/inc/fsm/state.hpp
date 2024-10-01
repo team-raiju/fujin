@@ -38,7 +38,6 @@ public:
     virtual State* react(Timeout const&) {
         return nullptr;
     };
-
 };
 
 /// @section Idle States
@@ -71,8 +70,8 @@ public:
 
 class Search : public State {
 public:
-    Search() : angular_vel_pid(0.0f, 0.0f, 0.0f, 0.0f),
-                walls_pid(0.0f, 0.0f, 0.0f, 0.0f){}
+    Search();
+
     void enter() override;
     void exit() override;
 
@@ -81,14 +80,9 @@ public:
     State* react(Timeout const&) override;
 
 private:
-    int stop_counter;
-    algorithm::PID angular_vel_pid;
-    algorithm::PID walls_pid;
-    Movement current_movement;
-    uint8_t movement_state;
-    float target_speed;
-    float rotation_ratio;
-    float target_travel;
+    uint16_t stop_counter;
+    services::Navigation* navigation;
+    services::Maze* maze;
 };
 
 class SearchFront : public Search {

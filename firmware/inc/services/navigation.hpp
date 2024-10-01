@@ -2,13 +2,12 @@
 
 #include <cstdint>
 
+#include "algorithms/pid.hpp"
+
 namespace services {
 
 class Navigation {
 public:
-    static constexpr float CELL_SIZE_CM = 18.0;
-    static constexpr float HALF_CELL_SIZE_CM = 9.0;
-
     static Navigation* instance();
 
     Navigation(const Navigation&) = delete;
@@ -16,26 +15,35 @@ public:
     void init();
     void reset();
     void update();
-
-    float get_traveled_cm();
-    void set_traveled_cm(float);
-
-    Direction get_robot_direction();
-    void set_robot_direction(Direction);
+    bool step();
 
     Point get_robot_position();
-    void move(Movement);
-    Movement get_target_movement(Direction robot_dir, Direction target_dir);
+    Direction get_robot_direction();
+    void move(Direction);
 
 private:
     Navigation() {}
+    void update_position();
+    Movement get_movement(Direction);
 
+    algorithm::PID angular_vel_pid;
+    algorithm::PID walls_pid;
+
+    float target_speed;
+    float rotation_ratio;
+    float target_travel;
+
+    bool is_initialized = false;
+    bool is_finished = false;
+
+    // The service uses a mini-fsm to update it's movement on each iteration
+    uint8_t state;
     float traveled_dist = 0;
     int32_t encoder_right_counter;
     int32_t encoder_left_counter;
     Point current_position;
     Direction current_direction;
+    Movement current_movement;
 };
-
 
 }
