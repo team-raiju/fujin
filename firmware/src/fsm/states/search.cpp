@@ -99,6 +99,7 @@ void Search::enter() {
     target_speed = 0;
     rotation_ratio = 0;
     target_travel = Navigation::HALF_CELL_SIZE_CM;
+    current_movement = Movement::FORWARD;
 
     // auto maze = Maze::instance();
 }
