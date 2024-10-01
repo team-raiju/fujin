@@ -37,4 +37,9 @@ bool ir_reading_wall(SensingDirection) {
     return true;
 }
 
+uint32_t ir_reading(SensingDirection direction) {
+    return dummy_readings[direction];
+}
+
+
 } // namespace
