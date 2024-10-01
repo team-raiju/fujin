@@ -13,8 +13,6 @@ struct ButtonPressed {
 
 struct Timeout {};
 
-struct UpdateMaze {};
-
-using Event = std::variant<BleCommand, UsbCommand, ButtonPressed, Timeout, UpdateMaze>;
+using Event = std::variant<BleCommand, UsbCommand, ButtonPressed, Timeout>;
 
 }

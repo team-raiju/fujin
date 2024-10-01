@@ -7,6 +7,7 @@
 #include "services/maze.hpp"
 #include "utils/RingBuffer.hpp"
 #include "utils/math.hpp"
+#include "bsp/timers.hpp"
 
 namespace services {
 
@@ -104,6 +105,7 @@ void Maze::print(Point const& curr) {
         }
 
         std::printf("\r\n");
+        bsp::delay_ms(2);
 
         // Left, value, right
         for (int x = 0; x < CELLS_X; x++) {
@@ -121,6 +123,8 @@ void Maze::print(Point const& curr) {
         }
 
         std::printf("\r\n");
+        bsp::delay_ms(2);
+
 
         // Print bottom borders
         for (int x = 0; x < CELLS_X; x++) {
@@ -130,6 +134,7 @@ void Maze::print(Point const& curr) {
 
         std::printf("\r\n");
         std::printf("\033[39m");
+        bsp::delay_ms(2);
     }
 }
 

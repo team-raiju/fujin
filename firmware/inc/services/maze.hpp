@@ -7,10 +7,6 @@
 
 namespace services {
 
-// TODO: not here, physical stuff
-// static constexpr float CELL_SIZE_CM = 18.0;
-// static constexpr float HALF_CELL_SIZE_CM = 9.0;
-
 class Maze {
 public:
     static constexpr int CELLS_X = 16;

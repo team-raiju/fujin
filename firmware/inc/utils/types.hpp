@@ -14,7 +14,7 @@ static constexpr Direction Directions[] = {NORTH, EAST, SOUTH, WEST};
 enum Movement {
     FORWARD,
     RIGHT,
-    BACKWARD,
+    TURN_AROUND,
     LEFT,
 };
 

@@ -39,9 +39,6 @@ public:
         return nullptr;
     };
 
-    virtual State* react(UpdateMaze const&) {
-        return nullptr;
-    };
 };
 
 /// @section Idle States
@@ -74,20 +71,24 @@ public:
 
 class Search : public State {
 public:
-    Search() : angular_vel_pid(0.0f, 0.0f, 0.0f, 0.0f) {}
-
+    Search() : angular_vel_pid(0.0f, 0.0f, 0.0f, 0.0f),
+                walls_pid(0.0f, 0.0f, 0.0f, 0.0f){}
     void enter() override;
     void exit() override;
 
     State* react(BleCommand const&) override;
     State* react(ButtonPressed const&) override;
     State* react(Timeout const&) override;
-    State* react(UpdateMaze const&) override;
 
 private:
     int stop_counter;
     algorithm::PID angular_vel_pid;
+    algorithm::PID walls_pid;
     Movement current_movement;
+    uint8_t movement_state;
+    float target_speed;
+    float rotation_ratio;
+    float target_travel;
 };
 
 class SearchFront : public Search {

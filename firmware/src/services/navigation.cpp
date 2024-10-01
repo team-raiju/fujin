@@ -64,6 +64,10 @@ float Navigation::get_traveled_cm(void) {
     return traveled_dist;
 }
 
+void Navigation::set_traveled_cm(float dist) {
+    traveled_dist = dist;
+}
+
 Direction Navigation::get_robot_direction(void) {
     return current_direction;
 }
@@ -78,6 +82,36 @@ Point Navigation::get_robot_position(void) {
 
 void Navigation::move(Movement) {
     // Actually move the robot here and update its position
+    switch (current_direction) {
+    case NORTH:
+        current_position.y++;
+        break;
+    case EAST:
+        current_position.x++;
+        break;
+    case SOUTH:
+        current_position.y--;
+        break;
+    case WEST:
+        current_position.x--;
+        break;
+    default:
+        break;
+    }
+}
+
+Movement Navigation::get_target_movement(Direction robot_dir, Direction target_dir) {
+    if (target_dir == robot_dir) {
+        return FORWARD;
+    } else if ((target_dir == NORTH && robot_dir == WEST) || (target_dir == EAST && robot_dir == NORTH) ||
+               (target_dir == SOUTH && robot_dir == EAST) || (target_dir == WEST && robot_dir == SOUTH)) {
+        return RIGHT;
+    } else if ((target_dir == NORTH && robot_dir == SOUTH) || (target_dir == EAST && robot_dir == WEST) ||
+               (target_dir == SOUTH && robot_dir == NORTH) || (target_dir == WEST && robot_dir == EAST)) {
+        return TURN_AROUND;
+    } else {
+        return LEFT;
+    }
 }
 
 }

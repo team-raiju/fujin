@@ -17,6 +17,26 @@
 using services::Maze;
 using services::Navigation;
 
+static uint8_t cell_wall(Direction robot_dir, bool front_seeing, bool right_seeing, bool left_seeing) {
+
+    uint8_t walls = 0;
+    switch (robot_dir) {
+    case NORTH:
+        walls = front_seeing * N | right_seeing * E | left_seeing * W;
+        break;
+    case EAST:
+        walls = front_seeing * E | right_seeing * S | left_seeing * N;
+        break;
+    case SOUTH:
+        walls = front_seeing * S | right_seeing * W | left_seeing * E;
+        break;
+    case WEST:
+        walls = front_seeing * W | right_seeing * N | left_seeing * S;
+        break;
+    }
+    return walls;
+}
+
 namespace fsm {
 
 void PreSearch::enter() {
@@ -62,6 +82,7 @@ void Search::enter() {
     soft_timer::start(1, soft_timer::CONTINUOUS);
 
     stop_counter = 0;
+    movement_state = 0;
 
     angular_vel_pid.reset();
     angular_vel_pid.kp = 10.0;
@@ -69,9 +90,17 @@ void Search::enter() {
     angular_vel_pid.kd = 0;
     angular_vel_pid.integral_limit = 0;
 
-    auto maze = Maze::instance();
-    // maze->init_steps({Maze::GOAL_X_POS, Maze::GOAL_Y_POS});
-    // maze->calculate_steps({Maze::GOAL_X_POS, Maze::GOAL_Y_POS}, Maze::SEARCH);
+    walls_pid.reset();
+    walls_pid.kp = 10.0;
+    walls_pid.ki = 0;
+    walls_pid.kd = 0;
+    walls_pid.integral_limit = 0;
+
+    target_speed = 0;
+    rotation_ratio = 0;
+    target_travel = Navigation::HALF_CELL_SIZE_CM;
+
+    // auto maze = Maze::instance();
 }
 
 State* Search::react(BleCommand const&) {
@@ -91,54 +120,120 @@ State* Search::react(ButtonPressed const& event) {
 }
 
 State* Search::react(Timeout const&) {
+    using bsp::analog_sensors::ir_reading;
+    using bsp::analog_sensors::SensingDirection;
+
     auto navigation = Navigation::instance();
 
-    float target_speed = 0;
-    float rotation_ratio = 0;
+    bool update_maze = false;
     navigation->update();
     bsp::imu::update();
+
+    auto left_ir = ir_reading(SensingDirection::LEFT);
+    auto right_ir = ir_reading(SensingDirection::RIGHT);
 
     switch (current_movement) {
     case Movement::FORWARD:
         target_speed = 50;
         rotation_ratio = angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
-        // if (navigation->get_traveled_cm() > Maze::CELL_SIZE_CM) {
-        //     // dispatch(UpdateMaze());
-        // }
+        rotation_ratio += walls_pid.calculate(0.0, (left_ir - right_ir));
+        if (navigation->get_traveled_cm() > target_travel) {
+            navigation->move(current_movement);
+            update_maze = true;
+        }
         break;
 
     case Movement::RIGHT:
-        target_speed = 0;
-        rotation_ratio = 30;
-        if (std::abs(bsp::imu::get_angle()) > (M_PI_2 - 0.2)) {
-            // dispatch(UpdateMaze());
+        // Move half a cell, turn right, move half a cell
+        if (movement_state == 0) {
+            target_speed = std::min(target_speed - 0.05, 0.0);
+            rotation_ratio = angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
+            if (navigation->get_traveled_cm() > Navigation::HALF_CELL_SIZE_CM) {
+                movement_state = 1;
+            }
+        } else if (movement_state == 1) {
+            target_speed = 0;
+            rotation_ratio = 30;
+            if (std::abs(bsp::imu::get_angle()) > (M_PI_2 - 0.2)) {
+                navigation->set_traveled_cm(0);
+                movement_state = 2;
+            }
+        } else if (movement_state == 2) {
+            target_speed = std::max(target_speed + 0.05, 50.0);
+            rotation_ratio = angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
+            if (navigation->get_traveled_cm() > Navigation::HALF_CELL_SIZE_CM) {
+                navigation->move(current_movement);
+                update_maze = true;
+            }
         }
+
         break;
 
     case Movement::LEFT:
-        target_speed = 0;
-        rotation_ratio = -30;
-        if (std::abs(bsp::imu::get_angle()) > (M_PI_2 - 0.2)) {
-            // dispatch(UpdateMaze());
+        // Move half a cell, turn left, move half a cell
+        if (movement_state == 0) {
+            target_speed = std::min(target_speed - 0.05, 0.0);
+            rotation_ratio = angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
+            if (navigation->get_traveled_cm() > Navigation::HALF_CELL_SIZE_CM) {
+                movement_state = 1;
+            }
+        } else if (movement_state == 1) {
+            target_speed = 0;
+            rotation_ratio = -30;
+            if (std::abs(bsp::imu::get_angle()) > (M_PI_2 - 0.2)) {
+                navigation->set_traveled_cm(0);
+                movement_state = 2;
+            }
+        } else if (movement_state == 2) {
+            target_speed = std::max(target_speed + 0.05, 50.0);
+            rotation_ratio = angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
+            if (navigation->get_traveled_cm() > Navigation::HALF_CELL_SIZE_CM) {
+                navigation->move(current_movement);
+                update_maze = true;
+            }
         }
         break;
 
-    case Movement::BACKWARD:
+    case Movement::TURN_AROUND:
         target_speed = 0;
         rotation_ratio = -30;
         if (std::abs(bsp::imu::get_angle()) > (M_PI - 0.4)) {
-            // dispatch(UpdateMaze());
+            navigation->move(current_movement);
+            update_maze = true;
         }
-        break;
-
-    default:
-        return &State::get<PreSearch>();
         break;
     }
 
     float speed_l = target_speed + rotation_ratio;
     float speed_r = target_speed - rotation_ratio;
     bsp::motors::set(speed_l, speed_r);
+
+    if (update_maze) {
+        using bsp::analog_sensors::ir_reading_wall;
+        using bsp::analog_sensors::SensingDirection;
+        bool front_seeing =
+            ir_reading_wall(SensingDirection::FRONT_LEFT) || ir_reading_wall(SensingDirection::FRONT_RIGHT);
+        bool right_seeing = ir_reading_wall(SensingDirection::RIGHT);
+        bool left_seeing = ir_reading_wall(SensingDirection::LEFT);
+        auto maze = Maze::instance();
+        auto navigation = Navigation::instance();
+
+        auto robot_pos = navigation->get_robot_position();
+        auto robot_dir = navigation->get_robot_direction();
+
+        uint8_t walls = cell_wall(robot_dir, front_seeing, right_seeing, left_seeing);
+
+        auto dir = maze->next_step(robot_pos, walls, false);
+        current_movement = navigation->get_target_movement(robot_dir, dir);
+        navigation->set_traveled_cm(0);
+        bsp::imu::reset_angle();
+        movement_state = 0;
+        target_travel = Navigation::CELL_SIZE_CM;
+
+        if (robot_pos == services::Maze::GOAL_POS) {
+            return &State::get<PreSearch>();
+        }
+    }
 
     // if (stop_counter++ > 300) {
     //     return &State::get<PreSearch>();
@@ -147,41 +242,11 @@ State* Search::react(Timeout const&) {
     return nullptr;
 }
 
-State* Search::react(UpdateMaze const&) {
-    using bsp::analog_sensors::ir_reading_wall;
-    using bsp::analog_sensors::SensingDirection;
-
-    bool front_seeing = ir_reading_wall(SensingDirection::FRONT_LEFT) || ir_reading_wall(SensingDirection::FRONT_RIGHT);
-    bool right_seeing = ir_reading_wall(SensingDirection::RIGHT);
-    bool left_seeing = ir_reading_wall(SensingDirection::LEFT);
-
-    auto maze = Maze::instance();
-    auto navigation = Navigation::instance();
-
-    auto robot_pos = navigation->get_robot_position();
-    auto robot_dir = navigation->get_robot_direction();
-
-    // Goal reached
-    // if (robot_pos.x == Maze::GOAL_X_POS && robot_pos.y == Maze::GOAL_Y_POS) {
-    //     return &State::get<PreSearch>();
-    // }
-
-    // maze->update_walls(robot_pos, robot_dir, front_seeing, right_seeing, left_seeing);
-    // maze->init_steps({Maze::GOAL_X_POS, Maze::GOAL_Y_POS});
-    // maze->calculate_steps({Maze::GOAL_X_POS, Maze::GOAL_Y_POS}, Maze::SEARCH);
-
-    // auto next_direction = maze->get_target_cell_dir(robot_pos, robot_dir, Maze::SEARCH);
-    // current_movement = maze->get_target_movement(robot_dir, next_direction);
-
-    // 7. prepare velocity and params for next movement
-
-    return nullptr;
-}
-
 void Search::exit() {
     bsp::motors::set(0, 0);
     bsp::leds::ir_emitter_all_off();
     bsp::leds::indication_off();
+    soft_timer::stop();
 }
 
 }
