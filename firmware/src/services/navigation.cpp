@@ -10,7 +10,7 @@
 
 /// @section Constants
 
-static constexpr float WHEEL_RADIUS_CM = (1.27);
+static constexpr float WHEEL_RADIUS_CM = (1.30);
 static constexpr float WHEEL_PERIMETER_CM = (M_TWOPI * WHEEL_RADIUS_CM);
 
 static constexpr float WHEEL_TO_ENCODER_RATIO = (1.0);
@@ -33,8 +33,6 @@ Navigation* Navigation::instance() {
 }
 
 void Navigation::init(void) {
-    bsp::leds::ir_emitter_all_on();
-
     reset();
 
     if (!is_initialized) {
@@ -61,9 +59,9 @@ void Navigation::reset(void) {
 
     angular_vel_pid.reset();
     angular_vel_pid.kp = 10.0;
-    angular_vel_pid.ki = 0;
+    angular_vel_pid.ki = 1;
     angular_vel_pid.kd = 0;
-    angular_vel_pid.integral_limit = 0;
+    angular_vel_pid.integral_limit = 1000;
 
     walls_pid.reset();
     walls_pid.kp = 10.0;
@@ -110,8 +108,8 @@ bool Navigation::step() {
 
     case Movement::FORWARD:
         target_speed = 50;
-        rotation_ratio = angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
-        rotation_ratio += walls_pid.calculate(0.0, (left_ir - right_ir));
+        rotation_ratio = -angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
+        //rotation_ratio += walls_pid.calculate(0.0, (left_ir - right_ir));
         if (traveled_dist >= target_travel) {
             update_position();
             current_movement = STOP;
@@ -121,8 +119,8 @@ bool Navigation::step() {
     case Movement::RIGHT:
         // Move half a cell, turn right, move half a cell
         if (state == 0) {
-            target_speed = std::min(target_speed - 0.05, 0.0);
-            rotation_ratio = angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
+            target_speed = std::max(target_speed - 0.05, 0.0);
+            rotation_ratio = -angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
             if (traveled_dist > HALF_CELL_SIZE_CM) {
                 state = 1;
             }
@@ -134,8 +132,8 @@ bool Navigation::step() {
                 state = 2;
             }
         } else if (state == 2) {
-            target_speed = std::max(target_speed + 0.05, 50.0);
-            rotation_ratio = angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
+            target_speed = std::min(target_speed + 0.05, 50.0);
+            rotation_ratio = -angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
             if (traveled_dist > HALF_CELL_SIZE_CM) {
                 update_position();
                 current_movement = STOP;
@@ -147,8 +145,8 @@ bool Navigation::step() {
     case Movement::LEFT:
         // Move half a cell, turn left, move half a cell
         if (state == 0) {
-            target_speed = std::min(target_speed - 0.05, 0.0);
-            rotation_ratio = angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
+            target_speed = std::max(target_speed - 0.05, 0.0);
+            rotation_ratio = -angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
             if (traveled_dist > HALF_CELL_SIZE_CM) {
                 state = 1;
             }
@@ -160,8 +158,8 @@ bool Navigation::step() {
                 state = 2;
             }
         } else if (state == 2) {
-            target_speed = std::max(target_speed + 0.05, 50.0);
-            rotation_ratio = angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
+            target_speed = std::min(target_speed + 0.05, 50.0);
+            rotation_ratio = -angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
             if (traveled_dist > HALF_CELL_SIZE_CM) {
                 update_position();
                 current_movement = STOP;

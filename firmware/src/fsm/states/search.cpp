@@ -57,6 +57,7 @@ Search::Search() {
 void Search::enter() {
     bsp::debug::print("state:Search");
     bsp::leds::indication_on();
+    bsp::leds::ir_emitter_all_on();
 
     bsp::buzzer::start();
     bsp::delay_ms(2000);
@@ -73,11 +74,19 @@ State* Search::react(BleCommand const&) {
 
 State* Search::react(ButtonPressed const& event) {
     if (event.button == ButtonPressed::SHORT1) {
-        return nullptr;
+        return &State::get<PreSearch>();
     }
 
     if (event.button == ButtonPressed::SHORT2) {
-        return nullptr;
+        return &State::get<PreSearch>();
+    }
+
+    if (event.button == ButtonPressed::LONG1) {
+        return &State::get<PreSearch>();
+    }
+
+    if (event.button == ButtonPressed::LONG2) {
+        return &State::get<PreSearch>();
     }
 
     return nullptr;
