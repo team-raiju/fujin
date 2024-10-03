@@ -10,7 +10,7 @@
 
 /// @section Constants
 
-static constexpr float WHEEL_RADIUS_CM = (1.30);
+static constexpr float WHEEL_RADIUS_CM = (1.32);
 static constexpr float WHEEL_PERIMETER_CM = (M_TWOPI * WHEEL_RADIUS_CM);
 
 static constexpr float WHEEL_TO_ENCODER_RATIO = (1.0);
@@ -59,12 +59,12 @@ void Navigation::reset(void) {
 
     angular_vel_pid.reset();
     angular_vel_pid.kp = 10.0;
-    angular_vel_pid.ki = 1;
+    angular_vel_pid.ki = 0.1;
     angular_vel_pid.kd = 0;
     angular_vel_pid.integral_limit = 1000;
 
     walls_pid.reset();
-    walls_pid.kp = 10.0;
+    walls_pid.kp = 0.001;
     walls_pid.ki = 0;
     walls_pid.kd = 0;
     walls_pid.integral_limit = 0;
@@ -93,12 +93,8 @@ void Navigation::update(void) {
 }
 
 bool Navigation::step() {
-    using bsp::analog_sensors::ir_reading;
-    using bsp::analog_sensors::ir_reading_wall;
+    using bsp::analog_sensors::ir_side_wall_error;
     using bsp::analog_sensors::SensingDirection;
-
-    auto left_ir = ir_reading(SensingDirection::LEFT);
-    auto right_ir = ir_reading(SensingDirection::RIGHT);
 
     switch (current_movement) {
     case Movement::STOP:
@@ -106,15 +102,20 @@ bool Navigation::step() {
         is_finished = true;
         break;
 
-    case Movement::FORWARD:
+    case Movement::FORWARD: {
+
         target_speed = 50;
-        rotation_ratio = -angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
-        //rotation_ratio += walls_pid.calculate(0.0, (left_ir - right_ir));
+
+        float wall_desired_rad_s = walls_pid.calculate(0.0, ir_side_wall_error());
+        
+        rotation_ratio = -angular_vel_pid.calculate(wall_desired_rad_s, bsp::imu::get_rad_per_s());
+
         if (traveled_dist >= target_travel) {
             update_position();
             current_movement = STOP;
         }
         break;
+    }
 
     case Movement::RIGHT:
         // Move half a cell, turn right, move half a cell
@@ -168,12 +169,28 @@ bool Navigation::step() {
         break;
 
     case Movement::TURN_AROUND:
-        target_speed = 0;
-        rotation_ratio = -30;
 
-        if (std::abs(bsp::imu::get_angle()) > (M_PI - 0.4)) {
-            update_position();
-            current_movement = STOP;
+        // Move half a cell, turn 180, move half a cell
+        if (state == 0) {
+            target_speed = std::max(target_speed - 0.05, 0.0);
+            rotation_ratio = -angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
+            if (traveled_dist > HALF_CELL_SIZE_CM) {
+                state = 1;
+            }
+        }  else if (state == 1) {
+            target_speed = 0;
+            rotation_ratio = -30;
+            if (std::abs(bsp::imu::get_angle()) > (M_PI_2 - 0.2)) {
+                traveled_dist = 0;
+                state = 2;
+            }
+        } else if (state == 2) {
+            target_speed = std::min(target_speed + 0.05, 50.0);
+            rotation_ratio = -angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
+            if (traveled_dist > HALF_CELL_SIZE_CM) {
+                update_position();
+                current_movement = STOP;
+            }
         }
 
         break;

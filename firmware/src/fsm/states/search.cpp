@@ -58,6 +58,7 @@ void Search::enter() {
     bsp::debug::print("state:Search");
     bsp::leds::indication_on();
     bsp::leds::ir_emitter_all_on();
+    bsp::analog_sensors::enable_modulation(true);
 
     bsp::buzzer::start();
     bsp::delay_ms(2000);
@@ -123,6 +124,7 @@ State* Search::react(Timeout const&) {
 
 void Search::exit() {
     bsp::motors::set(0, 0);
+    bsp::analog_sensors::enable_modulation(false);
     bsp::leds::ir_emitter_all_off();
     bsp::leds::indication_off();
     soft_timer::stop();
