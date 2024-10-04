@@ -45,6 +45,7 @@ private:
     Point current_position;
     Direction current_direction;
     Movement current_movement;
+    Direction target_direction;
 };
 
 }

@@ -29,6 +29,8 @@ static constexpr float MIN_TURN_SPEED = 16.0; // Motor PWM
 
 static constexpr float SEARCH_SPEED = 50.0;     // Motor PWM
 
+static constexpr float ROBOT_DIST_FROM_CENTER_START = 2.0;
+
 /// @section Service implementation
 
 namespace services {
@@ -77,7 +79,7 @@ void Navigation::reset(void) {
 
     target_speed = 0;
     rotation_ratio = 0;
-    target_travel = HALF_CELL_SIZE_CM;
+    target_travel = HALF_CELL_SIZE_CM + ROBOT_DIST_FROM_CENTER_START;
     current_movement = Movement::FORWARD;
 }
 
@@ -104,7 +106,6 @@ bool Navigation::step() {
 
     switch (current_movement) {
     case Movement::STOP:
-        target_speed = 0;
         is_finished = true;
         break;
 
@@ -118,7 +119,7 @@ bool Navigation::step() {
 
         if (traveled_dist >= target_travel) {
             update_position();
-            current_movement = STOP;
+            is_finished = true;
         }
         break;
     }
@@ -163,7 +164,7 @@ bool Navigation::step() {
             rotation_ratio = -angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
             if (traveled_dist > HALF_CELL_SIZE_CM) {
                 update_position();
-                current_movement = STOP;
+                is_finished = true;
             }
         }
 
@@ -182,7 +183,7 @@ bool Navigation::step() {
         } else if (state == 1) {
             target_speed = 0.0;
             rotation_ratio = -angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
-            if (bsp::get_tick_ms() - reference_time > 250) {
+            if (bsp::get_tick_ms() - reference_time > 150) {
                 state = 2;
             }
         } else if (state == 2) {
@@ -210,7 +211,7 @@ bool Navigation::step() {
             rotation_ratio = -angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
             if (traveled_dist > HALF_CELL_SIZE_CM) {
                 update_position();
-                current_movement = STOP;
+                is_finished = true;
             }
         }
 
@@ -221,14 +222,14 @@ bool Navigation::step() {
         if (state == 0) {
             target_speed = std::max(float(target_speed - 0.05), MIN_MOVE_SPEED);
             rotation_ratio = -angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
-            if (traveled_dist > HALF_CELL_SIZE_CM) {
+            if (traveled_dist > HALF_CELL_SIZE_CM - ROBOT_DIST_FROM_CENTER_START) {
                 state = 1;
                 reference_time = bsp::get_tick_ms();
             }
         } else if (state == 1) {
             target_speed = 0.0;
             rotation_ratio = -angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
-            if (bsp::get_tick_ms() - reference_time > 250) {
+            if (bsp::get_tick_ms() - reference_time > 150) {
                 state = 2;
             }
         } else if (state == 2) {
@@ -254,9 +255,9 @@ bool Navigation::step() {
         } else if (state == 4) {
             target_speed = std::min(float(target_speed + 0.05), SEARCH_SPEED);
             rotation_ratio = -angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
-            if (traveled_dist > HALF_CELL_SIZE_CM) {
+            if (traveled_dist > HALF_CELL_SIZE_CM - ROBOT_DIST_FROM_CENTER_START) {
                 update_position();
-                current_movement = STOP;
+                is_finished = true;
             }
         }
 
@@ -285,9 +286,11 @@ void Navigation::move(Direction dir) {
     traveled_dist = 0;
     state = 0;
     target_travel = CELL_SIZE_CM;
+    is_finished = false;
 }
 
 void Navigation::update_position() {
+    current_direction = target_direction;
     switch (current_direction) {
     case Direction::NORTH:
         current_position.y++;
@@ -308,6 +311,8 @@ void Navigation::update_position() {
 
 Movement Navigation::get_movement(Direction target_dir) {
     using enum Direction;
+
+    target_direction = target_dir;
 
     if (target_dir == current_direction) {
         return FORWARD;

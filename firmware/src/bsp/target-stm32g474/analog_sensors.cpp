@@ -3,7 +3,6 @@
 #include "bsp/analog_sensors.hpp"
 #include "bsp/leds.hpp"
 #include "bsp/timers.hpp"
-#include <cstdio>
 
 namespace bsp::analog_sensors {
 
