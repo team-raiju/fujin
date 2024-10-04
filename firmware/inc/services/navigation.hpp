@@ -38,6 +38,7 @@ private:
 
     // The service uses a mini-fsm to update it's movement on each iteration
     uint8_t state;
+    uint32_t reference_time;
     float traveled_dist = 0;
     int32_t encoder_right_counter;
     int32_t encoder_left_counter;
