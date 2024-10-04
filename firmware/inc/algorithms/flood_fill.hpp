@@ -54,7 +54,7 @@ template <int width, int height>
 void flood_fill(Grid<width, height>& grid, Point const& target) {
     // Reset the value of every cell
     for (int x = 0; x < width; x++) {
-        for (int y = 0; y < width; y++) {
+        for (int y = 0; y < height; y++) {
             grid[x][y].value = 255;
         }
     }
