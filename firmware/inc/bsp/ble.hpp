@@ -15,8 +15,10 @@ constexpr uint8_t max_packet_size = 20;
 
 enum BlePacketType : uint8_t {
     Command = 0x00,
-    RequestData = 0x01,
+    RequestParameters = 0x01,
     UpdateParameters = 0x02,
+    SensorData = 0x03,
+    BatteryData = 0x04,
     MazeData = 0x05,
 };
 
