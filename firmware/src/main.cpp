@@ -22,6 +22,7 @@ void startup() {
     bsp::leds::indication_off();
     bsp::buzzer::stop();
     bsp::analog_sensors::start();
+    bsp::delay_ms(30);
     bsp::ble::init();
     bsp::ble::start();
 }

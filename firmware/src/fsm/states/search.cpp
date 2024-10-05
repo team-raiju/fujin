@@ -33,7 +33,11 @@ void PreSearch::enter() {
 
     bsp::motors::set(0, 0);
 
-    soft_timer::start(100, soft_timer::SINGLE);
+    /* Only start IR if powered by the battery */
+    if (bsp::analog_sensors::battery_latest_reading_mv() > 7000) {
+        soft_timer::start(100, soft_timer::SINGLE);
+    }
+
 }
 
 State* PreSearch::react(Timeout const&) {
@@ -151,19 +155,21 @@ State* Search::react(Timeout const&) {
             return &State::get<Idle>();
         }
 
-        if (robot_pos == services::Maze::GOAL_POS && !returning) {
-            stop_next_move = true;
-        }
-
         auto dir = maze->next_step(robot_pos, walls, returning);
 
-        if (stop_next_move && dir == robot_dir) {
+        if (stop_next_move) {
             returning = true;
             stop_next_move = false;
             navigation->stop();
         } else {
             navigation->move(dir);
         }
+
+
+        if (robot_pos == services::Maze::GOAL_POS && !returning) {
+            stop_next_move = true;
+        }
+
     }
 
     return nullptr;

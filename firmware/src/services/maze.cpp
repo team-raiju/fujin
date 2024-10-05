@@ -100,6 +100,33 @@ Direction Maze::next_step(Point const& current_position, uint8_t walls, bool ret
     return next_direction;
 }
 
+std::array<Direction, 256> Maze::directions_to_goal() {
+    std::array<Direction, 256> directions;
+    Point pos = ORIGIN;
+    int i = 0;
+
+    while (pos != GOAL_POS) {
+        auto dir = next_step(pos, map[pos.x][pos.y].walls, false);
+        directions[i++] = dir;
+        switch (dir) {
+            case Direction::NORTH:
+                pos.y += 1;
+                break;
+            case Direction::EAST:
+                pos.x += 1;
+                break;
+            case Direction::SOUTH:
+                pos.y -= 1;
+                break;
+            case Direction::WEST:
+                pos.x -= 1;
+                break;
+        }
+    }
+
+    return directions;
+}
+
 void Maze::print(Point const& curr) {
     for (int y = (CELLS_Y - 1); y >= 0; y--) {
         // Top

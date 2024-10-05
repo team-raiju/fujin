@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <array>
 
 #include "algorithms/flood_fill.hpp"
 #include "navigation.hpp"
@@ -30,6 +31,8 @@ public:
     Maze(const Maze&) = delete;
 
     algorithm::Grid<CELLS_X, CELLS_Y> map;
+
+    std::array<Direction, 256> directions_to_goal();
 
 private:
     Maze();

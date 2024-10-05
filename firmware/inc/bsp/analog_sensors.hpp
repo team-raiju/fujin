@@ -33,6 +33,8 @@ void register_callback(bsp_analog_ready_callback_t callback);
 uint32_t* ir_latest_reading(void);
 uint32_t battery_latest_reading(void);
 uint32_t* current_latest_reading(void);
+float battery_latest_reading_mv(void);
+bool battery_low();
 
 uint32_t ir_reading(SensingDirection direction);
 bool ir_reading_wall(SensingDirection direction);

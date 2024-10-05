@@ -30,6 +30,14 @@ namespace bsp::analog_sensors {
 #define ADC_2_DMA_HALF_BUFFER_SIZE (ADC_2_DMA_BUFFER_SIZE / 2)
 
 
+#define ADC_MAX_VALUE      4095.0
+#define ADC_MAX_VOLTAGE_MV 3300.0
+#define PWR_BATTERY_THRESHOLD_MV   11200.0
+#define PWR_BAT_VOLTAGE_DIV_R1     100.0
+#define PWR_BAT_VOLTAGE_DIV_R2     33.0
+#define PWR_BAT_VOLTAGE_MULTIPLIER ((PWR_BAT_VOLTAGE_DIV_R1 + PWR_BAT_VOLTAGE_DIV_R2) / PWR_BAT_VOLTAGE_DIV_R2)
+#define PWR_BAT_POSITION_IN_ADC    4
+
 /// @section Private variables
 
 static uint32_t adc_1_dma_buffer[ADC_1_DMA_BUFFER_SIZE];
@@ -97,6 +105,15 @@ uint32_t* ir_latest_reading(void) {
 
 uint32_t battery_latest_reading(void) {
     return battery_reading;
+}
+
+float battery_latest_reading_mv(void) {
+    float measured_adc_voltage = (battery_reading / ADC_MAX_VALUE) * ADC_MAX_VOLTAGE_MV;
+    return measured_adc_voltage * PWR_BAT_VOLTAGE_MULTIPLIER;
+}
+
+bool battery_low() {
+    return battery_latest_reading_mv() <= PWR_BATTERY_THRESHOLD_MV;
 }
 
 uint32_t* current_latest_reading(void) {

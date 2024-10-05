@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <array>
 
 #include "algorithms/pid.hpp"
 #include "fsm/event.hpp"
@@ -59,6 +60,29 @@ public:
 
     State* react(BleCommand const&) override;
     State* react(ButtonPressed const&) override;
+    State* react(Timeout const&) override;
+};
+
+/// @section Run States
+
+class Run : public State {
+public:
+    Run();
+
+    void enter() override;
+    void exit() override;
+
+    State* react(BleCommand const&) override;
+    State* react(ButtonPressed const&) override;
+    State* react(Timeout const&) override;
+
+private:
+    uint16_t stop_counter;
+    services::Navigation* navigation;
+    services::Maze* maze;
+    bool stop_next_move;
+    std::array<Direction, 256> target_directions;
+    int move_count = 0;
 };
 
 /// @section Search States
