@@ -162,7 +162,7 @@ State* Search::react(Timeout const&) {
             stop_next_move = false;
             navigation->stop();
         } else {
-            navigation->move(dir);
+            navigation->move(dir, 1);
         }
 
 

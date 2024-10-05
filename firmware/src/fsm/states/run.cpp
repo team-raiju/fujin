@@ -102,7 +102,7 @@ void Run::enter() {
 
     target_directions = maze->directions_to_goal();
 
-    move_count = 0;
+    move_count = 1;
 }
 
 State* Run::react(ButtonPressed const& event) {
@@ -145,12 +145,14 @@ State* Run::react(Timeout const&) {
             stop_next_move = true;
         }
 
+        // auto cells = cells_to_move[move_count];
+        auto cells = 1;
         auto dir = target_directions[move_count++];
 
         if (robot_pos == services::Maze::GOAL_POS) {
             return &State::get<Idle>();
         } else {
-            navigation->move(dir);
+            navigation->move(dir, cells);
         }
 
     }

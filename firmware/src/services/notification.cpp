@@ -70,18 +70,19 @@ void Notification::update() {
     }
 
     case SEND_SENSORS: {
-        auto sensors = bsp::analog_sensors::ir_latest_reading();
+        using namespace bsp::analog_sensors;
+        auto sensors = ir_latest_reading();
         uint8_t data[] = {
             bsp::ble::header,
             bsp::ble::BlePacketType::SensorData,
-            uint8_t((sensors[0] & 0x00F0) >> 4),
-            uint8_t(sensors[0] & 0x000F),
-            uint8_t((sensors[1] & 0x00F0) >> 4),
-            uint8_t(sensors[1] & 0x000F),
-            uint8_t((sensors[2] & 0x00F0) >> 4),
-            uint8_t(sensors[2] & 0x000F),
-            uint8_t((sensors[3] & 0x00F0) >> 4),
-            uint8_t(sensors[3] & 0x000F),
+            uint8_t((sensors[SensingDirection::LEFT] & 0xFF00) >> 8),
+            uint8_t(sensors[SensingDirection::LEFT] & 0x00FF),
+            uint8_t((sensors[SensingDirection::FRONT_LEFT] & 0xFF00) >> 8),
+            uint8_t(sensors[SensingDirection::FRONT_LEFT] & 0x00FF),
+            uint8_t((sensors[SensingDirection::FRONT_RIGHT] & 0xFF00) >> 8),
+            uint8_t(sensors[SensingDirection::FRONT_RIGHT] & 0x00FF),
+            uint8_t((sensors[SensingDirection::RIGHT] & 0xFF00) >> 8),
+            uint8_t(sensors[SensingDirection::RIGHT] & 0x00FF),
             bsp::ble::header,
         };
 
@@ -91,10 +92,10 @@ void Notification::update() {
     }
 
     case SEND_BATTERY: {
-        auto bat = bsp::analog_sensors::battery_latest_reading();
+        uint32_t bat = bsp::analog_sensors::battery_latest_reading_mv();
 
         uint8_t data[] = {
-            bsp::ble::header, bsp::ble::BlePacketType::BatteryData, uint8_t((bat & 0x00F0) >> 4), uint8_t(bat & 0x000F),
+            bsp::ble::header, bsp::ble::BlePacketType::BatteryData, uint8_t((bat & 0xFF00) >> 8), uint8_t(bat & 0x00FF),
             bsp::ble::header,
         };
 

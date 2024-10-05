@@ -19,7 +19,7 @@ public:
 
     Point get_robot_position();
     Direction get_robot_direction();
-    void move(Direction);
+    void move(Direction dir, uint8_t cells);
     void stop();
 
 private:

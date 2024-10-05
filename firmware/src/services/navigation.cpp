@@ -30,6 +30,7 @@ static constexpr float MIN_TURN_SPEED = 16.0; // Motor PWM
 static constexpr float FIX_POSITION_SPEED = 20.0; // Motor PWM
 
 static constexpr float SEARCH_SPEED = 50.0; // Motor PWM
+static constexpr float RUN_SPEED = 100.0; // Motor PWM
 
 static constexpr float ROBOT_DIST_FROM_CENTER_START = 2.0;
 
@@ -192,9 +193,13 @@ bool Navigation::step() {
 
         bool front_emergency =
             ir_reading(SensingDirection::FRONT_LEFT) > 3000 && ir_reading(SensingDirection::FRONT_RIGHT) > 3000 &&
-            ir_reading(SensingDirection::LEFT) > 2950 && ir_reading(SensingDirection::RIGHT) > 2950;
+            ir_reading(SensingDirection::LEFT) > 2800 && ir_reading(SensingDirection::RIGHT) > 2800;
 
-        target_speed = std::min((target_speed + LINEAR_ACCEL), SEARCH_SPEED);
+        if (std::abs(traveled_dist) >= (target_travel - CELL_SIZE_CM)) {
+            target_speed = std::max((target_speed - LINEAR_ACCEL), SEARCH_SPEED);
+        } else {
+            target_speed = std::min((target_speed + LINEAR_ACCEL), RUN_SPEED);
+        }
 
         float target_rad_s = walls_pid.calculate(0.0, ir_side_wall_error());
         float angle_error = bsp::imu::get_angle();
@@ -202,7 +207,15 @@ bool Navigation::step() {
         rotation_ratio = -angular_vel_pid.calculate(target_rad_s - (angle_error * 0.5) , bsp::imu::get_rad_per_s());
 
         if (std::abs(traveled_dist) >= target_travel || front_emergency) {
+            // bsp::leds::stripe_set(0, Color::Red);
+            // bsp::leds::stripe_set(1, Color::Red);
+            // bsp::leds::stripe_send();
             update_position();
+            // uint8_t cells_travelled = std::abs(traveled_dist) / CELL_SIZE_CM;
+            
+            // for (int i = 0; i < cells_travelled - 1; i++) {
+            //     update_position();
+            // }
             is_finished = true;
         }
         break;
@@ -387,14 +400,20 @@ Direction Navigation::get_robot_direction(void) {
     return current_direction;
 }
 
-void Navigation::move(Direction dir) {
+void Navigation::move(Direction dir, uint8_t cells) {
     bsp::imu::reset_angle();
+
+    if (cells > 1){
+        bsp::leds::stripe_set(0, Color::Blue);
+        bsp::leds::stripe_set(1, Color::Blue);
+        bsp::leds::stripe_send();
+    }
 
     current_movement = get_movement(dir);
     traveled_dist = 0;
     state = 0;
     reference_time = bsp::get_tick_ms();
-    target_travel = CELL_SIZE_CM - 0.5;
+    target_travel = (cells * CELL_SIZE_CM) - 0.5;
     is_finished = false;
 }
 

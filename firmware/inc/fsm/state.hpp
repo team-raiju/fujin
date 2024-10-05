@@ -82,6 +82,7 @@ private:
     services::Maze* maze;
     bool stop_next_move;
     std::array<Direction, 256> target_directions;
+    std::array<uint8_t, 256>  cells_to_move;
     int move_count = 0;
 };
 
