@@ -30,6 +30,30 @@ void PreSearch::enter() {
     bsp::leds::stripe_send();
 
     bsp::motors::set(0, 0);
+
+    soft_timer::start(100, soft_timer::SINGLE);
+}
+
+State* PreSearch::react(Timeout const&) {
+    using bsp::analog_sensors::ir_reading_wall;
+    using bsp::analog_sensors::SensingDirection;
+
+    bsp::leds::ir_emitter_on(bsp::leds::LEFT_FRONT);
+    bsp::leds::ir_emitter_on(bsp::leds::RIGHT_FRONT);
+    bsp::analog_sensors::enable_modulation(true);
+    bsp::delay_ms(5);
+
+    for (int i = 0; i < 400; i++) {
+        if (!ir_reading_wall(SensingDirection::FRONT_LEFT) || !ir_reading_wall(SensingDirection::FRONT_RIGHT)) {
+            soft_timer::start(100, soft_timer::SINGLE);
+            bsp::leds::ir_emitter_all_off();
+            bsp::analog_sensors::enable_modulation(false);
+            return &State::get<PreSearch>();
+        }
+        bsp::delay_ms(1);
+    }
+
+    return &State::get<Search>();
 }
 
 State* PreSearch::react(BleCommand const&) {
@@ -73,6 +97,8 @@ void Search::enter() {
     soft_timer::start(1, soft_timer::CONTINUOUS);
 
     navigation->init();
+
+    returning = false;
 }
 
 State* Search::react(BleCommand const&) {
@@ -81,19 +107,19 @@ State* Search::react(BleCommand const&) {
 
 State* Search::react(ButtonPressed const& event) {
     if (event.button == ButtonPressed::SHORT1) {
-        return &State::get<PreSearch>();
+        return &State::get<Idle>();
     }
 
     if (event.button == ButtonPressed::SHORT2) {
-        return &State::get<PreSearch>();
+        return &State::get<Idle>();
     }
 
     if (event.button == ButtonPressed::LONG1) {
-        return &State::get<PreSearch>();
+        return &State::get<Idle>();
     }
 
     if (event.button == ButtonPressed::LONG2) {
-        return &State::get<PreSearch>();
+        return &State::get<Idle>();
     }
 
     return nullptr;
@@ -117,11 +143,15 @@ State* Search::react(Timeout const&) {
 
         uint8_t walls = (front_seeing * N | right_seeing * E | left_seeing * W) << robot_dir;
 
-        auto dir = maze->next_step(robot_pos, walls, false);
+        auto dir = maze->next_step(robot_pos, walls, returning);
         navigation->move(dir);
 
-        if (robot_pos == services::Maze::GOAL_POS) {
-            return &State::get<PreSearch>();
+        if (robot_pos == services::Maze::GOAL_POS && !returning) {
+            returning = true;
+        }
+
+        if (robot_pos == services::Maze::ORIGIN && returning) {
+            return &State::get<Idle>();
         }
     }
 

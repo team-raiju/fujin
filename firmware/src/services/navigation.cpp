@@ -11,7 +11,7 @@
 
 /// @section Constants
 
-static constexpr float WHEEL_RADIUS_CM = (1.34);
+static constexpr float WHEEL_RADIUS_CM = (1.36);
 static constexpr float WHEEL_PERIMETER_CM = (M_TWOPI * WHEEL_RADIUS_CM);
 
 static constexpr float WHEEL_TO_ENCODER_RATIO = (1.0);
@@ -30,6 +30,9 @@ static constexpr float MIN_TURN_SPEED = 16.0; // Motor PWM
 static constexpr float SEARCH_SPEED = 50.0; // Motor PWM
 
 static constexpr float ROBOT_DIST_FROM_CENTER_START = 2.0;
+
+static constexpr float LINEAR_ACCEL = 0.05;
+static constexpr float ANGULAR_ACCEL = 0.05;
 
 /// @section Service implementation
 
@@ -111,7 +114,7 @@ bool Navigation::step() {
 
     case Movement::FORWARD: {
 
-        target_speed = std::min(float(target_speed + 0.05), SEARCH_SPEED);
+        target_speed = std::min((target_speed + LINEAR_ACCEL), SEARCH_SPEED);
 
         float target_rad_s = walls_pid.calculate(0.0, ir_side_wall_error());
 
@@ -124,10 +127,10 @@ bool Navigation::step() {
         break;
     }
 
-    case Movement::RIGHT:
+    case Movement::RIGHT: {
         // Move half a cell, stop, turn right, stop, move half a cell
         if (state == 0) {
-            target_speed = std::max(float(target_speed - 0.05), MIN_MOVE_SPEED);
+            target_speed = std::max((target_speed - LINEAR_ACCEL), MIN_MOVE_SPEED);
             rotation_ratio = -angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
             if (traveled_dist > HALF_CELL_SIZE_CM) {
                 state = 1;
@@ -136,7 +139,7 @@ bool Navigation::step() {
         } else if (state == 1) {
             target_speed = 0.0;
             rotation_ratio = -angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
-            if (bsp::get_tick_ms() - reference_time > 150) {
+            if (bsp::get_tick_ms() - reference_time > 50) {
                 state = 2;
             }
         } else if (state == 2) {
@@ -144,7 +147,7 @@ bool Navigation::step() {
             if (std::abs(bsp::imu::get_angle()) < M_PI / 4) {
                 rotation_ratio = 30;
             } else {
-                rotation_ratio = std::max(float(rotation_ratio - 0.05), MIN_TURN_SPEED);
+                rotation_ratio = std::max((rotation_ratio - ANGULAR_ACCEL), MIN_TURN_SPEED);
             }
 
             if (std::abs(bsp::imu::get_angle()) > M_PI_2 - 0.05) {
@@ -160,7 +163,7 @@ bool Navigation::step() {
             }
 
         } else if (state == 4) {
-            target_speed = std::min(float(target_speed + 0.05), SEARCH_SPEED);
+            target_speed = std::min((target_speed + LINEAR_ACCEL), SEARCH_SPEED);
             float target_rad_s = walls_pid.calculate(0.0, ir_side_wall_error());
 
             rotation_ratio = -angular_vel_pid.calculate(target_rad_s, bsp::imu::get_rad_per_s());
@@ -171,12 +174,12 @@ bool Navigation::step() {
         }
 
         break;
+    }
 
-    case Movement::LEFT:
-
+    case Movement::LEFT: {
         // Move half a cell, stop, turn left, stop, move half a cell
         if (state == 0) {
-            target_speed = std::max(float(target_speed - 0.05), MIN_MOVE_SPEED);
+            target_speed = std::max((target_speed - LINEAR_ACCEL), MIN_MOVE_SPEED);
             rotation_ratio = -angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
             if (traveled_dist > HALF_CELL_SIZE_CM) {
                 state = 1;
@@ -185,7 +188,7 @@ bool Navigation::step() {
         } else if (state == 1) {
             target_speed = 0.0;
             rotation_ratio = -angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
-            if (bsp::get_tick_ms() - reference_time > 150) {
+            if (bsp::get_tick_ms() - reference_time > 50) {
                 state = 2;
             }
         } else if (state == 2) {
@@ -193,7 +196,7 @@ bool Navigation::step() {
             if (std::abs(bsp::imu::get_angle()) < M_PI / 4) {
                 rotation_ratio = -30;
             } else {
-                rotation_ratio = std::min(float(rotation_ratio + 0.05), -MIN_TURN_SPEED);
+                rotation_ratio = std::min(float(rotation_ratio + ANGULAR_ACCEL), -MIN_TURN_SPEED);
             }
 
             if (std::abs(bsp::imu::get_angle()) > M_PI_2 - 0.1) {
@@ -209,7 +212,7 @@ bool Navigation::step() {
             }
 
         } else if (state == 4) {
-            target_speed = std::min(float(target_speed + 0.05), SEARCH_SPEED);
+            target_speed = std::min((target_speed + LINEAR_ACCEL), SEARCH_SPEED);
             float target_rad_s = walls_pid.calculate(0.0, ir_side_wall_error());
 
             rotation_ratio = -angular_vel_pid.calculate(target_rad_s, bsp::imu::get_rad_per_s());
@@ -220,11 +223,12 @@ bool Navigation::step() {
         }
 
         break;
+    }
 
-    case Movement::TURN_AROUND:
+    case Movement::TURN_AROUND: {
         // Move half a cell, stop, turn 180, stop, move half a cell
         if (state == 0) {
-            target_speed = std::max(float(target_speed - 0.05), MIN_MOVE_SPEED);
+            target_speed = std::max((target_speed - LINEAR_ACCEL), MIN_MOVE_SPEED);
             rotation_ratio = -angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
             if (traveled_dist > HALF_CELL_SIZE_CM - ROBOT_DIST_FROM_CENTER_START) {
                 state = 1;
@@ -233,7 +237,7 @@ bool Navigation::step() {
         } else if (state == 1) {
             target_speed = 0.0;
             rotation_ratio = -angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
-            if (bsp::get_tick_ms() - reference_time > 150) {
+            if (bsp::get_tick_ms() - reference_time > 50) {
                 state = 2;
             }
         } else if (state == 2) {
@@ -241,7 +245,7 @@ bool Navigation::step() {
             if (std::abs(bsp::imu::get_angle()) < M_PI_2) {
                 rotation_ratio = 30;
             } else {
-                rotation_ratio = std::max(float(rotation_ratio - 0.05), MIN_TURN_SPEED);
+                rotation_ratio = std::max(float(rotation_ratio - ANGULAR_ACCEL), MIN_TURN_SPEED);
             }
 
             if (std::abs(bsp::imu::get_angle()) > M_PI - 0.1) {
@@ -254,18 +258,29 @@ bool Navigation::step() {
 
             if (std::abs(bsp::imu::get_rad_per_s()) < 0.05) {
                 state = 4;
+                reference_time = bsp::get_tick_ms();
             }
 
         } else if (state == 4) {
-            target_speed = std::min(float(target_speed + 0.05), SEARCH_SPEED);
-            rotation_ratio = -angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
-            if (traveled_dist > HALF_CELL_SIZE_CM - ROBOT_DIST_FROM_CENTER_START) {
+            target_speed = -MIN_MOVE_SPEED;
+            rotation_ratio = 0;
+            if (bsp::get_tick_ms() - reference_time > 200) {
+                state = 5;
+                traveled_dist = 0;
+            }
+        } else if (state == 5) {
+            target_speed = std::min((target_speed + LINEAR_ACCEL), SEARCH_SPEED);
+            float target_rad_s = walls_pid.calculate(0.0, ir_side_wall_error());
+
+            rotation_ratio = -angular_vel_pid.calculate(target_rad_s, bsp::imu::get_rad_per_s());
+            if (traveled_dist > HALF_CELL_SIZE_CM + ROBOT_DIST_FROM_CENTER_START) {
                 update_position();
                 is_finished = true;
             }
         }
 
         break;
+    }
     }
 
     float speed_l = target_speed + rotation_ratio;

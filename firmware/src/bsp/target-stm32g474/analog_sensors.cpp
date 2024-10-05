@@ -3,6 +3,7 @@
 #include "bsp/analog_sensors.hpp"
 #include "bsp/leds.hpp"
 #include "bsp/timers.hpp"
+#include "utils/math.hpp"
 
 namespace bsp::analog_sensors {
 
@@ -173,10 +174,10 @@ void adc1_callback(uint32_t* data) {
             ir_readings_on[2] = aux_readings[2];
             ir_readings_on[3] = aux_readings[3];
 
-            ir_readings[0] = ir_readings_on[0] - ir_readings_off[0];
-            ir_readings[1] = ir_readings_on[1] - ir_readings_off[1];
-            ir_readings[2] = ir_readings_on[2] - ir_readings_off[2];
-            ir_readings[3] = ir_readings_on[3] - ir_readings_off[3];
+            ir_readings[0] = std::max(ir_readings_on[0] - ir_readings_off[0], (uint32_t)0);
+            ir_readings[1] = std::max(ir_readings_on[1] - ir_readings_off[1], (uint32_t)0);
+            ir_readings[2] = std::max(ir_readings_on[2] - ir_readings_off[2], (uint32_t)0);
+            ir_readings[3] = std::max(ir_readings_on[3] - ir_readings_off[3], (uint32_t)0);
             read_ir_off = true;
         }
     } else {

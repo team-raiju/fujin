@@ -56,6 +56,7 @@ public:
 
     State* react(BleCommand const&) override;
     State* react(ButtonPressed const&) override;
+    State* react(Timeout const&) override;
 };
 
 class PreRun : public State {
@@ -83,6 +84,7 @@ private:
     uint16_t stop_counter;
     services::Navigation* navigation;
     services::Maze* maze;
+    bool returning;
 };
 
 class SearchFront : public Search {
