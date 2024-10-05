@@ -32,17 +32,6 @@ void FSM::start() {
         });
     });
 
-    bsp::ble::register_callback([this](bsp::ble::BleHeader packet) {
-        static std::map<bsp::ble::BleHeader, ButtonPressed::Type> b{
-            {bsp::ble::BLE_BUTTON_1_SHORT, ButtonPressed::SHORT1},
-            {bsp::ble::BLE_BUTTON_2_SHORT, ButtonPressed::SHORT2},
-            {bsp::ble::BLE_BUTTON_1_LONG, ButtonPressed::LONG1},
-            {bsp::ble::BLE_BUTTON_2_LONG, ButtonPressed::LONG2},
-        };
-
-        dispatch(ButtonPressed{.button = b[packet]});
-    });
-
     soft_timer::register_callback([this]() { dispatch(Timeout()); });
 
     current_state->enter();

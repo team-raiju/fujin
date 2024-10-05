@@ -17,7 +17,7 @@ enum Walls : uint8_t {
 namespace algorithm {
 
 struct Cell {
-    uint8_t value;
+    uint8_t distance;
     uint8_t walls;
     bool visited;
 
@@ -43,7 +43,7 @@ struct Cell {
 
         if (walls & S && (south != nullptr)) {
             south->walls |= N;
-        } else if (south != nullptr){
+        } else if (south != nullptr) {
             south->walls &= ~N;
         }
 
@@ -60,13 +60,13 @@ using Grid = Cell[width][height];
 
 template <int width, int height>
 void flood_fill(Grid<width, height>& grid, Point const& target) {
-    // Reset the value of every cell
+    // Reset the distance of every cell
     for (int x = 0; x < width; x++) {
         for (int y = 0; y < height; y++) {
-            grid[x][y].value = 255;
+            grid[x][y].distance = 255;
         }
     }
-    grid[target.x][target.y].value = 0;
+    grid[target.x][target.y].distance = 0;
 
     RingBuffer<Point, 32> to_visit;
     to_visit.put(target);
@@ -90,14 +90,14 @@ void flood_fill(Grid<width, height>& grid, Point const& target) {
             Cell& next_cell = grid[next.x][next.y];
 
             bool has_wall = (cell.walls & (1 << d)) != 0;
-            bool visited = next_cell.value != 255;
+            bool visited = next_cell.distance != 255;
 
             // We can't or don't need to visit this cell
             if (has_wall || visited) {
                 continue;
             }
 
-            next_cell.value = cell.value + 1;
+            next_cell.distance = cell.distance + 1;
             to_visit.put(next);
         }
     }

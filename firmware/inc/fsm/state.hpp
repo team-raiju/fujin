@@ -5,6 +5,8 @@
 #include "algorithms/pid.hpp"
 #include "fsm/event.hpp"
 #include "services/maze.hpp"
+#include "services/navigation.hpp"
+#include "services/notification.hpp"
 
 namespace fsm {
 
@@ -23,21 +25,13 @@ public:
     virtual void enter() {}
     virtual void exit() {}
 
-    virtual State* react(BleCommand const&) {
-        return nullptr;
-    };
+    virtual State* react(BleCommand const&) { return nullptr; };
 
-    virtual State* react(UsbCommand const&) {
-        return nullptr;
-    };
+    virtual State* react(UsbCommand const&) { return nullptr; };
 
-    virtual State* react(ButtonPressed const&) {
-        return nullptr;
-    };
+    virtual State* react(ButtonPressed const&) { return nullptr; };
 
-    virtual State* react(Timeout const&) {
-        return nullptr;
-    };
+    virtual State* react(Timeout const&) { return nullptr; };
 };
 
 /// @section Idle States
@@ -83,19 +77,10 @@ public:
 private:
     uint16_t stop_counter;
     services::Navigation* navigation;
+    services::Notification* notification;
     services::Maze* maze;
     bool returning;
     bool stop_next_move;
-};
-
-class SearchFront : public Search {
-public:
-    void enter() override;
-    void exit() override;
-
-    State* react(BleCommand const&) override;
-    State* react(ButtonPressed const&) override;
-    State* react(Timeout const&) override;
 };
 
 }

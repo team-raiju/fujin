@@ -2,6 +2,7 @@
 
 #include "algorithms/pid.hpp"
 #include "bsp/analog_sensors.hpp"
+#include "bsp/ble.hpp"
 #include "bsp/buzzer.hpp"
 #include "bsp/core.hpp"
 #include "bsp/debug.hpp"
@@ -12,9 +13,9 @@
 #include "fsm/state.hpp"
 #include "services/maze.hpp"
 #include "services/navigation.hpp"
+#include "services/notification.hpp"
 #include "utils/math.hpp"
 #include "utils/soft_timer.hpp"
-#include "bsp/ble.hpp"
 
 using bsp::leds::Color;
 using services::Maze;
@@ -80,6 +81,7 @@ State* PreSearch::react(ButtonPressed const& event) {
 Search::Search() {
     navigation = services::Navigation::instance();
     maze = services::Maze::instance();
+    notification = services::Notification::instance();
 }
 
 void Search::enter() {
@@ -130,6 +132,7 @@ State* Search::react(Timeout const&) {
     using bsp::analog_sensors::ir_reading_wall;
     using bsp::analog_sensors::SensingDirection;
 
+    notification->update();
     navigation->update();
     bool done = navigation->step();
 
@@ -144,12 +147,10 @@ State* Search::react(Timeout const&) {
 
         uint8_t walls = (front_seeing * N | right_seeing * E | left_seeing * W) << robot_dir;
 
-
-
         if (robot_pos == services::Maze::ORIGIN && returning) {
             return &State::get<Idle>();
         }
-        
+
         if (robot_pos == services::Maze::GOAL_POS && !returning) {
             stop_next_move = true;
         }
@@ -163,14 +164,6 @@ State* Search::react(Timeout const&) {
         } else {
             navigation->move(dir);
         }
-
-        uint8_t data[] = {0xff, 0x05, 0x13, 1, 1 ,0x05, 0xff};
-        data[2] = robot_pos.x << 4 | robot_pos.y;
-        data[3] = maze->map[robot_pos.x][robot_pos.y].walls;
-        data[4] = maze->map[robot_pos.x][robot_pos.y].visited;
-        data[5] = maze->map[robot_pos.x][robot_pos.y].value;
-        bsp::ble::transmit(data, sizeof(data));
-            
     }
 
     return nullptr;

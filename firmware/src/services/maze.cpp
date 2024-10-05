@@ -84,15 +84,14 @@ Direction Maze::next_step(Point const& current_position, uint8_t walls, bool ret
             continue;
         }
 
-
         // TODO: Prioritize the current direction
         // We prioritize cells with smallest values and then unvisited cells if there's a tie
         tprio = neighbour.visited ? 1 : 2;
-        if (neighbour.value < smallest) {
-            smallest = neighbour.value;
+        if (neighbour.distance < smallest) {
+            smallest = neighbour.distance;
             next_direction = d;
             prio = tprio;
-        } else if (neighbour.value == smallest && prio < tprio) {
+        } else if (neighbour.distance == smallest && prio < tprio) {
             next_direction = d;
             prio = tprio;
         }
@@ -121,7 +120,7 @@ void Maze::print(Point const& curr) {
                 std::printf("\033[32m");
             }
 
-            std::printf("%- 3d", map[x][y].value);
+            std::printf("%- 3d", map[x][y].distance);
 
             std::printf(map[x][y].visited ? "\033[33m" : "\033[34m");
             std::printf(map[x][y].walls & E ? "|" : " ");

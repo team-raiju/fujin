@@ -54,11 +54,6 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart) {
             return;
         }
 
-        if (bsp::ble::raw_data[0] > bsp::ble::BLE_BUTTON_2_LONG) {
-            return;
-        }
-
-        bsp::ble::BleHeader header = static_cast<bsp::ble::BleHeader>(bsp::ble::raw_data[0]);
-        bsp::ble::external_callback(header);
+        bsp::ble::external_callback(bsp::ble::raw_data);
     }
 }

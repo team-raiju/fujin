@@ -7,35 +7,41 @@ namespace bsp::ble {
 
 /// @section Constants
 
+constexpr uint8_t header = 0xFF;
 constexpr uint8_t receive_packet_size = 12;
 constexpr uint8_t max_packet_size = 20;
 
 /// @section Custom types
 
-enum BleHeader : uint8_t {
-    BLE_STOP_SIG = 0x00,
-    BLE_REQUEST_DATA = 0x01,
-    BLE_UPDATE_PARAMETERS = 0x02,
-    BLE_BUTTON_1_SHORT = 0x03,
-    BLE_BUTTON_2_SHORT = 0x04,
-    BLE_BUTTON_1_LONG = 0x05,
-    BLE_BUTTON_2_LONG = 0x06,
+enum BlePacketType : uint8_t {
+    Command = 0x00,
+    RequestData = 0x01,
+    UpdateParameters = 0x02,
+    MazeData = 0x05,
+};
+
+enum BleCommands : uint8_t {
+    Stop = 0x00,
+    Button1Short = 0x01,
+    Button2Short = 0x02,
+    Button1Long = 0x03,
+    Button2Long = 0x04,
 };
 
 /// @brief callback function for BLE received data
-typedef std::function<void(BleHeader)> BleCallback;
+typedef std::function<void(uint8_t[receive_packet_size])> BleCallback;
 
 /// @section Interface definition
 
 /// @brief Initializes BLE peripheral
 /// @note Doesn't need to be called directly as bsp_init() already calls this
-void init(void);
+void init();
 
 /// @brief Start BLE, listening for received data
-void start(void);
+void start();
 
 /// @brief Stop BLE
-void stop(void);
+void stop();
 
 /// @brief Send data through BLE
 /// @param data Data to be sent
