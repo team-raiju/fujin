@@ -142,7 +142,7 @@ bool Navigation::step() {
                 half_turn = true;
             }
 
-            if (std::abs(bsp::imu::get_angle()) > (M_PI - 0.02) ||
+            if (std::abs(bsp::imu::get_angle()) > (M_PI - 0.03) ||
                 (std::abs(bsp::imu::get_angle()) < (0.15) && half_turn)) {
                 traveled_dist = 0;
                 state = 3;
@@ -170,7 +170,8 @@ bool Navigation::step() {
 
             rotation_ratio = -angular_vel_pid.calculate(-angle_error * 0.5, bsp::imu::get_rad_per_s());
             if (std::abs(traveled_dist) >= HALF_CELL_SIZE_CM + ROBOT_DIST_FROM_CENTER_START) {
-               state = 6;
+                state = 6;
+                reference_time = bsp::get_tick_ms();
             }
         } else if (state == 6) {
             target_speed = 0.0;
@@ -196,7 +197,9 @@ bool Navigation::step() {
         target_speed = std::min((target_speed + LINEAR_ACCEL), SEARCH_SPEED);
 
         float target_rad_s = walls_pid.calculate(0.0, ir_side_wall_error());
-        rotation_ratio = -angular_vel_pid.calculate(target_rad_s, bsp::imu::get_rad_per_s());
+        float angle_error = bsp::imu::get_angle();
+
+        rotation_ratio = -angular_vel_pid.calculate(target_rad_s - (angle_error * 0.5) , bsp::imu::get_rad_per_s());
 
         if (std::abs(traveled_dist) >= target_travel || front_emergency) {
             update_position();
@@ -332,7 +335,7 @@ bool Navigation::step() {
                 half_turn = true;
             }
 
-            if (std::abs(bsp::imu::get_angle()) > (M_PI - 0.02) ||
+            if (std::abs(bsp::imu::get_angle()) > (M_PI - 0.03) ||
                 (std::abs(bsp::imu::get_angle()) < (0.15) && half_turn)) {
                 traveled_dist = 0;
                 state = 3;
