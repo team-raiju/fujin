@@ -62,9 +62,9 @@
  * @{
  */
 
-#define USBD_VID 1155
+#define USBD_VID 5140
 #define USBD_LANGID_STRING 1033
-#define USBD_MANUFACTURER_STRING "STMicroelectronics"
+#define USBD_MANUFACTURER_STRING "Team Raiju"
 #define USBD_PID 50001
 #define USBD_PRODUCT_STRING "Fujin"
 #define USBD_CONFIGURATION_STRING "CDC Config"

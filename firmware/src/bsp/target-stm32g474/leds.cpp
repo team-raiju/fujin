@@ -1,11 +1,33 @@
-#include <stdint.h>
+#include <cstdint>
+#include <cstdio>
 
 #include "st/hal.h"
 
 #include "bsp/leds.hpp"
+#include "devices/WS2812.hpp"
 #include "pin_mapping.h"
+#include "utils/math.hpp"
 
 namespace bsp::leds {
+
+Color Color::Red = Color(0x7F, 0x00, 0x00);
+Color Color::Green = Color(0x00, 0x3F, 0x00);
+Color Color::Blue = Color(0x00, 0x00, 0x7F);
+Color Color::Purple = Color(0x7F, 0x00, 0x7F);
+Color Color::Yellow = Color(0x3F, 0x3F, 0x00);
+Color Color::Orange = Color(0x64, 0xC8, 0x00);
+Color Color::White = Color(0x3F, 0x3F, 0x3F);
+Color Color::Black = Color(0x00, 0x00, 0x00);
+Color Color::Pink = Color(0x1F, 0xC8, 0x64);
+Color Color::Cyan = Color(0xD2, 0x32, 0x12);
+
+uint32_t Color::encode() const {
+    return bit_reverse(b) << 16 | bit_reverse(r) << 8 | bit_reverse(g);
+}
+
+/// @section Private variables
+
+static devices::WS2812<2> ws(&htim2, TIM_CHANNEL_1);
 
 /// @section Interface implementation
 
@@ -73,11 +95,16 @@ void ir_emitter_all_off(void) {
     ir_emitter_off(RIGHT_SIDE);
 }
 
-void stripe_set(uint8_t num, uint8_t r, uint8_t g, uint8_t b) {
-    (void)num;
-    (void)r;
-    (void)g;
-    (void)b;
+void stripe_set(uint8_t num, Color const& color) {
+    ws.set(num, color.encode());
+}
+
+void stripe_send() {
+    ws.send();
 }
 
 } // namespace
+
+void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef* htim) {
+    bsp::leds::ws.pulse_finished_callback(htim);
+}

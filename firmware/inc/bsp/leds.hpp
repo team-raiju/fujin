@@ -15,6 +15,29 @@ enum Emitter {
     RIGHT_SIDE,
 };
 
+/// @section Custom types
+
+struct Color {
+    static Color White;
+    static Color Black; // Off
+    static Color Red;
+    static Color Green;
+    static Color Blue;
+    static Color Purple;
+    static Color Yellow;
+    static Color Orange;
+    static Color Pink;
+    static Color Cyan;
+
+    uint32_t encode() const;
+
+    Color(const Color&) = delete;
+
+private:
+    const uint8_t r, g, b;
+    constexpr Color(uint8_t r, uint16_t g, uint8_t b) : r(r), g(g), b(b) {}
+};
+
 /// @section Interface definition
 
 /// @brief Initializes LEDs peripherals
@@ -32,9 +55,8 @@ void ir_emitter_all_off(void);
 
 /// @brief Sets the color of a LED in the stripe
 /// @param num LED number [0, LED_STRIPE_AMOUNT)
-/// @param r Red value. [0, 255]
-/// @param g Green value. [0, 255]
-/// @param b Blue value. [0, 255]
-void stripe_set(uint8_t num, uint8_t r, uint8_t g, uint8_t b);
+/// @param color the color
+void stripe_set(uint8_t num, Color const& color);
+void stripe_send();
 
 } // namespace

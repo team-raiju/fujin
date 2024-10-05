@@ -6,7 +6,7 @@ TabWidth: 4
 BreakBeforeBraces: Attach
 AllowShortIfStatementsOnASingleLine: false
 AllowShortBlocksOnASingleLine: Empty
-AllowShortFunctionsOnASingleLine: Empty
+AllowShortFunctionsOnASingleLine: Inline
 IndentCaseLabels: false
 ColumnLimit: 120
 AccessModifierOffset: -4

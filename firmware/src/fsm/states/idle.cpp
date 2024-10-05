@@ -7,9 +7,13 @@
 namespace fsm {
 
 void Idle::enter() {
+    using bsp::leds::Color;
+
     bsp::debug::print("state:Idle");
-    bsp::leds::stripe_set(0, 255, 0, 0);
-    bsp::leds::stripe_set(1, 255, 0, 0);
+
+    bsp::leds::stripe_set(0, Color::Red);
+    bsp::leds::stripe_set(1, Color::Red);
+    bsp::leds::stripe_send();
 
     bsp::motors::set(0, 0);
 }
@@ -30,7 +34,7 @@ State* Idle::react(ButtonPressed const& event) {
     return nullptr;
 }
 
-State *Idle::react(Timeout const&) {
+State* Idle::react(Timeout const&) {
     return nullptr;
 }
 

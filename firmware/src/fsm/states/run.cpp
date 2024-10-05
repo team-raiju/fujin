@@ -6,10 +6,13 @@
 namespace fsm {
 
 void PreRun::enter() {
+    using bsp::leds::Color;
+
     bsp::debug::print("state:PreRun");
 
-    bsp::leds::stripe_set(0, 0, 255, 0);
-    bsp::leds::stripe_set(1, 0, 0, 0);
+    bsp::leds::stripe_set(0, Color::Green);
+    bsp::leds::stripe_set(1, Color::Black);
+    bsp::leds::stripe_send();
 
     bsp::motors::set(0, 0);
 }

@@ -15,16 +15,19 @@
 #include "utils/math.hpp"
 #include "utils/soft_timer.hpp"
 
+using bsp::leds::Color;
 using services::Maze;
 using services::Navigation;
 
 namespace fsm {
 
 void PreSearch::enter() {
+
     bsp::debug::print("state:PreSearch");
 
-    bsp::leds::stripe_set(0, 0, 255, 0);
-    bsp::leds::stripe_set(1, 0, 0, 0);
+    bsp::leds::stripe_set(0, Color::Black);
+    bsp::leds::stripe_set(1, Color::Green);
+    bsp::leds::stripe_send();
 
     bsp::motors::set(0, 0);
 }
@@ -57,6 +60,9 @@ Search::Search() {
 void Search::enter() {
     bsp::debug::print("state:Search");
     bsp::leds::indication_on();
+    bsp::leds::stripe_set(0, Color::Green);
+    bsp::leds::stripe_set(1, Color::Green);
+    bsp::leds::stripe_send();
     bsp::leds::ir_emitter_all_on();
     bsp::analog_sensors::enable_modulation(true);
 

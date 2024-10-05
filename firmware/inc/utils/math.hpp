@@ -52,3 +52,16 @@ static constexpr double deg2rad(double const& degrees) {
 static constexpr uint8_t manhattan(Point const& p1, Point const& p2) {
     return std::abs(p1.x - p2.x) + std::abs(p1.y - p2.y);
 }
+
+static constexpr uint8_t bit_reverse(uint8_t n) {
+#if defined(__arm__)
+    uint32_t r;
+    __asm__("rbit %0, %1" : "=r"(r) : "r"(n));
+    return r >> 24;
+#else
+    n = (n & 0xF0 >> 4) | (n & 0x0F << 4);
+    n = (n & 0xCC >> 2) | (n & 0x33 << 2);
+    n = (n & 0xAA >> 1) | (n & 0x55 << 1);
+    return n;
+#endif
+}

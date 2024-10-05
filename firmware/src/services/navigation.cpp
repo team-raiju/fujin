@@ -27,7 +27,7 @@ static constexpr float HALF_CELL_SIZE_CM = 9.0;
 static constexpr float MIN_MOVE_SPEED = 16.0; // Motor PWM
 static constexpr float MIN_TURN_SPEED = 16.0; // Motor PWM
 
-static constexpr float SEARCH_SPEED = 50.0;     // Motor PWM
+static constexpr float SEARCH_SPEED = 50.0; // Motor PWM
 
 static constexpr float ROBOT_DIST_FROM_CENTER_START = 2.0;
 
@@ -114,7 +114,7 @@ bool Navigation::step() {
         target_speed = std::min(float(target_speed + 0.05), SEARCH_SPEED);
 
         float target_rad_s = walls_pid.calculate(0.0, ir_side_wall_error());
-        
+
         rotation_ratio = -angular_vel_pid.calculate(target_rad_s, bsp::imu::get_rad_per_s());
 
         if (traveled_dist >= target_travel) {
