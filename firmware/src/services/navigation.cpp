@@ -72,7 +72,7 @@ void Navigation::reset(void) {
     angular_vel_pid.integral_limit = 1000;
 
     walls_pid.reset();
-    walls_pid.kp = 0.001;
+    walls_pid.kp = 0.0015;
     walls_pid.ki = 0;
     walls_pid.kd = 0;
     walls_pid.integral_limit = 0;
@@ -136,7 +136,7 @@ bool Navigation::step() {
         } else if (state == 1) {
             target_speed = 0.0;
             rotation_ratio = -angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
-            if (bsp::get_tick_ms() - reference_time > 500) {
+            if (bsp::get_tick_ms() - reference_time > 150) {
                 state = 2;
             }
         } else if (state == 2) {
@@ -161,7 +161,9 @@ bool Navigation::step() {
 
         } else if (state == 4) {
             target_speed = std::min(float(target_speed + 0.05), SEARCH_SPEED);
-            rotation_ratio = -angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
+            float target_rad_s = walls_pid.calculate(0.0, ir_side_wall_error());
+
+            rotation_ratio = -angular_vel_pid.calculate(target_rad_s, bsp::imu::get_rad_per_s());
             if (traveled_dist > HALF_CELL_SIZE_CM) {
                 update_position();
                 is_finished = true;
@@ -194,7 +196,7 @@ bool Navigation::step() {
                 rotation_ratio = std::min(float(rotation_ratio + 0.05), -MIN_TURN_SPEED);
             }
 
-            if (std::abs(bsp::imu::get_angle()) > M_PI_2 - 0.05) {
+            if (std::abs(bsp::imu::get_angle()) > M_PI_2 - 0.1) {
                 traveled_dist = 0;
                 state = 3;
             }
@@ -208,7 +210,9 @@ bool Navigation::step() {
 
         } else if (state == 4) {
             target_speed = std::min(float(target_speed + 0.05), SEARCH_SPEED);
-            rotation_ratio = -angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
+            float target_rad_s = walls_pid.calculate(0.0, ir_side_wall_error());
+
+            rotation_ratio = -angular_vel_pid.calculate(target_rad_s, bsp::imu::get_rad_per_s());
             if (traveled_dist > HALF_CELL_SIZE_CM) {
                 update_position();
                 is_finished = true;
