@@ -14,6 +14,7 @@
 #include "services/navigation.hpp"
 #include "utils/math.hpp"
 #include "utils/soft_timer.hpp"
+#include "bsp/ble.hpp"
 
 using bsp::leds::Color;
 using services::Maze;
@@ -25,8 +26,8 @@ void PreSearch::enter() {
 
     bsp::debug::print("state:PreSearch");
 
-    bsp::leds::stripe_set(0, Color::Black);
-    bsp::leds::stripe_set(1, Color::Green);
+    bsp::leds::stripe_set(0, Color::Green);
+    bsp::leds::stripe_set(1, Color::Black);
     bsp::leds::stripe_send();
 
     bsp::motors::set(0, 0);
@@ -84,8 +85,8 @@ Search::Search() {
 void Search::enter() {
     bsp::debug::print("state:Search");
     bsp::leds::indication_on();
-    bsp::leds::stripe_set(0, Color::Green);
-    bsp::leds::stripe_set(1, Color::Green);
+    bsp::leds::stripe_set(0, Color::Red);
+    bsp::leds::stripe_set(1, Color::Red);
     bsp::leds::stripe_send();
     bsp::leds::ir_emitter_all_on();
     bsp::analog_sensors::enable_modulation(true);
@@ -143,16 +144,33 @@ State* Search::react(Timeout const&) {
 
         uint8_t walls = (front_seeing * N | right_seeing * E | left_seeing * W) << robot_dir;
 
-        auto dir = maze->next_step(robot_pos, walls, returning);
-        navigation->move(dir);
 
-        if (robot_pos == services::Maze::GOAL_POS && !returning) {
-            returning = true;
-        }
 
         if (robot_pos == services::Maze::ORIGIN && returning) {
             return &State::get<Idle>();
         }
+        
+        if (robot_pos == services::Maze::GOAL_POS && !returning) {
+            stop_next_move = true;
+        }
+
+        auto dir = maze->next_step(robot_pos, walls, returning);
+
+        if (stop_next_move && dir == robot_dir) {
+            returning = true;
+            stop_next_move = false;
+            navigation->stop();
+        } else {
+            navigation->move(dir);
+        }
+
+        uint8_t data[] = {0xff, 0x05, 0x13, 1, 1 ,0x05, 0xff};
+        data[2] = robot_pos.x << 4 | robot_pos.y;
+        data[3] = maze->map[robot_pos.x][robot_pos.y].walls;
+        data[4] = maze->map[robot_pos.x][robot_pos.y].visited;
+        data[5] = maze->map[robot_pos.x][robot_pos.y].value;
+        bsp::ble::transmit(data, sizeof(data));
+            
     }
 
     return nullptr;

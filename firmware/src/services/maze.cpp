@@ -52,8 +52,8 @@ Direction Maze::next_step(Point const& current_position, uint8_t walls, bool ret
 
     // Update our grid
     algorithm::Cell& cell = map[current_position.x][current_position.y];
-    cell.visited = true;
     cell.update_walls(walls);
+    cell.visited = true;
 
     // Recalculate the distances
     if (returning) {
@@ -76,9 +76,14 @@ Direction Maze::next_step(Point const& current_position, uint8_t walls, bool ret
             continue;
         }
 
-        // If we got here, we are always inside the bounds ~hopefully~
         Point position = current_position + Δ[std::to_underlying(d)];
         auto& neighbour = map[position.x][position.y];
+
+        // out of bounds
+        if (position.x < 0 || position.x >= CELLS_X || position.y < 0 || position.y >= CELLS_Y) {
+            continue;
+        }
+
 
         // TODO: Prioritize the current direction
         // We prioritize cells with smallest values and then unvisited cells if there's a tie
@@ -105,7 +110,7 @@ void Maze::print(Point const& curr) {
         }
 
         std::printf("\r\n");
-        // bsp::delay_ms(2);
+        bsp::delay_ms(2);
 
         // Left, value, right
         for (int x = 0; x < CELLS_X; x++) {
@@ -123,7 +128,7 @@ void Maze::print(Point const& curr) {
         }
 
         std::printf("\r\n");
-        // bsp::delay_ms(2);
+        bsp::delay_ms(2);
 
         // Print bottom borders
         for (int x = 0; x < CELLS_X; x++) {
@@ -133,7 +138,7 @@ void Maze::print(Point const& curr) {
 
         std::printf("\r\n");
         std::printf("\033[39m");
-        // bsp::delay_ms(2);
+        bsp::delay_ms(2);
     }
 }
 

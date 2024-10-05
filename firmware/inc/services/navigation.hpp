@@ -20,6 +20,7 @@ public:
     Point get_robot_position();
     Direction get_robot_direction();
     void move(Direction);
+    void stop();
 
 private:
     Navigation() {}

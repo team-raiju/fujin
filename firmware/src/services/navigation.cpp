@@ -11,7 +11,7 @@
 
 /// @section Constants
 
-static constexpr float WHEEL_RADIUS_CM = (1.36);
+static constexpr float WHEEL_RADIUS_CM = (1.32);
 static constexpr float WHEEL_PERIMETER_CM = (M_TWOPI * WHEEL_RADIUS_CM);
 
 static constexpr float WHEEL_TO_ENCODER_RATIO = (1.0);
@@ -27,12 +27,17 @@ static constexpr float HALF_CELL_SIZE_CM = 9.0;
 static constexpr float MIN_MOVE_SPEED = 16.0; // Motor PWM
 static constexpr float MIN_TURN_SPEED = 16.0; // Motor PWM
 
+static constexpr float FIX_POSITION_SPEED = 20.0; // Motor PWM
+
+
 static constexpr float SEARCH_SPEED = 50.0; // Motor PWM
 
 static constexpr float ROBOT_DIST_FROM_CENTER_START = 2.0;
 
 static constexpr float LINEAR_ACCEL = 0.05;
 static constexpr float ANGULAR_ACCEL = 0.05;
+
+using bsp::leds::Color;
 
 /// @section Service implementation
 
@@ -108,19 +113,42 @@ bool Navigation::step() {
     using bsp::analog_sensors::SensingDirection;
 
     switch (current_movement) {
-    case Movement::STOP:
-        is_finished = true;
+    case Movement::STOP: {
+
+        if (state == 0){
+            target_speed = std::max((target_speed - LINEAR_ACCEL), MIN_MOVE_SPEED);
+
+            float target_rad_s = walls_pid.calculate(0.0, ir_side_wall_error());
+            rotation_ratio = -angular_vel_pid.calculate(target_rad_s, bsp::imu::get_rad_per_s());
+
+            if (std::abs(traveled_dist) >= target_travel) {
+                bsp::leds::stripe_set(0, Color::Blue);
+                bsp::leds::stripe_set(1, Color::Blue);
+                bsp::leds::stripe_send();
+                reference_time = bsp::get_tick_ms();
+                state = 1;
+            }
+        } else if (state == 1) {
+            target_speed = 0.0;
+            rotation_ratio = -angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
+            if (bsp::get_tick_ms() - reference_time > 2500) {
+                bsp::leds::stripe_set(0, Color::Red);
+                bsp::leds::stripe_set(1, Color::Red);
+                bsp::leds::stripe_send();
+                update_position();
+                is_finished = true;
+            }
+        }
+
         break;
-
+    }
     case Movement::FORWARD: {
-
         target_speed = std::min((target_speed + LINEAR_ACCEL), SEARCH_SPEED);
 
         float target_rad_s = walls_pid.calculate(0.0, ir_side_wall_error());
-
         rotation_ratio = -angular_vel_pid.calculate(target_rad_s, bsp::imu::get_rad_per_s());
 
-        if (traveled_dist >= target_travel) {
+        if (std::abs(traveled_dist) >= target_travel) {
             update_position();
             is_finished = true;
         }
@@ -132,7 +160,7 @@ bool Navigation::step() {
         if (state == 0) {
             target_speed = std::max((target_speed - LINEAR_ACCEL), MIN_MOVE_SPEED);
             rotation_ratio = -angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
-            if (traveled_dist > HALF_CELL_SIZE_CM) {
+            if (std::abs(traveled_dist) >= HALF_CELL_SIZE_CM - 0.5) {
                 state = 1;
                 reference_time = bsp::get_tick_ms();
             }
@@ -167,7 +195,7 @@ bool Navigation::step() {
             float target_rad_s = walls_pid.calculate(0.0, ir_side_wall_error());
 
             rotation_ratio = -angular_vel_pid.calculate(target_rad_s, bsp::imu::get_rad_per_s());
-            if (traveled_dist > HALF_CELL_SIZE_CM) {
+            if (std::abs(traveled_dist) >= HALF_CELL_SIZE_CM - 0.5) {
                 update_position();
                 is_finished = true;
             }
@@ -181,7 +209,7 @@ bool Navigation::step() {
         if (state == 0) {
             target_speed = std::max((target_speed - LINEAR_ACCEL), MIN_MOVE_SPEED);
             rotation_ratio = -angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
-            if (traveled_dist > HALF_CELL_SIZE_CM) {
+            if (std::abs(traveled_dist) >= HALF_CELL_SIZE_CM - 0.5) {
                 state = 1;
                 reference_time = bsp::get_tick_ms();
             }
@@ -216,7 +244,7 @@ bool Navigation::step() {
             float target_rad_s = walls_pid.calculate(0.0, ir_side_wall_error());
 
             rotation_ratio = -angular_vel_pid.calculate(target_rad_s, bsp::imu::get_rad_per_s());
-            if (traveled_dist > HALF_CELL_SIZE_CM) {
+            if (std::abs(traveled_dist) >= HALF_CELL_SIZE_CM - 0.5) {
                 update_position();
                 is_finished = true;
             }
@@ -230,7 +258,7 @@ bool Navigation::step() {
         if (state == 0) {
             target_speed = std::max((target_speed - LINEAR_ACCEL), MIN_MOVE_SPEED);
             rotation_ratio = -angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
-            if (traveled_dist > HALF_CELL_SIZE_CM - ROBOT_DIST_FROM_CENTER_START) {
+            if (std::abs(traveled_dist) >= HALF_CELL_SIZE_CM - ROBOT_DIST_FROM_CENTER_START) {
                 state = 1;
                 reference_time = bsp::get_tick_ms();
             }
@@ -262,18 +290,19 @@ bool Navigation::step() {
             }
 
         } else if (state == 4) {
-            target_speed = -MIN_MOVE_SPEED;
+            target_speed = -FIX_POSITION_SPEED;
             rotation_ratio = 0;
-            if (bsp::get_tick_ms() - reference_time > 200) {
+            if (bsp::get_tick_ms() - reference_time > 300) {
+                bsp::imu::reset_angle();
                 state = 5;
                 traveled_dist = 0;
             }
         } else if (state == 5) {
             target_speed = std::min((target_speed + LINEAR_ACCEL), SEARCH_SPEED);
-            float target_rad_s = walls_pid.calculate(0.0, ir_side_wall_error());
+            float angle_error = bsp::imu::get_angle();
 
-            rotation_ratio = -angular_vel_pid.calculate(target_rad_s, bsp::imu::get_rad_per_s());
-            if (traveled_dist > HALF_CELL_SIZE_CM + ROBOT_DIST_FROM_CENTER_START) {
+            rotation_ratio = -angular_vel_pid.calculate(-angle_error * 0.5, bsp::imu::get_rad_per_s());
+            if (std::abs(traveled_dist) >= HALF_CELL_SIZE_CM + ROBOT_DIST_FROM_CENTER_START) {
                 update_position();
                 is_finished = true;
             }
@@ -304,6 +333,18 @@ void Navigation::move(Direction dir) {
     current_movement = get_movement(dir);
     traveled_dist = 0;
     state = 0;
+    reference_time = bsp::get_tick_ms();
+    target_travel = CELL_SIZE_CM - 0.5;
+    is_finished = false;
+}
+
+void Navigation::stop() {
+    bsp::imu::reset_angle();
+
+    current_movement = STOP;
+    traveled_dist = 0;
+    state = 0;
+    reference_time = bsp::get_tick_ms();
     target_travel = CELL_SIZE_CM;
     is_finished = false;
 }

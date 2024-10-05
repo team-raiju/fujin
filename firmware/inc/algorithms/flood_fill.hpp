@@ -29,20 +29,28 @@ struct Cell {
     void update_walls(uint8_t walls) {
         this->walls = walls;
 
-        if (walls & N && north != nullptr) {
+        if (walls & N && (north != nullptr)) {
             north->walls |= S;
+        } else if (north != nullptr) {
+            north->walls &= ~S;
         }
 
-        if (walls & E && east != nullptr) {
+        if (walls & E && (east != nullptr)) {
             east->walls |= W;
+        } else if (east != nullptr) {
+            east->walls &= ~W;
         }
 
-        if (walls & S && south != nullptr) {
+        if (walls & S && (south != nullptr)) {
             south->walls |= N;
+        } else if (south != nullptr){
+            south->walls &= ~N;
         }
 
-        if (walls & W && west != nullptr) {
+        if (walls & W && (west != nullptr)) {
             west->walls |= E;
+        } else if (west != nullptr) {
+            west->walls &= ~E;
         }
     }
 };

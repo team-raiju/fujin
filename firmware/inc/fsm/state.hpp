@@ -85,6 +85,7 @@ private:
     services::Navigation* navigation;
     services::Maze* maze;
     bool returning;
+    bool stop_next_move;
 };
 
 class SearchFront : public Search {

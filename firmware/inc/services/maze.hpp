@@ -13,7 +13,7 @@ public:
     static constexpr int CELLS_Y = 7;
 
     static constexpr Point ORIGIN = {0, 0};
-    static constexpr Point GOAL_POS = {0, 6};
+    static constexpr Point GOAL_POS = {1, 5};
 
     static Maze* instance();
 

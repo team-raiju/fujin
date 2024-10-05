@@ -11,8 +11,8 @@ void Idle::enter() {
 
     bsp::debug::print("state:Idle");
 
-    bsp::leds::stripe_set(0, Color::Red);
-    bsp::leds::stripe_set(1, Color::Red);
+    bsp::leds::stripe_set(0, Color::Black);
+    bsp::leds::stripe_set(1, Color::Black);
     bsp::leds::stripe_send();
 
     bsp::motors::set(0, 0);
