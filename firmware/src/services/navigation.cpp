@@ -30,6 +30,8 @@ static constexpr float MIN_TURN_SPEED = 16.0; // Motor PWM
 static constexpr float FIX_POSITION_SPEED = 20.0; // Motor PWM
 
 static constexpr float SEARCH_SPEED = 50.0; // Motor PWM
+static constexpr float ANGULAR_SPEED = 30.0; // Motor PWM
+
 static constexpr float RUN_SPEED = 100.0; // Motor PWM
 
 static constexpr float ROBOT_DIST_FROM_CENTER_START = 2.0;
@@ -134,7 +136,7 @@ bool Navigation::step() {
         } else if (state == 2) {
             target_speed = 0;
             if (std::abs(bsp::imu::get_angle()) < M_PI_2) {
-                rotation_ratio = 30;
+                rotation_ratio = ANGULAR_SPEED;
             } else {
                 rotation_ratio = std::max(float(rotation_ratio - ANGULAR_ACCEL), MIN_TURN_SPEED);
             }
@@ -239,7 +241,7 @@ bool Navigation::step() {
         } else if (state == 2) {
             target_speed = 0;
             if (std::abs(bsp::imu::get_angle()) < M_PI / 4) {
-                rotation_ratio = 30;
+                rotation_ratio = ANGULAR_SPEED;
             } else {
                 rotation_ratio = std::max((rotation_ratio - ANGULAR_ACCEL), MIN_TURN_SPEED);
             }
@@ -288,7 +290,7 @@ bool Navigation::step() {
         } else if (state == 2) {
             target_speed = 0;
             if (std::abs(bsp::imu::get_angle()) < M_PI / 4) {
-                rotation_ratio = -30;
+                rotation_ratio = -ANGULAR_SPEED;
             } else {
                 rotation_ratio = std::min(float(rotation_ratio + ANGULAR_ACCEL), -MIN_TURN_SPEED);
             }
@@ -339,7 +341,7 @@ bool Navigation::step() {
         } else if (state == 2) {
             target_speed = 0;
             if (std::abs(bsp::imu::get_angle()) < M_PI_2) {
-                rotation_ratio = 30;
+                rotation_ratio = ANGULAR_SPEED;
             } else {
                 rotation_ratio = std::max(float(rotation_ratio - ANGULAR_ACCEL), MIN_TURN_SPEED);
             }
