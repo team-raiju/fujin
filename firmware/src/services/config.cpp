@@ -47,7 +47,7 @@ void Config::parse_packet(uint8_t packet[bsp::ble::max_packet_size]) {
 
     const uint8_t parameter = packet[2];
 
-    if (parameter >= 10) {
+    if (parameter >= sizeof(params) / sizeof(params[0])) {
         return;
     }
 
