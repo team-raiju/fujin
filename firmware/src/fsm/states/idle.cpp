@@ -1,9 +1,9 @@
+#include "bsp/analog_sensors.hpp"
 #include "bsp/debug.hpp"
 #include "bsp/leds.hpp"
 #include "bsp/motors.hpp"
 #include "fsm/state.hpp"
 #include "utils/soft_timer.hpp"
-#include "bsp/analog_sensors.hpp"
 
 namespace fsm {
 
@@ -13,13 +13,10 @@ void Idle::enter() {
     bsp::debug::print("state:Idle");
 
     if (bsp::analog_sensors::battery_low()) {
-       bsp::leds::stripe_set(0, Color::Red);
-        bsp::leds::stripe_set(1, Color::Red); 
+        bsp::leds::stripe_set(Color::Red);
     } else {
-        bsp::leds::stripe_set(0, Color::Black);
-        bsp::leds::stripe_set(1, Color::Black);
+        bsp::leds::stripe_set(Color::Black);
     }
-    bsp::leds::stripe_send();
 
     bsp::motors::set(0, 0);
 }

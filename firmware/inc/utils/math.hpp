@@ -13,15 +13,6 @@
 #define constrain(v, x, y) ((v) < (x) ? (x) : ((v) > (y) ? (y) : (v)))
 
 /**
- * @brief Checks if v is between a and b inclusive
- */
-#define IS_BETWEEN(x, a, b) ((x) >= (a) && (x) <= (b))
-
-#define TWO_BYTES_TO_UINT16(b1, b2) ((b1 << 8) | (b2))
-
-#define FOUR_BYTES_TO_UINT32(b1, b2, b3, b4) ((b1 << 24) | (b2 << 16) | (b3 << 8) | (b4))
-
-/**
  * @brief Maps an integer value from one scale to another.
  *
  * @param T Integer type

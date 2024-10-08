@@ -6,6 +6,7 @@
 #include "bsp/leds.hpp"
 #include "bsp/motors.hpp"
 #include "bsp/timers.hpp"
+#include "services/config.hpp"
 #include "services/navigation.hpp"
 #include "utils/math.hpp"
 
@@ -24,20 +25,7 @@ static constexpr float ENCODER_DIST_CM_PULSE = (WHEEL_PERIMETER_CM / PULSES_PER_
 static constexpr float CELL_SIZE_CM = 18.0;
 static constexpr float HALF_CELL_SIZE_CM = 9.0;
 
-static constexpr float MIN_MOVE_SPEED = 16.0; // Motor PWM
-static constexpr float MIN_TURN_SPEED = 16.0; // Motor PWM
-
-static constexpr float FIX_POSITION_SPEED = 20.0; // Motor PWM
-
-static constexpr float SEARCH_SPEED = 50.0; // Motor PWM
-static constexpr float ANGULAR_SPEED = 30.0; // Motor PWM
-
-static constexpr float RUN_SPEED = 100.0; // Motor PWM
-
 static constexpr float ROBOT_DIST_FROM_CENTER_START = 2.0;
-
-static constexpr float LINEAR_ACCEL = 0.05;
-static constexpr float ANGULAR_ACCEL = 0.05;
 
 using bsp::leds::Color;
 
@@ -120,7 +108,7 @@ bool Navigation::step() {
         // Move half a cell, stop, turn 180, stop, move half a cell
         static int half_turn = false;
         if (state == 0) {
-            target_speed = std::max((target_speed - LINEAR_ACCEL), MIN_MOVE_SPEED);
+            target_speed = std::max((target_speed - Config::linear_acceleration), Config::min_move_speed);
             rotation_ratio = -angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
             if (std::abs(traveled_dist) >= HALF_CELL_SIZE_CM - ROBOT_DIST_FROM_CENTER_START) {
                 state = 1;
@@ -136,9 +124,9 @@ bool Navigation::step() {
         } else if (state == 2) {
             target_speed = 0;
             if (std::abs(bsp::imu::get_angle()) < M_PI_2) {
-                rotation_ratio = ANGULAR_SPEED;
+                rotation_ratio = Config::angular_speed;
             } else {
-                rotation_ratio = std::max(float(rotation_ratio - ANGULAR_ACCEL), MIN_TURN_SPEED);
+                rotation_ratio = std::max(float(rotation_ratio - Config::angular_acceleration), Config::min_turn_speed);
             }
 
             if (!half_turn && std::abs(bsp::imu::get_angle()) > M_PI_2) {
@@ -160,7 +148,7 @@ bool Navigation::step() {
             }
 
         } else if (state == 4) {
-            target_speed = -FIX_POSITION_SPEED;
+            target_speed = -Config::fix_position_speed;
             rotation_ratio = 0;
             if (bsp::get_tick_ms() - reference_time > 300) {
                 bsp::imu::reset_angle();
@@ -168,7 +156,7 @@ bool Navigation::step() {
                 traveled_dist = 0;
             }
         } else if (state == 5) {
-            target_speed = std::min((target_speed + LINEAR_ACCEL), MIN_MOVE_SPEED);
+            target_speed = std::min((target_speed + Config::linear_acceleration), Config::min_move_speed);
             float angle_error = bsp::imu::get_angle();
 
             rotation_ratio = -angular_vel_pid.calculate(-angle_error * 0.5, bsp::imu::get_rad_per_s());
@@ -180,9 +168,7 @@ bool Navigation::step() {
             target_speed = 0.0;
             rotation_ratio = -angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
             if (bsp::get_tick_ms() - reference_time > 2500) {
-                bsp::leds::stripe_set(0, Color::Red);
-                bsp::leds::stripe_set(1, Color::Red);
-                bsp::leds::stripe_send();
+                bsp::leds::stripe_set(Color::Red);
                 update_position();
                 is_finished = true;
             }
@@ -193,28 +179,27 @@ bool Navigation::step() {
     case Movement::FORWARD: {
         using bsp::analog_sensors::ir_reading;
 
-        bool front_emergency =
-            ir_reading(SensingDirection::FRONT_LEFT) > 3000 && ir_reading(SensingDirection::FRONT_RIGHT) > 3000 &&
-            ir_reading(SensingDirection::LEFT) > 2800 && ir_reading(SensingDirection::RIGHT) > 2800;
+        bool front_emergency = ir_reading(SensingDirection::FRONT_LEFT) > 3000 &&
+                               ir_reading(SensingDirection::FRONT_RIGHT) > 3000 &&
+                               ir_reading(SensingDirection::LEFT) > 2800 && ir_reading(SensingDirection::RIGHT) > 2800;
 
         if (std::abs(traveled_dist) >= (target_travel - CELL_SIZE_CM)) {
-            target_speed = std::max((target_speed - LINEAR_ACCEL), SEARCH_SPEED);
+            target_speed = std::max((target_speed - Config::linear_acceleration), Config::search_speed);
         } else {
-            target_speed = std::min((target_speed + LINEAR_ACCEL), RUN_SPEED);
+            target_speed = std::min((target_speed + Config::linear_acceleration), Config::run_speed);
         }
 
         float target_rad_s = walls_pid.calculate(0.0, ir_side_wall_error());
         float angle_error = bsp::imu::get_angle();
 
-        rotation_ratio = -angular_vel_pid.calculate(target_rad_s - (angle_error * 0.5) , bsp::imu::get_rad_per_s());
+        rotation_ratio = -angular_vel_pid.calculate(target_rad_s - (angle_error * 0.5), bsp::imu::get_rad_per_s());
 
         if (std::abs(traveled_dist) >= target_travel || front_emergency) {
-            // bsp::leds::stripe_set(0, Color::Red);
-            // bsp::leds::stripe_set(1, Color::Red);
+            // bsp::leds::stripe_set(Color::Red);
             // bsp::leds::stripe_send();
             update_position();
             // uint8_t cells_travelled = std::abs(traveled_dist) / CELL_SIZE_CM;
-            
+
             // for (int i = 0; i < cells_travelled - 1; i++) {
             //     update_position();
             // }
@@ -226,7 +211,7 @@ bool Navigation::step() {
     case Movement::RIGHT: {
         // Move half a cell, stop, turn right, stop, move half a cell
         if (state == 0) {
-            target_speed = std::max((target_speed - LINEAR_ACCEL), MIN_MOVE_SPEED);
+            target_speed = std::max((target_speed - Config::linear_acceleration), Config::min_move_speed);
             rotation_ratio = -angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
             if (std::abs(traveled_dist) >= HALF_CELL_SIZE_CM - 0.5) {
                 state = 1;
@@ -241,9 +226,9 @@ bool Navigation::step() {
         } else if (state == 2) {
             target_speed = 0;
             if (std::abs(bsp::imu::get_angle()) < M_PI / 4) {
-                rotation_ratio = ANGULAR_SPEED;
+                rotation_ratio = Config::angular_speed;
             } else {
-                rotation_ratio = std::max((rotation_ratio - ANGULAR_ACCEL), MIN_TURN_SPEED);
+                rotation_ratio = std::max((rotation_ratio - Config::angular_acceleration), Config::min_turn_speed);
             }
 
             if (std::abs(bsp::imu::get_angle()) > M_PI_2 - 0.05) {
@@ -259,7 +244,7 @@ bool Navigation::step() {
             }
 
         } else if (state == 4) {
-            target_speed = std::min((target_speed + LINEAR_ACCEL), SEARCH_SPEED);
+            target_speed = std::min((target_speed + Config::linear_acceleration), Config::search_speed);
             float target_rad_s = walls_pid.calculate(0.0, ir_side_wall_error());
 
             rotation_ratio = -angular_vel_pid.calculate(target_rad_s, bsp::imu::get_rad_per_s());
@@ -275,7 +260,7 @@ bool Navigation::step() {
     case Movement::LEFT: {
         // Move half a cell, stop, turn left, stop, move half a cell
         if (state == 0) {
-            target_speed = std::max((target_speed - LINEAR_ACCEL), MIN_MOVE_SPEED);
+            target_speed = std::max((target_speed - Config::linear_acceleration), Config::min_move_speed);
             rotation_ratio = -angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
             if (std::abs(traveled_dist) >= HALF_CELL_SIZE_CM - 0.5) {
                 state = 1;
@@ -290,9 +275,10 @@ bool Navigation::step() {
         } else if (state == 2) {
             target_speed = 0;
             if (std::abs(bsp::imu::get_angle()) < M_PI / 4) {
-                rotation_ratio = -ANGULAR_SPEED;
+                rotation_ratio = -Config::angular_speed;
             } else {
-                rotation_ratio = std::min(float(rotation_ratio + ANGULAR_ACCEL), -MIN_TURN_SPEED);
+                rotation_ratio =
+                    std::min(float(rotation_ratio + Config::angular_acceleration), -Config::min_turn_speed);
             }
 
             if (std::abs(bsp::imu::get_angle()) > M_PI_2 - 0.1) {
@@ -308,7 +294,7 @@ bool Navigation::step() {
             }
 
         } else if (state == 4) {
-            target_speed = std::min((target_speed + LINEAR_ACCEL), SEARCH_SPEED);
+            target_speed = std::min((target_speed + Config::linear_acceleration), Config::search_speed);
             float target_rad_s = walls_pid.calculate(0.0, ir_side_wall_error());
 
             rotation_ratio = -angular_vel_pid.calculate(target_rad_s, bsp::imu::get_rad_per_s());
@@ -325,7 +311,7 @@ bool Navigation::step() {
         // Move half a cell, stop, turn 180, stop, move half a cell
         static int half_turn = false;
         if (state == 0) {
-            target_speed = std::max((target_speed - LINEAR_ACCEL), MIN_MOVE_SPEED);
+            target_speed = std::max((target_speed - Config::linear_acceleration), Config::min_move_speed);
             rotation_ratio = -angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
             if (std::abs(traveled_dist) >= HALF_CELL_SIZE_CM - ROBOT_DIST_FROM_CENTER_START) {
                 state = 1;
@@ -341,9 +327,9 @@ bool Navigation::step() {
         } else if (state == 2) {
             target_speed = 0;
             if (std::abs(bsp::imu::get_angle()) < M_PI_2) {
-                rotation_ratio = ANGULAR_SPEED;
+                rotation_ratio = Config::angular_speed;
             } else {
-                rotation_ratio = std::max(float(rotation_ratio - ANGULAR_ACCEL), MIN_TURN_SPEED);
+                rotation_ratio = std::max(float(rotation_ratio - Config::angular_acceleration), Config::min_turn_speed);
             }
 
             if (!half_turn && std::abs(bsp::imu::get_angle()) > M_PI_2) {
@@ -365,7 +351,7 @@ bool Navigation::step() {
             }
 
         } else if (state == 4) {
-            target_speed = -FIX_POSITION_SPEED;
+            target_speed = -Config::fix_position_speed;
             rotation_ratio = 0;
             if (bsp::get_tick_ms() - reference_time > 300) {
                 bsp::imu::reset_angle();
@@ -373,7 +359,7 @@ bool Navigation::step() {
                 traveled_dist = 0;
             }
         } else if (state == 5) {
-            target_speed = std::min((target_speed + LINEAR_ACCEL), SEARCH_SPEED);
+            target_speed = std::min((target_speed + Config::linear_acceleration), Config::search_speed);
             float angle_error = bsp::imu::get_angle();
 
             rotation_ratio = -angular_vel_pid.calculate(-angle_error * 0.5, bsp::imu::get_rad_per_s());
@@ -405,10 +391,8 @@ Direction Navigation::get_robot_direction(void) {
 void Navigation::move(Direction dir, uint8_t cells) {
     bsp::imu::reset_angle();
 
-    if (cells > 1){
-        bsp::leds::stripe_set(0, Color::Blue);
-        bsp::leds::stripe_set(1, Color::Blue);
-        bsp::leds::stripe_send();
+    if (cells > 1) {
+        bsp::leds::stripe_set(Color::Blue);
     }
 
     current_movement = get_movement(dir);
@@ -432,9 +416,7 @@ void Navigation::stop() {
         target_direction = Direction::EAST;
     }
 
-    bsp::leds::stripe_set(0, Color::Blue);
-    bsp::leds::stripe_set(1, Color::Blue);
-    bsp::leds::stripe_send();
+    bsp::leds::stripe_set(Color::Blue);
 
     current_movement = STOP;
     traveled_dist = 0;

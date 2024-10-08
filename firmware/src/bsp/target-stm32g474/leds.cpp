@@ -99,6 +99,14 @@ void stripe_set(uint8_t num, Color const& color) {
     ws.set(num, color.encode());
 }
 
+void stripe_set(Color const& color) {
+    uint32_t encoded = color.encode();
+    for (size_t i = 0; i < ws.amount; i++) {
+        ws.set(i, encoded);
+    }
+    stripe_send();
+}
+
 void stripe_send() {
     ws.send();
 }

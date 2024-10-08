@@ -9,13 +9,13 @@
 
 namespace devices {
 
-template <size_t amount>
+template <size_t _amount>
 class WS2812 {
 public:
     WS2812(TIM_HandleTypeDef* timer, uint32_t channel) : timer(timer), timer_channel(channel) {}
 
     void set(uint8_t num, uint32_t encoded_color) {
-        if (num >= amount) {
+        if (num >= _amount) {
             return;
         }
 
@@ -26,7 +26,7 @@ public:
 
     void send() {
         for (int8_t i = 0; i < FINAL_PADDING_SIZE; i++) {
-            pwm_data[(WS2812_PACKET_SIZE * amount) + i] = 0;
+            pwm_data[(WS2812_PACKET_SIZE * _amount) + i] = 0;
         }
 
         HAL_TIM_PWM_Start_DMA(timer, timer_channel, pwm_data, WS2812_PWM_SIZE);
@@ -38,11 +38,13 @@ public:
         }
     }
 
+    static constexpr size_t amount = _amount;
+
 private:
     static constexpr uint16_t WS2812_PACKET_SIZE = 24;
     static constexpr uint16_t FINAL_PADDING_SIZE = 2;
 
-    static constexpr uint16_t WS2812_PWM_SIZE = ((WS2812_PACKET_SIZE * amount) + FINAL_PADDING_SIZE);
+    static constexpr uint16_t WS2812_PWM_SIZE = ((WS2812_PACKET_SIZE * _amount) + FINAL_PADDING_SIZE);
 
     /* PWM BIT1 must be a number so that the pwm has 580ns to 1000ns high time */
     /* PWM BIT0 must be a number so that the pwm has 220ns to 380ns high time */
@@ -58,4 +60,5 @@ private:
     TIM_HandleTypeDef* timer;
     uint32_t timer_channel;
 };
+
 }

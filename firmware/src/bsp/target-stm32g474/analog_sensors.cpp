@@ -29,14 +29,13 @@ namespace bsp::analog_sensors {
 #define ADC_2_DMA_BUFFER_SIZE ADC_2_DMA_CHANNELS* READINGS_PER_ADC_2
 #define ADC_2_DMA_HALF_BUFFER_SIZE (ADC_2_DMA_BUFFER_SIZE / 2)
 
-
-#define ADC_MAX_VALUE      4095.0
+#define ADC_MAX_VALUE 4095.0
 #define ADC_MAX_VOLTAGE_MV 3300.0
-#define PWR_BATTERY_THRESHOLD_MV   11200.0
-#define PWR_BAT_VOLTAGE_DIV_R1     100.0
-#define PWR_BAT_VOLTAGE_DIV_R2     33.0
+#define PWR_BATTERY_THRESHOLD_MV 11200.0
+#define PWR_BAT_VOLTAGE_DIV_R1 100.0
+#define PWR_BAT_VOLTAGE_DIV_R2 33.0
 #define PWR_BAT_VOLTAGE_MULTIPLIER ((PWR_BAT_VOLTAGE_DIV_R1 + PWR_BAT_VOLTAGE_DIV_R2) / PWR_BAT_VOLTAGE_DIV_R2)
-#define PWR_BAT_POSITION_IN_ADC    4
+#define PWR_BAT_POSITION_IN_ADC 4
 
 /// @section Private variables
 
@@ -52,18 +51,18 @@ static uint32_t current_reading[2];
 static bool modulation_enabled;
 
 /* Reading value when robot is in the middle of the cell */
-static uint32_t ir_wall_dist_reference[4] = {    
-    1435, //RIGHT
-    2600, //FRONT_LEFT
-    2600, //FRONT_RIGHT
-    1575  //LEFT
+static uint32_t ir_wall_dist_reference[4] = {
+    1435, // RIGHT
+    2600, // FRONT_LEFT
+    2600, // FRONT_RIGHT
+    1575  // LEFT
 };
 
 static uint32_t ir_threshold_control[4] = {
-    1050, //RIGHT
-    2600, //FRONT_LEFT
-    2600, //FRONT_RIGHT
-    1315  //LEFT
+    1050, // RIGHT
+    2600, // FRONT_LEFT
+    2600, // FRONT_RIGHT
+    1315  // LEFT
 };
 
 /* Reading on the cell start for considering wall on the next cell */

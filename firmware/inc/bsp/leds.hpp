@@ -57,6 +57,11 @@ void ir_emitter_all_off(void);
 /// @param num LED number [0, LED_STRIPE_AMOUNT)
 /// @param color the color
 void stripe_set(uint8_t num, Color const& color);
+
+/// @brief Sets the color of all LEDs in the stripe and send the command
+/// @param color the color
+void stripe_set(Color const& color);
+
 void stripe_send();
 
 } // namespace

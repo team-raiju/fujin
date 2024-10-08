@@ -37,7 +37,6 @@ void PreSearch::enter() {
     if (bsp::analog_sensors::battery_latest_reading_mv() > 7000) {
         soft_timer::start(100, soft_timer::SINGLE);
     }
-
 }
 
 State* PreSearch::react(Timeout const&) {
@@ -46,7 +45,7 @@ State* PreSearch::react(Timeout const&) {
 
     bsp::leds::ir_emitter_on(bsp::leds::LEFT_FRONT);
     bsp::leds::ir_emitter_on(bsp::leds::RIGHT_FRONT);
-    bsp::analog_sensors::enable_modulation(true);
+    bsp::analog_sensors::enable_modulation();
     bsp::delay_ms(5);
 
     for (int i = 0; i < 400; i++) {
@@ -91,11 +90,9 @@ Search::Search() {
 void Search::enter() {
     bsp::debug::print("state:Search");
     bsp::leds::indication_on();
-    bsp::leds::stripe_set(0, Color::Red);
-    bsp::leds::stripe_set(1, Color::Red);
-    bsp::leds::stripe_send();
+    bsp::leds::stripe_set(Color::Red);
     bsp::leds::ir_emitter_all_on();
-    bsp::analog_sensors::enable_modulation(true);
+    bsp::analog_sensors::enable_modulation();
 
     bsp::buzzer::start();
     bsp::delay_ms(2000);
@@ -165,11 +162,9 @@ State* Search::react(Timeout const&) {
             navigation->move(dir, 1);
         }
 
-
         if (robot_pos == services::Maze::GOAL_POS && !returning) {
             stop_next_move = true;
         }
-
     }
 
     return nullptr;

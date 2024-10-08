@@ -2,6 +2,7 @@
 
 #include "algorithms/pid.hpp"
 #include "bsp/analog_sensors.hpp"
+#include "bsp/ble.hpp"
 #include "bsp/buzzer.hpp"
 #include "bsp/core.hpp"
 #include "bsp/debug.hpp"
@@ -14,7 +15,6 @@
 #include "services/navigation.hpp"
 #include "utils/math.hpp"
 #include "utils/soft_timer.hpp"
-#include "bsp/ble.hpp"
 
 using bsp::leds::Color;
 
@@ -24,9 +24,7 @@ void PreRun::enter() {
 
     bsp::debug::print("state:PreRun");
 
-    bsp::leds::stripe_set(0, Color::Green);
-    bsp::leds::stripe_set(1, Color::Green);
-    bsp::leds::stripe_send();
+    bsp::leds::stripe_set(Color::Green);
 
     bsp::motors::set(0, 0);
 
@@ -42,7 +40,7 @@ State* PreRun::react(Timeout const&) {
 
     bsp::leds::ir_emitter_on(bsp::leds::LEFT_FRONT);
     bsp::leds::ir_emitter_on(bsp::leds::RIGHT_FRONT);
-    bsp::analog_sensors::enable_modulation(true);
+    bsp::analog_sensors::enable_modulation();
     bsp::delay_ms(5);
 
     for (int i = 0; i < 400; i++) {
@@ -86,11 +84,9 @@ Run::Run() {
 void Run::enter() {
     bsp::debug::print("state:Run");
     bsp::leds::indication_on();
-    bsp::leds::stripe_set(0, Color::Red);
-    bsp::leds::stripe_set(1, Color::Red);
-    bsp::leds::stripe_send();
+    bsp::leds::stripe_set(Color::Red);
     bsp::leds::ir_emitter_all_on();
-    bsp::analog_sensors::enable_modulation(true);
+    bsp::analog_sensors::enable_modulation();
 
     bsp::buzzer::start();
     bsp::delay_ms(2000);
@@ -129,7 +125,6 @@ State* Run::react(BleCommand const&) {
     return nullptr;
 }
 
-
 State* Run::react(Timeout const&) {
     using bsp::analog_sensors::ir_reading_wall;
     using bsp::analog_sensors::SensingDirection;
@@ -154,12 +149,10 @@ State* Run::react(Timeout const&) {
         } else {
             navigation->move(dir, cells);
         }
-
     }
 
     return nullptr;
 }
-
 
 void Run::exit() {
     bsp::motors::set(0, 0);

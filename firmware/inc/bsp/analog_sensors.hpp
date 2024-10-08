@@ -16,7 +16,7 @@ enum SensingDirection {
     RIGHT = 0,
     FRONT_LEFT = 1,
     FRONT_RIGHT = 2,
-    LEFT = 3
+    LEFT = 3,
 };
 
 typedef void (*bsp_analog_ready_callback_t)(void);
@@ -41,5 +41,6 @@ bool ir_reading_wall(SensingDirection direction);
 
 int32_t ir_side_wall_error();
 bool ir_wall_control_valid(SensingDirection direction);
-void enable_modulation(bool enable);
+void enable_modulation(bool enable = true);
+
 }

@@ -1,11 +1,11 @@
-#include "fsm/fsm.hpp"
+#include <variant>
+
 #include "bsp/ble.hpp"
 #include "bsp/buttons.hpp"
+#include "fsm/fsm.hpp"
+#include "services/config.hpp"
 #include "services/navigation.hpp"
 #include "utils/soft_timer.hpp"
-
-#include <map>
-#include <variant>
 
 namespace fsm {
 
@@ -30,6 +30,16 @@ void FSM::start() {
         dispatch(ButtonPressed{
             .button = type == bsp::buttons::PressType::SHORT ? ButtonPressed::SHORT2 : ButtonPressed::LONG2,
         });
+    });
+
+    bsp::ble::register_callback([this](auto packet) {
+        if (packet[0] != bsp::ble::header) {
+            return;
+        }
+
+        if (packet[1] == bsp::ble::BlePacketType::UpdateParameters) {
+            services::Config::parse_packet(packet);
+        }
     });
 
     soft_timer::register_callback([this]() { dispatch(Timeout()); });
