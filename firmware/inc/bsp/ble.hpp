@@ -8,7 +8,7 @@ namespace bsp::ble {
 /// @section Constants
 
 constexpr uint8_t header = 0xFF;
-constexpr uint8_t receive_packet_size = 12;
+constexpr uint8_t receive_packet_size = 7;
 constexpr uint8_t max_packet_size = 20;
 
 /// @section Custom types

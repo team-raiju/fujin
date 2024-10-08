@@ -53,7 +53,7 @@ void Config::parse_packet(uint8_t packet[bsp::ble::max_packet_size]) {
 
     _float f;
     for (size_t i = 0; i < sizeof(float); i++) {
-        f.raw[i] = packet[3 + i];
+        f.raw[(sizeof(float) - 1) - i] = packet[3 + i];
     }
 
     *params[parameter] = f.value;

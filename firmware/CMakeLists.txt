@@ -42,6 +42,9 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     src/services/navigation.cpp
     src/services/maze.cpp
     src/services/notification.cpp
+
+    src/services/config.cpp
+
 )
 
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
