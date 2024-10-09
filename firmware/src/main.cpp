@@ -8,7 +8,7 @@
 #include "bsp/timers.hpp"
 #include "fsm/fsm.hpp"
 #include "fsm/state.hpp"
-
+#include "services/config.hpp"
 void startup() {
     bsp::buzzer::set_frequency(2500);
     bsp::buzzer::set_volume(1);
@@ -23,6 +23,7 @@ void startup() {
     bsp::buzzer::stop();
     bsp::analog_sensors::start();
     bsp::delay_ms(30);
+    services::Config::init();
     bsp::ble::init();
     bsp::ble::start();
 }
