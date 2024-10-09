@@ -3,6 +3,7 @@
 #include <functional>
 #include <queue>
 
+#include "bsp/eeprom.hpp"
 #include "bsp/timers.hpp"
 #include "services/maze.hpp"
 #include "utils/RingBuffer.hpp"
@@ -42,7 +43,7 @@ Maze::Maze() {
     map[0][0].visited = true;
 }
 
-Direction Maze::next_step(Point const& current_position, uint8_t walls, bool returning) {
+Direction Maze::next_step(Point const& current_position, uint8_t walls, bool returning, bool search_mode) {
     static RingBuffer<Point, 32> to_visit;
 
     // The only option in the origin is always north, don't waste time calculating
@@ -52,14 +53,16 @@ Direction Maze::next_step(Point const& current_position, uint8_t walls, bool ret
 
     // Update our grid
     algorithm::Cell& cell = map[current_position.x][current_position.y];
-    cell.update_walls(walls);
-    cell.visited = true;
+    if (search_mode) {
+        cell.update_walls(walls);
+        cell.visited = true;
+    }
 
     // Recalculate the distances
     if (returning) {
-        algorithm::flood_fill(map, ORIGIN);
+        algorithm::flood_fill(map, ORIGIN, search_mode);
     } else {
-        algorithm::flood_fill(map, GOAL_POS);
+        algorithm::flood_fill(map, GOAL_POS, search_mode);
     }
 
     // Check all directions for the best option
@@ -77,13 +80,19 @@ Direction Maze::next_step(Point const& current_position, uint8_t walls, bool ret
         }
 
         Point position = current_position + Δ[std::to_underlying(d)];
-        auto& neighbour = map[position.x][position.y];
 
         // out of bounds
         if (position.x < 0 || position.x >= CELLS_X || position.y < 0 || position.y >= CELLS_Y) {
             continue;
         }
 
+        auto& neighbour = map[position.x][position.y];
+
+        // In run mode, we don't visit cells that have not been visited before
+        if (!search_mode && !neighbour.visited) {
+            continue;
+        }
+        
         // TODO: Prioritize the current direction
         // We prioritize cells with smallest values and then unvisited cells if there's a tie
         tprio = neighbour.visited ? 1 : 2;
@@ -101,31 +110,62 @@ Direction Maze::next_step(Point const& current_position, uint8_t walls, bool ret
 }
 
 std::array<Direction, 256> Maze::directions_to_goal() {
-    std::array<Direction, 256> directions;
+    std::array<Direction, 256> directions = {};
     Point pos = ORIGIN;
     int i = 0;
 
     while (pos != GOAL_POS) {
-        auto dir = next_step(pos, map[pos.x][pos.y].walls, false);
+        auto dir = next_step(pos, map[pos.x][pos.y].walls, false, false);
         directions[i++] = dir;
         switch (dir) {
-            case Direction::NORTH:
-                pos.y += 1;
-                break;
-            case Direction::EAST:
-                pos.x += 1;
-                break;
-            case Direction::SOUTH:
-                pos.y -= 1;
-                break;
-            case Direction::WEST:
-                pos.x -= 1;
-                break;
+        case Direction::NORTH:
+            pos.y += 1;
+            break;
+        case Direction::EAST:
+            pos.x += 1;
+            break;
+        case Direction::SOUTH:
+            pos.y -= 1;
+            break;
+        case Direction::WEST:
+            pos.x -= 1;
+            break;
         }
     }
 
     return directions;
 }
+
+void Maze::save_maze() {
+    uint8_t data[4];
+    for (int x = 0; x < CELLS_X; x++) {
+        for (int y = 0; y < CELLS_Y; y++) {
+            auto& cell = map[x][y];
+            data[0] = cell.walls;
+            data[1] = cell.visited;
+            data[2] = cell.distance;
+            data[3] = 0;
+            bsp::eeprom::write_u32(bsp::eeprom::param_addresses_t::ADDR_MAZE_START + 4 * (x * CELLS_Y + y),
+                                   *(uint32_t*)data);
+            bsp::delay_ms(5);
+        }
+    }
+}
+
+void Maze::read_maze() {
+    uint8_t data[4];
+    for (int x = 0; x < CELLS_X; x++) {
+        for (int y = 0; y < CELLS_Y; y++) {
+            bsp::eeprom::read_u32(bsp::eeprom::param_addresses_t::ADDR_MAZE_START + 4 * (x * CELLS_Y + y),
+                                  (uint32_t*)data);
+            map[x][y].walls = data[0];
+            map[x][y].visited = data[1];
+            map[x][y].distance = data[2];
+            bsp::delay_ms(5);
+        }
+    }
+}
+
 
 void Maze::print(Point const& curr) {
     for (int y = (CELLS_Y - 1); y >= 0; y--) {
@@ -144,7 +184,7 @@ void Maze::print(Point const& curr) {
             std::printf(map[x][y].walls & W ? "|" : " ");
 
             if (curr == Point{x, y}) {
-                std::printf("\033[32m");
+                std::printf("\033[37m");
             }
 
             std::printf("%- 3d", map[x][y].distance);

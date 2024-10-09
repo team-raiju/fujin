@@ -152,7 +152,7 @@ State* Search::react(Timeout const&) {
             return &State::get<Idle>();
         }
 
-        auto dir = maze->next_step(robot_pos, walls, returning);
+        auto dir = maze->next_step(robot_pos, walls, returning, true);
 
         if (stop_next_move) {
             returning = true;

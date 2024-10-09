@@ -5,6 +5,8 @@
 
 namespace bsp::ble {
 
+    bool locked = true;
+
 /// @section Constants
 
 static constexpr uint32_t ble_timeout = 100;
@@ -42,6 +44,18 @@ void transmit(uint8_t* data, uint8_t size) {
 
 void register_callback(BleCallback callback) {
     external_callback = callback;
+}
+
+void lock_config_rcv() {
+    locked = true;
+}
+
+void unlock_config_rcv() {
+    locked = false;
+}
+
+bool is_config_locked() {
+    return locked;
 }
 
 } // namespace

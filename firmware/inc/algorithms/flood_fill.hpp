@@ -59,7 +59,7 @@ template <int width, int height>
 using Grid = Cell[width][height];
 
 template <int width, int height>
-void flood_fill(Grid<width, height>& grid, Point const& target) {
+void flood_fill(Grid<width, height>& grid, Point const& target, bool search_mode = true) {
     // Reset the distance of every cell
     for (int x = 0; x < width; x++) {
         for (int y = 0; y < height; y++) {
@@ -95,6 +95,13 @@ void flood_fill(Grid<width, height>& grid, Point const& target) {
             // We can't or don't need to visit this cell
             if (has_wall || visited) {
                 continue;
+            }
+
+            // We only visit cells that have not been visited before in search mode
+            if (!search_mode) {
+                if (!next_cell.visited) {
+                    continue;
+                }
             }
 
             next_cell.distance = cell.distance + 1;

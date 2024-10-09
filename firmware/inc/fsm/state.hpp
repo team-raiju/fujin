@@ -39,6 +39,7 @@ public:
 class Idle : public State {
 public:
     void enter() override;
+    void exit() override;
 
     State* react(BleCommand const&) override;
     State* react(ButtonPressed const&) override;

@@ -38,7 +38,7 @@ union _float {
     uint32_t u32;
 };
 
-int Config::init() {
+void Config::init() {
     for (auto& param : params) {
         uint8_t data[sizeof(float)];
         if (bsp::eeprom::read_u32(param.second, (uint32_t*)data) == bsp::eeprom::OK) {
@@ -52,22 +52,21 @@ int Config::init() {
             *param.first = f.value;
         }
     }
-    return 0;
 }
 
-void Config::parse_packet(uint8_t packet[bsp::ble::max_packet_size]) {
+int Config::parse_packet(uint8_t packet[bsp::ble::max_packet_size]) {
     if (packet[0] != bsp::ble::header) {
-        return;
+        return -1;
     }
 
     if (packet[1] != bsp::ble::BlePacketType::UpdateParameters) {
-        return;
+        return -1;
     }
 
     const uint8_t parameter = packet[2];
 
     if (parameter >= sizeof(params) / sizeof(params[0])) {
-        return;
+        return -1;
     }
 
     _float f;
@@ -78,6 +77,8 @@ void Config::parse_packet(uint8_t packet[bsp::ble::max_packet_size]) {
     *params[parameter].first = f.value;
 
     bsp::eeprom::write_u32(params[parameter].second, f.u32);
+
+    return 0;
 }
 
 }

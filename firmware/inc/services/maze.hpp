@@ -23,7 +23,7 @@ public:
     /// @param current_position Current cell coordinates
     /// @param walls Current cell wall information
     /// @return Next cell to be visited
-    Direction next_step(Point const& current_position, uint8_t walls, bool returning = false);
+    Direction next_step(Point const& current_position, uint8_t walls, bool returning = false, bool search_mode = true);
 
     /// @brief Prints the maze for debugging purpose
     void print(Point const& curr);
@@ -33,6 +33,10 @@ public:
     algorithm::Grid<CELLS_X, CELLS_Y> map;
 
     std::array<Direction, 256> directions_to_goal();
+
+    void save_maze();
+    
+    void read_maze();
 
 private:
     Maze();

@@ -54,4 +54,10 @@ void transmit(uint8_t* data, uint8_t size);
 /// @param callback_function callback function for BLE received data
 void register_callback(BleCallback callback);
 
+void lock_config_rcv();
+
+void unlock_config_rcv();
+
+bool is_config_locked();
+
 }

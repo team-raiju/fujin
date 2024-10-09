@@ -20,8 +20,8 @@ public:
     static float linear_acceleration;
     static float angular_acceleration;
 
-    static int init();
-    static void parse_packet(uint8_t packet[bsp::ble::max_packet_size]);
+    static void init();
+    static int parse_packet(uint8_t packet[bsp::ble::max_packet_size]);
 };
 
 }

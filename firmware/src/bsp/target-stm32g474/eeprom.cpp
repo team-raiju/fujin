@@ -7,7 +7,7 @@
 
 namespace bsp::eeprom {
 
-bool address_is_valid(param_addresses_t address) {
+bool address_is_valid(uint16_t address) {
     return address <= ADDR_MAX;
 }
 
@@ -18,7 +18,7 @@ EepromResult init() {
     return OK;
 }
 
-EepromResult read_u8(param_addresses_t address, uint8_t* data) {
+EepromResult read_u8(uint16_t address, uint8_t* data) {
     if (!address_is_valid(address)) {
         return ERROR;
     }
@@ -33,7 +33,7 @@ EepromResult read_u8(param_addresses_t address, uint8_t* data) {
     return ERROR;
 }
 
-EepromResult write_u8(param_addresses_t address, uint8_t data) {
+EepromResult write_u8(uint16_t address, uint8_t data) {
     if (!address_is_valid(address)) {
         return ERROR;
     }
@@ -47,7 +47,7 @@ EepromResult write_u8(param_addresses_t address, uint8_t data) {
     return ERROR;
 }
 
-EepromResult read_u16(param_addresses_t address, uint16_t* data) {
+EepromResult read_u16(uint16_t address, uint16_t* data) {
     if (!address_is_valid(address)) {
         return ERROR;
     }
@@ -66,7 +66,7 @@ EepromResult read_u16(param_addresses_t address, uint16_t* data) {
     return ERROR;
 }
 
-EepromResult write_u16(param_addresses_t address, uint16_t data) {
+EepromResult write_u16(uint16_t address, uint16_t data) {
     if (!address_is_valid(address)) {
         return ERROR;
     }
@@ -82,7 +82,7 @@ EepromResult write_u16(param_addresses_t address, uint16_t data) {
     return ERROR;
 }
 
-EepromResult read_u32(param_addresses_t address, uint32_t* data) {
+EepromResult read_u32(uint16_t address, uint32_t* data) {
     if (!address_is_valid(address)) {
         return ERROR;
     }
@@ -102,7 +102,7 @@ EepromResult read_u32(param_addresses_t address, uint32_t* data) {
     return ERROR;
 }
 
-EepromResult write_u32(param_addresses_t address, uint32_t data) {
+EepromResult write_u32(uint16_t address, uint32_t data) {
     if (!address_is_valid(address)) {
         return ERROR;
     }

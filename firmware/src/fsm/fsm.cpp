@@ -37,9 +37,11 @@ void FSM::start() {
             return;
         }
 
-        if (packet[1] == bsp::ble::BlePacketType::UpdateParameters) {
+        if (packet[1] == bsp::ble::BlePacketType::UpdateParameters && !bsp::ble::is_config_locked()) {
             services::Config::parse_packet(packet);
+            dispatch(BleCommand());
         }
+
     });
 
     soft_timer::register_callback([this]() { dispatch(Timeout()); });
