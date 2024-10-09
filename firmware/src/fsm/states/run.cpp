@@ -96,6 +96,7 @@ void Run::enter() {
 
     navigation->init();
 
+    maze->read_maze_from_memory();
     target_directions = maze->directions_to_goal();
 
     move_count = 1;

@@ -107,6 +107,7 @@ private:
     services::Maze* maze;
     bool returning;
     bool stop_next_move;
+    bool save_maze;
 };
 
 }

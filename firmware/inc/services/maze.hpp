@@ -34,9 +34,9 @@ public:
 
     std::array<Direction, 256> directions_to_goal();
 
-    void save_maze();
+    void save_maze_to_memory();
     
-    void read_maze();
+    void read_maze_from_memory();
 
 private:
     Maze();

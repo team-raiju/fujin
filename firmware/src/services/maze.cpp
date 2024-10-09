@@ -136,7 +136,7 @@ std::array<Direction, 256> Maze::directions_to_goal() {
     return directions;
 }
 
-void Maze::save_maze() {
+void Maze::save_maze_to_memory() {
     uint8_t data[4];
     for (int x = 0; x < CELLS_X; x++) {
         for (int y = 0; y < CELLS_Y; y++) {
@@ -152,7 +152,7 @@ void Maze::save_maze() {
     }
 }
 
-void Maze::read_maze() {
+void Maze::read_maze_from_memory() {
     uint8_t data[4];
     for (int x = 0; x < CELLS_X; x++) {
         for (int y = 0; y < CELLS_Y; y++) {

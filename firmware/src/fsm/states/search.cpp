@@ -103,6 +103,7 @@ void Search::enter() {
     navigation->init();
 
     returning = false;
+    save_maze = false;
 }
 
 State* Search::react(BleCommand const&) {
@@ -163,6 +164,7 @@ State* Search::react(Timeout const&) {
         }
 
         if (robot_pos == services::Maze::GOAL_POS && !returning) {
+            save_maze = true;
             stop_next_move = true;
         }
     }
@@ -176,6 +178,11 @@ void Search::exit() {
     bsp::leds::ir_emitter_all_off();
     bsp::leds::indication_off();
     soft_timer::stop();
+    if (save_maze) {
+        bsp::buzzer::start();
+        maze->save_maze_to_memory();
+        bsp::buzzer::stop();
+    }
 }
 
 }
