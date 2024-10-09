@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <array>
+#include <utility>
 
 #include "algorithms/flood_fill.hpp"
 #include "navigation.hpp"
@@ -32,7 +33,7 @@ public:
 
     algorithm::Grid<CELLS_X, CELLS_Y> map;
 
-    std::array<Direction, 256> directions_to_goal();
+    std::array<std::pair<Direction, uint8_t>, 256> directions_to_goal();
 
     void save_maze_to_memory();
     

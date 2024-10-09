@@ -98,8 +98,7 @@ void Run::enter() {
 
     maze->read_maze_from_memory();
     target_directions = maze->directions_to_goal();
-
-    move_count = 1;
+    move_count = 0;
 }
 
 State* Run::react(ButtonPressed const& event) {
@@ -136,17 +135,20 @@ State* Run::react(Timeout const&) {
     if (done) {
 
         auto robot_pos = navigation->get_robot_position();
+        auto dir = target_directions[move_count].first;
+        auto cells = target_directions[move_count].second;
+        move_count++;
 
-        if (robot_pos == services::Maze::GOAL_POS) {
+        if (stop_next_move) {
+            return &State::get<Idle>();
+        }
+
+        if (robot_pos == services::Maze::GOAL_POS || cells == 0) {
             stop_next_move = true;
         }
 
-        // auto cells = cells_to_move[move_count];
-        auto cells = 1;
-        auto dir = target_directions[move_count++];
-
-        if (robot_pos == services::Maze::GOAL_POS) {
-            return &State::get<Idle>();
+        if (stop_next_move) {
+            navigation->stop();
         } else {
             navigation->move(dir, cells);
         }

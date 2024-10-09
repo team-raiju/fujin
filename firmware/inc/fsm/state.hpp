@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <array>
+#include <utility>
 
 #include "algorithms/pid.hpp"
 #include "fsm/event.hpp"
@@ -82,8 +83,7 @@ private:
     services::Navigation* navigation;
     services::Maze* maze;
     bool stop_next_move;
-    std::array<Direction, 256> target_directions;
-    std::array<uint8_t, 256>  cells_to_move;
+    std::array<std::pair<Direction, uint8_t>, 256> target_directions;
     int move_count = 0;
 };
 

@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <functional>
 #include <queue>
+#include <utility>
 
 #include "bsp/eeprom.hpp"
 #include "bsp/timers.hpp"
@@ -92,7 +93,7 @@ Direction Maze::next_step(Point const& current_position, uint8_t walls, bool ret
         if (!search_mode && !neighbour.visited) {
             continue;
         }
-        
+
         // TODO: Prioritize the current direction
         // We prioritize cells with smallest values and then unvisited cells if there's a tie
         tprio = neighbour.visited ? 1 : 2;
@@ -109,14 +110,17 @@ Direction Maze::next_step(Point const& current_position, uint8_t walls, bool ret
     return next_direction;
 }
 
-std::array<Direction, 256> Maze::directions_to_goal() {
-    std::array<Direction, 256> directions = {};
+std::array<std::pair<Direction, uint8_t>, 256> Maze::directions_to_goal() {
+    std::array<Direction, 256> target_directions = {};
+    std::array<std::pair<Direction, uint8_t>, 256> processed_directions = {};
     Point pos = ORIGIN;
-    int i = 0;
+    pos.y += 1; // start from the cell (0,1)
+
+    int dir_count = 0;
 
     while (pos != GOAL_POS) {
         auto dir = next_step(pos, map[pos.x][pos.y].walls, false, false);
-        directions[i++] = dir;
+        target_directions[dir_count++] = dir;
         switch (dir) {
         case Direction::NORTH:
             pos.y += 1;
@@ -133,7 +137,22 @@ std::array<Direction, 256> Maze::directions_to_goal() {
         }
     }
 
-    return directions;
+    uint8_t continuous_cnt = 1;
+    int processed_count = 1;
+    processed_directions[0] = {target_directions[0], 1};
+    processed_directions[1] = {target_directions[1], 1};
+
+    for (int i = 2; i < dir_count; i++) {
+        if (target_directions[i] == target_directions[i - 1] && target_directions[i] == target_directions[i - 2]) {
+            continuous_cnt++;
+        } else {
+            processed_directions[processed_count++] = {target_directions[i - 1], continuous_cnt};
+            continuous_cnt = 1;
+        }
+    }
+    processed_directions[processed_count] = {target_directions[dir_count - 1], continuous_cnt};
+
+    return processed_directions;
 }
 
 void Maze::save_maze_to_memory() {
@@ -165,7 +184,6 @@ void Maze::read_maze_from_memory() {
         }
     }
 }
-
 
 void Maze::print(Point const& curr) {
     for (int y = (CELLS_Y - 1); y >= 0; y--) {
