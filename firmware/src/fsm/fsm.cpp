@@ -1,4 +1,5 @@
 #include <variant>
+#include <map>
 
 #include "bsp/ble.hpp"
 #include "bsp/buttons.hpp"
@@ -40,6 +41,18 @@ void FSM::start() {
         if (packet[1] == bsp::ble::BlePacketType::UpdateParameters && !bsp::ble::is_config_locked()) {
             services::Config::parse_packet(packet);
             dispatch(BleCommand());
+        }
+
+        if (packet[1] == bsp::ble::BlePacketType::Command) {
+            static std::map<uint8_t, ButtonPressed::Type> b{
+                {bsp::ble::BleCommands::Stop, ButtonPressed::LONG2},
+                {bsp::ble::BleCommands::Button1Short, ButtonPressed::SHORT1},
+                {bsp::ble::BleCommands::Button2Short, ButtonPressed::SHORT2},
+                {bsp::ble::BleCommands::Button1Long, ButtonPressed::LONG1},
+                {bsp::ble::BleCommands::Button2Long, ButtonPressed::LONG2},
+            };
+
+            dispatch(ButtonPressed{.button = b[packet[2]]});   
         }
 
     });

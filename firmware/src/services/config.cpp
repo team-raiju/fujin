@@ -6,11 +6,11 @@
 
 namespace services {
 
-float Config::angular_kp = 0;
-float Config::angular_ki = 0;
+float Config::angular_kp = 10.0;
+float Config::angular_ki = 0.1;
 float Config::angular_kd = 0;
 
-float Config::wall_kp = 0;
+float Config::wall_kp = 0.0025;
 float Config::wall_ki = 0;
 float Config::wall_kd = 0;
 

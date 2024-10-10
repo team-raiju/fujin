@@ -21,6 +21,7 @@ public:
     Direction get_robot_direction();
     void move(Direction dir, uint8_t cells);
     void stop();
+    void stop_run_mode();
 
 private:
     Navigation() {}

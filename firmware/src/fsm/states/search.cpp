@@ -181,6 +181,7 @@ void Search::exit() {
     if (save_maze) {
         bsp::buzzer::start();
         maze->save_maze_to_memory();
+        bsp::delay_ms(500);
         bsp::buzzer::stop();
     }
 }

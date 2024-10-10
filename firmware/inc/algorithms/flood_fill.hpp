@@ -74,7 +74,7 @@ void flood_fill(Grid<width, height>& grid, Point const& target, bool search_mode
     static constexpr Point Δ[4] = {{0, 1}, {-1, 0}, {0, -1}, {1, 0}};
 
     while (!to_visit.empty()) {
-        Point pos;
+        Point pos = {0,0};
         to_visit.get(&pos);
         Cell& cell = grid[pos.x][pos.y];
 

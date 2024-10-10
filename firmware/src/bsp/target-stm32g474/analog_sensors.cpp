@@ -31,7 +31,7 @@ namespace bsp::analog_sensors {
 
 #define ADC_MAX_VALUE 4095.0
 #define ADC_MAX_VOLTAGE_MV 3300.0
-#define PWR_BATTERY_THRESHOLD_MV 11200.0
+#define PWR_BATTERY_THRESHOLD_MV 10700.0
 #define PWR_BAT_VOLTAGE_DIV_R1 100.0
 #define PWR_BAT_VOLTAGE_DIV_R2 33.0
 #define PWR_BAT_VOLTAGE_MULTIPLIER ((PWR_BAT_VOLTAGE_DIV_R1 + PWR_BAT_VOLTAGE_DIV_R2) / PWR_BAT_VOLTAGE_DIV_R2)
@@ -52,25 +52,25 @@ static bool modulation_enabled;
 
 /* Reading value when robot is in the middle of the cell */
 static uint32_t ir_wall_dist_reference[4] = {
-    1435, // RIGHT
-    2600, // FRONT_LEFT
-    2600, // FRONT_RIGHT
-    1575  // LEFT
+    960, // RIGHT
+    440, // FRONT_LEFT
+    360, // FRONT_RIGHT
+    860  // LEFT
 };
 
 static uint32_t ir_threshold_control[4] = {
-    1050, // RIGHT
+    560, // RIGHT
     2600, // FRONT_LEFT
     2600, // FRONT_RIGHT
-    1315  // LEFT
+    775  // LEFT
 };
 
 /* Reading on the cell start for considering wall on the next cell */
 static uint32_t ir_wall_threshold[4] = {
-    1150, // RIGHT
-    1600, // FRONT_LEFT
-    1600, // FRONT_RIGHT
-    1400  // LEFT
+    750, // RIGHT
+    625, // FRONT_LEFT
+    625, // FRONT_RIGHT
+    775  // LEFT
 };
 
 /// @section Interface implementation

@@ -148,7 +148,7 @@ State* Run::react(Timeout const&) {
         }
 
         if (stop_next_move) {
-            navigation->stop();
+            navigation->stop_run_mode();
         } else {
             navigation->move(dir, cells);
         }
