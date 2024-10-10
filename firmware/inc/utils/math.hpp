@@ -13,6 +13,11 @@
 #define constrain(v, x, y) ((v) < (x) ? (x) : ((v) > (y) ? (y) : (v)))
 
 /**
+ * @brief Constrains v between x and y, returning at least x and at most y.
+ */
+#define len(arr) (sizeof(arr) / sizeof(arr[0]))
+
+/**
  * @brief Maps an integer value from one scale to another.
  *
  * @param T Integer type

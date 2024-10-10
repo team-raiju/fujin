@@ -10,6 +10,10 @@ public:
     static float angular_ki;
     static float angular_kd;
 
+    static float wall_kp;
+    static float wall_ki;
+    static float wall_kd;
+
     static float min_move_speed;
     static float min_turn_speed;
     static float fix_position_speed;

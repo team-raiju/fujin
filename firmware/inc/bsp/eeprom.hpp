@@ -14,6 +14,8 @@ enum EepromResult {
 
 typedef enum : uint16_t {
     ADDR_MEMORY_CLEAR = 0x0000,
+
+    // PARAMS
     ADDR_ANGULAR_KP = 0x0004,
     ADDR_ANGULAR_KI = 0x0008,
     ADDR_ANGULAR_KD = 0x000C,
@@ -25,6 +27,9 @@ typedef enum : uint16_t {
     ADDR_RUN_SPEED = 0x0024,
     ADDR_LINEAR_ACCELERATION = 0x0028,
     ADDR_ANGULAR_ACCELERATION = 0x002C,
+    ADDR_WALL_KP = 0x0030,
+    ADDR_WALL_KI = 0x0034,
+    ADDR_WALL_KD = 0x0038,
 
     ADDR_MAZE_START = 0x1000,
     ADDR_MAZE_END = 0x1400,

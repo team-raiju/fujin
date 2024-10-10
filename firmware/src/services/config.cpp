@@ -1,12 +1,18 @@
-#include "services/config.hpp"
-#include "bsp/eeprom.hpp"
 #include <utility>
+
+#include "bsp/eeprom.hpp"
+#include "services/config.hpp"
+#include "utils/math.hpp"
 
 namespace services {
 
 float Config::angular_kp = 0;
 float Config::angular_ki = 0;
 float Config::angular_kd = 0;
+
+float Config::wall_kp = 0;
+float Config::wall_ki = 0;
+float Config::wall_kd = 0;
 
 float Config::min_move_speed = 16;
 float Config::min_turn_speed = 16;
@@ -23,6 +29,9 @@ static std::pair<float*, bsp::eeprom::param_addresses_t> params[] = {
     {&Config::angular_kp, bsp::eeprom::ADDR_ANGULAR_KP},
     {&Config::angular_ki, bsp::eeprom::ADDR_ANGULAR_KI},
     {&Config::angular_kd, bsp::eeprom::ADDR_ANGULAR_KD},
+    {&Config::wall_kp, bsp::eeprom::ADDR_WALL_KP},
+    {&Config::wall_ki, bsp::eeprom::ADDR_WALL_KI},
+    {&Config::wall_kd, bsp::eeprom::ADDR_WALL_KD},
     {&Config::min_move_speed, bsp::eeprom::ADDR_MIN_MOVE_SPEED},
     {&Config::min_turn_speed, bsp::eeprom::ADDR_MIN_TURN_SPEED},
     {&Config::fix_position_speed, bsp::eeprom::ADDR_FIX_POSITION_SPEED},
@@ -40,15 +49,12 @@ union _float {
 
 void Config::init() {
     for (auto& param : params) {
-        uint8_t data[sizeof(float)];
-        if (bsp::eeprom::read_u32(param.second, (uint32_t*)data) == bsp::eeprom::OK) {
-            if (data[0] == 0xff && data[1] == 0xff && data[2] == 0xff && data[3] == 0xff) {
+        _float f;
+        if (bsp::eeprom::read_u32(param.second, &f.u32) == bsp::eeprom::OK) {
+            if (f.u32 == 0xFFFFFFFF) {
                 continue;
             }
-            _float f;
-            for (size_t i = 0; i < sizeof(float); i++) {
-                f.raw[i] = data[i];
-            }
+
             *param.first = f.value;
         }
     }
@@ -65,13 +71,13 @@ int Config::parse_packet(uint8_t packet[bsp::ble::max_packet_size]) {
 
     const uint8_t parameter = packet[2];
 
-    if (parameter >= sizeof(params) / sizeof(params[0])) {
+    if (parameter >= len(params)) {
         return -1;
     }
 
     _float f;
     for (size_t i = 0; i < sizeof(float); i++) {
-        f.raw[(sizeof(float) - 1) - i] = packet[3 + i];
+        f.raw[i] = packet[3 + i];
     }
 
     *params[parameter].first = f.value;
