@@ -12,7 +12,7 @@
 
 /// @section Constants
 
-static constexpr float WHEEL_RADIUS_CM = (1.285);
+static constexpr float WHEEL_RADIUS_CM = (1.275);
 static constexpr float WHEEL_PERIMETER_CM = (M_TWOPI * WHEEL_RADIUS_CM);
 
 static constexpr float WHEEL_TO_ENCODER_RATIO = (1.0);
@@ -275,7 +275,6 @@ bool Navigation::step() {
                 target_speed = std::min((target_speed + Config::linear_acceleration), Config::min_move_speed);
             }
 
-
             rotation_ratio = -angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
             if ((std::abs(traveled_dist) >= HALF_CELL_SIZE_CM - 0.5)) {
                 state = 1;
@@ -332,7 +331,7 @@ bool Navigation::step() {
             } else {
                 target_speed = std::min((target_speed + Config::linear_acceleration), Config::min_move_speed);
             }
-            
+
             rotation_ratio = -angular_vel_pid.calculate(0.0, bsp::imu::get_rad_per_s());
 
             if ((std::abs(traveled_dist) >= HALF_CELL_SIZE_CM - 0.5)) {
@@ -371,16 +370,14 @@ bool Navigation::step() {
                 state = 4;
                 reference_time = bsp::get_tick_ms();
             }
-
         } else if (state == 4) {
-            // target_speed = -Config::fix_position_speed;
-            // rotation_ratio = 0;
-            // if (bsp::get_tick_ms() - reference_time > 250) {
+            target_speed = -Config::fix_position_speed;
+            rotation_ratio = 0;
+            if (bsp::get_tick_ms() - reference_time > 250) {
                 bsp::imu::reset_angle();
                 state = 5;
                 traveled_dist = 0;
-            // }
-
+            }
         } else if (state == 5) {
             target_speed = std::min((target_speed + Config::linear_acceleration), Config::search_speed);
             float angle_error = bsp::imu::get_angle();

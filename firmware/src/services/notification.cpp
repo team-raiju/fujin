@@ -52,8 +52,28 @@ void Notification::update() {
             maze->map[last_x][last_y].walls,
             maze->map[last_x][last_y].visited,
             maze->map[last_x][last_y].distance,
-            bsp::ble::header,
+            0,
+            0,
+            0,
+            0,
         };
+
+        // bsp::ble::transmit(data, sizeof(data));
+
+        last_x += 1;
+        if (last_x == services::Maze::CELLS_X) {
+            last_x = 0;
+            last_y += 1;
+            if (last_y == services::Maze::CELLS_Y) {
+                last_y = 0;
+                // state = SEND_MAZE; // Switch to next data to be sent
+            }
+        }
+
+        data[6] = (uint8_t)((last_x << 4) | last_y);
+        data[7] = maze->map[last_x][last_y].walls;
+        data[8] = maze->map[last_x][last_y].visited;
+        data[9] = maze->map[last_x][last_y].distance;
 
         bsp::ble::transmit(data, sizeof(data));
 
