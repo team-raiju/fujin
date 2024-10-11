@@ -11,7 +11,7 @@
 #include "services/config.hpp"
 void startup() {
     bsp::buzzer::set_frequency(2500);
-    bsp::buzzer::set_volume(1);
+    bsp::buzzer::set_volume(100);
     bsp::buzzer::start();
 
     for (int i = 0; i < 10; i++) {

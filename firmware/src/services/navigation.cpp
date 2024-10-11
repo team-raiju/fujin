@@ -12,7 +12,7 @@
 
 /// @section Constants
 
-static constexpr float WHEEL_RADIUS_CM = (1.31);
+static constexpr float WHEEL_RADIUS_CM = (1.285);
 static constexpr float WHEEL_PERIMETER_CM = (M_TWOPI * WHEEL_RADIUS_CM);
 
 static constexpr float WHEEL_TO_ENCODER_RATIO = (1.0);
