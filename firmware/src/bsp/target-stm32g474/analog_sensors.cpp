@@ -26,7 +26,7 @@ namespace bsp::analog_sensors {
 /* We have 1 sample per 45us*/
 #define ADC_2_DMA_CHANNELS 2
 #define READINGS_PER_ADC_2 32
-#define ADC_2_DMA_BUFFER_SIZE ADC_2_DMA_CHANNELS* READINGS_PER_ADC_2
+#define ADC_2_DMA_BUFFER_SIZE (ADC_2_DMA_CHANNELS * READINGS_PER_ADC_2)
 #define ADC_2_DMA_HALF_BUFFER_SIZE (ADC_2_DMA_BUFFER_SIZE / 2)
 
 #define ADC_MAX_VALUE 4095.0
@@ -37,6 +37,8 @@ namespace bsp::analog_sensors {
 #define PWR_BAT_VOLTAGE_MULTIPLIER ((PWR_BAT_VOLTAGE_DIV_R1 + PWR_BAT_VOLTAGE_DIV_R2) / PWR_BAT_VOLTAGE_DIV_R2)
 #define PWR_BAT_POSITION_IN_ADC 4
 
+#define IR_AVG_WINDOW 20
+
 /// @section Private variables
 
 static uint32_t adc_1_dma_buffer[ADC_1_DMA_BUFFER_SIZE];
@@ -44,33 +46,35 @@ static uint32_t adc_2_dma_buffer[ADC_2_DMA_BUFFER_SIZE];
 static bsp_analog_ready_callback_t reading_ready_callback;
 
 static uint32_t ir_readings[4];
-static uint32_t ir_readings_on[4];
-static uint32_t ir_readings_off[4];
+static int32_t ir_readings_on[4];
+static int32_t ir_readings_off[4];
 static uint32_t battery_reading;
 static uint32_t current_reading[2];
 static bool modulation_enabled;
+static uint32_t ir_window[4][IR_AVG_WINDOW];
+static size_t window_idx[4];
 
 /* Reading value when robot is in the middle of the cell */
 static uint32_t ir_wall_dist_reference[4] = {
-    960, // RIGHT
-    440, // FRONT_LEFT
-    360, // FRONT_RIGHT
-    860  // LEFT
+    1360, // RIGHT
+    440,  // FRONT_LEFT
+    360,  // FRONT_RIGHT
+    820   // LEFT
 };
 
 static uint32_t ir_threshold_control[4] = {
-    560, // RIGHT
+    1100, // RIGHT
     2600, // FRONT_LEFT
     2600, // FRONT_RIGHT
-    775  // LEFT
+    820   // LEFT
 };
 
 /* Reading on the cell start for considering wall on the next cell */
 static uint32_t ir_wall_threshold[4] = {
-    750, // RIGHT
+    950, // RIGHT
     625, // FRONT_LEFT
     625, // FRONT_RIGHT
-    775  // LEFT
+    550  // LEFT
 };
 
 /// @section Interface implementation
@@ -177,32 +181,21 @@ void adc1_callback(uint32_t* data) {
         aux_readings[j] /= (ADC_1_DMA_HALF_BUFFER_SIZE / ADC_1_DMA_CHANNELS);
     }
 
-    if (modulation_enabled) {
-        if (read_ir_off) {
-            ir_readings_off[0] = aux_readings[0];
-            ir_readings_off[1] = aux_readings[1];
-            ir_readings_off[2] = aux_readings[2];
-            ir_readings_off[3] = aux_readings[3];
-            read_ir_off = false;
+    for (int i = 0; i < 4; i++) {
+        if (modulation_enabled) {
+            if (read_ir_off) {
+                ir_readings_off[i] = aux_readings[i];
+            } else {
+                ir_readings_on[i] = aux_readings[i];
+                uint32_t reading = std::max(ir_readings_on[i] - ir_readings_off[i], 0L);
+                ir_readings[i] = moving_average(ir_window[i], IR_AVG_WINDOW, &window_idx[i], reading);
+            }
         } else {
-            ir_readings_on[0] = aux_readings[0];
-            ir_readings_on[1] = aux_readings[1];
-            ir_readings_on[2] = aux_readings[2];
-            ir_readings_on[3] = aux_readings[3];
-
-            ir_readings[0] = std::max(ir_readings_on[0] - ir_readings_off[0], (uint32_t)0);
-            ir_readings[1] = std::max(ir_readings_on[1] - ir_readings_off[1], (uint32_t)0);
-            ir_readings[2] = std::max(ir_readings_on[2] - ir_readings_off[2], (uint32_t)0);
-            ir_readings[3] = std::max(ir_readings_on[3] - ir_readings_off[3], (uint32_t)0);
-            read_ir_off = true;
+            ir_readings[0] = aux_readings[0];
         }
-    } else {
-        ir_readings[0] = aux_readings[0];
-        ir_readings[1] = aux_readings[1];
-        ir_readings[2] = aux_readings[2];
-        ir_readings[3] = aux_readings[3];
     }
 
+    read_ir_off = !read_ir_off;
     battery_reading = aux_readings[4];
 }
 

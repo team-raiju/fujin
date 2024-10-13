@@ -34,12 +34,16 @@ void Notification::reset() {
     state = SEND_MAZE;
 }
 
-void Notification::update() {
+void Notification::update(bool ignore_maze) {
     if (bsp::get_tick_ms() - last_sent < min_interval_ms) {
         return;
     }
 
     last_sent = bsp::get_tick_ms();
+
+    if (ignore_maze && state == SEND_MAZE) {
+        state = SEND_SENSORS;
+    }
 
     switch (state) {
     case SEND_MAZE: {
@@ -103,7 +107,6 @@ void Notification::update() {
             uint8_t(sensors[SensingDirection::FRONT_RIGHT] & 0x00FF),
             uint8_t((sensors[SensingDirection::RIGHT] & 0xFF00) >> 8),
             uint8_t(sensors[SensingDirection::RIGHT] & 0x00FF),
-            bsp::ble::header,
         };
 
         bsp::ble::transmit(data, sizeof(data));
@@ -115,8 +118,10 @@ void Notification::update() {
         uint32_t bat = bsp::analog_sensors::battery_latest_reading_mv();
 
         uint8_t data[] = {
-            bsp::ble::header, bsp::ble::BlePacketType::BatteryData, uint8_t((bat & 0xFF00) >> 8), uint8_t(bat & 0x00FF),
             bsp::ble::header,
+            bsp::ble::BlePacketType::BatteryData,
+            uint8_t((bat & 0xFF00) >> 8),
+            uint8_t(bat & 0x00FF),
         };
 
         bsp::ble::transmit(data, sizeof(data));

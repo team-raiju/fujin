@@ -34,6 +34,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     src/fsm/states/idle.cpp
     src/fsm/states/run.cpp
     src/fsm/states/search.cpp
+    src/fsm/states/calib.cpp
 
     src/algorithms/pid.cpp
 

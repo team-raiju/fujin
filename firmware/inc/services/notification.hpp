@@ -10,7 +10,7 @@ public:
 
     void init();
     void reset();
-    void update();
+    void update(bool ignore_maze = false);
 
     Notification(const Notification&) = delete;
 

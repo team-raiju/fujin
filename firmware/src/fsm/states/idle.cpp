@@ -39,7 +39,7 @@ State* Idle::react(ButtonPressed const& event) {
     }
 
     if (event.button == ButtonPressed::SHORT2) {
-        return &State::get<PreSearch>();
+        return &State::get<PreCalib>();
     }
 
     return nullptr;
@@ -51,6 +51,6 @@ State* Idle::react(Timeout const&) {
 
 void Idle::exit() {
     bsp::ble::lock_config_rcv();
-} 
+}
 
 }

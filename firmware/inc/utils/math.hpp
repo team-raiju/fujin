@@ -61,3 +61,15 @@ static constexpr uint8_t bit_reverse(uint8_t n) {
     return n;
 #endif
 }
+
+static constexpr uint32_t moving_average(uint32_t* window, size_t window_size, size_t* idx, uint32_t new_value) {
+    window[*idx] = new_value;
+
+    uint32_t sum = 0;
+    for (size_t i = 0; i < window_size; i++) {
+        sum += window[i];
+    }
+
+    *idx = (*idx + 1) % window_size;
+    return sum / window_size;
+}

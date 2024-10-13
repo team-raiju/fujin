@@ -1,7 +1,7 @@
 #pragma once
 
-#include <iostream>
 #include <array>
+#include <iostream>
 #include <utility>
 
 #include "algorithms/pid.hpp"
@@ -108,6 +108,32 @@ private:
     bool returning;
     bool stop_next_move;
     bool save_maze;
+};
+
+///
+
+class PreCalib : public State {
+public:
+    PreCalib();
+
+    void enter() override;
+    void exit() override;
+
+    State* react(ButtonPressed const&) override;
+};
+
+class Calib : public State {
+public:
+    Calib();
+
+    void enter() override;
+    void exit() override;
+
+    State* react(ButtonPressed const&) override;
+    State* react(Timeout const&) override;
+
+private:
+    services::Notification* notification;
 };
 
 }
