@@ -130,15 +130,27 @@ State* Search::react(ButtonPressed const& event) {
     return nullptr;
 }
 
+static bool indicate_read = false;
+static uint32_t last_indication = 0;
+
 State* Search::react(Timeout const&) {
     using bsp::analog_sensors::ir_reading_wall;
     using bsp::analog_sensors::SensingDirection;
+
+    if (indicate_read && bsp::get_tick_ms() - last_indication > 100) {
+        bsp::leds::stripe_set(Color::Black);
+        indicate_read = false;
+    }
 
     notification->update();
     navigation->update();
     bool done = navigation->step();
 
     if (done) {
+        last_indication = bsp::get_tick_ms();
+        indicate_read = true;
+        bsp::leds::stripe_set(Color::Green);
+
         bool front_seeing =
             ir_reading_wall(SensingDirection::FRONT_LEFT) || ir_reading_wall(SensingDirection::FRONT_RIGHT);
         bool right_seeing = ir_reading_wall(SensingDirection::RIGHT);

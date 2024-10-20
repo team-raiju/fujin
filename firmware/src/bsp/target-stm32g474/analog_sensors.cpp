@@ -56,25 +56,25 @@ static size_t window_idx[4];
 
 /* Reading value when robot is in the middle of the cell */
 static uint32_t ir_wall_dist_reference[4] = {
-    1360, // RIGHT
-    440,  // FRONT_LEFT
-    360,  // FRONT_RIGHT
-    820   // LEFT
+    820, // RIGHT
+    50,  // FRONT_LEFT
+    50,  // FRONT_RIGHT
+    570  // LEFT
 };
 
 static uint32_t ir_threshold_control[4] = {
-    1100, // RIGHT
+    600,  // RIGHT
     2600, // FRONT_LEFT
     2600, // FRONT_RIGHT
-    820   // LEFT
+    400   // LEFT
 };
 
 /* Reading on the cell start for considering wall on the next cell */
 static uint32_t ir_wall_threshold[4] = {
-    950, // RIGHT
-    625, // FRONT_LEFT
-    625, // FRONT_RIGHT
-    550  // LEFT
+    400, // RIGHT
+    900, // FRONT_LEFT
+    900, // FRONT_RIGHT
+    350  // LEFT
 };
 
 /// @section Interface implementation

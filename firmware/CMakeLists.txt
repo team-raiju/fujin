@@ -52,7 +52,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     inc
 )
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -include 'utils/types.hpp'")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -include 'utils/types.hpp' -Os")
 
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
     $<$<CONFIG:Debug>:DEBUG>

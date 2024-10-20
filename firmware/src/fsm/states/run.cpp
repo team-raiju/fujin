@@ -6,6 +6,7 @@
 #include "bsp/buzzer.hpp"
 #include "bsp/core.hpp"
 #include "bsp/debug.hpp"
+#include "bsp/fan.hpp"
 #include "bsp/imu.hpp"
 #include "bsp/leds.hpp"
 #include "bsp/motors.hpp"
@@ -95,6 +96,7 @@ void Run::enter() {
     soft_timer::start(1, soft_timer::CONTINUOUS);
 
     navigation->init();
+    navigation->optimize();
 
     maze->read_maze_from_memory();
     target_directions = maze->directions_to_goal();
@@ -133,7 +135,6 @@ State* Run::react(Timeout const&) {
     bool done = navigation->step();
 
     if (done) {
-
         auto robot_pos = navigation->get_robot_position();
         auto dir = target_directions[move_count].first;
         auto cells = target_directions[move_count].second;
