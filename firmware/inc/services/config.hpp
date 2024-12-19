@@ -6,6 +6,10 @@ namespace services {
 
 class Config {
 public:
+    static float linear_vel_kp;
+    static float linear_vel_ki;
+    static float linear_vel_kd;
+
     static float angular_kp;
     static float angular_ki;
     static float angular_kd;

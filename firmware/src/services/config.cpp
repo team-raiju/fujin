@@ -6,6 +6,10 @@
 
 namespace services {
 
+float Config::linear_vel_kp = 0.5;
+float Config::linear_vel_ki = 0.1;
+float Config::linear_vel_kd = 0;
+
 float Config::angular_kp = 10.0;
 float Config::angular_ki = 0.1;
 float Config::angular_kd = 0;

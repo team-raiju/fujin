@@ -3,6 +3,8 @@
 #include <cstdint>
 
 #include "algorithms/pid.hpp"
+#include "services/control.hpp"
+
 
 namespace services {
 
@@ -30,11 +32,8 @@ private:
     void update_position();
     Movement get_movement(Direction);
 
-    algorithm::PID angular_vel_pid;
-    algorithm::PID walls_pid;
+    services::Control* control;
 
-    float target_speed;
-    float rotation_ratio;
     float target_travel;
 
     bool is_initialized = false;
@@ -45,7 +44,7 @@ private:
     // The service uses a mini-fsm to update it's movement on each iteration
     uint8_t state;
     uint32_t reference_time;
-    float traveled_dist = 0;
+    float traveled_dist_cm = 0;
     int32_t encoder_right_counter;
     int32_t encoder_left_counter;
     Point current_position;

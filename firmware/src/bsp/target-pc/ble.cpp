@@ -20,9 +20,7 @@ void register_callback(BleCallback callback) {
 }
 
 void received() {
-    if (external_callback) {
-        external_callback(BLE_STOP_SIG);
-    }
+    
 }
 
 } // namespace
