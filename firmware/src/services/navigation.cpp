@@ -32,7 +32,6 @@ static constexpr float MM_PER_US_TO_M_PER_S = 1000.0; // 1mm/us = 1000m/s
 
 static constexpr float CONTROL_FREQUENCY_HZ = 1000.0;
 
-
 using bsp::leds::Color;
 
 /// @section Service implementation
@@ -82,6 +81,10 @@ void Navigation::optimize(bool opt) {
     optimize_turns = opt;
 }
 
+float Navigation::get_torricelli_distance(float final_speed, float initial_speed, float acceleration) {
+    return (final_speed * final_speed - initial_speed * initial_speed) / (2 * acceleration);
+}
+
 void Navigation::update(void) {
     static uint32_t last_update_vel_time_us = 0;
 
@@ -93,7 +96,7 @@ void Navigation::update(void) {
     if (encoder_left_counter == 0 && encoder_right_counter == 0) {
         // 50ms without movement
         // min meaasured vel is ENCODER_DIST_MM_PULSE / 50 = 0.00156 m/s
-        if (delta_time_us > 50000) { 
+        if (delta_time_us > 50000) {
             bsp::encoders::set_linear_velocity_m_s(0);
         } else {
             float velocity_m_s = (ENCODER_DIST_MM_PULSE / delta_time_us) * MM_PER_US_TO_M_PER_S;
@@ -107,17 +110,14 @@ void Navigation::update(void) {
     float delta_x_mm = (estimated_delta_l_mm + estimated_delta_r_mm) / 2.0;
     traveled_dist_cm += delta_x_mm / 10.0;
 
-
     float velocity_right_m_s = (estimated_delta_r_mm / delta_time_us) * MM_PER_US_TO_M_PER_S;
     float velocity_left_m_s = (estimated_delta_l_mm / delta_time_us) * MM_PER_US_TO_M_PER_S;
     float velocity_m_s = (velocity_right_m_s + velocity_left_m_s) / 2.0;
     bsp::encoders::set_linear_velocity_m_s(velocity_m_s);
     last_update_vel_time_us = current_time_us;
 
-
     encoder_left_counter = 0;
     encoder_right_counter = 0;
-
 }
 
 // TODO: Improve the mini FSM with state names and better transitions
@@ -139,18 +139,17 @@ bool Navigation::step() {
                                ir_reading(SensingDirection::FRONT_RIGHT) > 2850 &&
                                ir_reading(SensingDirection::LEFT) > 2470 && ir_reading(SensingDirection::RIGHT) > 2850;
 
-
-
         float control_linear_speed = control->get_target_linear_speed();
         float final_speed = Config::min_move_speed;
 
-        if (std::abs(traveled_dist_cm) < target_travel - ((final_speed * final_speed - Config::search_speed * Config::search_speed) / (2 * -Config::linear_acceleration)) ) {
+        if (std::abs(traveled_dist_cm) <
+            target_travel - get_torricelli_distance(final_speed, Config::search_speed, -Config::linear_acceleration)) {
             if (control_linear_speed < Config::search_speed) {
                 control_linear_speed += Config::linear_acceleration / CONTROL_FREQUENCY_HZ;
                 if (control_linear_speed > Config::search_speed) {
                     control_linear_speed = Config::search_speed;
                 }
-            } 
+            }
         } else {
             if (control_linear_speed > final_speed) {
                 control_linear_speed -= Config::linear_acceleration / CONTROL_FREQUENCY_HZ;
@@ -190,9 +189,11 @@ bool Navigation::step() {
             ideal_rad_s = std::min(ideal_rad_s, Config::angular_speed);
             control->set_target_angular_speed(-ideal_rad_s);
         } else if (elapsed_time <= 231) {
-            control->set_target_angular_speed(-Config::angular_speed);
+            float ideal_rad_s = Config::angular_speed;
+            control->set_target_angular_speed(-ideal_rad_s);
         } else if (elapsed_time <= 247) {
-            float ideal_rad_s = Config::angular_speed - (Config::angular_acceleration * (elapsed_time - (145 + 70)) / 1000.0);
+            float ideal_rad_s =
+                Config::angular_speed - (Config::angular_acceleration * (elapsed_time - (247)) / 1000.0);
             ideal_rad_s = std::max(ideal_rad_s, 0.0f);
             control->set_target_angular_speed(-ideal_rad_s);
         } else if (elapsed_time <= 317) {
@@ -200,7 +201,7 @@ bool Navigation::step() {
         } else {
             is_finished = true;
         }
-        
+
         break;
     }
 
@@ -216,16 +217,16 @@ bool Navigation::step() {
             ideal_rad_s = std::min(ideal_rad_s, Config::angular_speed);
             control->set_target_angular_speed(ideal_rad_s);
         } else if (elapsed_time <= 161) {
-            control->set_target_angular_speed(Config::angular_speed);
+            float ideal_rad_s = Config::angular_speed;
+            control->set_target_angular_speed(ideal_rad_s);
         } else if (elapsed_time <= 177) {
-            float ideal_rad_s = Config::angular_speed - (Config::angular_acceleration * (elapsed_time - 145) / 1000.0);
+            float ideal_rad_s = Config::angular_speed - (Config::angular_acceleration * (elapsed_time - 161) / 1000.0);
             ideal_rad_s = std::max(ideal_rad_s, 0.0f);
             control->set_target_angular_speed(ideal_rad_s);
         } else {
             is_finished = true;
         }
-        
-        
+
         break;
     }
 
@@ -235,7 +236,7 @@ bool Navigation::step() {
     }
     }
 
-    if (is_finished){
+    if (is_finished) {
         update_position();
     }
 

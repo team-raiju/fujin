@@ -7,7 +7,7 @@
 #include "services/config.hpp"
 #include "bsp/imu.hpp"
 
-
+static constexpr float max_battery_voltage = 12.6;
 
 namespace services {
 
@@ -43,15 +43,20 @@ void Control::reset(void) {
 
 void Control::update() {
 
-    float linear_vel_pwm = linear_vel_pid.calculate(target_linear_speed_m_s, bsp::encoders::get_linear_velocity_m_s());
-    float rotation_pwm = -angular_vel_pid.calculate(target_angular_speed_rad_s, bsp::imu::get_rad_per_s());
     if (wall_pid_enabled){
-        rotation_pwm += walls_pid.calculate(0.0, bsp::analog_sensors::ir_side_wall_error());
+        target_angular_speed_rad_s += walls_pid.calculate(0.0, bsp::analog_sensors::ir_side_wall_error());
     }
+    
+    float linear_speed_voltage = linear_vel_pid.calculate(target_linear_speed_m_s, bsp::encoders::get_linear_velocity_m_s());
+    float rotation_voltage = -angular_vel_pid.calculate(target_angular_speed_rad_s, bsp::imu::get_rad_per_s());
 
-    float speed_l = linear_vel_pwm + rotation_pwm;
-    float speed_r = linear_vel_pwm - rotation_pwm;
-    bsp::motors::set(speed_l, speed_r);
+    float speed_l_voltage = linear_speed_voltage + rotation_voltage;
+    float speed_r_voltage = linear_speed_voltage - rotation_voltage;
+
+    int16_t pwm_duty_l = (speed_l_voltage / max_battery_voltage) * 1000;
+    int16_t pwm_duty_r = (speed_r_voltage / max_battery_voltage) * 1000;
+
+    bsp::motors::set(pwm_duty_l, pwm_duty_r);
 
 }
 

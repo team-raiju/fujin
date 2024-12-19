@@ -31,6 +31,7 @@ private:
     Navigation() {}
     void update_position();
     Movement get_movement(Direction);
+    float get_torricelli_distance(float final_speed, float initial_speed, float acceleration);
 
     services::Control* control;
 

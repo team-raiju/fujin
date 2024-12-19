@@ -6,27 +6,27 @@
 
 namespace services {
 
-float Config::linear_vel_kp = 0.5;
+float Config::linear_vel_kp = 10.0;
 float Config::linear_vel_ki = 0.1;
 float Config::linear_vel_kd = 0;
 
-float Config::angular_kp = 10.0;
-float Config::angular_ki = 0.1;
+float Config::angular_kp = 0.125;
+float Config::angular_ki = 0.00125;
 float Config::angular_kd = 0;
 
 float Config::wall_kp = 0.0025;
 float Config::wall_ki = 0;
 float Config::wall_kd = 0;
 
-float Config::min_move_speed = 16;
-float Config::min_turn_speed = 16;
-float Config::fix_position_speed = 20;
-float Config::search_speed = 50;
-float Config::angular_speed = 30;
-float Config::run_speed = 100;
+float Config::min_move_speed = 0.1;         // [m/s]
+float Config::min_turn_speed = 0.1;         // [m/s]
+float Config::fix_position_speed = 0.3;     // [m/s]
+float Config::search_speed = 0.5;           // [m/s]
+float Config::angular_speed = 9.77;         // [rad/s]
+float Config::run_speed = 0.75;             // [m/s]
 
-float Config::linear_acceleration = 0.05;
-float Config::angular_acceleration = 0.05;
+float Config::linear_acceleration = 1.0;     // [m/s^2]
+float Config::angular_acceleration = 610.87; // [rad/s^2]
 
 // All params
 static std::pair<float*, bsp::eeprom::param_addresses_t> params[] = {
