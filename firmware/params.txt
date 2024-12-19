@@ -1,18 +1,19 @@
+########################
+## Competition Params ##
+########################
 
-float Config::wall_kp = 0.0025;
-float Config::wall_ki = 0;
-float Config::wall_kd = 0;
-
-float Config::min_move_speed = 16;
-float Config::min_turn_speed = 16;
-float Config::fix_position_speed = 20;
-float Config::search_speed = 50;
-float Config::angular_speed = 30;
-float Config::run_speed = 100;
-
-float Config::linear_acceleration = 0.05;
-float Config::angular_acceleration = 0.05;
-
-float Config::angular_kp = 10.0;
-float Config::angular_ki = 0.1;
-float Config::angular_kd = 0;
+# RoboChallenge 2024
+angular_kp = 15
+angular_ki = 0.15
+angular_kd = 0
+wall_kp = 0.0035
+wall_ki = 0
+wall_kd = 0.006
+min_move_speed = 16
+min_turn_speed = 16
+fix_position_speed = 20
+search_speed = 45
+angular_speed = 30
+run_speed = 100
+linear_acceleration = 0.05
+angular_acceleration = 0.05
