@@ -75,6 +75,8 @@ void Navigation::reset(void) {
 
     target_travel = HALF_CELL_SIZE_CM + ROBOT_DIST_FROM_CENTER_START;
     current_movement = Movement::FORWARD;
+    reference_time = bsp::get_tick_ms();
+    bsp::encoders::set_linear_velocity_m_s(0);
 }
 
 void Navigation::optimize(bool opt) {
@@ -143,7 +145,8 @@ bool Navigation::step() {
         float final_speed = Config::min_move_speed;
 
         if (std::abs(traveled_dist_cm) <
-            target_travel - get_torricelli_distance(final_speed, Config::search_speed, -Config::linear_acceleration)) {
+            (target_travel -
+             (100 * get_torricelli_distance(final_speed, Config::search_speed, -Config::linear_acceleration)))) {
             if (control_linear_speed < Config::search_speed) {
                 control_linear_speed += Config::linear_acceleration / CONTROL_FREQUENCY_HZ;
                 if (control_linear_speed > Config::search_speed) {

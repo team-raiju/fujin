@@ -30,12 +30,45 @@ typedef enum : uint16_t {
     ADDR_WALL_KP = 0x0030,
     ADDR_WALL_KI = 0x0034,
     ADDR_WALL_KD = 0x0038,
+    ADDR_LINEAR_VEL_KP = 0x003C,
+    ADDR_LINEAR_VEL_KI = 0x0040,
+    ADDR_LINEAR_VEL_KD = 0x0044,
 
     ADDR_MAZE_START = 0x1000,
     ADDR_MAZE_END = 0x1400,
 
     ADDR_MAX = 0xFFFF,
 } param_addresses_t;
+
+struct ParamInfo {
+    uint16_t address;
+    const char* name;
+};
+
+// Initialize the array with address-name pairs
+const ParamInfo paramInfoArray[] = {
+    {ADDR_MEMORY_CLEAR, "ADDR_MEMORY_CLEAR"},
+    {ADDR_ANGULAR_KP, "ADDR_ANGULAR_KP"},
+    {ADDR_ANGULAR_KI, "ADDR_ANGULAR_KI"},
+    {ADDR_ANGULAR_KD, "ADDR_ANGULAR_KD"},
+    {ADDR_MIN_MOVE_SPEED, "ADDR_MIN_MOVE_SPEED"},
+    {ADDR_MIN_TURN_SPEED, "ADDR_MIN_TURN_SPEED"},
+    {ADDR_FIX_POSITION_SPEED, "ADDR_FIX_POSITION_SPEED"},
+    {ADDR_SEARCH_SPEED, "ADDR_SEARCH_SPEED"},
+    {ADDR_ANGULAR_SPEED, "ADDR_ANGULAR_SPEED"},
+    {ADDR_RUN_SPEED, "ADDR_RUN_SPEED"},
+    {ADDR_LINEAR_ACCELERATION, "ADDR_LINEAR_ACCELERATION"},
+    {ADDR_ANGULAR_ACCELERATION, "ADDR_ANGULAR_ACCELERATION"},
+    {ADDR_WALL_KP, "ADDR_WALL_KP"},
+    {ADDR_WALL_KI, "ADDR_WALL_KI"},
+    {ADDR_WALL_KD, "ADDR_WALL_KD"},
+    {ADDR_LINEAR_VEL_KP, "ADDR_LINEAR_VEL_KP"},
+    {ADDR_LINEAR_VEL_KI, "ADDR_LINEAR_VEL_KI"},
+    {ADDR_LINEAR_VEL_KD, "ADDR_LINEAR_VEL_KD"},
+    {ADDR_MAZE_START, "ADDR_MAZE_START"},
+    {ADDR_MAZE_END, "ADDR_MAZE_END"},
+    {ADDR_MAX, "ADDR_MAX"}
+};
 
 /// @section Interface definition
 
@@ -50,5 +83,6 @@ EepromResult write_u32(uint16_t address, uint32_t data);
 
 void clear(void);
 void print_all(void);
+const char* param_name(uint16_t address);
 
 }

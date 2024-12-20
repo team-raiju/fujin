@@ -1,22 +1,22 @@
 #include <utility>
+#include <cstdio>
 
+#include "bsp/timers.hpp"
 #include "bsp/eeprom.hpp"
 #include "services/config.hpp"
 #include "utils/math.hpp"
 
 namespace services {
 
-float Config::linear_vel_kp = 10.0;
-float Config::linear_vel_ki = 0.1;
-float Config::linear_vel_kd = 0;
+static bool write_default = false;
 
-float Config::angular_kp = 0.125;
-float Config::angular_ki = 0.00125;
+float Config::angular_kp = 0.190;
+float Config::angular_ki = 0.00190;
 float Config::angular_kd = 0;
 
-float Config::wall_kp = 0.0025;
+float Config::wall_kp = 0.0035;
 float Config::wall_ki = 0;
-float Config::wall_kd = 0;
+float Config::wall_kd = 0.006;
 
 float Config::min_move_speed = 0.1;         // [m/s]
 float Config::min_turn_speed = 0.1;         // [m/s]
@@ -27,6 +27,10 @@ float Config::run_speed = 0.75;             // [m/s]
 
 float Config::linear_acceleration = 1.0;     // [m/s^2]
 float Config::angular_acceleration = 610.87; // [rad/s^2]
+
+float Config::linear_vel_kp = 10.0;
+float Config::linear_vel_ki = 0.18;
+float Config::linear_vel_kd = 0;
 
 // All params
 static std::pair<float*, bsp::eeprom::param_addresses_t> params[] = {
@@ -43,7 +47,10 @@ static std::pair<float*, bsp::eeprom::param_addresses_t> params[] = {
     {&Config::angular_speed, bsp::eeprom::ADDR_ANGULAR_SPEED},
     {&Config::run_speed, bsp::eeprom::ADDR_RUN_SPEED},
     {&Config::linear_acceleration, bsp::eeprom::ADDR_LINEAR_ACCELERATION},
-    {&Config::angular_acceleration, bsp::eeprom::ADDR_ANGULAR_ACCELERATION}};
+    {&Config::angular_acceleration, bsp::eeprom::ADDR_ANGULAR_ACCELERATION},
+    {&Config::linear_vel_kp, bsp::eeprom::ADDR_LINEAR_VEL_KP},
+    {&Config::linear_vel_ki, bsp::eeprom::ADDR_LINEAR_VEL_KI},
+    {&Config::linear_vel_kd, bsp::eeprom::ADDR_LINEAR_VEL_KD}};
 
 union _float {
     float value;
@@ -52,6 +59,10 @@ union _float {
 };
 
 void Config::init() {
+    if (write_default) {
+        write_default_params();
+    }
+
     for (auto& param : params) {
         _float f;
         if (bsp::eeprom::read_u32(param.second, &f.u32) == bsp::eeprom::OK) {
@@ -60,6 +71,9 @@ void Config::init() {
             }
 
             *param.first = f.value;
+
+            std::printf("%s: %f\r\n", bsp::eeprom::param_name(param.second), f.value);
+            bsp::delay_ms(2);
         }
     }
 }
@@ -87,6 +101,19 @@ int Config::parse_packet(uint8_t packet[bsp::ble::max_packet_size]) {
     *params[parameter].first = f.value;
 
     bsp::eeprom::write_u32(params[parameter].second, f.u32);
+
+    return 0;
+}
+
+int Config::write_default_params() {
+    for (auto& param : params) {
+        _float f;
+        f.value = *param.first;
+        if (bsp::eeprom::write_u32(param.second, f.u32) != bsp::eeprom::OK) {
+            return -1;
+        }
+        bsp::delay_ms(5);
+    }
 
     return 0;
 }

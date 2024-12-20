@@ -163,4 +163,14 @@ void print_all(void) {
     }
 }
 
+const char* param_name(uint16_t address) {
+    for (const auto& param : paramInfoArray) {
+        if (param.address == address) {
+            return param.name;
+        }
+    }
+
+    return "UNKNOWN";
+}
+
 }

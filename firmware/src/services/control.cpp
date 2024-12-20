@@ -25,7 +25,7 @@ void Control::reset(void) {
     linear_vel_pid.kp = Config::linear_vel_kp;
     linear_vel_pid.ki = Config::linear_vel_ki;
     linear_vel_pid.kd = Config::linear_vel_kd;
-    linear_vel_pid.integral_limit = 1000;
+    linear_vel_pid.integral_limit = 100;
 
     angular_vel_pid.reset();
     angular_vel_pid.kp = Config::angular_kp;
@@ -39,6 +39,11 @@ void Control::reset(void) {
     walls_pid.kd = Config::wall_kd;
     walls_pid.integral_limit = 0;
 
+    target_angular_speed_rad_s = 0;
+    target_linear_speed_m_s = 0;
+    mean_velocity_m_s = 0;
+    last_velocity_m_s = 0;
+
 }
 
 void Control::update() {
@@ -47,14 +52,19 @@ void Control::update() {
         target_angular_speed_rad_s += walls_pid.calculate(0.0, bsp::analog_sensors::ir_side_wall_error());
     }
     
-    float linear_speed_voltage = linear_vel_pid.calculate(target_linear_speed_m_s, bsp::encoders::get_linear_velocity_m_s());
-    float rotation_voltage = -angular_vel_pid.calculate(target_angular_speed_rad_s, bsp::imu::get_rad_per_s());
+    mean_velocity_m_s = bsp::encoders::get_linear_velocity_m_s() * 0.2 + mean_velocity_m_s * 0.8;
+    // mean_velocity_m_s = (0.112157918)*(bsp::encoders::get_linear_velocity_m_s() + last_velocity_m_s) + (0.775684163)*(mean_velocity_m_s); // Low pass 40hz butterworth filter
+    
+    last_velocity_m_s = bsp::encoders::get_linear_velocity_m_s();
 
-    float speed_l_voltage = linear_speed_voltage + rotation_voltage;
-    float speed_r_voltage = linear_speed_voltage - rotation_voltage;
+    float linear_ratio = linear_vel_pid.calculate(target_linear_speed_m_s, mean_velocity_m_s);
+    float rotation_ratio = -angular_vel_pid.calculate(target_angular_speed_rad_s, bsp::imu::get_rad_per_s());
 
-    int16_t pwm_duty_l = (speed_l_voltage / max_battery_voltage) * 1000;
-    int16_t pwm_duty_r = (speed_r_voltage / max_battery_voltage) * 1000;
+    float l_voltage = linear_ratio + rotation_ratio;
+    float r_voltage = linear_ratio - rotation_ratio;
+
+    int16_t pwm_duty_l = (l_voltage / max_battery_voltage) * 1000;
+    int16_t pwm_duty_r = (r_voltage / max_battery_voltage) * 1000;
 
     bsp::motors::set(pwm_duty_l, pwm_duty_r);
 

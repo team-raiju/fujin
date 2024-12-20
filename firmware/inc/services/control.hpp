@@ -35,6 +35,8 @@ class Control {
         float target_linear_speed_m_s;
         float target_angular_speed_rad_s;
         bool wall_pid_enabled;
+        float mean_velocity_m_s;
+        float last_velocity_m_s;
 
 };
 
