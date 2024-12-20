@@ -102,6 +102,20 @@ EepromResult read_u32(uint16_t address, uint32_t* data) {
     return ERROR;
 }
 
+EepromResult read_array(uint16_t address, uint8_t* data, uint16_t size) {
+    if (!address_is_valid(address + size)) {
+        return ERROR;
+    }
+
+    devices::EEPROM_24LC512 eeprom;
+    auto result = eeprom.read(address, data, size);
+    if (result == devices::EEPROM_24LC512::Result::OK) {
+        return OK;
+    }
+
+    return ERROR;
+}
+
 EepromResult write_u32(uint16_t address, uint32_t data) {
     if (!address_is_valid(address)) {
         return ERROR;
@@ -115,6 +129,20 @@ EepromResult write_u32(uint16_t address, uint32_t data) {
     if (result == devices::EEPROM_24LC512::Result::OK) {
         return OK;
     }
+    return ERROR;
+}
+
+EepromResult write_array(uint16_t address, uint8_t* data, uint16_t size) {
+    if (!address_is_valid(address + size)) {
+        return ERROR;
+    }
+
+    devices::EEPROM_24LC512 eeprom;
+    auto result = eeprom.write(address, data, size);
+    if (result == devices::EEPROM_24LC512::Result::OK) {
+        return OK;
+    }
+
     return ERROR;
 }
 

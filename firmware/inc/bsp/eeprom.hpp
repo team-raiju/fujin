@@ -37,6 +37,7 @@ typedef enum : uint16_t {
     ADDR_MAZE_START = 0x1000,
     ADDR_MAZE_END = 0x1400,
 
+    ADDR_START_LOGGER = 0x1404,
     ADDR_MAX = 0xFFFF,
 } param_addresses_t;
 
@@ -79,7 +80,9 @@ EepromResult write_u8(uint16_t address, uint8_t data);
 EepromResult read_u16(uint16_t address, uint16_t* data);
 EepromResult write_u16(uint16_t address, uint16_t data);
 EepromResult read_u32(uint16_t address, uint32_t* data);
+EepromResult read_array(uint16_t address, uint8_t* data, uint16_t size);
 EepromResult write_u32(uint16_t address, uint32_t data);
+EepromResult write_array(uint16_t address, uint8_t* data, uint16_t size);
 
 void clear(void);
 void print_all(void);
