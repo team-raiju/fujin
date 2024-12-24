@@ -15,7 +15,7 @@ enum EepromResult {
 typedef enum : uint16_t {
     ADDR_MEMORY_CLEAR = 0x0000,
 
-    // PARAMS
+    // PARAMS 0x0004 ~ 0x0FFF
     ADDR_ANGULAR_KP = 0x0004,
     ADDR_ANGULAR_KI = 0x0008,
     ADDR_ANGULAR_KD = 0x000C,
@@ -34,10 +34,13 @@ typedef enum : uint16_t {
     ADDR_LINEAR_VEL_KI = 0x0040,
     ADDR_LINEAR_VEL_KD = 0x0044,
 
+    // MAZE 0x1000 ~ 0x13FF
     ADDR_MAZE_START = 0x1000,
-    ADDR_MAZE_END = 0x1400,
 
-    ADDR_START_LOGGER = 0x1404,
+    // LOGGER 0x1400 ~ 0xFFFF
+    ADDR_LOGGER_SIZE = 0x1400,
+    ADDR_LOGGER_START = 0x1404,
+
     ADDR_MAX = 0xFFFF,
 } param_addresses_t;
 
@@ -65,10 +68,7 @@ const ParamInfo paramInfoArray[] = {
     {ADDR_WALL_KD, "ADDR_WALL_KD"},
     {ADDR_LINEAR_VEL_KP, "ADDR_LINEAR_VEL_KP"},
     {ADDR_LINEAR_VEL_KI, "ADDR_LINEAR_VEL_KI"},
-    {ADDR_LINEAR_VEL_KD, "ADDR_LINEAR_VEL_KD"},
-    {ADDR_MAZE_START, "ADDR_MAZE_START"},
-    {ADDR_MAZE_END, "ADDR_MAZE_END"},
-    {ADDR_MAX, "ADDR_MAX"}
+    {ADDR_LINEAR_VEL_KD, "ADDR_LINEAR_VEL_KD"}
 };
 
 /// @section Interface definition

@@ -9,6 +9,7 @@
 #include "services/maze.hpp"
 #include "services/navigation.hpp"
 #include "services/notification.hpp"
+#include "services/logger.hpp"
 
 namespace fsm {
 
@@ -82,6 +83,7 @@ private:
     uint16_t stop_counter;
     services::Navigation* navigation;
     services::Maze* maze;
+    services::Logger* logger;
     bool stop_next_move;
     std::array<std::pair<Direction, uint8_t>, 256> target_directions;
     int move_count = 0;

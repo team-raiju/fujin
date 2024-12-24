@@ -12,19 +12,19 @@ public:
        uint8_t data[6];
 
         struct {
-            uint16_t velocity_ms : 10;
-            uint16_t target_velocity_ms : 10;
+            uint16_t velocity_ms : 12;
+            uint16_t target_velocity_ms : 12;
 
             uint16_t angular_speed_rad_s : 12;
             uint16_t target_rad_s : 12;
-            uint16_t  reserved : 4;
 
         } __attribute__((packed)) fields;
     };
 
     struct ParamInfo {
         uint16_t max_store_value; //Max value to store
-        uint32_t max_param_value; //Max measured value
+        float min_param_value; //Min measured value
+        float max_param_value; //Max measured value
         float scale; // For max usage efficiency = max_store_value / max_param_value
     };
 
@@ -33,6 +33,7 @@ public:
     void init();
     void reset();
     void update();
+    void save_size();
     void print_log();
 
     Logger(const Logger&) = delete;

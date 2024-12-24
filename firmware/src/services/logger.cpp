@@ -16,11 +16,10 @@
 namespace services {
 
 const Logger::ParamInfo paramInfoArray[] = {
-    {1024, 10, 100.0f}, // velocity_ms
-    {1024, 10, 100.0f}, // target_velocity_ms
-    {4096, 70, 58.0f},  // angular_speed_rad_s
-    {4096, 70, 58.0f},  // target_rad_s
-    {16, 0, 0.0f}       // reserved
+    {4096, -5, 10, 270.0f}, // velocity_ms
+    {4096, -5, 10, 270.0f}, // target_velocity_ms
+    {4096, -70, 70, 29.0f},  // angular_speed_rad_s
+    {4096, -70, 70, 29.0f},  // target_rad_s
 };
 
 Logger* Logger::instance() {
@@ -37,30 +36,39 @@ void Logger::reset() {
     addr_offset = 0;
 }
 
+void Logger::save_size() {
+    bsp::eeprom::write_u32(bsp::eeprom::ADDR_LOGGER_SIZE, addr_offset);
+}
+
 void Logger::update() {
 
-    if (bsp::eeprom::ADDR_START_LOGGER + addr_offset + sizeof(logdata) >= bsp::eeprom::ADDR_MAX) {
+    if (bsp::eeprom::ADDR_LOGGER_START + addr_offset + sizeof(logdata) >= bsp::eeprom::ADDR_MAX) {
         return;
     }
 
     auto control = services::Control::instance();
 
-    logdata[log_data_idx].fields.velocity_ms = std::min(
-        bsp::encoders::get_linear_velocity_m_s() * paramInfoArray[0].scale, (float)paramInfoArray[0].max_store_value);
+    float param_velocity_ms = bsp::encoders::get_linear_velocity_m_s() + std::abs(paramInfoArray[0].min_param_value);
+    param_velocity_ms *= paramInfoArray[0].scale;
 
-    logdata[log_data_idx].fields.target_velocity_ms = std::min(
-        control->get_target_linear_speed() * paramInfoArray[1].scale, (float)paramInfoArray[1].max_store_value);
+    float param_target_velocity_ms = control->get_target_linear_speed() + std::abs(paramInfoArray[1].min_param_value);
+    param_target_velocity_ms *= paramInfoArray[1].scale;
 
-    logdata[log_data_idx].fields.angular_speed_rad_s =
-        std::min(bsp::imu::get_rad_per_s() * paramInfoArray[2].scale, (float)paramInfoArray[2].max_store_value);
+    float param_angular_speed_rad_s = bsp::imu::get_rad_per_s() + std::abs(paramInfoArray[2].min_param_value);
+    param_angular_speed_rad_s *= paramInfoArray[2].scale;
 
-    logdata[log_data_idx].fields.target_rad_s = std::min(control->get_target_angular_speed() * paramInfoArray[3].scale,
-                                                         (float)paramInfoArray[3].max_store_value);
+    float param_target_rad_s = control->get_target_angular_speed() + std::abs(paramInfoArray[3].min_param_value);
+    param_target_rad_s *= paramInfoArray[3].scale;
+
+    logdata[log_data_idx].fields.velocity_ms = std::min(param_velocity_ms, (float)paramInfoArray[0].max_store_value);
+    logdata[log_data_idx].fields.target_velocity_ms = std::min(param_target_velocity_ms, (float)paramInfoArray[1].max_store_value);
+    logdata[log_data_idx].fields.angular_speed_rad_s = std::min(param_angular_speed_rad_s, (float)paramInfoArray[2].max_store_value);
+    logdata[log_data_idx].fields.target_rad_s = std::min(param_target_rad_s, (float)paramInfoArray[3].max_store_value);
 
     log_data_idx++;
     if (log_data_idx >= (sizeof(logdata) / sizeof(logdata[0]))) {
         log_data_idx = 0;
-        bsp::eeprom::write_array(bsp::eeprom::ADDR_START_LOGGER + addr_offset, reinterpret_cast<uint8_t*>(logdata),
+        bsp::eeprom::write_array(bsp::eeprom::ADDR_LOGGER_START + addr_offset, reinterpret_cast<uint8_t*>(logdata),
                                  sizeof(logdata));
 
         addr_offset += sizeof(logdata);
@@ -69,20 +77,27 @@ void Logger::update() {
 
 void Logger::print_log() {
 
-    printf("t;Velocity;TargetVel;AngularVel;TargetAngularVel\r\n");
+    std::printf("t;Velocity;TargetVel;AngularVel;TargetAngularVel\r\n");
     bsp::delay_ms(5);
 
-    for (uint16_t i = 0; i < addr_offset; i += sizeof(LogData)) {
+    uint32_t saved_size;
+    if(bsp::eeprom::read_u32(bsp::eeprom::ADDR_LOGGER_SIZE, &saved_size) != bsp::eeprom::OK) {
+        std::printf("Error reading logger saved size\r\n");
+        return;
+    }
+
+    for (uint16_t i = 0; i < saved_size; i += sizeof(LogData)) {
         LogData read_logdata;
 
-        bsp::eeprom::read_array(bsp::eeprom::ADDR_START_LOGGER + i, read_logdata.data, sizeof(read_logdata.data));
+        bsp::eeprom::read_array(bsp::eeprom::ADDR_LOGGER_START + i, read_logdata.data, sizeof(read_logdata.data));
 
         uint16_t idx = i / sizeof(LogData);
 
-        printf("%d;%0.4f;%0.4f;%0.4f;%0.4f\r\n",idx, read_logdata.fields.velocity_ms / paramInfoArray[0].scale,
-               read_logdata.fields.target_velocity_ms / paramInfoArray[1].scale,
-               read_logdata.fields.angular_speed_rad_s / paramInfoArray[2].scale,
-               read_logdata.fields.target_rad_s / paramInfoArray[3].scale);
+        std::printf("%d;%0.4f;%0.4f;%0.4f;%0.4f\r\n",idx, 
+               (read_logdata.fields.velocity_ms / paramInfoArray[0].scale) - std::abs(paramInfoArray[0].min_param_value),
+               (read_logdata.fields.target_velocity_ms / paramInfoArray[1].scale) - std::abs(paramInfoArray[1].min_param_value),
+               (read_logdata.fields.angular_speed_rad_s / paramInfoArray[2].scale) - std::abs(paramInfoArray[2].min_param_value),
+               (read_logdata.fields.target_rad_s / paramInfoArray[3].scale) - std::abs(paramInfoArray[3].min_param_value));
 
         bsp::delay_ms(3);
     }

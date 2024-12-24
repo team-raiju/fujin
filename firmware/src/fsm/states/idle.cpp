@@ -7,6 +7,7 @@
 #include "bsp/buzzer.hpp"
 #include "bsp/timers.hpp"
 #include "bsp/ble.hpp"
+#include "services/logger.hpp"
 
 namespace fsm {
 
@@ -40,6 +41,10 @@ State* Idle::react(ButtonPressed const& event) {
 
     if (event.button == ButtonPressed::SHORT2) {
         return &State::get<PreCalib>();
+    }
+
+    if (event.button == ButtonPressed::LONG1) {
+        services::Logger::instance()->print_log();
     }
 
     return nullptr;

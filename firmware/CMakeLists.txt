@@ -44,6 +44,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     src/services/control.cpp
     src/services/maze.cpp
     src/services/notification.cpp
+    src/services/logger.cpp
 
     src/services/config.cpp
 
@@ -53,7 +54,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     inc
 )
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -include 'utils/types.hpp' -Os")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -include 'utils/types.hpp' ")
 
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
     $<$<CONFIG:Debug>:DEBUG>
