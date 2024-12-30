@@ -16,6 +16,7 @@
 #include "services/navigation.hpp"
 #include "utils/math.hpp"
 #include "utils/soft_timer.hpp"
+#include "services/logger.hpp"
 
 using bsp::leds::Color;
 
@@ -80,6 +81,7 @@ State* PreRun::react(ButtonPressed const& event) {
 Run::Run() {
     navigation = services::Navigation::instance();
     maze = services::Maze::instance();
+    logger = services::Logger::instance();
 }
 
 void Run::enter() {
@@ -97,6 +99,8 @@ void Run::enter() {
 
     navigation->init();
     navigation->optimize();
+    
+    logger->init();
 
     maze->read_maze_from_memory();
     target_directions = maze->directions_to_goal();
@@ -134,6 +138,8 @@ State* Run::react(Timeout const&) {
     navigation->update();
     bool done = navigation->step();
 
+    logger->update();
+
     if (done) {
         auto robot_pos = navigation->get_robot_position();
         auto dir = target_directions[move_count].first;
@@ -164,6 +170,7 @@ void Run::exit() {
     bsp::leds::ir_emitter_all_off();
     bsp::leds::indication_off();
     soft_timer::stop();
+    logger->save_size();
 }
 
 }

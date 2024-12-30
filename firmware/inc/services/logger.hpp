@@ -44,6 +44,7 @@ private:
     LogData logdata[10];
     uint8_t log_data_idx;
     uint32_t addr_offset;
+    uint8_t ram_logger[10000];
 
 };
 

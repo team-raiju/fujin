@@ -1,5 +1,6 @@
 #include "utils/math.hpp"
 #include <cstdio>
+#include <cstring>
 
 #include "bsp/analog_sensors.hpp"
 #include "bsp/eeprom.hpp"
@@ -42,13 +43,13 @@ void Logger::save_size() {
 
 void Logger::update() {
 
-    if (bsp::eeprom::ADDR_LOGGER_START + addr_offset + sizeof(logdata) >= bsp::eeprom::ADDR_MAX) {
+    if (addr_offset + sizeof(logdata) >= sizeof(ram_logger)) {
         return;
     }
 
     auto control = services::Control::instance();
 
-    float param_velocity_ms = bsp::encoders::get_linear_velocity_m_s() + std::abs(paramInfoArray[0].min_param_value);
+    float param_velocity_ms = bsp::encoders::get_filtered_velocity_m_s() + std::abs(paramInfoArray[0].min_param_value);
     param_velocity_ms *= paramInfoArray[0].scale;
 
     float param_target_velocity_ms = control->get_target_linear_speed() + std::abs(paramInfoArray[1].min_param_value);
@@ -68,8 +69,8 @@ void Logger::update() {
     log_data_idx++;
     if (log_data_idx >= (sizeof(logdata) / sizeof(logdata[0]))) {
         log_data_idx = 0;
-        bsp::eeprom::write_array(bsp::eeprom::ADDR_LOGGER_START + addr_offset, reinterpret_cast<uint8_t*>(logdata),
-                                 sizeof(logdata));
+
+        memcpy(ram_logger + addr_offset, reinterpret_cast<uint8_t*>(logdata), sizeof(logdata));
 
         addr_offset += sizeof(logdata);
     }
@@ -89,7 +90,11 @@ void Logger::print_log() {
     for (uint16_t i = 0; i < saved_size; i += sizeof(LogData)) {
         LogData read_logdata;
 
-        bsp::eeprom::read_array(bsp::eeprom::ADDR_LOGGER_START + i, read_logdata.data, sizeof(read_logdata.data));
+        if (i + sizeof(read_logdata.data) > sizeof(ram_logger)) {
+            break;
+        }
+
+        memcpy(read_logdata.data, ram_logger + i, sizeof(read_logdata.data));
 
         uint16_t idx = i / sizeof(LogData);
 

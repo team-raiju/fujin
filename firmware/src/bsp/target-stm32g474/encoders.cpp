@@ -9,6 +9,9 @@ static EncoderCallback cb_encoder_l;
 static EncoderCallback cb_encoder_r;
 static float linear_velocity_m_s;
 
+float filtered_velocity_m_s;
+float last_velocity_m_s;
+
 /// @section Interface implementation
 
 void init() {
@@ -42,12 +45,29 @@ void gpio_exti_callback(uint16_t GPIO_Pin) {
     }
 }
 
+void reset_linear_velocity_m_s() {
+    linear_velocity_m_s = 0;
+    filtered_velocity_m_s = 0;
+    last_velocity_m_s = 0;
+}
+
 void set_linear_velocity_m_s(float speed) {
     linear_velocity_m_s = speed;
+
+    // filtered_velocity_m_s = linear_velocity_m_s * 0.2 + filtered_velocity_m_s * 0.8;
+
+    // Butterworth filter - https://www.meme.net.au/butterworth.html
+    // filtered_velocity_m_s = (0.112157918)*(linear_velocity_m_s + last_velocity_m_s) + (0.775684163)*(filtered_velocity_m_s); // Low pass 40hz
+    filtered_velocity_m_s = (0.072960747)*(linear_velocity_m_s + last_velocity_m_s) + (0.854078506)*(filtered_velocity_m_s); // Low pass 25hz
+    last_velocity_m_s = linear_velocity_m_s;
 }
 
 float get_linear_velocity_m_s() {
     return linear_velocity_m_s;
+}
+
+float get_filtered_velocity_m_s() {
+    return filtered_velocity_m_s;
 }
 
 }

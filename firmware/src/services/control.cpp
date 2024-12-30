@@ -31,7 +31,7 @@ void Control::reset(void) {
     angular_vel_pid.kp = Config::angular_kp;
     angular_vel_pid.ki = Config::angular_ki;
     angular_vel_pid.kd = Config::angular_kd;
-    angular_vel_pid.integral_limit = 1000;
+    angular_vel_pid.integral_limit = 40; // approximately (max_bat_voltage / Config::angular_ki)
 
     walls_pid.reset();
     walls_pid.kp = Config::wall_kp;
@@ -41,8 +41,6 @@ void Control::reset(void) {
 
     target_angular_speed_rad_s = 0;
     target_linear_speed_m_s = 0;
-    mean_velocity_m_s = 0;
-    last_velocity_m_s = 0;
 
 }
 
@@ -52,10 +50,9 @@ void Control::update() {
         target_angular_speed_rad_s += walls_pid.calculate(0.0, bsp::analog_sensors::ir_side_wall_error());
     }
     
-    mean_velocity_m_s = bsp::encoders::get_linear_velocity_m_s() * 0.2 + mean_velocity_m_s * 0.8;
-    // mean_velocity_m_s = (0.112157918)*(bsp::encoders::get_linear_velocity_m_s() + last_velocity_m_s) + (0.775684163)*(mean_velocity_m_s); // Low pass 40hz butterworth filter
+
+    float mean_velocity_m_s = bsp::encoders::get_filtered_velocity_m_s();
     
-    last_velocity_m_s = bsp::encoders::get_linear_velocity_m_s();
 
     float linear_ratio = linear_vel_pid.calculate(target_linear_speed_m_s, mean_velocity_m_s);
     float rotation_ratio = -angular_vel_pid.calculate(target_angular_speed_rad_s, bsp::imu::get_rad_per_s());
