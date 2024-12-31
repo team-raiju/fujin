@@ -197,7 +197,7 @@ bool Navigation::step() {
 
         control->set_target_linear_speed(control_linear_speed);
         control->set_target_angular_speed(0);
-        control->set_wall_pid_enabled(false);
+        control->set_wall_pid_enabled(true);
 
         if (std::abs(traveled_dist_cm) >= target_travel || front_emergency) {
             bsp::leds::stripe_set(Color::Red);
@@ -290,22 +290,19 @@ bool Navigation::step() {
         control->set_wall_pid_enabled(false);
         float elapsed_time = bsp::get_tick_ms() - reference_time;
 
-        if (elapsed_time <= 70) {
-            control->set_target_angular_speed(0);
-        } else if (elapsed_time <= 86) {
+        if (elapsed_time <= 16) {
             float ideal_rad_s = std::abs(control->get_target_angular_speed()) + (angular_acceleration / 1000.0);
             ideal_rad_s = std::min(ideal_rad_s, angular_speed);
             control->set_target_angular_speed(-ideal_rad_s);
-        } else if (elapsed_time <= 632) {
+        } else if (elapsed_time <= 580) {
             float ideal_rad_s = angular_speed;
             control->set_target_angular_speed(-ideal_rad_s);
-        } else if (elapsed_time <= 648) {
+        } else if (elapsed_time <= 596) {
             float ideal_rad_s = std::abs(control->get_target_angular_speed()) - (angular_acceleration / 1000.0);
             ideal_rad_s = std::max(ideal_rad_s, 0.0f);
             control->set_target_angular_speed(-ideal_rad_s);
-        } else if (elapsed_time <= 848) {
-            control->set_target_angular_speed(0);
         } else {
+            control->set_target_angular_speed(0);
             is_finished = true;
         }
 
@@ -319,22 +316,19 @@ bool Navigation::step() {
         control->set_wall_pid_enabled(false);
         float elapsed_time = bsp::get_tick_ms() - reference_time;
 
-        if (elapsed_time <= 70) {
-            control->set_target_angular_speed(0);
-        } else if (elapsed_time <= 86) {
+        if (elapsed_time <= 16) {
             float ideal_rad_s = std::abs(control->get_target_angular_speed()) + (angular_acceleration / 1000.0);
             ideal_rad_s = std::min(ideal_rad_s, angular_speed);
             control->set_target_angular_speed(ideal_rad_s);
-        } else if (elapsed_time <= 632) {
+        } else if (elapsed_time <= 580) {
             float ideal_rad_s = angular_speed;
             control->set_target_angular_speed(ideal_rad_s);
-        } else if (elapsed_time <= 648) {
+        } else if (elapsed_time <= 596) {
             float ideal_rad_s = std::abs(control->get_target_angular_speed()) - (angular_acceleration / 1000.0);
             ideal_rad_s = std::max(ideal_rad_s, 0.0f);
             control->set_target_angular_speed(ideal_rad_s);
-        } else if (elapsed_time <= 848) {
-            control->set_target_angular_speed(0);
         } else {
+            control->set_target_angular_speed(0);
             is_finished = true;
         }
 

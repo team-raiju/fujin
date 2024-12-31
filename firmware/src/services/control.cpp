@@ -50,9 +50,7 @@ void Control::update() {
         target_angular_speed_rad_s += walls_pid.calculate(0.0, bsp::analog_sensors::ir_side_wall_error());
     }
     
-
     float mean_velocity_m_s = bsp::encoders::get_filtered_velocity_m_s();
-    
 
     float linear_ratio = linear_vel_pid.calculate(target_linear_speed_m_s, mean_velocity_m_s);
     float rotation_ratio = -angular_vel_pid.calculate(target_angular_speed_rad_s, bsp::imu::get_rad_per_s());

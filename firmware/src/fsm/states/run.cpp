@@ -88,8 +88,8 @@ void Run::enter() {
     bsp::debug::print("state:Run");
     bsp::leds::indication_on();
     bsp::leds::stripe_set(Color::Red);
-    // bsp::leds::ir_emitter_all_on();
-    // bsp::analog_sensors::enable_modulation();
+    bsp::leds::ir_emitter_all_on();
+    bsp::analog_sensors::enable_modulation();
 
     bsp::buzzer::start();
     bsp::delay_ms(2000);
@@ -118,9 +118,8 @@ void Run::enter() {
     target_movements[12] = {Movement::FORWARD, 1};
     target_movements[13] = {Movement::TURN_RIGHT_180, 1};
     target_movements[14] = {Movement::FORWARD, 1};
-    target_movements[15] = {Movement::LEFT, 1};
     target_movements[16] = {Movement::STOP, 1};
-    target_movements[17] = {Movement::STOP, 1};
+    target_movements[17] = {Movement::STOP, 0};
 
     move_count = 0;
 }
