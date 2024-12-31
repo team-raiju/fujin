@@ -84,8 +84,7 @@ private:
     services::Navigation* navigation;
     services::Maze* maze;
     services::Logger* logger;
-    bool stop_next_move;
-    std::array<std::pair<Direction, uint8_t>, 256> target_directions;
+    std::array<std::pair<Movement, uint8_t>, 256> target_movements;
     int move_count = 0;
 };
 

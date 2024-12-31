@@ -25,7 +25,7 @@ float Config::search_speed = 0.5;           // [m/s]
 float Config::angular_speed = 9.77;         // [rad/s]
 float Config::run_speed = 0.75;             // [m/s]
 
-float Config::linear_acceleration = 1.0;     // [m/s^2]
+float Config::linear_acceleration = 2.0;     // [m/s^2]
 float Config::angular_acceleration = 610.87; // [rad/s^2]
 
 float Config::linear_vel_kp = 11.0;

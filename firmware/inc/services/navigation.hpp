@@ -24,6 +24,7 @@ public:
     Point get_robot_position();
     Direction get_robot_direction();
     void move(Direction dir, uint8_t cells);
+    void set_movement(Movement);
     void stop();
     void stop_run_mode();
 
@@ -42,8 +43,6 @@ private:
 
     bool optimize_turns = false;
 
-    // The service uses a mini-fsm to update it's movement on each iteration
-    uint8_t state;
     uint32_t reference_time;
     float traveled_dist_cm = 0;
     int32_t encoder_right_counter;

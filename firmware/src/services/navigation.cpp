@@ -68,15 +68,13 @@ void Navigation::reset(void) {
     current_direction = Direction::NORTH;
     optimize_turns = false;
 
-    state = 0;
-
     is_finished = false;
     control->reset();
 
     target_travel = HALF_CELL_SIZE_CM + ROBOT_DIST_FROM_CENTER_START;
     current_movement = Movement::FORWARD;
     reference_time = bsp::get_tick_ms();
-    bsp::encoders::set_linear_velocity_m_s(0);
+    bsp::encoders::reset_linear_velocity_m_s();
 }
 
 void Navigation::optimize(bool opt) {
@@ -122,7 +120,6 @@ void Navigation::update(void) {
     encoder_right_counter = 0;
 }
 
-// TODO: Improve the mini FSM with state names and better transitions
 bool Navigation::step() {
     using bsp::analog_sensors::ir_side_wall_error;
     using bsp::analog_sensors::SensingDirection;
@@ -130,19 +127,12 @@ bool Navigation::step() {
     switch (current_movement) {
     case Movement::STOP: {
 
-        // Move half a cell, stop, turn 180, stop, move half a cell
-        break;
-    }
-
-    case Movement::FORWARD: {
-        using bsp::analog_sensors::ir_reading;
-
-        bool front_emergency = ir_reading(SensingDirection::FRONT_LEFT) > 2850 &&
-                               ir_reading(SensingDirection::FRONT_RIGHT) > 2850 &&
-                               ir_reading(SensingDirection::LEFT) > 2470 && ir_reading(SensingDirection::RIGHT) > 2850;
+        uint32_t elapsed_time = bsp::get_tick_ms() - reference_time;
+        bool front_emergency = elapsed_time > 9000;
 
         float control_linear_speed = control->get_target_linear_speed();
-        float final_speed = Config::min_move_speed;
+        float final_speed = 0.0;
+        target_travel = HALF_CELL_SIZE_CM + ROBOT_DIST_FROM_CENTER_START;
 
         if (std::abs(traveled_dist_cm) <
             (target_travel -
@@ -164,7 +154,50 @@ bool Navigation::step() {
 
         control->set_target_linear_speed(control_linear_speed);
         control->set_target_angular_speed(0);
-        control->set_wall_pid_enabled(true);
+        control->set_wall_pid_enabled(false);
+
+        if (std::abs(traveled_dist_cm) >= target_travel || front_emergency) {
+            bsp::leds::stripe_set(Color::Red);
+            is_finished = true;
+        }
+        break;
+    }
+
+    case Movement::FORWARD: {
+        using bsp::analog_sensors::ir_reading;
+
+        uint32_t elapsed_time = bsp::get_tick_ms() - reference_time;
+        bool front_emergency = elapsed_time > 9000;
+
+        // bool front_emergency = ir_reading(SensingDirection::FRONT_LEFT) > 2850 &&
+        //                        ir_reading(SensingDirection::FRONT_RIGHT) > 2850 &&
+        //                        ir_reading(SensingDirection::LEFT) > 2470 && ir_reading(SensingDirection::RIGHT) >
+        //                        2850;
+
+        float control_linear_speed = control->get_target_linear_speed();
+        float final_speed = Config::search_speed;
+
+        if (std::abs(traveled_dist_cm) <
+            (target_travel -
+             (100 * get_torricelli_distance(final_speed, Config::search_speed, -Config::linear_acceleration)))) {
+            if (control_linear_speed < Config::search_speed) {
+                control_linear_speed += Config::linear_acceleration / CONTROL_FREQUENCY_HZ;
+                if (control_linear_speed > Config::search_speed) {
+                    control_linear_speed = Config::search_speed;
+                }
+            }
+        } else {
+            if (control_linear_speed > final_speed) {
+                control_linear_speed -= Config::linear_acceleration / CONTROL_FREQUENCY_HZ;
+                if (control_linear_speed < final_speed) {
+                    control_linear_speed = final_speed;
+                }
+            }
+        }
+
+        control->set_target_linear_speed(control_linear_speed);
+        control->set_target_angular_speed(0);
+        control->set_wall_pid_enabled(false);
 
         if (std::abs(traveled_dist_cm) >= target_travel || front_emergency) {
             bsp::leds::stripe_set(Color::Red);
@@ -175,28 +208,29 @@ bool Navigation::step() {
     }
 
     case Movement::RIGHT: {
-        // Move 70ms foward
+        // Move 70ms foward (35mm at 0.5m/s)
         // Angular accel 16ms  (total time 86ms)
         // max angular vel 145ms (total time 231ms)
         // Angular -accel 16ms (total time 247ms)
         // Move 70ms foward (total time 317ms)
 
-        float elapsed_time = bsp::get_tick_ms() - reference_time;
-        control->set_target_linear_speed(Config::search_speed);
+        float angular_acceleration = 610.87;
+        float angular_speed = 9.77;
         control->set_wall_pid_enabled(false);
+
+        float elapsed_time = bsp::get_tick_ms() - reference_time;
 
         if (elapsed_time <= 70) {
             control->set_target_angular_speed(0);
         } else if (elapsed_time <= 86) {
-            float ideal_rad_s = Config::angular_acceleration * elapsed_time / 1000.0;
-            ideal_rad_s = std::min(ideal_rad_s, Config::angular_speed);
+            float ideal_rad_s = std::abs(control->get_target_angular_speed()) + (angular_acceleration / 1000.0);
+            ideal_rad_s = std::min(ideal_rad_s, angular_speed);
             control->set_target_angular_speed(-ideal_rad_s);
         } else if (elapsed_time <= 231) {
-            float ideal_rad_s = Config::angular_speed;
+            float ideal_rad_s = angular_speed;
             control->set_target_angular_speed(-ideal_rad_s);
         } else if (elapsed_time <= 247) {
-            float ideal_rad_s =
-                Config::angular_speed - (Config::angular_acceleration * (elapsed_time - (247)) / 1000.0);
+            float ideal_rad_s = std::abs(control->get_target_angular_speed()) - (angular_acceleration / 1000.0);
             ideal_rad_s = std::max(ideal_rad_s, 0.0f);
             control->set_target_angular_speed(-ideal_rad_s);
         } else if (elapsed_time <= 317) {
@@ -209,23 +243,33 @@ bool Navigation::step() {
     }
 
     case Movement::LEFT: {
-        // Move half a cell, stop, turn right, stop, move half a cell
+        // Move 70ms foward (35mm at 0.5m/s)
+        // Angular accel 16ms  (total time 86ms)
+        // max angular vel 145ms (total time 231ms)
+        // Angular -accel 16ms (total time 247ms)
+        // Move 70ms foward (total time 317ms)
 
-        float elapsed_time = bsp::get_tick_ms() - reference_time;
-        control->set_target_linear_speed(Config::search_speed);
+        float angular_acceleration = 610.87;
+        float angular_speed = 9.77;
         control->set_wall_pid_enabled(false);
 
-        if (elapsed_time <= 16) {
-            float ideal_rad_s = Config::angular_acceleration * elapsed_time / 1000.0;
-            ideal_rad_s = std::min(ideal_rad_s, Config::angular_speed);
+        float elapsed_time = bsp::get_tick_ms() - reference_time;
+
+        if (elapsed_time <= 70) {
+            control->set_target_angular_speed(0);
+        } else if (elapsed_time <= 86) {
+            float ideal_rad_s = std::abs(control->get_target_angular_speed()) + (angular_acceleration / 1000.0);
+            ideal_rad_s = std::min(ideal_rad_s, angular_speed);
             control->set_target_angular_speed(ideal_rad_s);
-        } else if (elapsed_time <= 161) {
-            float ideal_rad_s = Config::angular_speed;
+        } else if (elapsed_time <= 231) {
+            float ideal_rad_s = angular_speed;
             control->set_target_angular_speed(ideal_rad_s);
-        } else if (elapsed_time <= 177) {
-            float ideal_rad_s = Config::angular_speed - (Config::angular_acceleration * (elapsed_time - 161) / 1000.0);
+        } else if (elapsed_time <= 247) {
+            float ideal_rad_s = std::abs(control->get_target_angular_speed()) - (angular_acceleration / 1000.0);
             ideal_rad_s = std::max(ideal_rad_s, 0.0f);
             control->set_target_angular_speed(ideal_rad_s);
+        } else if (elapsed_time <= 317) {
+            control->set_target_angular_speed(0);
         } else {
             is_finished = true;
         }
@@ -234,9 +278,69 @@ bool Navigation::step() {
     }
 
     case Movement::TURN_AROUND: {
-        // Move half a cell, stop, turn 180, stop, move half a cell
         break;
     }
+
+
+    case Movement::TURN_RIGHT_180: {
+
+        float angular_acceleration = 349.065;
+        float angular_speed = 5.5850;
+
+        control->set_wall_pid_enabled(false);
+        float elapsed_time = bsp::get_tick_ms() - reference_time;
+
+        if (elapsed_time <= 70) {
+            control->set_target_angular_speed(0);
+        } else if (elapsed_time <= 86) {
+            float ideal_rad_s = std::abs(control->get_target_angular_speed()) + (angular_acceleration / 1000.0);
+            ideal_rad_s = std::min(ideal_rad_s, angular_speed);
+            control->set_target_angular_speed(-ideal_rad_s);
+        } else if (elapsed_time <= 632) {
+            float ideal_rad_s = angular_speed;
+            control->set_target_angular_speed(-ideal_rad_s);
+        } else if (elapsed_time <= 648) {
+            float ideal_rad_s = std::abs(control->get_target_angular_speed()) - (angular_acceleration / 1000.0);
+            ideal_rad_s = std::max(ideal_rad_s, 0.0f);
+            control->set_target_angular_speed(-ideal_rad_s);
+        } else if (elapsed_time <= 848) {
+            control->set_target_angular_speed(0);
+        } else {
+            is_finished = true;
+        }
+
+        break;
+    }
+
+    case Movement::TURN_LEFT_180: {
+        float angular_acceleration = 349.065;
+        float angular_speed = 5.5850;
+
+        control->set_wall_pid_enabled(false);
+        float elapsed_time = bsp::get_tick_ms() - reference_time;
+
+        if (elapsed_time <= 70) {
+            control->set_target_angular_speed(0);
+        } else if (elapsed_time <= 86) {
+            float ideal_rad_s = std::abs(control->get_target_angular_speed()) + (angular_acceleration / 1000.0);
+            ideal_rad_s = std::min(ideal_rad_s, angular_speed);
+            control->set_target_angular_speed(ideal_rad_s);
+        } else if (elapsed_time <= 632) {
+            float ideal_rad_s = angular_speed;
+            control->set_target_angular_speed(ideal_rad_s);
+        } else if (elapsed_time <= 648) {
+            float ideal_rad_s = std::abs(control->get_target_angular_speed()) - (angular_acceleration / 1000.0);
+            ideal_rad_s = std::max(ideal_rad_s, 0.0f);
+            control->set_target_angular_speed(ideal_rad_s);
+        } else if (elapsed_time <= 848) {
+            control->set_target_angular_speed(0);
+        } else {
+            is_finished = true;
+        }
+
+        break;
+    }
+
     }
 
     if (is_finished) {
@@ -266,7 +370,6 @@ void Navigation::move(Direction dir, uint8_t cells) {
     current_movement = get_movement(dir);
 
     traveled_dist_cm = 0;
-    state = 0;
     reference_time = bsp::get_tick_ms();
     target_travel = (cells * CELL_SIZE_CM) - 0.5;
     is_finished = false;
@@ -289,7 +392,6 @@ void Navigation::stop() {
 
     current_movement = STOP;
     traveled_dist_cm = 0;
-    state = 0;
     reference_time = bsp::get_tick_ms();
     target_travel = HALF_CELL_SIZE_CM;
     is_finished = false;
@@ -302,7 +404,6 @@ void Navigation::stop_run_mode() {
 
     current_movement = FORWARD;
     traveled_dist_cm = 0;
-    state = 0;
     reference_time = bsp::get_tick_ms();
     target_travel = HALF_CELL_SIZE_CM + ROBOT_DIST_FROM_CENTER_START;
     is_finished = false;
@@ -348,6 +449,17 @@ Movement Navigation::get_movement(Direction target_dir) {
     } else {
         return LEFT;
     }
+}
+
+void Navigation::set_movement(Movement movement) {
+    bsp::imu::reset_angle();
+    
+    current_movement = movement;
+
+    traveled_dist_cm = 0;
+    reference_time = bsp::get_tick_ms();
+    target_travel = CELL_SIZE_CM;
+    is_finished = false;
 }
 
 }

@@ -30,6 +30,8 @@ enum Movement {
     RIGHT,
     TURN_AROUND,
     LEFT,
+    TURN_RIGHT_180,
+    TURN_LEFT_180,
     STOP,
 };
 

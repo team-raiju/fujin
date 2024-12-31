@@ -27,14 +27,23 @@ def plot_robot_positions(ideal_positions: Position, real_positions: Position):
     plt.plot(robot2[:, 0], robot2[:, 1], 'r-', label='Real Path')
     
     # Set axis limits
-    plt.xlim(-90, 400)
-    plt.ylim(-90, 400)
+    plt.xlim(-92, 630)
+    plt.ylim(-92, 540)
+
 
      # Add micromouse grid
     ax = plt.gca()
-    ax.set_xticks(range(-90, 450, 180))
-    ax.set_yticks(range(0, 450, 180))
+    ax.set_xticks(range(-90, 720, 180))
+    ax.set_yticks(range(-180, 540, 180))
+    ax.set_aspect('equal')
     plt.grid(color='gray', linestyle='--', linewidth=0.5)
+
+     # Add micromouse walls
+    plt.plot([-90, -90], [180, 0], 'g-', linewidth=3)
+    plt.plot([-90, -90], [0, -180], 'g-', linewidth=3)
+    plt.plot([-90, 90], [180, 180], 'g-', linewidth=3)
+    plt.plot([90, 90], [0, -180], 'g-', linewidth=3)
+
 
     # Add labels and legend
     plt.xlabel('X Position')
@@ -65,15 +74,15 @@ def main():
 
     #### Inputs ####
     linear_speed_m_s = 0.5
-    turn_angle_deg = 135
+    turn_angle_deg = 90
     turn_radius_mm = 55
 
     angular_acceleration_deg_s2 = 35000
     angular_desacceleration_deg_s2 = 35000
     maximum_angular_speed_deg_s = 560
 
-    mm_before_turn = 35
-    mm_after_turn = 0
+    mm_before_turn = 0
+    mm_after_turn = 100
 
 
     #### Units conversion ####
@@ -112,7 +121,9 @@ def main():
 
     T_ms = t1_ms + t2_ms + t3_ms
 
-    print("Max angular speed (deg/s): ", maximum_angular_speed_deg_s)
+    print("Max angular speed (deg/s): ", maximum_angular_speed_deg_s, " (=", maximum_angular_speed_rad_s, "rad/s)")
+    print("Acc (deg/s^2): ", angular_acceleration_deg_s2, " (=", angular_acceleration_rad_s2, "rad/s^2)")
+    print("Desacc (deg/s^2): ", angular_desacceleration_deg_s2, " (=", angular_desacceleration_rad_s2, "rad/s^2)")
     print("t1 (ms): ", t1_ms)
     print("t2 (ms): ", t2_ms)
     print("t3 (ms): ", t3_ms)

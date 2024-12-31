@@ -88,8 +88,8 @@ void Run::enter() {
     bsp::debug::print("state:Run");
     bsp::leds::indication_on();
     bsp::leds::stripe_set(Color::Red);
-    bsp::leds::ir_emitter_all_on();
-    bsp::analog_sensors::enable_modulation();
+    // bsp::leds::ir_emitter_all_on();
+    // bsp::analog_sensors::enable_modulation();
 
     bsp::buzzer::start();
     bsp::delay_ms(2000);
@@ -102,8 +102,26 @@ void Run::enter() {
     
     logger->init();
 
-    maze->read_maze_from_memory();
-    target_directions = maze->directions_to_goal();
+    // maze->read_maze_from_memory();
+    target_movements[0] = {Movement::FORWARD, 1};
+    target_movements[1] = {Movement::TURN_RIGHT_180, 1};
+    target_movements[2] = {Movement::FORWARD, 1};
+    target_movements[3] = {Movement::LEFT, 1};
+    target_movements[4] = {Movement::FORWARD, 1};
+    target_movements[5] = {Movement::LEFT, 1};
+    target_movements[6] = {Movement::FORWARD, 1};
+    target_movements[7] = {Movement::FORWARD, 1};
+    target_movements[8] = {Movement::FORWARD, 1};
+    target_movements[9] = {Movement::FORWARD, 1};
+    target_movements[10] = {Movement::FORWARD, 1};
+    target_movements[11] = {Movement::TURN_LEFT_180, 1};
+    target_movements[12] = {Movement::FORWARD, 1};
+    target_movements[13] = {Movement::TURN_RIGHT_180, 1};
+    target_movements[14] = {Movement::FORWARD, 1};
+    target_movements[15] = {Movement::LEFT, 1};
+    target_movements[16] = {Movement::STOP, 1};
+    target_movements[17] = {Movement::STOP, 1};
+
     move_count = 0;
 }
 
@@ -141,24 +159,15 @@ State* Run::react(Timeout const&) {
     logger->update();
 
     if (done) {
-        auto robot_pos = navigation->get_robot_position();
-        auto dir = target_directions[move_count].first;
-        auto cells = target_directions[move_count].second;
+        auto movement = target_movements[move_count].first;
+        auto cells = target_movements[move_count].second;
         move_count++;
-
-        if (stop_next_move) {
+        if (move_count > 17 || cells == 0){
             return &State::get<Idle>();
         }
 
-        if (robot_pos == services::Maze::GOAL_POS || cells == 0) {
-            stop_next_move = true;
-        }
-
-        if (stop_next_move) {
-            navigation->stop_run_mode();
-        } else {
-            navigation->move(dir, cells);
-        }
+        navigation->set_movement(movement);
+        
     }
 
     return nullptr;

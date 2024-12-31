@@ -83,6 +83,11 @@ class Maze:
             start_angle = end_angle + angle
 
 
+
+        print("angle: ", angle)
+        print(f"Start angle: {start_angle}, End angle: {end_angle}")
+        
+        
         print("angle: ", angle)
         print(f"Start angle: {start_angle}, End angle: {end_angle}")
         
@@ -127,6 +132,22 @@ class Maze:
         #     ['LEFT',  1],
         # ]
 
+        # movements = [
+        #     ['FORWARD', 1], 
+        #     ['TURN_180_RIGHT', 1],
+        #     ['FORWARD', 1], 
+        #     ['TURN_90_LEFT',  1],
+        #     ['FORWARD', 1],
+        #     ['TURN_90_LEFT',  1],
+        #     ['FORWARD', 5],
+        #     ['TURN_180_LEFT', 1],
+        #     ['FORWARD', 1],
+        #     ['TURN_90_RIGHT',  1],
+        #     ['TURN_90_RIGHT',  1],
+        #     ['FORWARD', 1],
+        #     ['TURN_90_LEFT',  1],
+        # ]
+
         movements = [
             ['FORWARD', 1], 
             ['TURN_180_RIGHT', 1],
@@ -134,11 +155,10 @@ class Maze:
             ['TURN_90_LEFT',  1],
             ['FORWARD', 1],
             ['TURN_90_LEFT',  1],
-            ['FORWARD', 5],
-            ['TURN_180_LEFT', 1],
-            ['FORWARD', 1],
-            ['TURN_90_RIGHT',  1],
-            ['TURN_90_RIGHT',  1],
+            ['FORWARD', 2],
+            ['TURN_45_LEFT',  1],
+            ['DIAGONAL',  1],
+            ['RIGHT_FROM_45',  1],
             ['FORWARD', 1],
             ['TURN_90_LEFT',  1],
         ]
@@ -151,7 +171,9 @@ class Maze:
                 'TURN_180_RIGHT': {'x': 1, 'y': 0, 'next_direction': 'SOUTH', 'arc_angle': -180},
                 'TURN_180_LEFT': {'x': -1, 'y': 0, 'next_direction': 'SOUTH', 'arc_angle': 180},
                 'TURN_90_RIGHT': {'x': 0.5, 'y': 0.5, 'next_direction': 'EAST', 'arc_angle': -90},
-                'TURN_90_LEFT': {'x': -0.5, 'y': 0.5, 'next_direction': 'WEST', 'arc_angle': 90}
+                'TURN_90_LEFT': {'x': -0.5, 'y': 0.5, 'next_direction': 'WEST', 'arc_angle': 90},
+                'TURN_45_RIGHT': {'x': 0.5, 'y': 0.5, 'next_direction': 'NORTHEAST'},
+                'TURN_45_LEFT': {'x': -0.5, 'y': 0.5, 'next_direction': 'NORTHWEST'}
             },
             'SOUTH': {
                 'FORWARD': {'x': 0, 'y': -1, 'next_direction': 'SOUTH'},
@@ -160,7 +182,9 @@ class Maze:
                 'TURN_180_RIGHT': {'x': -1, 'y': 0, 'next_direction': 'NORTH', 'arc_angle': -180},
                 'TURN_180_LEFT': {'x': 1, 'y': 0, 'next_direction': 'NORTH', 'arc_angle': 180},
                 'TURN_90_RIGHT': {'x': -0.5, 'y': -0.5, 'next_direction': 'WEST', 'arc_angle': -90},
-                'TURN_90_LEFT': {'x': 0.5, 'y': -0.5, 'next_direction': 'EAST', 'arc_angle': 90}
+                'TURN_90_LEFT': {'x': 0.5, 'y': -0.5, 'next_direction': 'EAST', 'arc_angle': 90},
+                'TURN_45_RIGHT': {'x': -0.5, 'y': -0.5, 'next_direction': 'SOUTHWEST'},
+                'TURN_45_LEFT': {'x': 0.5, 'y': -0.5, 'next_direction': 'SOUTHEAST'}
             },
             'EAST': {
                 'FORWARD': {'x': 1, 'y': 0, 'next_direction': 'EAST'},
@@ -169,7 +193,9 @@ class Maze:
                 'TURN_180_RIGHT': {'x': 0, 'y': -1, 'next_direction': 'WEST', 'arc_angle': -180},
                 'TURN_180_LEFT': {'x': 0, 'y': 1, 'next_direction': 'WEST', 'arc_angle': 180},
                 'TURN_90_RIGHT': {'x': 0.5, 'y': -0.5, 'next_direction': 'SOUTH', 'arc_angle': -90},
-                'TURN_90_LEFT': {'x': 0.5, 'y': 0.5, 'next_direction': 'NORTH', 'arc_angle': 90}
+                'TURN_90_LEFT': {'x': 0.5, 'y': 0.5, 'next_direction': 'NORTH', 'arc_angle': 90},
+                'TURN_45_RIGHT': {'x': 0.5, 'y': -0.5, 'next_direction': 'SOUTHEAST'},
+                'TURN_45_LEFT': {'x': 0.5, 'y': 0.5, 'next_direction': 'NORTHEAST'}
             },
             'WEST': {
                 'FORWARD': {'x': -1, 'y': 0, 'next_direction': 'WEST'},
@@ -178,8 +204,31 @@ class Maze:
                 'TURN_180_RIGHT': {'x': 0, 'y': 1, 'next_direction': 'EAST', 'arc_angle': -180},
                 'TURN_180_LEFT': {'x': 0, 'y': -1, 'next_direction': 'EAST', 'arc_angle': 180},
                 'TURN_90_RIGHT': {'x': -0.5, 'y': 0.5, 'next_direction': 'NORTH', 'arc_angle': -90},
-                'TURN_90_LEFT': {'x': -0.5, 'y': -0.5, 'next_direction': 'SOUTH', 'arc_angle': 90}
+                'TURN_90_LEFT': {'x': -0.5, 'y': -0.5, 'next_direction': 'SOUTH', 'arc_angle': 90},
+                'TURN_45_RIGHT': {'x': -0.5, 'y': 0.5, 'next_direction': 'NORTHWEST'},
+                'TURN_45_LEFT': {'x': -0.5, 'y': -0.5, 'next_direction': 'SOUTHWEST'}
+            },
+            'NORTHEAST': {
+                "DIAGONAL": {'x': 1, 'y': 1, 'next_direction': 'NORTHEAST'},
+                "RIGHT_FROM_45": {'x': 0.5, 'y': -0.5, 'next_direction': 'SOUTH'},
+                "LEFT_FROM_45": {'x': 0.5, 'y': 0.5, 'next_direction': 'NORTH'}
+            },
+            'NORTHWEST': {
+                "DIAGONAL": {'x': -1, 'y': 1, 'next_direction': 'NORTHWEST'},
+                "RIGHT_FROM_45": {'x': -0.5, 'y': 0.5, 'next_direction': 'NORTH'},
+                "LEFT_FROM_45": {'x': -0.5, 'y': -0.5, 'next_direction': 'SOUTH'}
+            },
+            'SOUTHEAST': {
+                "DIAGONAL": {'x': 1, 'y': -1, 'next_direction': 'SOUTHEAST'},
+                "RIGHT_FROM_45": {'x': 0.5, 'y': 0.5, 'next_direction': 'NORTH'},
+                "LEFT_FROM_45": {'x': 0.5, 'y': -0.5, 'next_direction': 'SOUTH'}
+            },
+            'SOUTHWEST': {
+                "DIAGONAL": {'x': -1, 'y': -1, 'next_direction': 'SOUTHWEST'},
+                "RIGHT_FROM_45": {'x': -0.5, 'y': 0.5, 'next_direction': 'NORTH'},
+                "LEFT_FROM_45": {'x': -0.5, 'y': -0.5, 'next_direction': 'SOUTH'}
             }
+
         }
 
         for movement in movements:
@@ -192,8 +241,7 @@ class Maze:
                 end_point = Point(current_position.x + movement['x'] * steps, 
                                 current_position.y + movement['y'] * steps)
                 self.draw_line(current_position, end_point)
-                current_position.x = end_point.x
-                current_position.y = end_point.y
+                current_position = end_point
             
             elif move_type in ['RIGHT', 'LEFT']:
                 mid_point = Point(current_position.x + movement['x1'], current_position.y + movement['y1'])
@@ -205,17 +253,32 @@ class Maze:
                 current_position.x = end_point.x
                 current_position.y = end_point.y
             
-            elif move_type in ['TURN_180_RIGHT', 'TURN_180_LEFT']:
+            elif move_type in ['TURN_180_RIGHT', 'TURN_180_LEFT', 'TURN_90_RIGHT', 'TURN_90_LEFT']:
                 self.draw_arc(current_position, 0.5, movement['arc_angle'], current_direction)
                 current_position.x += movement['x']
                 current_position.y += movement['y']
             
-            elif move_type in ['TURN_90_RIGHT', 'TURN_90_LEFT']:
-                self.draw_arc(current_position, 0.5, movement['arc_angle'], current_direction)
-                current_position.x += movement['x']
-                current_position.y += movement['y']
+            elif move_type in ['TURN_45_RIGHT', 'TURN_45_LEFT']:
+                end_point = Point(current_position.x + movement['x'], current_position.y + movement['y'] )
+                
+                self.draw_line(current_position, end_point)
+                current_position = end_point
+            
+            elif move_type == 'DIAGONAL':
+                end_point = Point(current_position.x + movement['x'] * steps, 
+                                current_position.y + movement['y'] * steps)
+                self.draw_line(current_position, end_point)
+                current_position = end_point
+            
+            elif move_type in ['RIGHT_FROM_45', 'LEFT_FROM_45']:
+                end_point = Point(current_position.x + movement['x'], current_position.y + movement['y'] )
+                self.draw_line(current_position, end_point)
+                current_position = end_point
+                
+            
 
             current_direction = movement['next_direction']
+            print({'x': current_position.x, 'y': current_position.y, 'current_direction': current_direction})
 
             # Draw a point to current position
             plt.plot(current_position.x, current_position.y, 'ro', markersize=3)
@@ -233,7 +296,7 @@ def main():
         (0, 1, 1, 1), (0, 0, 1, 1), (1, 0, 1, 0), (0, 1, 1, 0),
         (0, 1, 0, 1), (0, 0, 0, 1), (1, 1, 1, 0), (0, 1, 0, 1),
         (1, 0, 0, 1), (0, 1, 0, 0), (0, 1, 1, 1), (0, 1, 0, 1),
-        (0, 0, 1, 1), (1, 1, 0, 0), (0, 1, 0, 1), (0, 1, 0, 1),
+        (0, 0, 1, 1), (1, 1, 0, 0), (0, 0, 0, 1), (0, 1, 0, 0),
         (0, 1, 0, 1), (0, 0, 1, 1), (0, 1, 0, 0), (0, 1, 0, 1),
         (1, 1, 0, 1), (0, 1, 0, 1), (0, 1, 0, 1), (0, 1, 0, 1), 
         (1, 0, 1, 1), (1, 1, 0, 0), (1, 0, 0, 1), (1, 1, 0, 0)
