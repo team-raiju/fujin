@@ -98,15 +98,17 @@ def main():
 
     #### Inputs ####
     linear_speed_m_s = 0.5
-    turn_angle_deg = 135
-    turn_radius_mm = 75
+    turn_angle_deg = 45
+    turn_radius_mm = 45
 
     angular_acceleration_deg_s2 = 35000
     angular_desacceleration_deg_s2 = 35000
-    maximum_angular_speed_deg_s = 385
+    maximum_angular_speed_deg_s = 1195
 
-    mm_before_turn = 0
-    mm_after_turn = 75
+    mm_before_turn = 82
+    mm_after_turn = 0
+    initial_theta_deg = 45
+
 
 
     #### Units conversion ####
@@ -155,8 +157,11 @@ def main():
 
 
     #### Calculate Ideal Positions ####
+    initial_theta_rad = np.deg2rad(initial_theta_deg)
     ideal_positions = [
-        Position(90, mm_before_turn, 0)
+        Position(90 + mm_before_turn * np.cos(initial_theta_rad), 
+                  mm_before_turn * np.sin(initial_theta_rad), 
+                  initial_theta_rad)
     ]
     ideal_ang_speeds = [0]
 
@@ -168,7 +173,7 @@ def main():
             theta = ideal_positions[t - 1].theta + (angular_speed_rad_s / 1000)
         else:
             angular_speed_rad_s = 0
-            theta = turn_angle_rad
+            theta = ideal_positions[0].theta + turn_angle_rad
 
         linear_speed_mm_ms = linear_speed_m_s * 1000 / 1000
 
@@ -184,7 +189,9 @@ def main():
     angular_speed_rad_s = 0
     real_ang_speeds = [0]
     real_positions = [
-        Position(90, mm_before_turn, 0),    # t=0
+        Position(90 + mm_before_turn * np.cos(initial_theta_rad), 
+                  mm_before_turn * np.sin(initial_theta_rad), 
+                  initial_theta_rad)
     ]
 
     for t in range(1, T_ms + 1):
@@ -217,10 +224,10 @@ def main():
 
 
     #### Manually add the mm_after_turn ####
-    last_x = ideal_positions[-1].x + mm_after_turn * np.sin(turn_angle_rad)
-    last_y = ideal_positions[-1].y + mm_after_turn * np.cos(turn_angle_rad)
+    last_x = ideal_positions[-1].x + mm_after_turn * np.sin(turn_angle_rad + ideal_positions[0].theta)
+    last_y = ideal_positions[-1].y + mm_after_turn * np.cos(turn_angle_rad + ideal_positions[0].theta)
     ideal_ang_speeds.append(0)
-    ideal_positions.append(Position(last_x, last_y, turn_angle_rad))
+    ideal_positions.append(Position(last_x, last_y, turn_angle_rad + ideal_positions[0].theta))
 
     last_x = real_positions[-1].x + mm_after_turn * np.sin(real_positions[-1].theta) 
     last_y = real_positions[-1].y + mm_after_turn * np.cos(real_positions[-1].theta)
