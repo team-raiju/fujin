@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 import math
 import matplotlib.patches as patches
+from matplotlib.ticker import MultipleLocator
 
 matplotlib.use('TkAgg')
 
@@ -27,22 +28,45 @@ def plot_robot_positions(ideal_positions: Position, real_positions: Position):
     plt.plot(robot2[:, 0], robot2[:, 1], 'r-', label='Real Path')
     
     # Set axis limits
-    plt.xlim(-92, 630)
-    plt.ylim(-92, 540)
+    # plt.xlim(-90, 2700+360)
+    # plt.ylim(-2790, 360)
+
+    plt.xlim(-90, 540)
+    plt.ylim(-90, 540)
 
 
      # Add micromouse grid
     ax = plt.gca()
-    ax.set_xticks(range(-90, 720, 180))
-    ax.set_yticks(range(-180, 540, 180))
+    ax.xaxis.set_major_locator(MultipleLocator(180))
+    ax.yaxis.set_major_locator(MultipleLocator(180))
     ax.set_aspect('equal')
     plt.grid(color='gray', linestyle='--', linewidth=0.5)
 
      # Add micromouse walls
-    plt.plot([-90, -90], [180, 0], 'g-', linewidth=3)
-    plt.plot([-90, -90], [0, -180], 'g-', linewidth=3)
-    plt.plot([-90, 90], [180, 180], 'g-', linewidth=3)
-    plt.plot([90, 90], [0, -180], 'g-', linewidth=3)
+    plt.plot([0, 0], [0, 180], 'g-', linewidth=3)
+    plt.plot([0, 0], [0, -180], 'g-', linewidth=3)
+    plt.plot([0, 180], [180, 180], 'g-', linewidth=3)
+    plt.plot([180, 180], [0, -180], 'g-', linewidth=3)
+
+    ## Discomment to add 45deg ladder pattern
+    # for i in range (0, 7200, 180):
+    #     plt.plot([i, i], [i, i + 180], 'g-', linewidth=3)
+    #     plt.plot([i, i + 180], [i + 180, i + 180], 'g-', linewidth=3)
+        
+    #     plt.plot([i + 180, i + 360], [i, i], 'g-', linewidth=3)
+    #     plt.plot([i + 360, i + 360], [i, i + 180], 'g-', linewidth=3)
+    
+    ## Discomment to add 135deg ladder pattern
+    # plt.plot([180, 360], [180, 180], 'g-', linewidth=3)
+    # plt.plot([360, 360], [180, 0], 'g-', linewidth=3)
+    # plt.plot([360, 540], [0, 0], 'g-', linewidth=3)
+
+    # for i in range (180, 3600, 180):
+    #     plt.plot([i, i], [180 - i, -i], 'g-', linewidth=3)
+    #     plt.plot([i, i + 180], [-i, -i], 'g-', linewidth=3)
+
+    #     plt.plot([i + 360, i + 360], [180 - i, -i], 'g-', linewidth=3)
+    #     plt.plot([i + 360, i + 360 + 180], [-i, -i], 'g-', linewidth=3)
 
 
     # Add labels and legend
@@ -74,15 +98,15 @@ def main():
 
     #### Inputs ####
     linear_speed_m_s = 0.5
-    turn_angle_deg = 90
-    turn_radius_mm = 55
+    turn_angle_deg = 135
+    turn_radius_mm = 75
 
     angular_acceleration_deg_s2 = 35000
     angular_desacceleration_deg_s2 = 35000
-    maximum_angular_speed_deg_s = 560
+    maximum_angular_speed_deg_s = 385
 
     mm_before_turn = 0
-    mm_after_turn = 100
+    mm_after_turn = 75
 
 
     #### Units conversion ####
@@ -132,11 +156,11 @@ def main():
 
     #### Calculate Ideal Positions ####
     ideal_positions = [
-        Position(0, mm_before_turn, 0)
+        Position(90, mm_before_turn, 0)
     ]
     ideal_ang_speeds = [0]
 
-    for t in range(1, int(total_ideal_time_ms)):
+    for t in range(1, int(total_ideal_time_ms) + 1):
         theta = ideal_positions[t - 1].theta
 
         if t < total_ideal_time_ms:
@@ -160,10 +184,10 @@ def main():
     angular_speed_rad_s = 0
     real_ang_speeds = [0]
     real_positions = [
-        Position(0, mm_before_turn, 0),    # t=0
+        Position(90, mm_before_turn, 0),    # t=0
     ]
 
-    for t in range(1, T_ms):
+    for t in range(1, T_ms + 1):
         if t <= t1_ms:
             angular_speed_rad_s += angular_acceleration_rad_s2 / 1000
         elif t <= t1_ms + t2_ms:
@@ -193,9 +217,10 @@ def main():
 
 
     #### Manually add the mm_after_turn ####
-    last_x = ideal_positions[-1].x + mm_after_turn * np.sin(ideal_positions[-1].theta) 
-    last_y = ideal_positions[-1].y + mm_after_turn * np.cos(ideal_positions[-1].theta)
-    ideal_positions.append(Position(last_x, last_y, ideal_positions[-1].theta))
+    last_x = ideal_positions[-1].x + mm_after_turn * np.sin(turn_angle_rad)
+    last_y = ideal_positions[-1].y + mm_after_turn * np.cos(turn_angle_rad)
+    ideal_ang_speeds.append(0)
+    ideal_positions.append(Position(last_x, last_y, turn_angle_rad))
 
     last_x = real_positions[-1].x + mm_after_turn * np.sin(real_positions[-1].theta) 
     last_y = real_positions[-1].y + mm_after_turn * np.cos(real_positions[-1].theta)
