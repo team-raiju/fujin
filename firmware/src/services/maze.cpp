@@ -111,12 +111,12 @@ Direction Maze::next_step(Point const& current_position, uint8_t walls, bool ret
 }
 
 std::array<std::pair<Direction, uint8_t>, 256> Maze::directions_to_goal() {
-    std::array<Direction, 256> target_directions = {};
+    // std::array<Direction, 256> target_directions = {};
     std::array<std::pair<Direction, uint8_t>, 256> processed_directions = {};
     Point pos = ORIGIN;
     pos.y += 1; // start from the cell (0,1)
 
-    int dir_count = 0;
+/*     int dir_count = 0;
 
     while (pos != GOAL_POS) {
         auto dir = next_step(pos, map[pos.x][pos.y].walls, false, false);
@@ -150,7 +150,15 @@ std::array<std::pair<Direction, uint8_t>, 256> Maze::directions_to_goal() {
             continuous_cnt = 1;
         }
     }
-    processed_directions[processed_count] = {target_directions[dir_count - 1], continuous_cnt};
+    processed_directions[processed_count] = {target_directions[dir_count - 1], continuous_cnt}; */
+
+    std::array<std::pair<Direction, uint8_t>, 1> process_direction = {
+        std::make_pair(Direction::EAST, 1)
+    };
+
+    for (size_t i = 0; i < process_direction.size(); ++i) {
+        processed_directions[i] = process_direction[i];
+    }
 
     return processed_directions;
 }

@@ -104,22 +104,22 @@ void Run::enter() {
 
     // maze->read_maze_from_memory();
     target_movements[0] = {Movement::FORWARD, 1};
-    target_movements[1] = {Movement::TURN_RIGHT_180, 1};
-    target_movements[2] = {Movement::FORWARD, 1};
-    target_movements[3] = {Movement::LEFT, 1};
-    target_movements[4] = {Movement::FORWARD, 1};
-    target_movements[5] = {Movement::LEFT, 1};
-    target_movements[6] = {Movement::FORWARD, 1};
-    target_movements[7] = {Movement::FORWARD, 1};
-    target_movements[8] = {Movement::FORWARD, 1};
-    target_movements[9] = {Movement::FORWARD, 1};
-    target_movements[10] = {Movement::FORWARD, 1};
-    target_movements[11] = {Movement::TURN_LEFT_180, 1};
-    target_movements[12] = {Movement::FORWARD, 1};
-    target_movements[13] = {Movement::TURN_RIGHT_180, 1};
-    target_movements[14] = {Movement::FORWARD, 1};
-    target_movements[16] = {Movement::STOP, 1};
-    target_movements[17] = {Movement::STOP, 0};
+    target_movements[1] = {Movement::TURN_RIGHT_90, 1};
+    // target_movements[2] = {Movement::FORWARD, 1};
+    // target_movements[3] = {Movement::TURN_LEFT_90, 1};
+    // target_movements[4] = {Movement::FORWARD, 1};
+    // target_movements[5] = {Movement::TURN_LEFT_90, 1};
+    // target_movements[6] = {Movement::FORWARD, 1};
+    // target_movements[7] = {Movement::FORWARD, 1};
+    // target_movements[8] = {Movement::FORWARD, 1};
+    // target_movements[9] = {Movement::FORWARD, 1};
+    // target_movements[10] = {Movement::FORWARD, 1};
+    // target_movements[11] = {Movement::TURN_LEFT_180, 1};
+    // target_movements[12] = {Movement::FORWARD, 1};
+    // target_movements[13] = {Movement::TURN_RIGHT_180, 1};
+    // target_movements[14] = {Movement::FORWARD, 1};
+    // target_movements[16] = {Movement::STOP, 1};
+    // target_movements[17] = {Movement::STOP, 0};
 
     move_count = 0;
 }
@@ -161,7 +161,7 @@ State* Run::react(Timeout const&) {
         auto movement = target_movements[move_count].first;
         auto cells = target_movements[move_count].second;
         move_count++;
-        if (move_count > 17 || cells == 0){
+        if (move_count > 1 || cells == 0){
             return &State::get<Idle>();
         }
 

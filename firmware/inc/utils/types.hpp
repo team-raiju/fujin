@@ -27,11 +27,21 @@ static constexpr uint8_t operator<<(uint8_t x, const Direction n) {
 
 enum Movement {
     FORWARD,
-    RIGHT,
-    TURN_AROUND,
-    LEFT,
+    TURN_RIGHT_45,
+    TURN_LEFT_45,
+    TURN_RIGHT_90,
+    TURN_LEFT_90,
+    TURN_RIGHT_135,
+    TURN_LEFT_135,
     TURN_RIGHT_180,
     TURN_LEFT_180,
+    TURN_RIGHT_45_FROM_45,
+    TURN_LEFT_45_FROM_45,
+    TURN_RIGHT_90_FROM_45,
+    TURN_LEFT_90_FROM_45,
+    TURN_RIGHT_135_FROM_45,
+    TURN_LEFT_135_FROM_45,
+    TURN_AROUND,
     STOP,
 };
 

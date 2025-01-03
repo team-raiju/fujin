@@ -36,7 +36,7 @@ private:
 
     services::Control* control;
 
-    float target_travel;
+    float target_travel_cm;
 
     bool is_initialized = false;
     bool is_finished = false;
