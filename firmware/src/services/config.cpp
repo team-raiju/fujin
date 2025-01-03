@@ -28,8 +28,8 @@ float Config::run_speed = 0.75;             // [m/s]
 float Config::linear_acceleration = 2.0;     // [m/s^2]
 float Config::angular_acceleration = 610.87; // [rad/s^2]
 
-float Config::linear_vel_kp = 11.0;
-float Config::linear_vel_ki = 0.18;
+float Config::linear_vel_kp = 20.0;
+float Config::linear_vel_ki = 0.2;
 float Config::linear_vel_kd = 0;
 
 // All params

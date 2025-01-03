@@ -54,11 +54,11 @@ void reset_linear_velocity_m_s() {
 void set_linear_velocity_m_s(float speed) {
     linear_velocity_m_s = speed;
 
-    // filtered_velocity_m_s = linear_velocity_m_s * 0.2 + filtered_velocity_m_s * 0.8;
+    filtered_velocity_m_s = linear_velocity_m_s * 0.1 + filtered_velocity_m_s * 0.9;
 
     // Butterworth filter - https://www.meme.net.au/butterworth.html
     // filtered_velocity_m_s = (0.112157918)*(linear_velocity_m_s + last_velocity_m_s) + (0.775684163)*(filtered_velocity_m_s); // Low pass 40hz
-    filtered_velocity_m_s = (0.072960747)*(linear_velocity_m_s + last_velocity_m_s) + (0.854078506)*(filtered_velocity_m_s); // Low pass 25hz
+    // filtered_velocity_m_s = (0.072960747)*(linear_velocity_m_s + last_velocity_m_s) + (0.854078506)*(filtered_velocity_m_s); // Low pass 25hz
     last_velocity_m_s = linear_velocity_m_s;
 }
 

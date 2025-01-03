@@ -160,8 +160,8 @@ bool Navigation::step() {
         } else {
             if (control_linear_speed > final_speed) {
                 control_linear_speed -= deceleration / CONTROL_FREQUENCY_HZ;
-                if (control_linear_speed < final_speed) {
-                    control_linear_speed = final_speed;
+                if (control_linear_speed < Config::min_move_speed) {
+                    control_linear_speed = Config::min_move_speed;
                 }
             }
         }
@@ -192,8 +192,6 @@ bool Navigation::step() {
     case Movement::TURN_LEFT_90_FROM_45:
     case Movement::TURN_RIGHT_135_FROM_45:
     case Movement::TURN_LEFT_135_FROM_45: {
-
-        control->set_wall_pid_enabled(false);
         
         float angular_acceleration = turn_params[current_movement].angular_accel;
         float angular_speed = turn_params[current_movement].max_angular_speed;
@@ -209,14 +207,14 @@ bool Navigation::step() {
         if (elapsed_time <= elapsed_t_start) {
             control->set_target_angular_speed(0);
         } else if (elapsed_time <= elapsed_t_accel) {
-            float ideal_rad_s = std::abs(control->get_target_angular_speed()) + (angular_acceleration / 1000.0);
+            float ideal_rad_s = std::abs(control->get_target_angular_speed()) + (angular_acceleration / CONTROL_FREQUENCY_HZ);
             ideal_rad_s = std::min(ideal_rad_s, angular_speed);
             control->set_target_angular_speed(ideal_rad_s * turn_sign);
         } else if (elapsed_time <= elapsed_t_max_ang_vel) {
             float ideal_rad_s = angular_speed;
             control->set_target_angular_speed(ideal_rad_s * turn_sign);
         } else if (elapsed_time <= elapsed_t_decel) {
-            float ideal_rad_s = std::abs(control->get_target_angular_speed()) - (angular_acceleration / 1000.0);
+            float ideal_rad_s = std::abs(control->get_target_angular_speed()) - (angular_acceleration / CONTROL_FREQUENCY_HZ);
             ideal_rad_s = std::max(ideal_rad_s, 0.0f);
             control->set_target_angular_speed(ideal_rad_s * turn_sign);
         } else if (elapsed_time <= elapsed_t_end) {
@@ -224,6 +222,8 @@ bool Navigation::step() {
         } else {
             is_finished = true;
         }
+
+        control->set_wall_pid_enabled(false);
 
         break;
     }

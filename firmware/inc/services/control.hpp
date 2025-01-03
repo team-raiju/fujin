@@ -24,6 +24,8 @@ class Control {
         float get_target_linear_speed() { return target_linear_speed_m_s; }
         float get_target_angular_speed() { return target_angular_speed_rad_s; }
         bool get_wall_pid_enabled() { return wall_pid_enabled; }
+        int16_t get_pwm_duty_l() { return pwm_duty_l; }
+        int16_t get_pwm_duty_r() { return pwm_duty_r; }
 
     private:
         Control() {}
@@ -35,6 +37,8 @@ class Control {
         float target_linear_speed_m_s;
         float target_angular_speed_rad_s;
         bool wall_pid_enabled;
+        int16_t pwm_duty_l;
+        int16_t pwm_duty_r;
 
 };
 

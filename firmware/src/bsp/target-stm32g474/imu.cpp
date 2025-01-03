@@ -14,7 +14,7 @@ namespace bsp::imu {
 
 #define USE_MOTION_GC true
 
-#define OUTPUT_DATA_RATE_HZ 415
+#define OUTPUT_DATA_RATE_HZ 1200
 #define WHO_I_AM_EXPECTED 0x6B
 #define INITIAL_VALUE_FLAG 0xffffffff
 #define SAMPLE_FREQ_HZ 1000

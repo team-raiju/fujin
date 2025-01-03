@@ -63,18 +63,20 @@ struct ForwardParams {
 
 
 static std::map<Movement, TurnParams> turn_params_slow = {
-    {Movement::TURN_RIGHT_45, {0, 106, 0.5, 610.87, 16.8249, 28, 19, -1}},
-    {Movement::TURN_LEFT_45, {0, 106, 0.5, 610.87, 16.8249, 28, 19, 1}},
-    {Movement::TURN_RIGHT_90, {35, 35, 0.5, 610.87, 9.77, 16, 145, -1}},
-    {Movement::TURN_LEFT_90, {35, 35, 0.5, 610.87, 9.77, 16, 145, 1}},
-    {Movement::TURN_RIGHT_135, {0, 75, 0.5, 610.87, 6.7195, 11, 340, -1}},
-    {Movement::TURN_LEFT_135, {0, 75, 0.5, 610.87, 6.7195, 11, 340, 1}},
-    {Movement::TURN_RIGHT_180, {0, 0, 0.5, 349.065, 5.5850, 16, 564, -1}},
-    {Movement::TURN_LEFT_180, {0, 0, 0.5, 349.065, 5.5850, 16, 564, 1}},
-    {Movement::TURN_RIGHT_45_FROM_45, {82, 0, 0.5, 610.87, 20.857, 34, 4, -1}},
-    {Movement::TURN_LEFT_45_FROM_45, {82, 0, 0.5, 610.87, 20.857, 34, 4, 1}},
-    {Movement::TURN_RIGHT_90_FROM_45, {77, 0, 0.5, 610.87, 6.7195, 11, 340, -1}},
-    {Movement::TURN_LEFT_90_FROM_45, {77, 0, 0.5, 610.87, 6.7195, 11, 340, 1}},
+    {Movement::TURN_RIGHT_45, {0, 60, 0.5, 100.00, 8.726, 87, 35, -1}},
+    {Movement::TURN_LEFT_45, {0, 60, 0.5, 100.00, 8.726, 87, 35, 1}},
+    {Movement::TURN_RIGHT_90, {0, 15, 0.5, 100.00, 10.472, 105, 45, -1}},
+    {Movement::TURN_LEFT_90, {0, 15, 0.5, 100.00, 10.472, 105, 45, 1}},
+    {Movement::TURN_RIGHT_135, {0, 74, 0.5, 100.00, 7.5049, 75, 239, -1}},
+    {Movement::TURN_LEFT_135, {0, 74, 0.5, 100.00, 7.5049, 75, 239, 1}},
+    {Movement::TURN_RIGHT_180, {0, 0, 0.5, 100.00, 5.5850, 56, 507, -1}},
+    {Movement::TURN_LEFT_180, {0, 0, 0.5, 100.00, 5.5850, 56, 507, 1}},
+    {Movement::TURN_RIGHT_45_FROM_45, {25, 0, 0.5, 100.0, 8.290, 83, 12, -1}},
+    {Movement::TURN_LEFT_45_FROM_45, {25, 0, 0.5, 100.0, 8.290, 83, 12, 1}},
+    {Movement::TURN_RIGHT_90_FROM_45, {50, 50, 0.5, 100.0, 10.472, 105, 45, -1}},
+    {Movement::TURN_LEFT_90_FROM_45, {50, 50, 0.5, 100.0, 10.472, 105, 45, 1}},
+    {Movement::TURN_RIGHT_135_FROM_45, {70, 0, 0.5, 100.0, 7.8539, 79, 230, -1}},
+    {Movement::TURN_LEFT_135_FROM_45, {70, 0, 0.5, 100.0, 7.8539, 79, 230, 1}},
     {Movement::TURN_AROUND, {0, 180, 0.1, 349.065, 5.5850, 16, 564, -1}},
 };
 
