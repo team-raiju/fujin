@@ -12,11 +12,11 @@
 #include "bsp/motors.hpp"
 #include "bsp/timers.hpp"
 #include "fsm/state.hpp"
+#include "services/logger.hpp"
 #include "services/maze.hpp"
 #include "services/navigation.hpp"
 #include "utils/math.hpp"
 #include "utils/soft_timer.hpp"
-#include "services/logger.hpp"
 
 using bsp::leds::Color;
 
@@ -98,7 +98,7 @@ void Run::enter() {
     soft_timer::start(1, soft_timer::CONTINUOUS);
 
     navigation->reset(false);
-    
+
     logger->init();
 
     // maze->read_maze_from_memory();
@@ -171,16 +171,14 @@ State* Run::react(Timeout const&) {
         indicate_read = true;
         bsp::leds::stripe_set(Color::Green);
 
-
         auto movement = target_movements[move_count].first;
         auto cells = target_movements[move_count].second;
         move_count++;
-        if (move_count > 13 || cells == 0){
+        if (move_count > 13 || cells == 0) {
             return &State::get<Idle>();
         }
 
-            navigation->set_movement(movement);
-        
+        navigation->set_movement(movement);
     }
 
     return nullptr;

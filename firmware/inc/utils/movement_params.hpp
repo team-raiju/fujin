@@ -1,6 +1,6 @@
-#include <map>
-#include <cstdint>
 #include "types.hpp"
+#include <cstdint>
+#include <map>
 
 static constexpr float CELL_SIZE_CM = 18.0;
 static constexpr float HALF_CELL_SIZE_CM = 9.0;
@@ -10,8 +10,8 @@ static constexpr float ROBOT_DIST_FROM_CENTER_START_CM = 2.0;
 /**
  * @struct TurnParams
  * @brief Parameters for defining a turn movement.
- * 
- * 
+ *
+ *
  * @param start How much the robot will advance before starting the turn in [mm]
  * @param end How much the robot will advance after finishing the turn in [mm]
  * @param turn_linear_speed The linear speed during the turn in [m/s]
@@ -20,7 +20,7 @@ static constexpr float ROBOT_DIST_FROM_CENTER_START_CM = 2.0;
  * @param t_accel The time duration for acceleration and deceleration in [ms]
  * @param t_max_ang_vel The time duration that the robot will be in maximum angular speed in [ms]
  * @param sign The direction sign of the turn (positive or negative).
- * 
+ *
  */
 struct TurnParams {
     float start;
@@ -32,26 +32,25 @@ struct TurnParams {
     uint16_t t_max_ang_vel;
     int sign;
 
-    constexpr TurnParams(): start(0), end(0), turn_linear_speed(0), angular_accel(0),
-                           max_angular_speed(0), t_accel(0), t_max_ang_vel(0), sign(0) {}
+    constexpr TurnParams()
+        : start(0), end(0), turn_linear_speed(0), angular_accel(0), max_angular_speed(0), t_accel(0), t_max_ang_vel(0),
+          sign(0) {}
 
-    constexpr TurnParams(float s, float e, float ls, float aa, 
-                        float mas, int ta, int tm, int sg) noexcept
-        : start(s), end(e), turn_linear_speed(ls), angular_accel(aa),
-          max_angular_speed(mas), t_accel(ta), t_max_ang_vel(tm), sign(sg) {}
+    constexpr TurnParams(float s, float e, float ls, float aa, float mas, int ta, int tm, int sg) noexcept
+        : start(s), end(e), turn_linear_speed(ls), angular_accel(aa), max_angular_speed(mas), t_accel(ta),
+          t_max_ang_vel(tm), sign(sg) {}
 };
-
 
 /**
  * @struct ForwardParams
  * @brief Parameters for defining a forward movement.
- * 
- * 
+ *
+ *
  * @param max_speed The maximum speed of the robot in [m/s]
  * @param end_speed The speed of the robot after finishing the movement in [m/s]
  * @param acceleration The acceleration of the robot in [m/s^2]
  * @param deceleration The deceleration of the robot in [m/s^2]
- * 
+ *
  */
 struct ForwardParams {
     float max_speed;
@@ -60,12 +59,11 @@ struct ForwardParams {
     float deceleration;
     float target_travel_cm;
 
-    ForwardParams(): max_speed(0), end_speed(0), acceleration(0), deceleration(0), target_travel_cm(0) {}
+    ForwardParams() : max_speed(0), end_speed(0), acceleration(0), deceleration(0), target_travel_cm(0) {}
 
     ForwardParams(float ms, float es, float a, float d, float t) noexcept
         : max_speed(ms), end_speed(es), acceleration(a), deceleration(d), target_travel_cm(t) {}
 };
-
 
 static std::map<Movement, TurnParams> turn_params_search = {
     {Movement::TURN_RIGHT_90, {33, 33, 0.25, 69.8132, 5.236, 75, 225, -1}},
@@ -78,7 +76,6 @@ static std::map<Movement, ForwardParams> forward_params_search = {
     {Movement::STOP, {0.25, 0.0, 1.0, 1.0, (HALF_CELL_SIZE_CM)}},
     {Movement::TURN_AROUND, {0.25, 0.0, 1.0, 1.0, HALF_CELL_SIZE_CM}},
 };
-
 
 static std::map<Movement, TurnParams> turn_params_slow = {
     {Movement::TURN_RIGHT_45, {0, 78, 0.5, 100.00, 7.854, 79, 21, -1}},

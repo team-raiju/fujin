@@ -157,10 +157,10 @@ State* Search::react(Timeout const&) {
             ir_reading_wall(SensingDirection::FRONT_LEFT) || ir_reading_wall(SensingDirection::FRONT_RIGHT);
         bool right_seeing = ir_reading_wall(SensingDirection::RIGHT);
         bool left_seeing = ir_reading_wall(SensingDirection::LEFT);
-        
+
         last_indication = bsp::get_tick_ms();
         indicate_read = true;
-        if(ir_reading_wall(SensingDirection::FRONT_LEFT)) {
+        if (ir_reading_wall(SensingDirection::FRONT_LEFT)) {
             bsp::leds::stripe_set(0, left_seeing ? Color::Blue : Color::Red);
         } else {
             bsp::leds::stripe_set(0, left_seeing ? Color::Green : Color::Black);
@@ -178,7 +178,6 @@ State* Search::react(Timeout const&) {
 
         uint8_t walls = (front_seeing * N | right_seeing * E | left_seeing * W) << robot_dir;
 
-
         if (robot_pos == services::Maze::GOAL_POS && !returning) {
             bsp::buzzer::start();
             save_maze = true;
@@ -192,7 +191,6 @@ State* Search::react(Timeout const&) {
             auto dir = maze->next_step(robot_pos, walls, returning, true);
             navigation->move(dir);
         }
-
     }
 
     return nullptr;
