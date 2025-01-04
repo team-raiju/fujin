@@ -80,7 +80,6 @@ public:
     State* react(Timeout const&) override;
 
 private:
-    uint16_t stop_counter;
     services::Navigation* navigation;
     services::Maze* maze;
     services::Logger* logger;
@@ -102,13 +101,12 @@ public:
     State* react(Timeout const&) override;
 
 private:
-    uint16_t stop_counter;
     services::Navigation* navigation;
     services::Notification* notification;
     services::Maze* maze;
     bool returning;
-    bool stop_next_move;
     bool save_maze;
+    bool stop_next_move;
 };
 
 ///

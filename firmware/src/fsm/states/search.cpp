@@ -100,10 +100,11 @@ void Search::enter() {
 
     soft_timer::start(1, soft_timer::CONTINUOUS);
 
-    navigation->init();
+    navigation->reset(true);
 
     returning = false;
     save_maze = false;
+    stop_next_move = false;
 }
 
 State* Search::react(BleCommand const&) {
@@ -137,9 +138,10 @@ State* Search::react(Timeout const&) {
     using bsp::analog_sensors::ir_reading_wall;
     using bsp::analog_sensors::SensingDirection;
 
-    if (indicate_read && bsp::get_tick_ms() - last_indication > 100) {
+    if (indicate_read && bsp::get_tick_ms() - last_indication > 150) {
         bsp::leds::stripe_set(Color::Black);
         indicate_read = false;
+        bsp::buzzer::stop();
     }
 
     notification->update();
@@ -147,38 +149,50 @@ State* Search::react(Timeout const&) {
     bool done = navigation->step();
 
     if (done) {
-        last_indication = bsp::get_tick_ms();
-        indicate_read = true;
-        bsp::leds::stripe_set(Color::Green);
+        if (stop_next_move) {
+            return &State::get<Idle>();
+        }
 
         bool front_seeing =
             ir_reading_wall(SensingDirection::FRONT_LEFT) || ir_reading_wall(SensingDirection::FRONT_RIGHT);
         bool right_seeing = ir_reading_wall(SensingDirection::RIGHT);
         bool left_seeing = ir_reading_wall(SensingDirection::LEFT);
+        
+        last_indication = bsp::get_tick_ms();
+        indicate_read = true;
+        if(ir_reading_wall(SensingDirection::FRONT_LEFT)) {
+            bsp::leds::stripe_set(0, left_seeing ? Color::Blue : Color::Red);
+        } else {
+            bsp::leds::stripe_set(0, left_seeing ? Color::Green : Color::Black);
+        }
+
+        if (ir_reading_wall(SensingDirection::FRONT_RIGHT)) {
+            bsp::leds::stripe_set(1, right_seeing ? Color::Blue : Color::Red);
+        } else {
+            bsp::leds::stripe_set(1, right_seeing ? Color::Green : Color::Black);
+        }
+        bsp::leds::stripe_send();
 
         auto robot_pos = navigation->get_robot_position();
         auto robot_dir = navigation->get_robot_direction();
 
         uint8_t walls = (front_seeing * N | right_seeing * E | left_seeing * W) << robot_dir;
 
-        if (robot_pos == services::Maze::ORIGIN && returning) {
-            return &State::get<Idle>();
-        }
-
-        auto dir = maze->next_step(robot_pos, walls, returning, true);
-
-        if (stop_next_move) {
-            returning = true;
-            stop_next_move = false;
-            navigation->stop();
-        } else {
-            navigation->move(dir, 1);
-        }
 
         if (robot_pos == services::Maze::GOAL_POS && !returning) {
+            bsp::buzzer::start();
             save_maze = true;
-            stop_next_move = true;
+            returning = true;
         }
+
+        if (robot_pos == services::Maze::ORIGIN && returning) {
+            navigation->set_movement(Movement::STOP);
+            stop_next_move = true;
+        } else {
+            auto dir = maze->next_step(robot_pos, walls, returning, true);
+            navigation->move(dir);
+        }
+
     }
 
     return nullptr;

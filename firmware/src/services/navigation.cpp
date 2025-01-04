@@ -42,8 +42,8 @@ Navigation* Navigation::instance() {
     return &p;
 }
 
-void Navigation::init(void) {
-    reset();
+void Navigation::init() {
+    reset(true);
     control = Control::instance();
 
     if (!is_initialized) {
@@ -57,7 +57,7 @@ void Navigation::init(void) {
     }
 }
 
-void Navigation::reset(void) {
+void Navigation::reset(bool search_mode) {
     bsp::imu::reset_angle();
 
     traveled_dist_cm = 0;
@@ -65,7 +65,6 @@ void Navigation::reset(void) {
     encoder_right_counter = 0;
     current_position = {0, 0};
     current_direction = Direction::NORTH;
-    optimize_turns = false;
 
     is_finished = false;
     control->reset();
@@ -75,12 +74,14 @@ void Navigation::reset(void) {
     reference_time = bsp::get_tick_ms();
     bsp::encoders::reset_linear_velocity_m_s();
 
-    turn_params = turn_params_slow;
-    forward_params = forward_params_slow;
-}
+    if (search_mode){
+        turn_params = turn_params_search;
+        forward_params = forward_params_search;
+    } else {
+        turn_params = turn_params_slow;
+        forward_params = forward_params_slow;
+    }
 
-void Navigation::optimize(bool opt) {
-    optimize_turns = opt;
 }
 
 float Navigation::get_torricelli_distance(float final_speed, float initial_speed, float acceleration) {
@@ -163,7 +164,7 @@ bool Navigation::step() {
         control->set_target_linear_speed(control_linear_speed);
         control->set_target_angular_speed(0);
 
-        if(current_movement == Movement::DIAGONAL){
+        if(current_movement == Movement::DIAGONAL || current_movement == Movement::STOP){
             control->set_wall_pid_enabled(false);
             front_emergency = false;
         } else {
@@ -326,44 +327,37 @@ Direction Navigation::get_robot_direction(void) {
     return current_direction;
 }
 
-void Navigation::move(Direction dir, uint8_t cells) {
+void Navigation::move(Direction dir) {
     bsp::imu::reset_angle();
 
-    if (cells > 1) {
-        bsp::leds::stripe_set(Color::Blue);
-    }
-
+    target_direction = dir;
     current_movement = get_movement(dir);
 
     traveled_dist_cm = 0;
     reference_time = bsp::get_tick_ms();
-    target_travel_cm = (cells * CELL_SIZE_CM) - 0.5;
+    target_travel_cm = forward_params[current_movement].target_travel_cm;
     is_finished = false;
 }
 
-void Navigation::stop() {
-    bsp::imu::reset_angle();
+Movement Navigation::get_movement(Direction target_dir) {
+    using enum Direction;
 
-    if (current_direction == Direction::NORTH) {
-        target_direction = Direction::SOUTH;
-    } else if (current_direction == Direction::EAST) {
-        target_direction = Direction::WEST;
-    } else if (current_direction == Direction::SOUTH) {
-        target_direction = Direction::NORTH;
-    } else if (current_direction == Direction::WEST) {
-        target_direction = Direction::EAST;
+    if (target_dir == current_direction) {
+        return FORWARD;
+    } else if ((target_dir == NORTH && current_direction == WEST) ||
+               (target_dir == EAST && current_direction == NORTH) ||
+               (target_dir == SOUTH && current_direction == EAST) ||
+               (target_dir == WEST && current_direction == SOUTH)) {
+        return TURN_RIGHT_90;
+    } else if ((target_dir == NORTH && current_direction == SOUTH) ||
+               (target_dir == EAST && current_direction == WEST) ||
+               (target_dir == SOUTH && current_direction == NORTH) ||
+               (target_dir == WEST && current_direction == EAST)) {
+        return TURN_AROUND;
+    } else {
+        return TURN_LEFT_90;
     }
-
-    bsp::leds::stripe_set(Color::Blue);
-
-    current_movement = STOP;
-    traveled_dist_cm = 0;
-    reference_time = bsp::get_tick_ms();
-    target_travel_cm = HALF_CELL_SIZE_CM;
-    is_finished = false;
 }
-
-
 
 void Navigation::update_position() {
     current_direction = target_direction;
@@ -385,27 +379,6 @@ void Navigation::update_position() {
     }
 }
 
-Movement Navigation::get_movement(Direction target_dir) {
-    using enum Direction;
-
-    target_direction = target_dir;
-
-    if (target_dir == current_direction) {
-        return FORWARD;
-    } else if ((target_dir == NORTH && current_direction == WEST) ||
-               (target_dir == EAST && current_direction == NORTH) ||
-               (target_dir == SOUTH && current_direction == EAST) ||
-               (target_dir == WEST && current_direction == SOUTH)) {
-        return TURN_RIGHT_90;
-    } else if ((target_dir == NORTH && current_direction == SOUTH) ||
-               (target_dir == EAST && current_direction == WEST) ||
-               (target_dir == SOUTH && current_direction == NORTH) ||
-               (target_dir == WEST && current_direction == EAST)) {
-        return TURN_AROUND;
-    } else {
-        return TURN_LEFT_90;
-    }
-}
 
 void Navigation::set_movement(Movement movement) {
     bsp::imu::reset_angle();
@@ -420,7 +393,7 @@ void Navigation::set_movement(Movement movement) {
         bsp::leds::stripe_set(Color::Blue); 
     } 
 
-        target_travel_cm = forward_params[movement].target_travel_cm;
+    target_travel_cm = forward_params[movement].target_travel_cm;
 
 }
 

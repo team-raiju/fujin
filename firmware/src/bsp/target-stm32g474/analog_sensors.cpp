@@ -71,10 +71,10 @@ static uint32_t ir_threshold_control[4] = {
 
 /* Reading on the cell start for considering wall on the next cell */
 static uint32_t ir_wall_threshold[4] = {
-    400, // RIGHT
+    420, // RIGHT
     900, // FRONT_LEFT
     900, // FRONT_RIGHT
-    350  // LEFT
+    420  // LEFT
 };
 
 /// @section Interface implementation

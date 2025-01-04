@@ -15,17 +15,14 @@ public:
     Navigation(const Navigation&) = delete;
 
     void init();
-    void reset();
+    void reset(bool search_mode);
     void update();
     bool step();
 
-    void optimize(bool = true);
-
     Point get_robot_position();
     Direction get_robot_direction();
-    void move(Direction dir, uint8_t cells);
+    void move(Direction dir);
     void set_movement(Movement);
-    void stop();
 
 private:
     Navigation() {}
@@ -39,8 +36,6 @@ private:
 
     bool is_initialized = false;
     bool is_finished = false;
-
-    bool optimize_turns = false;
 
     uint32_t reference_time;
     float traveled_dist_cm = 0;

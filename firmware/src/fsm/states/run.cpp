@@ -97,8 +97,7 @@ void Run::enter() {
 
     soft_timer::start(1, soft_timer::CONTINUOUS);
 
-    navigation->init();
-    navigation->optimize();
+    navigation->reset(false);
     
     logger->init();
 

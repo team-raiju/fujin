@@ -68,23 +68,23 @@ struct ForwardParams {
 
 
 static std::map<Movement, TurnParams> turn_params_search = {
-    {Movement::TURN_RIGHT_90, {0, 15, 0.5, 100.00, 10.472, 105, 45, -1}},
-    {Movement::TURN_LEFT_90, {0, 15, 0.5, 100.00, 10.472, 105, 45, 1}},
-    {Movement::TURN_AROUND, {HALF_CELL_SIZE_CM, HALF_CELL_SIZE_CM, 0.0, 100.00, 6.981, 70, 380, -1}},
+    {Movement::TURN_RIGHT_90, {33, 33, 0.25, 69.8132, 5.236, 75, 225, -1}},
+    {Movement::TURN_LEFT_90, {33, 33, 0.25, 69.8132, 5.236, 75, 225, 1}},
+    {Movement::TURN_AROUND, {HALF_CELL_SIZE_CM, HALF_CELL_SIZE_CM, 0.0, 69.8132, 5.236, 60, 540, -1}},
 };
 
 static std::map<Movement, ForwardParams> forward_params_search = {
-    {Movement::FORWARD, {0.5, 0.5, 2.0, 2.0, CELL_SIZE_CM}},
-    {Movement::STOP, {0.5, 0.0, 2.0, 2.0, (HALF_CELL_SIZE_CM + ROBOT_DIST_FROM_CENTER_START_CM)}},
-    {Movement::TURN_AROUND, {0.5, 0.0, 2.0, 2.0, HALF_CELL_SIZE_CM}},
+    {Movement::FORWARD, {0.25, 0.25, 1.0, 1.0, CELL_SIZE_CM}},
+    {Movement::STOP, {0.25, 0.0, 1.0, 1.0, (HALF_CELL_SIZE_CM)}},
+    {Movement::TURN_AROUND, {0.25, 0.0, 1.0, 1.0, HALF_CELL_SIZE_CM}},
 };
 
 
 static std::map<Movement, TurnParams> turn_params_slow = {
     {Movement::TURN_RIGHT_45, {0, 78, 0.5, 100.00, 7.854, 79, 21, -1}},
     {Movement::TURN_LEFT_45, {0, 78, 0.5, 100.00, 7.854, 79, 21, 1}},
-    {Movement::TURN_RIGHT_90, {0, 15, 0.5, 100.00, 10.472, 105, 45, -1}},
-    {Movement::TURN_LEFT_90, {0, 15, 0.5, 100.00, 10.472, 105, 45, 1}},
+    {Movement::TURN_RIGHT_90, {10, 10, 0.5, 100.00, 8.7266, 87, 93, -1}},
+    {Movement::TURN_LEFT_90, {10, 10, 0.5, 100.00, 8.7266, 87, 93, 1}},
     {Movement::TURN_RIGHT_135, {0, 74, 0.5, 100.00, 7.5049, 75, 239, -1}},
     {Movement::TURN_LEFT_135, {0, 74, 0.5, 100.00, 7.5049, 75, 239, 1}},
     {Movement::TURN_RIGHT_180, {0, 0, 0.5, 100.00, 5.5850, 56, 507, -1}},
@@ -103,6 +103,6 @@ static std::map<Movement, ForwardParams> forward_params_slow = {
     {Movement::FORWARD_BEFORE_TURN_45, {0.5, 0.5, 2.0, 2.0, (CELL_SIZE_CM - 5)}},
     {Movement::DIAGONAL, {0.5, 0.5, 2.0, 2.0, CELL_DIAGONAL_SIZE_CM}},
     {Movement::FORWARD_AFTER_DIAGONAL, {0.5, 0.5, 2.0, 2.0, CELL_SIZE_CM - 4.6}},
-    {Movement::STOP, {0.5, 0.0, 2.0, 2.0, (HALF_CELL_SIZE_CM + ROBOT_DIST_FROM_CENTER_START_CM)}},
+    {Movement::STOP, {0.5, 0.0, 2.0, 2.0, (HALF_CELL_SIZE_CM)}},
     {Movement::TURN_AROUND, {0.5, 0.0, 2.0, 2.0, HALF_CELL_SIZE_CM}},
 };

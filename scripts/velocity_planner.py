@@ -98,16 +98,16 @@ def main():
 
     #### Inputs ####
     linear_speed_m_s = 0.5
-    turn_angle_deg = 45
-    turn_radius_mm = 45
+    turn_angle_deg = 90
+    turn_radius_mm = 75
 
-    angular_acceleration_deg_s2 = 35000
-    angular_desacceleration_deg_s2 = 35000
-    maximum_angular_speed_deg_s = 1195
+    angular_acceleration_deg_s2 = 5729.578
+    angular_desacceleration_deg_s2 = 5729.578
+    maximum_angular_speed_deg_s = 500
 
-    mm_before_turn = 82
-    mm_after_turn = 0
-    initial_theta_deg = 45
+    mm_before_turn = 10
+    mm_after_turn = 10
+    initial_theta_deg = 0
 
 
 

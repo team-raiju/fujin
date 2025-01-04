@@ -11,11 +11,11 @@ namespace services {
 
 class Maze {
 public:
-    static constexpr int CELLS_X = 16;
-    static constexpr int CELLS_Y = 16;
+    static constexpr int CELLS_X = 4;
+    static constexpr int CELLS_Y = 7;
 
     static constexpr Point ORIGIN = {0, 0};
-    static constexpr Point GOAL_POS = {7, 7};
+    static constexpr Point GOAL_POS = {0, 6};
 
     static Maze* instance();
 
