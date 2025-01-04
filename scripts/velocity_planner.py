@@ -159,8 +159,8 @@ def main():
     #### Calculate Ideal Positions ####
     initial_theta_rad = np.deg2rad(initial_theta_deg)
     ideal_positions = [
-        Position(90 + mm_before_turn * np.cos(initial_theta_rad), 
-                  mm_before_turn * np.sin(initial_theta_rad), 
+        Position(90 + mm_before_turn * np.sin(initial_theta_rad), 
+                 mm_before_turn * np.cos(initial_theta_rad), 
                   initial_theta_rad)
     ]
     ideal_ang_speeds = [0]
@@ -189,8 +189,8 @@ def main():
     angular_speed_rad_s = 0
     real_ang_speeds = [0]
     real_positions = [
-        Position(90 + mm_before_turn * np.cos(initial_theta_rad), 
-                  mm_before_turn * np.sin(initial_theta_rad), 
+        Position(90 + mm_before_turn * np.sin(initial_theta_rad), 
+                  mm_before_turn * np.cos(initial_theta_rad), 
                   initial_theta_rad)
     ]
 

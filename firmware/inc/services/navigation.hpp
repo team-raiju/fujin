@@ -26,7 +26,6 @@ public:
     void move(Direction dir, uint8_t cells);
     void set_movement(Movement);
     void stop();
-    void stop_run_mode();
 
 private:
     Navigation() {}

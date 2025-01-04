@@ -110,16 +110,17 @@ void Run::enter() {
     target_movements[4] = {Movement::FORWARD, 1};
     target_movements[5] = {Movement::TURN_LEFT_90, 1};
     target_movements[6] = {Movement::FORWARD, 1};
-    target_movements[7] = {Movement::FORWARD, 1};
-    target_movements[8] = {Movement::FORWARD, 1};
-    target_movements[9] = {Movement::FORWARD, 1};
-    target_movements[10] = {Movement::FORWARD, 1};
-    target_movements[11] = {Movement::TURN_LEFT_180, 1};
-    target_movements[12] = {Movement::FORWARD, 1};
-    target_movements[13] = {Movement::TURN_RIGHT_135, 1};
-    target_movements[14] = {Movement::FORWARD, 1};
-    target_movements[16] = {Movement::STOP, 1};
-    target_movements[17] = {Movement::STOP, 0};
+    target_movements[7] = {Movement::FORWARD_BEFORE_TURN_45, 1};
+    target_movements[8] = {Movement::TURN_LEFT_45, 1};
+    target_movements[9] = {Movement::DIAGONAL, 1};
+    target_movements[10] = {Movement::DIAGONAL, 1};
+    target_movements[11] = {Movement::TURN_RIGHT_45_FROM_45, 1};
+    target_movements[12] = {Movement::STOP, 1};
+    target_movements[13] = {Movement::STOP, 0};
+
+    // target_movements[14] = {Movement::FORWARD, 1};
+    // target_movements[16] = {Movement::STOP, 1};
+    // target_movements[17] = {Movement::STOP, 0};
 
     move_count = 0;
 }
@@ -148,9 +149,17 @@ State* Run::react(BleCommand const&) {
     return nullptr;
 }
 
+static bool indicate_read = false;
+static uint32_t last_indication = 0;
+
 State* Run::react(Timeout const&) {
     using bsp::analog_sensors::ir_reading_wall;
     using bsp::analog_sensors::SensingDirection;
+
+    if (indicate_read && bsp::get_tick_ms() - last_indication > 75) {
+        bsp::leds::stripe_set(Color::Black);
+        indicate_read = false;
+    }
 
     navigation->update();
     bool done = navigation->step();
@@ -158,18 +167,20 @@ State* Run::react(Timeout const&) {
     logger->update();
 
     if (done) {
+
+        last_indication = bsp::get_tick_ms();
+        indicate_read = true;
+        bsp::leds::stripe_set(Color::Green);
+
+
         auto movement = target_movements[move_count].first;
         auto cells = target_movements[move_count].second;
         move_count++;
-        if (move_count > 17 || cells == 0){
+        if (move_count > 13 || cells == 0){
             return &State::get<Idle>();
         }
 
-        if (movement == Movement::STOP) {
-            navigation->stop_run_mode();
-        } else {
             navigation->set_movement(movement);
-        }
         
     }
 

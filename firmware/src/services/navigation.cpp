@@ -24,11 +24,6 @@ static constexpr float WHEELS_DIST_CM = (7.0);
 static constexpr float ENCODER_DIST_CM_PULSE = (WHEEL_PERIMETER_CM / PULSES_PER_WHEEL_ROTATION);
 static constexpr float ENCODER_DIST_MM_PULSE = (ENCODER_DIST_CM_PULSE * 10.0);
 
-static constexpr float CELL_SIZE_CM = 18.0;
-static constexpr float HALF_CELL_SIZE_CM = 9.0;
-
-static constexpr float ROBOT_DIST_FROM_CENTER_START = 2.0;
-
 static constexpr float MM_PER_US_TO_M_PER_S = 1000.0; // 1mm/us = 1000m/s
 
 static constexpr float CONTROL_FREQUENCY_HZ = 1000.0;
@@ -75,7 +70,7 @@ void Navigation::reset(void) {
     is_finished = false;
     control->reset();
 
-    target_travel_cm = HALF_CELL_SIZE_CM + ROBOT_DIST_FROM_CENTER_START;
+    target_travel_cm = HALF_CELL_SIZE_CM + ROBOT_DIST_FROM_CENTER_START_CM;
     current_movement = Movement::FORWARD;
     reference_time = bsp::get_tick_ms();
     bsp::encoders::reset_linear_velocity_m_s();
@@ -132,8 +127,11 @@ bool Navigation::step() {
     using bsp::analog_sensors::SensingDirection;
 
     switch (current_movement) {
-    case Movement::STOP:
-    case Movement::FORWARD: {
+    case Movement::FORWARD: 
+    case Movement::FORWARD_BEFORE_TURN_45: 
+    case Movement::FORWARD_AFTER_DIAGONAL: 
+    case Movement::DIAGONAL:
+    case Movement::STOP: {
         using bsp::analog_sensors::ir_reading;
 
         bool front_emergency = ir_reading(SensingDirection::FRONT_LEFT) > 2850 &&
@@ -168,7 +166,13 @@ bool Navigation::step() {
 
         control->set_target_linear_speed(control_linear_speed);
         control->set_target_angular_speed(0);
-        control->set_wall_pid_enabled(true);
+
+        if(current_movement == Movement::DIAGONAL){
+            control->set_wall_pid_enabled(false);
+            front_emergency = false;
+        } else {
+            control->set_wall_pid_enabled(true);
+        }
 
         if (std::abs(traveled_dist_cm) >= target_travel_cm || front_emergency) {
             bsp::leds::stripe_set(Color::Red);
@@ -289,17 +293,7 @@ void Navigation::stop() {
     is_finished = false;
 }
 
-void Navigation::stop_run_mode() {
-    bsp::imu::reset_angle();
 
-    bsp::leds::stripe_set(Color::Blue);
-
-    current_movement = STOP;
-    traveled_dist_cm = 0;
-    reference_time = bsp::get_tick_ms();
-    target_travel_cm = HALF_CELL_SIZE_CM + ROBOT_DIST_FROM_CENTER_START;
-    is_finished = false;
-}
 
 void Navigation::update_position() {
     current_direction = target_direction;
@@ -350,8 +344,27 @@ void Navigation::set_movement(Movement movement) {
 
     traveled_dist_cm = 0;
     reference_time = bsp::get_tick_ms();
-    target_travel_cm = CELL_SIZE_CM;
     is_finished = false;
+
+    if (movement == Movement::STOP) {
+        bsp::leds::stripe_set(Color::Blue); 
+    } 
+
+    switch (movement)
+    {
+    case Movement::FORWARD:
+    case Movement::FORWARD_BEFORE_TURN_45:
+    case Movement::DIAGONAL:
+    case Movement::FORWARD_AFTER_DIAGONAL:
+    case Movement::STOP:
+        target_travel_cm = forward_params[movement].target_travel_cm;
+        break;
+    
+    default:
+        target_travel_cm = 0;
+        break;
+    }
+
 }
 
 }
