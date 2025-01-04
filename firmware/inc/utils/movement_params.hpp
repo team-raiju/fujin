@@ -53,7 +53,6 @@ struct TurnParams {
  * @param deceleration The deceleration of the robot in [m/s^2]
  * 
  */
-
 struct ForwardParams {
     float max_speed;
     float end_speed;
@@ -61,10 +60,23 @@ struct ForwardParams {
     float deceleration;
     float target_travel_cm;
 
-    constexpr ForwardParams(): max_speed(0), end_speed(0), acceleration(0), deceleration(0), target_travel_cm(0) {}
+    ForwardParams(): max_speed(0), end_speed(0), acceleration(0), deceleration(0), target_travel_cm(0) {}
 
-    constexpr ForwardParams(float ms, float es, float a, float d, float t) noexcept
+    ForwardParams(float ms, float es, float a, float d, float t) noexcept
         : max_speed(ms), end_speed(es), acceleration(a), deceleration(d), target_travel_cm(t) {}
+};
+
+
+static std::map<Movement, TurnParams> turn_params_search = {
+    {Movement::TURN_RIGHT_90, {0, 15, 0.5, 100.00, 10.472, 105, 45, -1}},
+    {Movement::TURN_LEFT_90, {0, 15, 0.5, 100.00, 10.472, 105, 45, 1}},
+    {Movement::TURN_AROUND, {HALF_CELL_SIZE_CM, HALF_CELL_SIZE_CM, 0.0, 100.00, 6.981, 70, 380, -1}},
+};
+
+static std::map<Movement, ForwardParams> forward_params_search = {
+    {Movement::FORWARD, {0.5, 0.5, 2.0, 2.0, CELL_SIZE_CM}},
+    {Movement::STOP, {0.5, 0.0, 2.0, 2.0, (HALF_CELL_SIZE_CM + ROBOT_DIST_FROM_CENTER_START_CM)}},
+    {Movement::TURN_AROUND, {0.5, 0.0, 2.0, 2.0, HALF_CELL_SIZE_CM}},
 };
 
 
@@ -83,7 +95,7 @@ static std::map<Movement, TurnParams> turn_params_slow = {
     {Movement::TURN_LEFT_90_FROM_45, {50, 50, 0.5, 100.0, 10.472, 105, 45, 1}},
     {Movement::TURN_RIGHT_135_FROM_45, {70, 0, 0.5, 100.0, 7.8539, 79, 230, -1}},
     {Movement::TURN_LEFT_135_FROM_45, {70, 0, 0.5, 100.0, 7.8539, 79, 230, 1}},
-    {Movement::TURN_AROUND, {0, 180, 0.1, 349.065, 5.5850, 16, 564, -1}},
+    {Movement::TURN_AROUND, {HALF_CELL_SIZE_CM, HALF_CELL_SIZE_CM, 0.0, 100.00, 6.981, 70, 380, -1}},
 };
 
 static std::map<Movement, ForwardParams> forward_params_slow = {
@@ -92,4 +104,5 @@ static std::map<Movement, ForwardParams> forward_params_slow = {
     {Movement::DIAGONAL, {0.5, 0.5, 2.0, 2.0, CELL_DIAGONAL_SIZE_CM}},
     {Movement::FORWARD_AFTER_DIAGONAL, {0.5, 0.5, 2.0, 2.0, CELL_SIZE_CM - 4.6}},
     {Movement::STOP, {0.5, 0.0, 2.0, 2.0, (HALF_CELL_SIZE_CM + ROBOT_DIST_FROM_CENTER_START_CM)}},
+    {Movement::TURN_AROUND, {0.5, 0.0, 2.0, 2.0, HALF_CELL_SIZE_CM}},
 };

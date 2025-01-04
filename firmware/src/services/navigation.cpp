@@ -151,16 +151,12 @@ bool Navigation::step() {
              (100 * get_torricelli_distance(final_speed, max_speed, -deceleration)))) {
             if (control_linear_speed < max_speed) {
                 control_linear_speed += acceleration / CONTROL_FREQUENCY_HZ;
-                if (control_linear_speed > max_speed) {
-                    control_linear_speed = max_speed;
-                }
+                control_linear_speed = std::min(control_linear_speed, max_speed);
             }
         } else {
             if (control_linear_speed > final_speed) {
                 control_linear_speed -= deceleration / CONTROL_FREQUENCY_HZ;
-                if (control_linear_speed < Config::min_move_speed) {
-                    control_linear_speed = Config::min_move_speed;
-                }
+                control_linear_speed = std::max(control_linear_speed, Config::min_move_speed);
             }
         }
 
@@ -233,10 +229,84 @@ bool Navigation::step() {
     }
 
     case Movement::TURN_AROUND: {
+        float angular_acceleration = turn_params[current_movement].angular_accel;
+        float angular_speed = turn_params[current_movement].max_angular_speed;
+        uint16_t elapsed_t_start = 2000; // arbitrary large value
+        uint16_t elapsed_t_accel = elapsed_t_start + turn_params[current_movement].t_accel;
+        uint16_t elapsed_t_max_ang_vel = elapsed_t_accel + turn_params[current_movement].t_max_ang_vel;
+        uint16_t elapsed_t_decel = elapsed_t_max_ang_vel + turn_params[current_movement].t_accel;
+        uint16_t elapsed_t_end = elapsed_t_decel;
+        int turn_sign = turn_params[current_movement].sign;
+
+        uint32_t elapsed_time = bsp::get_tick_ms() - reference_time;
+
+        if (elapsed_time <= elapsed_t_start || elapsed_time >= elapsed_t_end) {
+            bool front_emergency = ir_reading(SensingDirection::FRONT_LEFT) > 2850 &&
+                        ir_reading(SensingDirection::FRONT_RIGHT) > 2850 &&
+                        ir_reading(SensingDirection::LEFT) > 2470 && ir_reading(SensingDirection::RIGHT) >
+                        2850;
+
+            // Final speed is first 0 to stop and turn around, then max speed to exit the movement with speed
+            float final_speed; 
+            if (elapsed_time >= elapsed_t_end) {
+                final_speed = forward_params[current_movement].max_speed;
+            } else {
+                final_speed = 0;
+            }
+
+            float max_speed = forward_params[current_movement].max_speed;
+            float acceleration = forward_params[current_movement].acceleration;
+            float deceleration = forward_params[current_movement].deceleration;
+            float control_linear_speed = control->get_target_linear_speed();
+
+            if (std::abs(traveled_dist_cm) <
+                (target_travel_cm -
+                (100 * get_torricelli_distance(final_speed, max_speed, -deceleration)))) {
+                if (control_linear_speed < max_speed) {
+                    control_linear_speed += acceleration / CONTROL_FREQUENCY_HZ;
+                    control_linear_speed = std::min(control_linear_speed, max_speed);
+                }
+            } else {
+                if (control_linear_speed > final_speed) {
+                    control_linear_speed -= deceleration / CONTROL_FREQUENCY_HZ;
+                    control_linear_speed = std::max(control_linear_speed, Config::min_move_speed);
+                }
+            }
+
+            if (std::abs(traveled_dist_cm) >= target_travel_cm || front_emergency) {
+                control_linear_speed = final_speed;
+
+                if (elapsed_time >= elapsed_t_end) {
+                    is_finished = true;
+                } else {
+                    // We want to start the turn around, so we change ref time
+                    reference_time = bsp::get_tick_ms() - elapsed_t_start; 
+                }
+            }
+
+            control->set_target_linear_speed(control_linear_speed);
+            control->set_target_angular_speed(0);
+            control->set_wall_pid_enabled(false);
+        } else if (elapsed_time <= elapsed_t_accel) {
+            control->set_target_linear_speed(0);
+            float ideal_rad_s = std::abs(control->get_target_angular_speed()) + (angular_acceleration / CONTROL_FREQUENCY_HZ);
+            ideal_rad_s = std::min(ideal_rad_s, angular_speed);
+            control->set_target_angular_speed(ideal_rad_s * turn_sign);
+            control->set_wall_pid_enabled(false);
+        } else if (elapsed_time <= elapsed_t_max_ang_vel) {
+            float ideal_rad_s = angular_speed;
+            control->set_target_angular_speed(ideal_rad_s * turn_sign);
+            control->set_wall_pid_enabled(false);
+        } else if (elapsed_time <= elapsed_t_decel) {
+            float ideal_rad_s = std::abs(control->get_target_angular_speed()) - (angular_acceleration / CONTROL_FREQUENCY_HZ);
+            ideal_rad_s = std::max(ideal_rad_s, 0.0f);
+            control->set_target_angular_speed(ideal_rad_s * turn_sign);
+            control->set_wall_pid_enabled(false);
+            traveled_dist_cm = 0;
+        }
+
         break;
     }
-
-
     }
 
     if (is_finished) {
@@ -350,20 +420,7 @@ void Navigation::set_movement(Movement movement) {
         bsp::leds::stripe_set(Color::Blue); 
     } 
 
-    switch (movement)
-    {
-    case Movement::FORWARD:
-    case Movement::FORWARD_BEFORE_TURN_45:
-    case Movement::DIAGONAL:
-    case Movement::FORWARD_AFTER_DIAGONAL:
-    case Movement::STOP:
         target_travel_cm = forward_params[movement].target_travel_cm;
-        break;
-    
-    default:
-        target_travel_cm = 0;
-        break;
-    }
 
 }
 
