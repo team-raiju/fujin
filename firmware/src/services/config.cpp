@@ -10,8 +10,8 @@ namespace services {
 
 static bool write_default = false;
 
-float Config::angular_kp = 0.37;
-float Config::angular_ki = 0.040;
+float Config::angular_kp = 0.40;
+float Config::angular_ki = 0.020;
 float Config::angular_kd = 0;
 
 float Config::wall_kp = 0.0035;
@@ -22,11 +22,11 @@ float Config::min_move_speed = 0.1;         // [m/s]
 float Config::min_turn_speed = 0.1;         // [m/s]
 float Config::fix_position_speed = 0.3;     // [m/s]
 float Config::search_speed = 0.5;           // [m/s]
-float Config::angular_speed = 9.77;         // [rad/s]
+float Config::angular_speed = 5.585;         // [rad/s]
 float Config::run_speed = 0.75;             // [m/s]
 
 float Config::linear_acceleration = 2.0;     // [m/s^2]
-float Config::angular_acceleration = 610.87; // [rad/s^2]
+float Config::angular_acceleration = 100.0; // [rad/s^2]
 
 float Config::linear_vel_kp = 20.0;
 float Config::linear_vel_ki = 0.2;
