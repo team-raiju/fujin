@@ -83,8 +83,9 @@ private:
     services::Navigation* navigation;
     services::Maze* maze;
     services::Logger* logger;
-    std::array<std::pair<Movement, uint8_t>, 256> target_movements;
-    int move_count = 0;
+    std::vector<Direction> target_directions;
+    std::vector<std::pair<Movement, uint8_t>> target_movements;
+    uint32_t move_count = 0;
 };
 
 /// @section Search States

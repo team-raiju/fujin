@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <string>
 
 #include "bsp/analog_sensors.hpp"
 #include "bsp/encoders.hpp"
@@ -10,6 +11,7 @@
 #include "services/navigation.hpp"
 #include "utils/math.hpp"
 #include "utils/movement_params.hpp"
+#include "utils/types.hpp"
 
 /// @section Constants
 
@@ -332,7 +334,7 @@ void Navigation::move(Direction dir) {
     bsp::imu::reset_angle();
 
     target_direction = dir;
-    current_movement = get_movement(dir);
+    current_movement = get_movement(dir, current_direction);
 
     traveled_dist_cm = 0;
     reference_time = bsp::get_tick_ms();
@@ -340,20 +342,16 @@ void Navigation::move(Direction dir) {
     is_finished = false;
 }
 
-Movement Navigation::get_movement(Direction target_dir) {
+Movement Navigation::get_movement(Direction target_dir, Direction current_dir) {
     using enum Direction;
 
-    if (target_dir == current_direction) {
+    if (target_dir == current_dir) {
         return FORWARD;
-    } else if ((target_dir == NORTH && current_direction == WEST) ||
-               (target_dir == EAST && current_direction == NORTH) ||
-               (target_dir == SOUTH && current_direction == EAST) ||
-               (target_dir == WEST && current_direction == SOUTH)) {
+    } else if ((target_dir == NORTH && current_dir == WEST) || (target_dir == EAST && current_dir == NORTH) ||
+               (target_dir == SOUTH && current_dir == EAST) || (target_dir == WEST && current_dir == SOUTH)) {
         return TURN_RIGHT_90;
-    } else if ((target_dir == NORTH && current_direction == SOUTH) ||
-               (target_dir == EAST && current_direction == WEST) ||
-               (target_dir == SOUTH && current_direction == NORTH) ||
-               (target_dir == WEST && current_direction == EAST)) {
+    } else if ((target_dir == NORTH && current_dir == SOUTH) || (target_dir == EAST && current_dir == WEST) ||
+               (target_dir == SOUTH && current_dir == NORTH) || (target_dir == WEST && current_dir == EAST)) {
         return TURN_AROUND;
     } else {
         return TURN_LEFT_90;
@@ -394,6 +392,217 @@ void Navigation::set_movement(Movement movement) {
     }
 
     target_travel_cm = forward_params[movement].target_travel_cm;
+}
+
+std::vector<std::pair<Movement, uint8_t>> Navigation::get_default_target_movements(std::vector<Direction> target_directions) {
+
+    std::vector<std::pair<Movement, uint8_t>> default_target_movements = {};
+
+    Direction robot_direction = Direction::NORTH;
+    default_target_movements.push_back({Movement::FORWARD, 1});
+
+    for (auto target_dir : target_directions) {
+        Movement movement = get_movement(target_dir, robot_direction);
+        default_target_movements.push_back({movement, 1});
+        robot_direction = target_dir;
+    }
+
+    default_target_movements.push_back({Movement::STOP, 1});
+
+    print_movement_sequence(default_target_movements, "Default");
+    return default_target_movements;
+}
+
+std::vector<std::pair<Movement, uint8_t>> Navigation::get_smooth_movements(std::vector<std::pair<Movement, uint8_t>> default_target_movements) {
+
+    std::vector<std::pair<Movement, uint8_t>> smooth_movements = {};
+
+    smooth_movements.push_back(default_target_movements[0]);
+    uint8_t forward_count = 1;
+    for (uint32_t i = 1; i < default_target_movements.size() - 1; i++) {
+        Movement movement = default_target_movements[i].first;
+        Movement next_movement = default_target_movements[i + 1].first;
+        if (movement == Movement::TURN_LEFT_90 && next_movement == Movement::TURN_LEFT_90) {
+            smooth_movements.push_back({Movement::TURN_LEFT_180, 1});
+            i++;
+        } else if (movement == Movement::TURN_RIGHT_90 && next_movement == Movement::TURN_RIGHT_90) {
+            smooth_movements.push_back({Movement::TURN_RIGHT_180, 1});
+            i++;
+        } else if (movement == Movement::FORWARD && next_movement == Movement::FORWARD) {
+            forward_count++;
+        } else if (movement == Movement::FORWARD && next_movement != Movement::FORWARD) {
+            smooth_movements.push_back({Movement::FORWARD, forward_count});
+            forward_count = 1;
+        } else {
+            smooth_movements.push_back(default_target_movements[i]);
+        }
+    }
+    
+    smooth_movements.push_back({Movement::STOP, 1});
+    print_movement_sequence(smooth_movements, "Smooth");
+
+    return smooth_movements;
+}
+
+std::vector<std::pair<Movement, uint8_t>> Navigation::get_diagonal_movements(std::vector<std::pair<Movement, uint8_t>> default_target_movements){
+    std::vector<std::pair<Movement, uint8_t>> temp_target_movements = {};
+    std::vector<std::pair<Movement, uint8_t>> final_target_movements = {};
+    
+    uint8_t diagonal_count = 0;
+    uint8_t forward_count = 1;
+    temp_target_movements.push_back(default_target_movements[0]);
+
+    for (uint32_t i = 1; i < default_target_movements.size() - 2; i++) {
+        Movement movement = default_target_movements[i].first;
+        Movement next_movement_1 = default_target_movements[i + 1].first;
+        Movement next_movement_2 = default_target_movements[i + 2].first;
+
+        if (movement == Movement::TURN_LEFT_90) {
+            if (!diagonal_count) {
+                if (next_movement_1 == Movement::TURN_RIGHT_90) {
+                    temp_target_movements.push_back({Movement::TURN_LEFT_45, 1});
+                    diagonal_count = 1;
+                } else if (next_movement_1 == Movement::TURN_LEFT_90 && next_movement_2 == Movement::TURN_RIGHT_90) {
+                    temp_target_movements.push_back({Movement::TURN_LEFT_135, 1});
+                    diagonal_count = 1;
+                    i++;
+                } else if (next_movement_1 == Movement::TURN_LEFT_90) {
+                    temp_target_movements.push_back({Movement::TURN_LEFT_180, 1});
+                    i++;
+                } else {
+                    temp_target_movements.push_back(default_target_movements[i]);
+                }
+            } else {
+                if (next_movement_1 == Movement::TURN_RIGHT_90) {
+                    diagonal_count++;
+                } else {
+                    temp_target_movements.push_back({Movement::DIAGONAL, diagonal_count});
+                    diagonal_count = 0;
+                }
+            }
+        } else if (movement == Movement::TURN_RIGHT_90) {
+            if (!diagonal_count) {
+                if (next_movement_1 == Movement::TURN_LEFT_90) {
+                    temp_target_movements.push_back({Movement::TURN_RIGHT_45, 1});
+                    diagonal_count = 1;
+                } else if (next_movement_1 == Movement::TURN_RIGHT_90 && next_movement_2 == Movement::TURN_LEFT_90) {
+                    temp_target_movements.push_back({Movement::TURN_RIGHT_135, 1});
+                    diagonal_count = 1;
+                    i++;
+                } else if (next_movement_1 == Movement::TURN_RIGHT_90) {
+                    temp_target_movements.push_back({Movement::TURN_RIGHT_180, 1});
+                    i++;
+                } else {
+                    temp_target_movements.push_back(default_target_movements[i]);
+                }
+            } else {
+                if (next_movement_1 == Movement::TURN_LEFT_90) {
+                    diagonal_count++;
+                } else {
+                    temp_target_movements.push_back({Movement::DIAGONAL, diagonal_count});
+                    diagonal_count = 0;
+                }
+            }
+        } else if (movement == Movement::FORWARD && next_movement_1 == Movement::FORWARD) {
+            forward_count++;
+        } else if (movement == Movement::FORWARD && next_movement_1 != Movement::FORWARD) {
+            temp_target_movements.push_back({Movement::FORWARD, forward_count});
+            forward_count = 1;
+        } else {
+            temp_target_movements.push_back(default_target_movements[i]);
+        }
+    }
+    
+    if (diagonal_count > 0) {
+        temp_target_movements.push_back({Movement::DIAGONAL, diagonal_count});
+    } else if (forward_count > 1) {
+        temp_target_movements.push_back({Movement::FORWARD, forward_count});
+    } else if (temp_target_movements.back().first != Movement::TURN_LEFT_180 &&
+        temp_target_movements.back().first != Movement::TURN_RIGHT_180) {
+        temp_target_movements.push_back(default_target_movements[default_target_movements.size() - 2]);
+    }
+
+    
+    temp_target_movements.push_back({Movement::STOP, 1});
+    
+    // print_movement_sequence(temp_target_movements, "Temp: ");
+
+    // Fix movements after and before diagonals
+    final_target_movements.push_back(temp_target_movements[0]);
+    for (uint32_t i = 1; i < temp_target_movements.size() - 1; i++) {
+        Movement movement = temp_target_movements[i].first;
+        uint8_t mov_count = temp_target_movements[i].second;
+        Movement next_movement = temp_target_movements[i + 1].first;
+        uint8_t next_movement_count = temp_target_movements[i + 1].second;
+        Movement prev_movement = temp_target_movements[i - 1].first;
+
+        if (movement == Movement::FORWARD && (next_movement == TURN_LEFT_45 || next_movement == TURN_RIGHT_45)) {
+
+            if (mov_count > 1) {
+                final_target_movements.push_back({Movement::FORWARD, (mov_count - 1)});
+            }
+
+            final_target_movements.push_back({Movement::FORWARD_BEFORE_TURN_45, 1});
+        } else if (movement == Movement::DIAGONAL) {
+            if (mov_count > 1){
+                final_target_movements.push_back({Movement::DIAGONAL, mov_count - 1});
+            }
+            
+            bool diagonal_start_right = (prev_movement == TURN_RIGHT_45 || prev_movement == TURN_RIGHT_135);
+            
+            if (diagonal_start_right) {
+                if (next_movement == FORWARD || next_movement == STOP) {
+                    final_target_movements.push_back({Movement::TURN_LEFT_45_FROM_45, 1});
+                    final_target_movements.push_back({Movement::FORWARD_AFTER_DIAGONAL, 1});
+                    
+                    if (next_movement_count > 2) {
+                       final_target_movements.push_back({Movement::FORWARD, (next_movement_count - 1)}); 
+                    }
+                } else if (next_movement == TURN_LEFT_45 ) {
+                    final_target_movements.push_back({Movement::TURN_LEFT_90_FROM_45, 1});
+                } else if (next_movement == TURN_LEFT_90 ) {
+                    final_target_movements.push_back({Movement::TURN_LEFT_135_FROM_45, 1});
+                }
+                
+            } else {
+                if ((next_movement == FORWARD || next_movement == STOP) && !diagonal_start_right) {
+                    final_target_movements.push_back({Movement::TURN_RIGHT_45_FROM_45, 1});
+                    final_target_movements.push_back({Movement::FORWARD_AFTER_DIAGONAL, 1});
+                    if (next_movement_count > 2) {
+                       final_target_movements.push_back({Movement::FORWARD, (next_movement_count - 1)}); 
+                    }
+                }  else if (next_movement == TURN_RIGHT_45 ) {
+                    final_target_movements.push_back({Movement::TURN_RIGHT_90_FROM_45, 1});
+                } else if (next_movement == TURN_RIGHT_90 ) {
+                    final_target_movements.push_back({Movement::TURN_RIGHT_135_FROM_45, 1});
+                }
+            }
+
+            i++;
+        } else {
+            final_target_movements.push_back({movement, mov_count});
+        }
+    }
+    
+    final_target_movements.push_back({Movement::STOP, 1});
+    
+    print_movement_sequence(final_target_movements, "Final: ");
+
+    return final_target_movements;
+}
+
+void Navigation::print_movement_sequence(std::vector<std::pair<Movement, uint8_t>> movements, std::string name) {
+    std::printf("%s: \r\n", name.c_str());
+    bsp::delay_ms(2);
+    for (auto movement : movements) {
+        for (uint32_t i = 0; i < sizeof(movementInfoMap) / sizeof(movementInfoMap[0]); i++) {
+            if (movementInfoMap[i].first == movement.first) {
+                std::printf("%d - %s\r\n", movement.second, movementInfoMap[i].second);
+                bsp::delay_ms(2);
+                break;
+            }
+        }
+    }
 }
 
 }

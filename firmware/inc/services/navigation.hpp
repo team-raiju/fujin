@@ -1,10 +1,11 @@
 #pragma once
 
 #include <cstdint>
+#include <vector>
+#include <string>
 
 #include "algorithms/pid.hpp"
 #include "services/control.hpp"
-
 
 namespace services {
 
@@ -24,10 +25,20 @@ public:
     void move(Direction dir);
     void set_movement(Movement);
 
+    std::vector<std::pair<Movement, uint8_t>> get_default_target_movements(std::vector<Direction> target_directions);
+
+    std::vector<std::pair<Movement, uint8_t>>
+    get_smooth_movements(std::vector<std::pair<Movement, uint8_t>> default_target_movements);
+
+    std::vector<std::pair<Movement, uint8_t>>
+    get_diagonal_movements(std::vector<std::pair<Movement, uint8_t>> default_target_movements);
+
+    void print_movement_sequence(std::vector<std::pair<Movement, uint8_t>> movements, std::string name);
+
 private:
     Navigation() {}
     void update_position();
-    Movement get_movement(Direction);
+    Movement get_movement(Direction target_dir, Direction current_dir);
     float get_torricelli_distance(float final_speed, float initial_speed, float acceleration);
 
     services::Control* control;

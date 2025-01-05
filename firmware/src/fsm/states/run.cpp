@@ -101,25 +101,21 @@ void Run::enter() {
 
     logger->init();
 
-    // maze->read_maze_from_memory();
-    target_movements[0] = {Movement::FORWARD, 1};
-    target_movements[1] = {Movement::TURN_RIGHT_180, 1};
-    target_movements[2] = {Movement::FORWARD, 1};
-    target_movements[3] = {Movement::TURN_LEFT_90, 1};
-    target_movements[4] = {Movement::FORWARD, 1};
-    target_movements[5] = {Movement::TURN_LEFT_90, 1};
-    target_movements[6] = {Movement::FORWARD, 1};
-    target_movements[7] = {Movement::FORWARD_BEFORE_TURN_45, 1};
-    target_movements[8] = {Movement::TURN_LEFT_45, 1};
-    target_movements[9] = {Movement::DIAGONAL, 1};
-    target_movements[10] = {Movement::DIAGONAL, 1};
-    target_movements[11] = {Movement::TURN_RIGHT_45_FROM_45, 1};
-    target_movements[12] = {Movement::STOP, 1};
-    target_movements[13] = {Movement::STOP, 0};
+    maze->read_maze_from_memory();
+    maze->print(maze->ORIGIN);
+    target_directions = maze->directions_to_goal();
+    maze->print(maze->ORIGIN);
 
-    // target_movements[14] = {Movement::FORWARD, 1};
-    // target_movements[16] = {Movement::STOP, 1};
-    // target_movements[17] = {Movement::STOP, 0};
+    std::vector<std::pair<Movement, uint8_t>> default_target_movements =
+        navigation->get_default_target_movements(target_directions);
+
+    bool use_diagonal = true;
+
+    if (use_diagonal) {
+        target_movements = navigation->get_diagonal_movements(default_target_movements);
+    } else {
+        target_movements = navigation->get_smooth_movements(default_target_movements);
+    }
 
     move_count = 0;
 }
@@ -171,12 +167,13 @@ State* Run::react(Timeout const&) {
         indicate_read = true;
         bsp::leds::stripe_set(Color::Green);
 
-        auto movement = target_movements[move_count].first;
-        auto cells = target_movements[move_count].second;
         move_count++;
-        if (move_count > 13 || cells == 0) {
+        if (move_count >= target_movements.size()) {
             return &State::get<Idle>();
         }
+
+        auto movement = target_movements[move_count].first;
+        // auto cells = target_movements[move_count].second;
 
         navigation->set_movement(movement);
     }
