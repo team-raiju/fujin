@@ -173,9 +173,9 @@ State* Run::react(Timeout const&) {
         }
 
         auto movement = target_movements[move_count].first;
-        // auto cells = target_movements[move_count].second;
+        auto cells = target_movements[move_count].second;
 
-        navigation->set_movement(movement);
+        navigation->set_movement(movement, cells);
     }
 
     return nullptr;

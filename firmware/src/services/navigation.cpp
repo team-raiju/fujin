@@ -148,7 +148,7 @@ bool Navigation::step() {
         float control_linear_speed = control->get_target_linear_speed();
 
         if (std::abs(traveled_dist_cm) <
-            (target_travel_cm - (100 * get_torricelli_distance(final_speed, max_speed, -deceleration)))) {
+            (target_travel_cm - (100 * get_torricelli_distance(final_speed, control_linear_speed, -deceleration)))) {
             if (control_linear_speed < max_speed) {
                 control_linear_speed += acceleration / CONTROL_FREQUENCY_HZ;
                 control_linear_speed = std::min(control_linear_speed, max_speed);
@@ -263,7 +263,7 @@ bool Navigation::step() {
             float control_linear_speed = control->get_target_linear_speed();
 
             if (std::abs(traveled_dist_cm) <
-                (target_travel_cm - (100 * get_torricelli_distance(final_speed, max_speed, -deceleration)))) {
+                (target_travel_cm - (100 * get_torricelli_distance(final_speed, control_linear_speed, -deceleration)))) {
                 if (control_linear_speed < max_speed) {
                     control_linear_speed += acceleration / CONTROL_FREQUENCY_HZ;
                     control_linear_speed = std::min(control_linear_speed, max_speed);
@@ -378,7 +378,7 @@ void Navigation::update_position() {
     }
 }
 
-void Navigation::set_movement(Movement movement) {
+void Navigation::set_movement(Movement movement, uint8_t count) {
     bsp::imu::reset_angle();
 
     current_movement = movement;
@@ -391,7 +391,7 @@ void Navigation::set_movement(Movement movement) {
         bsp::leds::stripe_set(Color::Blue);
     }
 
-    target_travel_cm = forward_params[movement].target_travel_cm;
+    target_travel_cm = forward_params[movement].target_travel_cm * count;
 }
 
 std::vector<std::pair<Movement, uint8_t>> Navigation::get_default_target_movements(std::vector<Direction> target_directions) {
