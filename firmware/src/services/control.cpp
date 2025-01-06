@@ -49,6 +49,10 @@ void Control::update() {
     if (wall_pid_enabled){
         target_angular_speed_rad_s += walls_pid.calculate(0.0, bsp::analog_sensors::ir_side_wall_error());
     }
+
+    if (diagonal_pid_enabled) {
+        target_angular_speed_rad_s += walls_pid.calculate(0.0, bsp::analog_sensors::ir_diagonal_error());
+    }
     
     float mean_velocity_m_s = bsp::encoders::get_filtered_velocity_m_s();
 

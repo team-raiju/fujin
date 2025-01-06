@@ -163,11 +163,17 @@ bool Navigation::step() {
         control->set_target_linear_speed(control_linear_speed);
         control->set_target_angular_speed(0);
 
-        if (current_movement == Movement::DIAGONAL || current_movement == Movement::STOP) {
+        if (current_movement == Movement::DIAGONAL) {
             control->set_wall_pid_enabled(false);
+            control->set_diagonal_pid_enabled(true);
+            front_emergency = false;
+        } else if (current_movement == Movement::STOP) {
+            control->set_wall_pid_enabled(false);
+            control->set_diagonal_pid_enabled(false);
             front_emergency = false;
         } else {
             control->set_wall_pid_enabled(true);
+            control->set_diagonal_pid_enabled(false);
         }
 
         if (std::abs(traveled_dist_cm) >= target_travel_cm || front_emergency) {
@@ -228,6 +234,7 @@ bool Navigation::step() {
         }
 
         control->set_wall_pid_enabled(false);
+        control->set_diagonal_pid_enabled(false);
 
         break;
     }
@@ -263,7 +270,8 @@ bool Navigation::step() {
             float control_linear_speed = control->get_target_linear_speed();
 
             if (std::abs(traveled_dist_cm) <
-                (target_travel_cm - (100 * get_torricelli_distance(final_speed, control_linear_speed, -deceleration)))) {
+                (target_travel_cm -
+                 (100 * get_torricelli_distance(final_speed, control_linear_speed, -deceleration)))) {
                 if (control_linear_speed < max_speed) {
                     control_linear_speed += acceleration / CONTROL_FREQUENCY_HZ;
                     control_linear_speed = std::min(control_linear_speed, max_speed);
@@ -288,26 +296,26 @@ bool Navigation::step() {
 
             control->set_target_linear_speed(control_linear_speed);
             control->set_target_angular_speed(0);
-            control->set_wall_pid_enabled(false);
+            control->set_diagonal_pid_enabled(false);
         } else if (elapsed_time <= elapsed_t_accel) {
             control->set_target_linear_speed(0);
             float ideal_rad_s =
                 std::abs(control->get_target_angular_speed()) + (angular_acceleration / CONTROL_FREQUENCY_HZ);
             ideal_rad_s = std::min(ideal_rad_s, angular_speed);
             control->set_target_angular_speed(ideal_rad_s * turn_sign);
-            control->set_wall_pid_enabled(false);
         } else if (elapsed_time <= elapsed_t_max_ang_vel) {
             float ideal_rad_s = angular_speed;
             control->set_target_angular_speed(ideal_rad_s * turn_sign);
-            control->set_wall_pid_enabled(false);
         } else if (elapsed_time <= elapsed_t_decel) {
             float ideal_rad_s =
                 std::abs(control->get_target_angular_speed()) - (angular_acceleration / CONTROL_FREQUENCY_HZ);
             ideal_rad_s = std::max(ideal_rad_s, 0.0f);
             control->set_target_angular_speed(ideal_rad_s * turn_sign);
-            control->set_wall_pid_enabled(false);
             traveled_dist_cm = 0;
         }
+        
+        control->set_wall_pid_enabled(false);
+        control->set_diagonal_pid_enabled(false);
 
         break;
     }
@@ -394,7 +402,8 @@ void Navigation::set_movement(Movement movement, uint8_t count) {
     target_travel_cm = forward_params[movement].target_travel_cm * count;
 }
 
-std::vector<std::pair<Movement, uint8_t>> Navigation::get_default_target_movements(std::vector<Direction> target_directions) {
+std::vector<std::pair<Movement, uint8_t>>
+Navigation::get_default_target_movements(std::vector<Direction> target_directions) {
 
     std::vector<std::pair<Movement, uint8_t>> default_target_movements = {};
 
@@ -413,7 +422,8 @@ std::vector<std::pair<Movement, uint8_t>> Navigation::get_default_target_movemen
     return default_target_movements;
 }
 
-std::vector<std::pair<Movement, uint8_t>> Navigation::get_smooth_movements(std::vector<std::pair<Movement, uint8_t>> default_target_movements) {
+std::vector<std::pair<Movement, uint8_t>>
+Navigation::get_smooth_movements(std::vector<std::pair<Movement, uint8_t>> default_target_movements) {
 
     std::vector<std::pair<Movement, uint8_t>> smooth_movements = {};
 
@@ -437,17 +447,18 @@ std::vector<std::pair<Movement, uint8_t>> Navigation::get_smooth_movements(std::
             smooth_movements.push_back(default_target_movements[i]);
         }
     }
-    
+
     smooth_movements.push_back({Movement::STOP, 1});
     print_movement_sequence(smooth_movements, "Smooth");
 
     return smooth_movements;
 }
 
-std::vector<std::pair<Movement, uint8_t>> Navigation::get_diagonal_movements(std::vector<std::pair<Movement, uint8_t>> default_target_movements){
+std::vector<std::pair<Movement, uint8_t>>
+Navigation::get_diagonal_movements(std::vector<std::pair<Movement, uint8_t>> default_target_movements) {
     std::vector<std::pair<Movement, uint8_t>> temp_target_movements = {};
     std::vector<std::pair<Movement, uint8_t>> final_target_movements = {};
-    
+
     uint8_t diagonal_count = 0;
     uint8_t forward_count = 1;
     temp_target_movements.push_back(default_target_movements[0]);
@@ -512,19 +523,18 @@ std::vector<std::pair<Movement, uint8_t>> Navigation::get_diagonal_movements(std
             temp_target_movements.push_back(default_target_movements[i]);
         }
     }
-    
+
     if (diagonal_count > 0) {
         temp_target_movements.push_back({Movement::DIAGONAL, diagonal_count});
     } else if (forward_count > 1) {
         temp_target_movements.push_back({Movement::FORWARD, forward_count});
     } else if (temp_target_movements.back().first != Movement::TURN_LEFT_180 &&
-        temp_target_movements.back().first != Movement::TURN_RIGHT_180) {
+               temp_target_movements.back().first != Movement::TURN_RIGHT_180) {
         temp_target_movements.push_back(default_target_movements[default_target_movements.size() - 2]);
     }
 
-    
     temp_target_movements.push_back({Movement::STOP, 1});
-    
+
     // print_movement_sequence(temp_target_movements, "Temp: ");
 
     // Fix movements after and before diagonals
@@ -544,36 +554,36 @@ std::vector<std::pair<Movement, uint8_t>> Navigation::get_diagonal_movements(std
 
             final_target_movements.push_back({Movement::FORWARD_BEFORE_TURN_45, 1});
         } else if (movement == Movement::DIAGONAL) {
-            if (mov_count > 1){
+            if (mov_count > 1) {
                 final_target_movements.push_back({Movement::DIAGONAL, mov_count - 1});
             }
-            
+
             bool diagonal_start_right = (prev_movement == TURN_RIGHT_45 || prev_movement == TURN_RIGHT_135);
-            
+
             if (diagonal_start_right) {
                 if (next_movement == FORWARD || next_movement == STOP) {
                     final_target_movements.push_back({Movement::TURN_LEFT_45_FROM_45, 1});
                     final_target_movements.push_back({Movement::FORWARD_AFTER_DIAGONAL, 1});
-                    
+
                     if (next_movement_count > 2) {
-                       final_target_movements.push_back({Movement::FORWARD, (next_movement_count - 1)}); 
+                        final_target_movements.push_back({Movement::FORWARD, (next_movement_count - 1)});
                     }
-                } else if (next_movement == TURN_LEFT_45 ) {
+                } else if (next_movement == TURN_LEFT_45) {
                     final_target_movements.push_back({Movement::TURN_LEFT_90_FROM_45, 1});
-                } else if (next_movement == TURN_LEFT_90 ) {
+                } else if (next_movement == TURN_LEFT_90) {
                     final_target_movements.push_back({Movement::TURN_LEFT_135_FROM_45, 1});
                 }
-                
+
             } else {
                 if ((next_movement == FORWARD || next_movement == STOP) && !diagonal_start_right) {
                     final_target_movements.push_back({Movement::TURN_RIGHT_45_FROM_45, 1});
                     final_target_movements.push_back({Movement::FORWARD_AFTER_DIAGONAL, 1});
                     if (next_movement_count > 2) {
-                       final_target_movements.push_back({Movement::FORWARD, (next_movement_count - 1)}); 
+                        final_target_movements.push_back({Movement::FORWARD, (next_movement_count - 1)});
                     }
-                }  else if (next_movement == TURN_RIGHT_45 ) {
+                } else if (next_movement == TURN_RIGHT_45) {
                     final_target_movements.push_back({Movement::TURN_RIGHT_90_FROM_45, 1});
-                } else if (next_movement == TURN_RIGHT_90 ) {
+                } else if (next_movement == TURN_RIGHT_90) {
                     final_target_movements.push_back({Movement::TURN_RIGHT_135_FROM_45, 1});
                 }
             }
@@ -583,9 +593,9 @@ std::vector<std::pair<Movement, uint8_t>> Navigation::get_diagonal_movements(std
             final_target_movements.push_back({movement, mov_count});
         }
     }
-    
+
     final_target_movements.push_back({Movement::STOP, 1});
-    
+
     print_movement_sequence(final_target_movements, "Final: ");
 
     return final_target_movements;

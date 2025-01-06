@@ -57,15 +57,16 @@ static size_t window_idx[4];
 /* Reading value when robot is in the middle of the cell */
 static uint32_t ir_wall_dist_reference[4] = {
     820, // RIGHT
-    50,  // FRONT_LEFT
-    50,  // FRONT_RIGHT
+    150,  // FRONT_LEFT
+    150,  // FRONT_RIGHT
     570  // LEFT
 };
 
+/* Threshold to calculate PID error */
 static uint32_t ir_threshold_control[4] = {
     600,  // RIGHT
-    2600, // FRONT_LEFT
-    2600, // FRONT_RIGHT
+    250, // FRONT_LEFT
+    250, // FRONT_RIGHT
     400   // LEFT
 };
 
@@ -142,6 +143,22 @@ int32_t ir_side_wall_error() {
         ir_error = 2.0 * left_error;
     } else if (ir_wall_control_valid(SensingDirection::RIGHT)) {
         ir_error = -2.0 * right_error;
+    } else {
+        ir_error = 0;
+    }
+
+    return ir_error;
+}
+
+int32_t ir_diagonal_error() {
+    bool greater_error_left = ir_readings[SensingDirection::FRONT_LEFT] > ir_readings[SensingDirection::FRONT_RIGHT];
+
+    int32_t ir_error;
+
+    if (greater_error_left && ir_wall_control_valid(SensingDirection::FRONT_LEFT)) {
+        ir_error = ir_readings[SensingDirection::FRONT_LEFT] - ir_wall_dist_reference[SensingDirection::FRONT_LEFT];
+    } else if (!greater_error_left && ir_wall_control_valid(SensingDirection::FRONT_RIGHT)) {
+        ir_error = -(ir_readings[SensingDirection::FRONT_RIGHT] - ir_wall_dist_reference[SensingDirection::FRONT_RIGHT]);
     } else {
         ir_error = 0;
     }
