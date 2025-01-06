@@ -35,6 +35,7 @@ class Control {
         algorithm::PID linear_vel_pid;
         algorithm::PID angular_vel_pid;
         algorithm::PID walls_pid;
+        algorithm::PID diagonal_walls_pid;
 
         float target_linear_speed_m_s;
         float target_angular_speed_rad_s;

@@ -36,6 +36,9 @@ static float ω;
 // Angular Displacement in rad
 static float φ;
 
+// Vertical acceleration in m/s²
+static float a_z;
+
 static float sample_frequency = SAMPLE_FREQ_HZ;
 
 /// @section Private functions
@@ -169,6 +172,7 @@ ImuResult update() {
     float δt = Δt();
 
     ω = deg2rad(mω.z / 1000.0f);
+    a_z = mg.z / 1000.0f;
 
 #if USE_MOTION_GC
     float new_frequency = 1.0f / δt;
@@ -216,6 +220,10 @@ void reset_angle() {
 
 float get_rad_per_s() {
     return ω;
+}
+
+float get_z_acceleration() {
+    return a_z;
 }
 
 void update_g_bias() {

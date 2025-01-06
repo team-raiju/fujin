@@ -109,6 +109,7 @@ void Run::enter() {
     std::vector<std::pair<Movement, uint8_t>> default_target_movements =
         navigation->get_default_target_movements(target_directions);
 
+    target_movements.clear();
     bool use_diagonal = true;
 
     if (use_diagonal) {
@@ -116,6 +117,22 @@ void Run::enter() {
     } else {
         target_movements = navigation->get_smooth_movements(default_target_movements);
     }
+
+
+    // target_movements.push_back({Movement::START, 1});
+    // target_movements.push_back({Movement::FORWARD, 1});
+    // target_movements.push_back({Movement::TURN_RIGHT_180, 1});
+    // target_movements.push_back({Movement::FORWARD, 1});
+    // target_movements.push_back({Movement::TURN_LEFT_90, 1});
+    // target_movements.push_back({Movement::FORWARD, 1});
+    // target_movements.push_back({Movement::TURN_LEFT_90, 1});
+    // target_movements.push_back({Movement::FORWARD, 5});
+    // target_movements.push_back({Movement::TURN_LEFT_180, 1});
+    // target_movements.push_back({Movement::FORWARD, 1});
+    // target_movements.push_back({Movement::TURN_RIGHT_135, 1});
+    // target_movements.push_back({Movement::DIAGONAL, 1});
+    // target_movements.push_back({Movement::TURN_RIGHT_45_FROM_45, 1});
+    // target_movements.push_back({Movement::STOP, 1});
 
     move_count = 0;
 }
@@ -176,6 +193,17 @@ State* Run::react(Timeout const&) {
         auto cells = target_movements[move_count].second;
 
         navigation->set_movement(movement, cells);
+    }
+
+    bool imu_emergency = (bsp::imu::get_z_acceleration() > 4.5 || bsp::imu::get_z_acceleration() < -2.5);
+    if (imu_emergency) {
+        soft_timer::stop();
+        bsp::motors::set(0, 0);
+        bsp::leds::stripe_set(Color::Orange);
+        bsp::buzzer::start();
+        bsp::delay_ms(500);
+        bsp::buzzer::stop();
+        return &State::get<Idle>();
     }
 
     return nullptr;

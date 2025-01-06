@@ -39,6 +39,12 @@ void Control::reset(void) {
     walls_pid.kd = Config::wall_kd;
     walls_pid.integral_limit = 0;
 
+    diagonal_walls_pid.reset();
+    diagonal_walls_pid.kp = Config::diagonal_walls_kp;
+    diagonal_walls_pid.ki = Config::diagonal_walls_ki;
+    diagonal_walls_pid.kd = Config::diagonal_walls_kd;
+    diagonal_walls_pid.integral_limit = 0;
+
     target_angular_speed_rad_s = 0;
     target_linear_speed_m_s = 0;
 
@@ -51,7 +57,7 @@ void Control::update() {
     }
 
     if (diagonal_pid_enabled) {
-        target_angular_speed_rad_s += walls_pid.calculate(0.0, bsp::analog_sensors::ir_diagonal_error());
+        target_angular_speed_rad_s += diagonal_walls_pid.calculate(0.0, bsp::analog_sensors::ir_diagonal_error());
     }
     
     float mean_velocity_m_s = bsp::encoders::get_filtered_velocity_m_s();

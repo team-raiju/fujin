@@ -21,6 +21,8 @@ float get_angle();
 void reset_angle();
 float get_rad_per_s();
 
+float get_z_acceleration();
+
 void update_g_bias();
 void set_g_bias(int32_t bias);
 int32_t get_g_bias();

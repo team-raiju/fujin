@@ -71,8 +71,6 @@ void Navigation::reset(bool search_mode) {
     is_finished = false;
     control->reset();
 
-    target_travel_cm = HALF_CELL_SIZE_CM + ROBOT_DIST_FROM_CENTER_START_CM;
-    current_movement = Movement::FORWARD;
     reference_time = bsp::get_tick_ms();
     bsp::encoders::reset_linear_velocity_m_s();
 
@@ -83,6 +81,9 @@ void Navigation::reset(bool search_mode) {
         turn_params = turn_params_slow;
         forward_params = forward_params_slow;
     }
+
+    current_movement = Movement::START;
+    target_travel_cm = forward_params[current_movement].target_travel_cm;
 }
 
 float Navigation::get_torricelli_distance(float final_speed, float initial_speed, float acceleration) {
@@ -129,6 +130,7 @@ bool Navigation::step() {
     using bsp::analog_sensors::SensingDirection;
 
     switch (current_movement) {
+    case Movement::START:
     case Movement::FORWARD:
     case Movement::FORWARD_BEFORE_TURN_45:
     case Movement::FORWARD_AFTER_DIAGONAL:
@@ -408,7 +410,7 @@ Navigation::get_default_target_movements(std::vector<Direction> target_direction
     std::vector<std::pair<Movement, uint8_t>> default_target_movements = {};
 
     Direction robot_direction = Direction::NORTH;
-    default_target_movements.push_back({Movement::FORWARD, 1});
+    default_target_movements.push_back({Movement::START, 1});
 
     for (auto target_dir : target_directions) {
         Movement movement = get_movement(target_dir, robot_direction);

@@ -32,6 +32,10 @@ float Config::linear_vel_kp = 20.0;
 float Config::linear_vel_ki = 0.2;
 float Config::linear_vel_kd = 0;
 
+float Config::diagonal_walls_kp = 0.015;
+float Config::diagonal_walls_ki = 0;
+float Config::diagonal_walls_kd = 0.015;
+
 // All params
 static std::pair<float*, bsp::eeprom::param_addresses_t> params[] = {
     {&Config::angular_kp, bsp::eeprom::ADDR_ANGULAR_KP},
@@ -50,7 +54,10 @@ static std::pair<float*, bsp::eeprom::param_addresses_t> params[] = {
     {&Config::angular_acceleration, bsp::eeprom::ADDR_ANGULAR_ACCELERATION},
     {&Config::linear_vel_kp, bsp::eeprom::ADDR_LINEAR_VEL_KP},
     {&Config::linear_vel_ki, bsp::eeprom::ADDR_LINEAR_VEL_KI},
-    {&Config::linear_vel_kd, bsp::eeprom::ADDR_LINEAR_VEL_KD}};
+    {&Config::linear_vel_kd, bsp::eeprom::ADDR_LINEAR_VEL_KD},
+    {&Config::diagonal_walls_kp, bsp::eeprom::ADDR_DIAGONAL_WALLS_KP},
+    {&Config::diagonal_walls_ki, bsp::eeprom::ADDR_DIAGONAL_WALLS_KI},
+    {&Config::diagonal_walls_kd, bsp::eeprom::ADDR_DIAGONAL_WALLS_KD}};
 
 union _float {
     float value;
