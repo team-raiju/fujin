@@ -31,7 +31,7 @@ void Control::reset(void) {
     angular_vel_pid.kp = Config::angular_kp;
     angular_vel_pid.ki = Config::angular_ki;
     angular_vel_pid.kd = Config::angular_kd;
-    angular_vel_pid.integral_limit = 1000; // approximately (max_bat_voltage / Config::angular_ki)
+    angular_vel_pid.integral_limit = 500; // approximately (max_bat_voltage / Config::angular_ki)
 
     walls_pid.reset();
     walls_pid.kp = Config::wall_kp;
@@ -68,8 +68,10 @@ void Control::update() {
     float l_voltage = linear_ratio + rotation_ratio;
     float r_voltage = linear_ratio - rotation_ratio;
 
-    pwm_duty_l = (l_voltage / max_battery_voltage) * 1000;
-    pwm_duty_r = (r_voltage / max_battery_voltage) * 1000;
+    float bat_volts = bsp::analog_sensors::battery_latest_reading_mv() / 1000.0;
+
+    pwm_duty_l = (l_voltage / bat_volts) * 1000;
+    pwm_duty_r = (r_voltage / bat_volts) * 1000;
 
     bsp::motors::set(pwm_duty_l, pwm_duty_r);
 

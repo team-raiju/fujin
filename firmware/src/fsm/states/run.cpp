@@ -17,6 +17,8 @@
 #include "services/navigation.hpp"
 #include "utils/math.hpp"
 #include "utils/soft_timer.hpp"
+#include "services/config.hpp"
+
 
 using bsp::leds::Color;
 
@@ -29,6 +31,7 @@ void PreRun::enter() {
     bsp::leds::stripe_set(Color::Green);
 
     bsp::motors::set(0, 0);
+    bsp::fan::set(0);
 
     /* Only start IR if powered by the battery */
     if (bsp::analog_sensors::battery_latest_reading_mv() > 7000) {
@@ -95,6 +98,14 @@ void Run::enter() {
     bsp::delay_ms(2000);
     bsp::buzzer::stop();
 
+    uint8_t fan_speed = 0;
+    for (int i = 0; i < fan_speed; i++) {
+        bsp::fan::set(i);
+        bsp::delay_ms(10);
+    }
+    bsp::fan::set(fan_speed);
+    bsp::delay_ms(100);
+                                                                                               
     soft_timer::start(1, soft_timer::CONTINUOUS);
 
     navigation->reset(false);
@@ -199,6 +210,7 @@ State* Run::react(Timeout const&) {
     if (imu_emergency) {
         soft_timer::stop();
         bsp::motors::set(0, 0);
+        bsp::fan::set(0);
         bsp::leds::stripe_set(Color::Orange);
         bsp::buzzer::start();
         bsp::delay_ms(500);
@@ -211,6 +223,7 @@ State* Run::react(Timeout const&) {
 
 void Run::exit() {
     bsp::motors::set(0, 0);
+    bsp::fan::set(0);
     bsp::analog_sensors::enable_modulation(false);
     bsp::leds::ir_emitter_all_off();
     bsp::leds::indication_off();
