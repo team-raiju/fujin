@@ -10,8 +10,8 @@ namespace services {
 
 static bool write_default = false;
 
-float Config::angular_kp = 0.40;
-float Config::angular_ki = 0.020;
+float Config::angular_kp = 0.7;
+float Config::angular_ki = 0.025;
 float Config::angular_kd = 0;
 
 float Config::wall_kp = 0.0035;
