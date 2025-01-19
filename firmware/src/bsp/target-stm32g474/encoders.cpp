@@ -12,6 +12,10 @@ static float linear_velocity_m_s;
 float filtered_velocity_m_s;
 float last_velocity_m_s;
 
+float right_filtered_ang_vel_rad_s;
+float left_filtered_ang_vel_rad_s;
+
+
 /// @section Interface implementation
 
 void init() {
@@ -51,6 +55,14 @@ void reset_linear_velocity_m_s() {
     last_velocity_m_s = 0;
 }
 
+void set_right_ang_vel_rad_s(float speed) {
+    right_filtered_ang_vel_rad_s = speed * 0.1 + right_filtered_ang_vel_rad_s * 0.9;
+}
+
+void set_left_ang_vel_rad_s(float speed) {
+    left_filtered_ang_vel_rad_s = speed * 0.1 + left_filtered_ang_vel_rad_s * 0.9;
+}
+
 void set_linear_velocity_m_s(float speed) {
     linear_velocity_m_s = speed;
 
@@ -68,6 +80,14 @@ float get_linear_velocity_m_s() {
 
 float get_filtered_velocity_m_s() {
     return filtered_velocity_m_s;
+}
+
+float get_right_filtered_ang_vel_rad_s() {
+    return right_filtered_ang_vel_rad_s;
+}
+
+float get_left_filtered_ang_vel_rad_s() {
+    return left_filtered_ang_vel_rad_s;
 }
 
 }

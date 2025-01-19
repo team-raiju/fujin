@@ -16,6 +16,7 @@
 /// @section Constants
 
 static constexpr float WHEEL_RADIUS_CM = (1.275);
+static constexpr float WHEEL_RADIUS_M = (WHEEL_RADIUS_CM / 100.0);
 static constexpr float WHEEL_PERIMETER_CM = (M_TWOPI * WHEEL_RADIUS_CM);
 
 static constexpr float WHEEL_TO_ENCODER_RATIO = (1.0);
@@ -78,6 +79,8 @@ void Navigation::reset(bool search_mode) {
         turn_params = turn_params_search;
         forward_params = forward_params_search;
     } else {
+        // turn_params = turn_params_medium;
+        // forward_params = forward_params_medium;
         turn_params = turn_params_slow;
         forward_params = forward_params_slow;
     }
@@ -103,9 +106,13 @@ void Navigation::update(void) {
         // min meaasured vel is ENCODER_DIST_MM_PULSE / 50 = 0.00156 m/s
         if (delta_time_us > 50000) {
             bsp::encoders::set_linear_velocity_m_s(0);
+            bsp::encoders::set_right_ang_vel_rad_s(0);
+            bsp::encoders::set_left_ang_vel_rad_s(0);
         } else {
             float velocity_m_s = (ENCODER_DIST_MM_PULSE / delta_time_us) * MM_PER_US_TO_M_PER_S;
             bsp::encoders::set_linear_velocity_m_s(velocity_m_s);
+            bsp::encoders::set_right_ang_vel_rad_s(velocity_m_s / WHEEL_RADIUS_M);
+            bsp::encoders::set_left_ang_vel_rad_s(velocity_m_s / WHEEL_RADIUS_M);
         }
         return;
     }
@@ -119,6 +126,8 @@ void Navigation::update(void) {
     float velocity_left_m_s = (estimated_delta_l_mm / delta_time_us) * MM_PER_US_TO_M_PER_S;
     float velocity_m_s = (velocity_right_m_s + velocity_left_m_s) / 2.0;
     bsp::encoders::set_linear_velocity_m_s(velocity_m_s);
+    bsp::encoders::set_right_ang_vel_rad_s(velocity_right_m_s / WHEEL_RADIUS_M);
+    bsp::encoders::set_left_ang_vel_rad_s(velocity_left_m_s / WHEEL_RADIUS_M);
     last_update_vel_time_us = current_time_us;
 
     encoder_left_counter = 0;
@@ -173,8 +182,11 @@ bool Navigation::step() {
             control->set_wall_pid_enabled(false);
             control->set_diagonal_pid_enabled(false);
             front_emergency = false;
-        } else {
+        } else if (current_movement == Movement::FORWARD || current_movement == Movement::START) {
             control->set_wall_pid_enabled(true);
+            control->set_diagonal_pid_enabled(false);
+        } else {
+            control->set_wall_pid_enabled(false);
             control->set_diagonal_pid_enabled(false);
         }
 

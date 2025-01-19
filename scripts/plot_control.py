@@ -2,10 +2,15 @@ import os
 import matplotlib.pyplot as plt
 from statistics import mean, stdev
 
-kp = "0.70"
-ki = "0.025"
+kp = "0.60"
+ki = "0.040_2"
 filter = "fujin_fan_25"
 num = "1"
+
+def calculate_average_error(actual, target):
+    total_error = sum(abs(a - t) for a, t in zip(actual, target))
+    num_samples = len(actual)
+    return total_error / num_samples
 
 def plot_velocities(file_path):
     time = []
@@ -27,6 +32,12 @@ def plot_velocities(file_path):
             pwm_right.append(float(fields[6]))
 
     fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(12, 12))
+
+    linear_error = calculate_average_error(linear_velocity1, linear_velocity2)
+    angular_error = calculate_average_error(angular_velocity1, angular_velocity2)
+
+    print(f"Total Linear Velocity Error: {linear_error:.5f}")
+    print(f"Total Angular Velocity Error: {angular_error:.5f}")
 
     # Plot linear velocities
     ax1.plot(time, linear_velocity1, label='Linear Velocity')

@@ -8,6 +8,9 @@
 #include "bsp/imu.hpp"
 
 static constexpr float max_battery_voltage = 12.6;
+static constexpr float mot_kt = 0.0017; // motor torque constant [Nm/A]
+static constexpr float mot_ra = 2.5; // armature resistance[Ohms]
+
 
 namespace services {
 
@@ -65,13 +68,16 @@ void Control::update() {
     float linear_ratio = linear_vel_pid.calculate(target_linear_speed_m_s, mean_velocity_m_s);
     float rotation_ratio = -angular_vel_pid.calculate(target_angular_speed_rad_s, bsp::imu::get_rad_per_s());
 
-    float l_voltage = linear_ratio + rotation_ratio;
-    float r_voltage = linear_ratio - rotation_ratio;
+    float l_current = linear_ratio + rotation_ratio;
+    float r_current = linear_ratio - rotation_ratio;
 
     float bat_volts = bsp::analog_sensors::battery_latest_reading_mv() / 1000.0;
 
-    pwm_duty_l = (l_voltage / bat_volts) * 1000;
-    pwm_duty_r = (r_voltage / bat_volts) * 1000;
+    float left_ang_vel = bsp::encoders::get_left_filtered_ang_vel_rad_s();
+    float right_ang_vel = bsp::encoders::get_right_filtered_ang_vel_rad_s();
+
+    pwm_duty_l = ((l_current * mot_ra + left_ang_vel * mot_kt) / bat_volts) * 1000;
+    pwm_duty_r = ((r_current * mot_ra + right_ang_vel * mot_kt) / bat_volts) * 1000;
 
     bsp::motors::set(pwm_duty_l, pwm_duty_r);
 
