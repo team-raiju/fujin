@@ -79,6 +79,18 @@ void Control::update() {
     pwm_duty_l = ((l_current * mot_ra + left_ang_vel * mot_kt) / bat_volts) * 1000;
     pwm_duty_r = ((r_current * mot_ra + right_ang_vel * mot_kt) / bat_volts) * 1000;
 
+    if (pwm_duty_l > 1000 || pwm_duty_r > 1000){
+        if (pwm_duty_l > pwm_duty_r){
+            int16_t diff = pwm_duty_l - pwm_duty_r;
+            pwm_duty_r = 1000 - diff;
+            pwm_duty_l = 1000;
+        } else {
+            int32_t diff = pwm_duty_r - pwm_duty_l;
+            pwm_duty_l = 1000 - diff;
+            pwm_duty_r = 1000;
+        }
+    }
+
     bsp::motors::set(pwm_duty_l, pwm_duty_r);
 
 }
