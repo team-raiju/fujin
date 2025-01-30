@@ -36,6 +36,7 @@ public:
     static void init();
     static int parse_packet(uint8_t packet[bsp::ble::max_packet_size]);
     static int write_default_params();
+    static void send_parameters();
 };
 
 }

@@ -125,4 +125,22 @@ int Config::write_default_params() {
     return 0;
 }
 
+void Config::send_parameters() {
+    uint8_t packet[bsp::ble::max_packet_size] = {0};
+
+    for (size_t i = 0; i < len(params); i++) {
+        _float f;
+        f.value = *params[i].first;
+
+        packet[0] = i;
+        for (size_t j = 0; j < sizeof(float); j++) {
+            packet[1 + j] = f.raw[j];
+        }
+
+        bsp::ble::transmit(packet, bsp::ble::max_packet_size);
+
+        bsp::delay_ms(75);
+    }
+}
+
 }

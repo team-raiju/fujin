@@ -9,6 +9,7 @@
 #include "bsp/ble.hpp"
 #include "services/logger.hpp"
 #include "bsp/fan.hpp"
+#include "services/config.hpp"
 
 namespace fsm {
 
@@ -47,6 +48,10 @@ State* Idle::react(ButtonPressed const& event) {
 
     if (event.button == ButtonPressed::LONG1) {
         services::Logger::instance()->print_log();
+    }
+
+    if (event.button == ButtonPressed::LONG2) {
+        services::Config::send_parameters();
     }
 
     return nullptr;
