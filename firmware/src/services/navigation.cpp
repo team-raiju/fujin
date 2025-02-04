@@ -46,8 +46,8 @@ Navigation* Navigation::instance() {
 }
 
 void Navigation::init() {
-    reset(true);
     control = Control::instance();
+    reset(true);
 
     if (!is_initialized) {
         bsp::encoders::register_callback_encoder_left(
