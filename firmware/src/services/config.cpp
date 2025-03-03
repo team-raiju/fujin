@@ -10,8 +10,8 @@ namespace services {
 
 static bool write_default = false;
 
-float Config::angular_kp = 0.7;
-float Config::angular_ki = 0.025;
+float Config::angular_kp = 0.16;
+float Config::angular_ki = 0.008;
 float Config::angular_kd = 0;
 
 float Config::wall_kp = 0.0035;
@@ -28,8 +28,8 @@ float Config::run_speed = 0.75;             // [m/s]
 float Config::linear_acceleration = 2.0;     // [m/s^2]
 float Config::angular_acceleration = 100.0; // [rad/s^2]
 
-float Config::linear_vel_kp = 50.0;
-float Config::linear_vel_ki = 0.45;
+float Config::linear_vel_kp = 8.0;
+float Config::linear_vel_ki = 0.11;
 float Config::linear_vel_kd = 0;
 
 float Config::diagonal_walls_kp = 0.015;
@@ -126,20 +126,22 @@ int Config::write_default_params() {
 }
 
 void Config::send_parameters() {
-    uint8_t packet[bsp::ble::max_packet_size] = {0};
+    uint8_t packet[7] = {0};
+    packet[0] = bsp::ble::header;
+    packet[1] = bsp::ble::BlePacketType::RequestParameters;
 
     for (size_t i = 0; i < len(params); i++) {
         _float f;
         f.value = *params[i].first;
 
-        packet[0] = i;
+        packet[2] = i;
         for (size_t j = 0; j < sizeof(float); j++) {
-            packet[1 + j] = f.raw[j];
+            packet[3 + j] = f.raw[j];
         }
 
-        bsp::ble::transmit(packet, bsp::ble::max_packet_size);
+        bsp::ble::transmit(packet, sizeof(packet));
 
-        bsp::delay_ms(75);
+        bsp::delay_ms(50);
     }
 }
 

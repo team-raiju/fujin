@@ -18,6 +18,7 @@ def plot_velocities(file_path):
     linear_velocity2 = []
     angular_velocity1 = []
     angular_velocity2 = []
+    acceleration = []
     pwm_left = []
     pwm_right = []
     with open(file_path, 'r') as file:
@@ -56,6 +57,13 @@ def plot_velocities(file_path):
     ax2.set_title('Angular Velocities')
     ax2.legend()
     ax2.grid(True)
+
+    # Create a list of acceleration values each 10ms
+    for i in range(0, len(linear_velocity1) - 50, 50):
+        acceleration.append((linear_velocity1[i+50] - linear_velocity1[i]) / 0.05)
+
+        print(f"t({i} - {i+50}): {linear_velocity1[i]:.2f} -> {linear_velocity1[i+50]:.2f} = {acceleration[-1]:.2f}m/s²")
+
 
     # Plot pwms
     ax3.plot(time, pwm_left, label='PWM_Left')

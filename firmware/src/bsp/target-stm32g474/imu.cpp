@@ -153,7 +153,7 @@ ImuResult update() {
     LSM6DSR_Axes_t mω;
 
     // Gravity acceleration in mm/s²
-    LSM6DSR_Axes_t mg;
+    LSM6DSR_Axes_t mg = {0, 0, 0};
 
     MGC_input_t data_in_gc;
     MGC_output_t data_out_gc;
