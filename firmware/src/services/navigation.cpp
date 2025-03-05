@@ -153,10 +153,21 @@ bool Navigation::step() {
 
         float final_speed = forward_params[current_movement].end_speed;
         float max_speed = forward_params[current_movement].max_speed;
+        float control_linear_speed = control->get_target_linear_speed();
         float acceleration = forward_params[current_movement].acceleration;
         float deceleration = forward_params[current_movement].deceleration;
 
-        float control_linear_speed = control->get_target_linear_speed();
+        if (control_linear_speed > 0.5){
+            acceleration = std::min(acceleration, 0.5f);
+        }
+
+        if (control_linear_speed > 3.8){
+            acceleration *= 0.75;
+        }
+
+        if (control_linear_speed > 4.8){
+            acceleration *= 0.65;
+        }
 
         if (std::abs(traveled_dist_cm) <
             (target_travel_cm - (100 * get_torricelli_distance(final_speed, control_linear_speed, -deceleration)))) {
