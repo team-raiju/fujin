@@ -8,7 +8,7 @@
 #include "bsp/imu.hpp"
 
 static constexpr float max_battery_voltage = 12.6;
-static constexpr float mot_kt = 0.0017; // motor torque constant [Nm/A]
+static constexpr float mot_kt = 0.0064; // motor torque constant [Nm/A]
 static constexpr float mot_ra = 2.5; // armature resistance[Ohms]
 
 

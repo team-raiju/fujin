@@ -15,19 +15,6 @@
 
 /// @section Constants
 
-static constexpr float WHEEL_RADIUS_CM = (1.275);
-static constexpr float WHEEL_RADIUS_M = (WHEEL_RADIUS_CM / 100.0);
-static constexpr float WHEEL_PERIMETER_CM = (M_TWOPI * WHEEL_RADIUS_CM);
-
-static constexpr float WHEEL_TO_ENCODER_RATIO = (1.0);
-static constexpr float ENCODER_PPR = (1024.0);
-static constexpr float PULSES_PER_WHEEL_ROTATION = (WHEEL_TO_ENCODER_RATIO * ENCODER_PPR);
-
-static constexpr float WHEELS_DIST_CM = (7.0);
-static constexpr float ENCODER_DIST_CM_PULSE = (WHEEL_PERIMETER_CM / PULSES_PER_WHEEL_ROTATION);
-static constexpr float ENCODER_DIST_MM_PULSE = (ENCODER_DIST_CM_PULSE * 10.0);
-
-static constexpr float MM_PER_US_TO_M_PER_S = 1000.0; // 1mm/us = 1000m/s
 
 static constexpr float CONTROL_FREQUENCY_HZ = 1000.0;
 
@@ -50,12 +37,6 @@ void Navigation::init() {
     reset(true);
 
     if (!is_initialized) {
-        bsp::encoders::register_callback_encoder_left(
-            [this](auto type) { encoder_left_counter += type == bsp::encoders::DirectionType::CCW ? 1 : -1; });
-
-        bsp::encoders::register_callback_encoder_right(
-            [this](auto type) { encoder_right_counter += type == bsp::encoders::DirectionType::CCW ? 1 : -1; });
-
         is_initialized = true;
     }
 }
@@ -73,7 +54,7 @@ void Navigation::reset(bool search_mode) {
     control->reset();
 
     reference_time = bsp::get_tick_ms();
-    bsp::encoders::reset_linear_velocity_m_s();
+    bsp::encoders::reset();
 
     if (search_mode) {
         turn_params = turn_params_search;
@@ -94,44 +75,22 @@ float Navigation::get_torricelli_distance(float final_speed, float initial_speed
 }
 
 void Navigation::update(void) {
-    static uint32_t last_update_vel_time_us = 0;
-
-    uint32_t current_time_us = bsp::get_tick_us();
-    uint32_t delta_time_us = current_time_us - last_update_vel_time_us;
-
     bsp::imu::update();
+    bsp::encoders::update_ticks();
+    bsp::encoders::update_velocities();
 
-    if (encoder_left_counter == 0 && encoder_right_counter == 0) {
-        // 50ms without movement
-        // min meaasured vel is ENCODER_DIST_MM_PULSE / 50 = 0.00156 m/s
-        if (delta_time_us > 50000) {
-            bsp::encoders::set_linear_velocity_m_s(0);
-            bsp::encoders::set_right_ang_vel_rad_s(0);
-            bsp::encoders::set_left_ang_vel_rad_s(0);
-        } else {
-            float velocity_m_s = (ENCODER_DIST_MM_PULSE / delta_time_us) * MM_PER_US_TO_M_PER_S;
-            bsp::encoders::set_linear_velocity_m_s(velocity_m_s);
-            bsp::encoders::set_right_ang_vel_rad_s(velocity_m_s / WHEEL_RADIUS_M);
-            bsp::encoders::set_left_ang_vel_rad_s(velocity_m_s / WHEEL_RADIUS_M);
-        }
-        return;
+    bsp::encoders::EncoderData left_encoder = bsp::encoders::get_data(bsp::encoders::EncoderSide::LEFT);
+    bsp::encoders::EncoderData right_encoder = bsp::encoders::get_data(bsp::encoders::EncoderSide::RIGHT);
+
+    if (left_encoder.ticks != 0 || right_encoder.ticks != 0) {
+        float estimated_delta_l_mm = (left_encoder.ticks * bsp::encoders::get_encoder_dist_mm_pulse());
+        float estimated_delta_r_mm = (right_encoder.ticks * bsp::encoders::get_encoder_dist_mm_pulse());
+    
+        float delta_x_mm = (estimated_delta_l_mm + estimated_delta_r_mm) / 2.0;
+        traveled_dist_cm += delta_x_mm / 10.0;
     }
 
-    float estimated_delta_l_mm = (encoder_left_counter * ENCODER_DIST_MM_PULSE);
-    float estimated_delta_r_mm = (encoder_right_counter * ENCODER_DIST_MM_PULSE);
-    float delta_x_mm = (estimated_delta_l_mm + estimated_delta_r_mm) / 2.0;
-    traveled_dist_cm += delta_x_mm / 10.0;
-
-    float velocity_right_m_s = (estimated_delta_r_mm / delta_time_us) * MM_PER_US_TO_M_PER_S;
-    float velocity_left_m_s = (estimated_delta_l_mm / delta_time_us) * MM_PER_US_TO_M_PER_S;
-    float velocity_m_s = (velocity_right_m_s + velocity_left_m_s) / 2.0;
-    bsp::encoders::set_linear_velocity_m_s(velocity_m_s);
-    bsp::encoders::set_right_ang_vel_rad_s(velocity_right_m_s / WHEEL_RADIUS_M);
-    bsp::encoders::set_left_ang_vel_rad_s(velocity_left_m_s / WHEEL_RADIUS_M);
-    last_update_vel_time_us = current_time_us;
-
-    encoder_left_counter = 0;
-    encoder_right_counter = 0;
+    bsp::encoders::clear_ticks();
 }
 
 bool Navigation::step() {
