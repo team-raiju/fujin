@@ -103,7 +103,7 @@ def plot_pwm_and_bat(file_path):
     ax1.legend()
     ax1.grid(True)
 
-    # Plot angular velocities
+    # Plot battery voltage
     ax2.plot(time, battery, label='Angular Velocity')
     ax2.set_xlabel('Time (ms)')
     ax2.set_ylabel('mV')
@@ -114,10 +114,45 @@ def plot_pwm_and_bat(file_path):
     plt.tight_layout()
     plt.show()
 
+def plot_integral(file_path):
+    time = []
+    integral_vel = []
+    integral_angular = []
+    
+    with open(file_path, 'r') as file:
+        for line in file:
+            fields = line.strip().split(';')
+            time.append(float(fields[0]))
+            integral_vel.append(float(fields[8]))
+            integral_angular.append(float(fields[9]))
+
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 12))
+
+    # Plot integral velocities
+    ax1.plot(time, integral_vel, label='integral_vel')
+    ax1.set_xlabel('Time (ms)')
+    ax1.set_ylabel('-0-100')
+    ax1.set_title('integral_vel')
+    ax1.legend()
+    ax1.grid(True)
+
+    # Plot integral angle
+    ax2.plot(time, integral_angular, label='integral_angular')
+    ax2.set_xlabel('Time (ms)')
+    ax2.set_ylabel('-1000-1000')
+    ax2.set_title('integral_angular')
+    ax2.legend()
+    ax2.grid(True)
+
+    plt.tight_layout()
+    plt.show()
+
+
 
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.abspath(__file__))
     file_name = filter + '/kp_' + kp + '_ki_' + ki + '.txt'
     file_path = os.path.join(script_dir, file_name)
     plot_velocities(file_path)
+    plot_integral(file_path)
     plot_pwm_and_bat(file_path)

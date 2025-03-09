@@ -9,7 +9,7 @@ public:
 
     union LogData {
 
-       uint8_t data[9];
+       uint8_t data[11];
 
         struct {
             uint16_t velocity_ms : 12;
@@ -22,6 +22,10 @@ public:
             uint8_t pwm_right : 8;
 
             uint8_t battery : 8;
+
+            uint8_t integral_vel : 8;
+            uint8_t integral_angular : 8;
+
 
         } __attribute__((packed)) fields;
     };

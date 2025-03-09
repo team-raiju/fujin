@@ -14,6 +14,7 @@ public:
     float integral_limit;
 
     float calculate(float const& target, float const& measured_value);
+    float get_integral() { return integral; }
 
     void reset();
 

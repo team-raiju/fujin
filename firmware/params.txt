@@ -48,6 +48,19 @@ ADDR_DIAGONAL_WALLS_KI: 0.000000
 ADDR_DIAGONAL_WALLS_KD: 0.015000
 ADDR_FAN_SPEED: 25 -> old battery
 
+########################
+## Params Fast ##
+########################
+ADDR_ANGULAR_KP: 0.11
+ADDR_ANGULAR_KI: 0.0110
+ADDR_ANGULAR_KD: 0.000000
+ADDR_LINEAR_VEL_KP: 8.000000
+ADDR_LINEAR_VEL_KI: 0.11000
+ADDR_LINEAR_VEL_KD: 0.000000
+ADDR_FAN_SPEED: 475
+Vel nas curvas 1.5
+Accel = 610.865
+
 
 ########################
 ## Competition Params ##

@@ -32,6 +32,9 @@ class Control {
         int16_t get_pwm_duty_l() { return pwm_duty_l; }
         int16_t get_pwm_duty_r() { return pwm_duty_r; }
 
+        float get_integral_vel() { return linear_vel_pid.get_integral(); }
+        float get_integral_angular() { return angular_vel_pid.get_integral(); }
+
     private:
         Control() {}
 
