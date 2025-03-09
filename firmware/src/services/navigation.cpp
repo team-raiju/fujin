@@ -116,8 +116,8 @@ bool Navigation::step() {
         float acceleration = forward_params[current_movement].acceleration;
         float deceleration = forward_params[current_movement].deceleration;
 
-        if (control_linear_speed > 0.5){
-            acceleration = std::min(acceleration, 0.5f);
+        if (control_linear_speed < 1.0){
+            acceleration = std::min(acceleration, 5.0f);
         }
 
         if (control_linear_speed > 3.8){
