@@ -17,6 +17,9 @@ class Control {
         void reset();
         void update();
 
+        void start_fan();
+        void stop_fan();
+
         void set_target_linear_speed(float speed) { target_linear_speed_m_s = speed; }
         void set_target_angular_speed(float speed) { target_angular_speed_rad_s = speed; }
         void set_wall_pid_enabled(bool enabled) { wall_pid_enabled = enabled; }

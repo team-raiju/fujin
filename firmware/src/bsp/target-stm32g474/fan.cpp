@@ -7,25 +7,30 @@ namespace bsp::fan {
 
 /// @section Constants
 
-static constexpr uint8_t max_speed = 100;
+static constexpr uint16_t counter_period_min = 0;
 static constexpr uint16_t counter_period_max = 999;
 
 #define PWM_CH TIM_CHANNEL_2
+#define PWM_TIMER_INSTANCE &htim3
+#define PWM_TIMER_INIT_FUNCTION MX_TIM3_Init
 
 /// @section Interface implementation
 
 void init() {
-    MX_TIM3_Init();
+    PWM_TIMER_INIT_FUNCTION();
 
-    HAL_TIM_PWM_Start(&htim3, PWM_CH);
-    __HAL_TIM_SET_COMPARE(&htim3, PWM_CH, 0);
+    HAL_TIM_PWM_Start(PWM_TIMER_INSTANCE, PWM_CH);
+    __HAL_TIM_SET_COMPARE(PWM_TIMER_INSTANCE, PWM_CH, 0);
 }
 
-void set(uint8_t speed) {
-    speed = std::min(speed, max_speed);
+void set(uint16_t speed) {
+    speed = std::min(speed, counter_period_max);
 
-    auto counter_value = map<uint32_t>(speed, 0, max_speed, 0, counter_period_max);
-    __HAL_TIM_SET_COMPARE(&htim3, PWM_CH, counter_value);
+    __HAL_TIM_SET_COMPARE(PWM_TIMER_INSTANCE, PWM_CH, speed);
+}
+
+float get_max_fan_voltage(void) {
+    return 11.0f;
 }
 
 } // namespace

@@ -24,6 +24,9 @@ using bsp::leds::Color;
 
 namespace fsm {
 
+static bool indicate_read = false;
+static uint32_t last_indication = 0;
+
 void PreRun::enter() {
 
     bsp::debug::print("state:PreRun");
@@ -98,13 +101,8 @@ void Run::enter() {
     bsp::delay_ms(2000);
     bsp::buzzer::stop();
 
-    uint8_t fan_speed = 0;
-    for (int i = 0; i < fan_speed; i++) {
-        bsp::fan::set(i);
-        bsp::delay_ms(10);
-    }
-    bsp::fan::set(fan_speed);
-    bsp::delay_ms(100);
+    services::Control::instance()->start_fan();
+    bsp::delay_ms(250);
                                                                                                
     soft_timer::start(1, soft_timer::CONTINUOUS);
 
@@ -172,9 +170,6 @@ State* Run::react(BleCommand const&) {
     return nullptr;
 }
 
-static bool indicate_read = false;
-static uint32_t last_indication = 0;
-
 State* Run::react(Timeout const&) {
     using bsp::analog_sensors::ir_reading_wall;
     using bsp::analog_sensors::SensingDirection;
@@ -222,12 +217,13 @@ State* Run::react(Timeout const&) {
 }
 
 void Run::exit() {
+    soft_timer::stop();
     bsp::motors::set(0, 0);
+    services::Control::instance()->stop_fan();
     bsp::fan::set(0);
     bsp::analog_sensors::enable_modulation(false);
     bsp::leds::ir_emitter_all_off();
     bsp::leds::indication_off();
-    soft_timer::stop();
     logger->save_size();
 }
 

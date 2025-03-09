@@ -6,6 +6,9 @@
 #include "services/control.hpp"
 #include "services/config.hpp"
 #include "bsp/imu.hpp"
+#include "bsp/fan.hpp"
+#include "bsp/timers.hpp"
+
 
 static constexpr float max_battery_voltage = 12.6;
 static constexpr float mot_kt = 0.0064; // motor torque constant [Nm/A]
@@ -93,6 +96,52 @@ void Control::update() {
 
     bsp::motors::set(pwm_duty_l, pwm_duty_r);
 
+
+    /* Fan control */
+    float target_fan_speed = std::min(services::Config::fan_speed, 1000.0f);
+    float desired_fan_voltage = (target_fan_speed / 1000.0f) * bsp::fan::get_max_fan_voltage();
+
+    if (bat_volts > 5.0) { // To avoid turning on fan when batery measurement is not reliable
+        uint16_t fan_pwm = (desired_fan_voltage / bat_volts) * 1000;
+        bsp::fan::set(fan_pwm);
+    } else {
+        bsp::fan::set(0);
+    }
+    
+
+}
+
+void Control::start_fan() {
+    float target_fan_speed = std::min(services::Config::fan_speed, 1000.0f);
+    float desired_fan_voltage = (target_fan_speed / 1000.0) * bsp::fan::get_max_fan_voltage();
+
+    for (float volts = 0; volts < desired_fan_voltage; volts += 0.1) {
+        float bat_volts = bsp::analog_sensors::battery_latest_reading_mv() / 1000.0;
+        if (bat_volts < 5.0) {
+            bsp::fan::set(0);
+            break;
+        }
+        uint16_t fan_pwm = (volts / bat_volts) * 1000;
+        std::printf("volts: %f, bat: %f, pwm: %d\r\n", volts, bat_volts, fan_pwm);
+        bsp::fan::set(fan_pwm);
+        bsp::delay_ms(20);
+    }
+}
+
+void Control::stop_fan() {
+    float target_fan_speed = std::min(services::Config::fan_speed, 1000.0f);
+    float desired_fan_voltage = (target_fan_speed / 1000.0) * bsp::fan::get_max_fan_voltage();
+    for (float volts = desired_fan_voltage; volts > 0; volts -= 0.1) {
+        float bat_volts = bsp::analog_sensors::battery_latest_reading_mv() / 1000.0;
+        if (bat_volts < 5.0) { 
+            bsp::fan::set(0);
+            break;
+        }
+        uint16_t fan_pwm = (volts / bat_volts) * 1000;
+        bsp::fan::set(fan_pwm);
+        bsp::delay_ms(20);
+    }
+    bsp::fan::set(0);
 }
 
 }

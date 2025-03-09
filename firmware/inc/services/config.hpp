@@ -33,6 +33,8 @@ public:
     static float diagonal_walls_ki;
     static float diagonal_walls_kd;
 
+    static float fan_speed;
+
     static void init();
     static int parse_packet(uint8_t packet[bsp::ble::max_packet_size]);
     static int write_default_params();

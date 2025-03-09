@@ -36,6 +36,7 @@ typedef enum : uint16_t {
     ADDR_DIAGONAL_WALLS_KP = 0x0048,
     ADDR_DIAGONAL_WALLS_KI = 0x004C,
     ADDR_DIAGONAL_WALLS_KD = 0x0050,
+    ADDR_FAN_SPEED = 0x0054,
 
     // MAZE 0x1000 ~ 0x13FF
     ADDR_MAZE_START = 0x1000,
@@ -75,6 +76,7 @@ const ParamInfo paramInfoArray[] = {
     {ADDR_DIAGONAL_WALLS_KP, "ADDR_DIAGONAL_WALLS_KP"},
     {ADDR_DIAGONAL_WALLS_KI, "ADDR_DIAGONAL_WALLS_KI"},
     {ADDR_DIAGONAL_WALLS_KD, "ADDR_DIAGONAL_WALLS_KD"},
+    {ADDR_FAN_SPEED, "ADDR_FAN_SPEED"},
 };
 
 /// @section Interface definition
