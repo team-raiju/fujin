@@ -12,13 +12,12 @@
 #include "bsp/motors.hpp"
 #include "bsp/timers.hpp"
 #include "fsm/state.hpp"
+#include "services/config.hpp"
 #include "services/logger.hpp"
 #include "services/maze.hpp"
 #include "services/navigation.hpp"
 #include "utils/math.hpp"
 #include "utils/soft_timer.hpp"
-#include "services/config.hpp"
-
 
 using bsp::leds::Color;
 
@@ -186,23 +185,30 @@ State* Run::react(Timeout const&) {
 
     if (done) {
 
-        last_indication = bsp::get_tick_ms();
-        indicate_read = true;
-        bsp::leds::stripe_set(Color::Green);
-
         move_count++;
         if (move_count >= target_movements.size()) {
             return &State::get<Idle>();
         }
 
+        last_indication = bsp::get_tick_ms();
+        indicate_read = true;
+        bsp::leds::stripe_set(Color::Green);
+
         auto movement = target_movements[move_count].first;
+
+        auto prev_movement =
+            ((move_count) >= 1) ? target_movements[move_count - 1].first : Movement::STOP;
+
+        auto next_movement =
+            ((move_count + 1) < target_movements.size()) ? target_movements[move_count + 1].first : Movement::STOP;
+        
+
         auto cells = target_movements[move_count].second;
 
-        navigation->set_movement(movement, cells);
+        navigation->set_movement(movement, prev_movement, next_movement, cells);
     }
 
-    bool imu_emergency = (bsp::imu::get_z_acceleration() > 4.5 || bsp::imu::get_z_acceleration() < -2.5);
-    if (imu_emergency) {
+    if (bsp::imu::is_imu_emergency()) {
         soft_timer::stop();
         bsp::motors::set(0, 0);
         bsp::fan::set(0);
@@ -221,6 +227,7 @@ void Run::exit() {
     bsp::motors::set(0, 0);
     services::Control::instance()->stop_fan();
     bsp::fan::set(0);
+    bsp::leds::stripe_set(Color::Black);
     bsp::analog_sensors::enable_modulation(false);
     bsp::leds::ir_emitter_all_off();
     bsp::leds::indication_off();

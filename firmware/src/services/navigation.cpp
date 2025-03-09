@@ -15,7 +15,6 @@
 
 /// @section Constants
 
-
 static constexpr float CONTROL_FREQUENCY_HZ = 1000.0;
 
 static std::map<Movement, TurnParams> turn_params;
@@ -60,10 +59,12 @@ void Navigation::reset(bool search_mode) {
         turn_params = turn_params_search;
         forward_params = forward_params_search;
     } else {
-        // turn_params = turn_params_medium;
-        // forward_params = forward_params_medium;
         turn_params = turn_params_slow;
         forward_params = forward_params_slow;
+        // turn_params = turn_params_medium;
+        // forward_params = forward_params_medium;
+        // turn_params = turn_params_fast;
+        // forward_params = forward_params_fast;
     }
 
     current_movement = Movement::START;
@@ -85,7 +86,7 @@ void Navigation::update(void) {
     if (left_encoder.ticks != 0 || right_encoder.ticks != 0) {
         float estimated_delta_l_mm = (left_encoder.ticks * bsp::encoders::get_encoder_dist_mm_pulse());
         float estimated_delta_r_mm = (right_encoder.ticks * bsp::encoders::get_encoder_dist_mm_pulse());
-    
+
         float delta_x_mm = (estimated_delta_l_mm + estimated_delta_r_mm) / 2.0;
         traveled_dist_cm += delta_x_mm / 10.0;
     }
@@ -116,15 +117,15 @@ bool Navigation::step() {
         float acceleration = forward_params[current_movement].acceleration;
         float deceleration = forward_params[current_movement].deceleration;
 
-        if (control_linear_speed < 1.0){
+        if (control_linear_speed < 1.0) {
             acceleration = std::min(acceleration, 5.0f);
         }
 
-        if (control_linear_speed > 3.8){
+        if (control_linear_speed > 3.8) {
             acceleration *= 0.75;
         }
 
-        if (control_linear_speed > 4.8){
+        if (control_linear_speed > 4.8) {
             acceleration *= 0.65;
         }
 
@@ -185,20 +186,16 @@ bool Navigation::step() {
 
         float angular_acceleration = turn_params[current_movement].angular_accel;
         float angular_speed = turn_params[current_movement].max_angular_speed;
-        uint16_t elapsed_t_start =
-            (turn_params[current_movement].start / turn_params[current_movement].turn_linear_speed);
-        uint16_t elapsed_t_accel = elapsed_t_start + turn_params[current_movement].t_accel;
+
+        uint16_t elapsed_t_accel = turn_params[current_movement].t_accel;
         uint16_t elapsed_t_max_ang_vel = elapsed_t_accel + turn_params[current_movement].t_max_ang_vel;
         uint16_t elapsed_t_decel = elapsed_t_max_ang_vel + turn_params[current_movement].t_accel;
-        uint16_t elapsed_t_end =
-            elapsed_t_decel + (turn_params[current_movement].end / turn_params[current_movement].turn_linear_speed);
+
         int turn_sign = turn_params[current_movement].sign;
 
         uint32_t elapsed_time = bsp::get_tick_ms() - reference_time;
 
-        if (elapsed_time <= elapsed_t_start) {
-            control->set_target_angular_speed(0);
-        } else if (elapsed_time <= elapsed_t_accel) {
+        if (elapsed_time <= elapsed_t_accel) {
             float ideal_rad_s =
                 std::abs(control->get_target_angular_speed()) + (angular_acceleration / CONTROL_FREQUENCY_HZ);
             ideal_rad_s = std::min(ideal_rad_s, angular_speed);
@@ -211,9 +208,8 @@ bool Navigation::step() {
                 std::abs(control->get_target_angular_speed()) - (angular_acceleration / CONTROL_FREQUENCY_HZ);
             ideal_rad_s = std::max(ideal_rad_s, 0.0f);
             control->set_target_angular_speed(ideal_rad_s * turn_sign);
-        } else if (elapsed_time <= elapsed_t_end) {
-            control->set_target_angular_speed(0);
         } else {
+            control->set_target_angular_speed(0);
             is_finished = true;
         }
 
@@ -297,7 +293,7 @@ bool Navigation::step() {
             control->set_target_angular_speed(ideal_rad_s * turn_sign);
             traveled_dist_cm = 0;
         }
-        
+
         control->set_wall_pid_enabled(false);
         control->set_diagonal_pid_enabled(false);
 
@@ -370,7 +366,7 @@ void Navigation::update_position() {
     }
 }
 
-void Navigation::set_movement(Movement movement, uint8_t count) {
+void Navigation::set_movement(Movement movement, Movement prev_movement, Movement next_movement, uint8_t count) {
     bsp::imu::reset_angle();
 
     current_movement = movement;
@@ -383,7 +379,10 @@ void Navigation::set_movement(Movement movement, uint8_t count) {
         bsp::leds::stripe_set(Color::Blue);
     }
 
-    target_travel_cm = forward_params[movement].target_travel_cm * count;
+    float complete_prev_move_travel = -turn_params[prev_movement].end;
+
+    target_travel_cm = complete_prev_move_travel + (forward_params[movement].target_travel_cm * count) +
+                       turn_params[next_movement].start;
 }
 
 std::vector<std::pair<Movement, uint8_t>>

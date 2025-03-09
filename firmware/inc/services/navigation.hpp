@@ -23,7 +23,7 @@ public:
     Point get_robot_position();
     Direction get_robot_direction();
     void move(Direction dir);
-    void set_movement(Movement, uint8_t);
+    void set_movement(Movement movement, Movement prev_movement, Movement next_movement, uint8_t count);
 
     std::vector<std::pair<Movement, uint8_t>> get_default_target_movements(std::vector<Direction> target_directions);
 

@@ -33,6 +33,12 @@ static float z_gbias = 0.0;
 // Angular Velocity in rad/s
 static float ω;
 
+// Last Angular Velocity in rad/s
+static float last_ω;
+
+// Angular acceleration in rad/s²
+static float α;
+
 // Angular Displacement in rad
 static float φ;
 
@@ -175,8 +181,10 @@ ImuResult update() {
     a_z = mg.z / 1000.0f;
 
 #if USE_MOTION_GC
-    float new_frequency = 1.0f / δt;
-    MotionGC_SetFrequency(&new_frequency);
+    if (δt > 0.000001) {
+        float new_frequency = 1.0f / δt;
+        MotionGC_SetFrequency(&new_frequency);
+    }
 
     data_in_gc.Acc[0] = (mg.x / 1000.0f);
     data_in_gc.Acc[1] = (mg.y / 1000.0f);
@@ -189,6 +197,12 @@ ImuResult update() {
 
     ω = deg2rad(data_in_gc.Gyro[2] - data_out_gc.GyroBiasZ);
 #endif
+
+    if (δt > 0.000001) {
+        α = (ω - last_ω) / δt;
+    }
+
+    last_ω = ω;
 
     φ += ω * δt;
 
@@ -245,6 +259,13 @@ void set_g_bias(int32_t bias) {
     };
 
     MotionGC_SetCalParams(&gyro_bias);
+}
+
+bool is_imu_emergency() {
+    bool emergency_z_linear_accel = (bsp::imu::get_z_acceleration() > 4.5 || bsp::imu::get_z_acceleration() < -2.5);
+    bool emergency_z_angular_accel = α > 3000.0f;
+
+    return emergency_z_linear_accel || emergency_z_angular_accel;
 }
 
 int32_t get_g_bias() {
