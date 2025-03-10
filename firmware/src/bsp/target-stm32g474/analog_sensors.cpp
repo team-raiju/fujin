@@ -34,7 +34,8 @@ namespace bsp::analog_sensors {
 #define PWR_BATTERY_THRESHOLD_MV 10700.0
 #define PWR_BAT_VOLTAGE_DIV_R1 100.0
 #define PWR_BAT_VOLTAGE_DIV_R2 33.0
-#define PWR_BAT_VOLTAGE_MULTIPLIER ((PWR_BAT_VOLTAGE_DIV_R1 + PWR_BAT_VOLTAGE_DIV_R2) / PWR_BAT_VOLTAGE_DIV_R2)
+// #define PWR_BAT_VOLTAGE_MULTIPLIER ((PWR_BAT_VOLTAGE_DIV_R1 + PWR_BAT_VOLTAGE_DIV_R2) / PWR_BAT_VOLTAGE_DIV_R2)
+#define PWR_BAT_VOLTAGE_MULTIPLIER (4.19) // Experimentaly set
 #define PWR_BAT_POSITION_IN_ADC 4
 
 #define IR_AVG_WINDOW 20
@@ -53,6 +54,10 @@ static uint32_t current_reading[2];
 static bool modulation_enabled;
 static uint32_t ir_window[4][IR_AVG_WINDOW];
 static size_t window_idx[4];
+
+#define ROBOT_1 false // If robot hardware 1 or 2
+
+#if ROBOT_1
 
 /* Reading value when robot is in the middle of the cell */
 static uint32_t ir_wall_dist_reference[4] = {
@@ -77,6 +82,32 @@ static uint32_t ir_wall_threshold[4] = {
     900, // FRONT_RIGHT
     420  // LEFT
 };
+
+#else
+/* Reading value when robot is in the middle of the cell */
+static uint32_t ir_wall_dist_reference[4] = {
+    1310, // RIGHT
+    150,  // FRONT_LEFT -> used to diagonal corection
+    150,  // FRONT_RIGHT -> used to diagonal corection
+    832  // LEFT
+};
+
+/* Threshold to calculate PID error */
+static uint32_t ir_threshold_control[4] = {
+    600,  // RIGHT
+    250, // FRONT_LEFT
+    250, // FRONT_RIGHT
+    550   // LEFT
+};
+
+/* Reading on the cell start for considering wall on the next cell */
+static uint32_t ir_wall_threshold[4] = {
+    850, // RIGHT
+    600, // FRONT_LEFT
+    800, // FRONT_RIGHT
+    650  // LEFT
+};
+#endif
 
 /// @section Interface implementation
 
@@ -213,7 +244,7 @@ void adc1_callback(uint32_t* data) {
     }
 
     read_ir_off = !read_ir_off;
-    battery_reading = aux_readings[4];
+    battery_reading = 0.5 * aux_readings[4] + battery_reading * 0.5;
 }
 
 void adc2_callback(uint32_t* data) {
