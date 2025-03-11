@@ -86,6 +86,7 @@ private:
     std::vector<Direction> target_directions;
     std::vector<std::pair<Movement, uint8_t>> target_movements;
     uint32_t move_count = 0;
+    bool emergency = false;
 };
 
 /// @section Search States

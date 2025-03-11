@@ -139,18 +139,19 @@ static std::map<Movement, ForwardParams> forward_params_medium = {
 };
 
 static std::map<Movement, TurnParams> turn_params_fast = {
-    {Movement::TURN_RIGHT_45, {-6.8, -8.2, 1.5, 785.39, 22.69, 29, 6, -1}},
-    {Movement::TURN_LEFT_45, {-6.8, -8.2, 1.5, 785.39, 22.69, 29, 6, 1}},
-    {Movement::TURN_RIGHT_90, {-2.8, -1.3, 1.5, 785.39, 24.96, 32, 31, -1}}, 
-    {Movement::TURN_LEFT_90, {-2.8, -1.3, 1.5, 785.39, 24.96, 32, 31, 1}},
+    {Movement::TURN_RIGHT_45, {-4.3, -8.2, 1.5, 785.39, 22.69, 28, 5, -1}},
+    {Movement::TURN_LEFT_45, {-4.3, -8.2, 1.5, 785.39, 22.69, 28, 5, 1}},
+    {Movement::TURN_RIGHT_90, {-1.3, -1.3, 1.5, 785.39, 24.96, 32, 28, -1}}, 
+    {Movement::TURN_LEFT_90, {-1.3, -1.3, 1.5, 785.39, 24.96, 32, 28, 1}},
     {Movement::TURN_RIGHT_135, {-2.9, -9.1, 1.5, 610.865, 20.94, 34, 78, -1}},
     {Movement::TURN_LEFT_135, {-2.9, -9.1, 1.5, 610.865, 20.94, 34, 78, 1}},
-    {Movement::TURN_RIGHT_180, {-2.7, 0.5, 1.5, 610.865, 16.05, 26, 169, -1}},
-    {Movement::TURN_LEFT_180, {-2.7, 0.5, 1.5, 610.865, 16.05, 26, 169, 1}},
+    {Movement::TURN_RIGHT_180, {-2.9, 0.2, 1.5, 610.865, 16.05, 26, 169, -1}},
+    {Movement::TURN_LEFT_180, {-2.9, 0.2, 1.5, 610.865, 16.05, 26, 169, 1}},
 
     // Below parameters not tested
-    {Movement::TURN_RIGHT_45_FROM_45, {7.3, 5.5, 1.5, 785.39, 22.69, 29, 6, -1}},
-    {Movement::TURN_LEFT_45_FROM_45, {7.3, 5.5, 1.5, 785.39, 22.69, 29, 6, 1}},
+    {Movement::TURN_RIGHT_45_FROM_45, {7.7, 5.4, 1.5, 785.39, 22.69, 29, 6, -1}},
+
+    {Movement::TURN_LEFT_45_FROM_45, {7.7, 5.4, 1.5, 785.39, 22.69, 29, 6, 1}},
 
     {Movement::TURN_RIGHT_90_FROM_45, {4.0, -3.8, 1.5, 785.39, 24.96, 32, 31, -1}},
     {Movement::TURN_LEFT_90_FROM_45, {4.0, -3.8, 1.5, 785.39, 24.96, 32, 31, 1}},
@@ -164,14 +165,16 @@ static std::map<Movement, TurnParams> turn_params_fast = {
 static std::map<Movement, ForwardParams> forward_params_fast = {
     {Movement::START, {1.5, 1.5, 10.0, 20.0, HALF_CELL_SIZE_CM + ROBOT_DIST_FROM_CENTER_START_CM}},
 
-    {Movement::FORWARD, {3.0, 1.5, 20.0, 35.0, CELL_SIZE_CM}},
+    {Movement::FORWARD, {4.0, 1.5, 20.0, 35.0, CELL_SIZE_CM}},
 
     {Movement::FORWARD_BEFORE_TURN_45, {1.5, 1.5, 20.0, 35.0, (CELL_SIZE_CM - 6.5)}}, 
 
     {Movement::DIAGONAL, {3.0, 1.5, 20.0, 35.0, CELL_DIAGONAL_SIZE_CM}},
 
     {Movement::FORWARD_AFTER_DIAGONAL, {0.5, 0.5, 2.0, 2.0, CELL_SIZE_CM - 4.6}},
-    {Movement::STOP, {1.0, 0.0, 2.0, 35.0, (HALF_CELL_SIZE_CM)}},
+
+    {Movement::STOP, {0.75, 0.0, 2.0, 35.0, (HALF_CELL_SIZE_CM)}},
+
     {Movement::TURN_AROUND, {0.5, 0.0, 2.0, 2.0, HALF_CELL_SIZE_CM}},
 };
 

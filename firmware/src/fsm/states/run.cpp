@@ -143,6 +143,7 @@ void Run::enter() {
     // target_movements.push_back({Movement::STOP, 1});
 
     move_count = 0;
+    emergency = false;
 }
 
 State* Run::react(ButtonPressed const& event) {
@@ -208,7 +209,8 @@ State* Run::react(Timeout const&) {
         navigation->set_movement(movement, prev_movement, next_movement, cells);
     }
 
-    if (bsp::imu::is_imu_emergency()) {
+    if (bsp::imu::is_imu_emergency() && move_count > 1) {
+        emergency = true;
         soft_timer::stop();
         bsp::motors::set(0, 0);
         bsp::fan::set(0);
@@ -225,7 +227,9 @@ State* Run::react(Timeout const&) {
 void Run::exit() {
     soft_timer::stop();
     bsp::motors::set(0, 0);
+    if(!emergency) {
     services::Control::instance()->stop_fan();
+    }
     bsp::fan::set(0);
     bsp::leds::stripe_set(Color::Black);
     bsp::analog_sensors::enable_modulation(false);

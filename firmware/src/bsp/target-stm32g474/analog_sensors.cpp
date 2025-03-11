@@ -94,10 +94,10 @@ static uint32_t ir_wall_dist_reference[4] = {
 
 /* Threshold to calculate PID error */
 static uint32_t ir_threshold_control[4] = {
-    600,  // RIGHT
+    700,  // RIGHT
     250, // FRONT_LEFT
     250, // FRONT_RIGHT
-    550   // LEFT
+    650   // LEFT
 };
 
 /* Reading on the cell start for considering wall on the next cell */
