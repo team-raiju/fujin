@@ -142,7 +142,6 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     ${DRIVERS_PATH}/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_cortex.c
     ${DRIVERS_PATH}/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc.c
     ${DRIVERS_PATH}/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc_ex.c
-    ${DRIVERS_PATH}/STM32G4xx_HAL_Driver/Src/stm32g4xx_ll_adc.c
     ${DRIVERS_PATH}/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_crc.c
     ${DRIVERS_PATH}/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_crc_ex.c
     ${DRIVERS_PATH}/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_i2c.c

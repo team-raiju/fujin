@@ -44,6 +44,7 @@ private:
     services::Control* control;
 
     float target_travel_cm;
+    float forward_end_speed;
 
     bool is_initialized = false;
     bool is_finished = false;

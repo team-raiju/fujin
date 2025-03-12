@@ -59,16 +59,17 @@ void Navigation::reset(bool search_mode) {
         turn_params = turn_params_search;
         forward_params = forward_params_search;
     } else {
-        turn_params = turn_params_slow;
-        forward_params = forward_params_slow;
+        // turn_params = turn_params_slow;
+        // forward_params = forward_params_slow;
         // turn_params = turn_params_medium;
         // forward_params = forward_params_medium;
-        // turn_params = turn_params_fast;
-        // forward_params = forward_params_fast;
+        turn_params = turn_params_fast;
+        forward_params = forward_params_fast;
     }
 
     current_movement = Movement::START;
     target_travel_cm = forward_params[current_movement].target_travel_cm;
+    forward_end_speed = forward_params[current_movement].max_speed;
 }
 
 float Navigation::get_torricelli_distance(float final_speed, float initial_speed, float acceleration) {
@@ -108,8 +109,11 @@ bool Navigation::step() {
         bool front_emergency = ir_reading(SensingDirection::FRONT_LEFT) > 2850 &&
                                ir_reading(SensingDirection::FRONT_RIGHT) > 2850 &&
                                ir_reading(SensingDirection::LEFT) > 2470 && ir_reading(SensingDirection::RIGHT) > 2850;
+        
+        if (current_movement == Movement::STOP){
+            forward_end_speed = 0.0;
+        }                              
 
-        float final_speed = forward_params[current_movement].end_speed;
         float max_speed = forward_params[current_movement].max_speed;
         float control_linear_speed = control->get_target_linear_speed();
         float acceleration = forward_params[current_movement].acceleration;
@@ -128,13 +132,13 @@ bool Navigation::step() {
         }
 
         if (std::abs(traveled_dist_cm) <
-            (target_travel_cm - (100 * get_torricelli_distance(final_speed, control_linear_speed, -deceleration)))) {
+            (target_travel_cm - (100 * get_torricelli_distance(forward_end_speed, control_linear_speed, -deceleration)))) {
             if (control_linear_speed < max_speed) {
                 control_linear_speed += acceleration / CONTROL_FREQUENCY_HZ;
                 control_linear_speed = std::min(control_linear_speed, max_speed);
             }
         } else {
-            if (control_linear_speed > final_speed) {
+            if (control_linear_speed > forward_end_speed) {
                 control_linear_speed -= deceleration / CONTROL_FREQUENCY_HZ;
                 control_linear_speed = std::max(control_linear_speed, Config::min_move_speed);
             }
@@ -325,6 +329,13 @@ void Navigation::move(Direction dir) {
     traveled_dist_cm = 0;
     reference_time = bsp::get_tick_ms();
     target_travel_cm = forward_params[current_movement].target_travel_cm;
+    
+    if (current_movement == Movement::STOP || current_movement == Movement::TURN_AROUND) {
+        forward_end_speed = 0;
+    } else {
+        forward_end_speed = forward_params[Movement::FORWARD].max_speed;
+    }
+
     is_finished = false;
 }
 
@@ -373,14 +384,19 @@ void Navigation::set_movement(Movement movement, Movement prev_movement, Movemen
     reference_time = bsp::get_tick_ms();
     is_finished = false;
 
-    if (movement == Movement::STOP) {
-        bsp::leds::stripe_set(Color::Blue);
-    }
-
     float complete_prev_move_travel = -turn_params[prev_movement].end;
 
     target_travel_cm = complete_prev_move_travel + (forward_params[movement].target_travel_cm * count) +
                        turn_params[next_movement].start;
+    
+    if (current_movement == Movement::STOP || current_movement == Movement::TURN_AROUND) {
+        forward_end_speed = 0;
+        bsp::leds::stripe_set(Color::Blue);
+    } else if (next_movement == Movement::FORWARD || next_movement == Movement::DIAGONAL) {
+        forward_end_speed = forward_params[next_movement].max_speed;
+    } else {
+        forward_end_speed = turn_params[next_movement].turn_linear_speed;
+    }
 }
 
 std::vector<std::pair<Movement, uint8_t>>
