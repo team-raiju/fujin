@@ -125,7 +125,7 @@ static std::map<Movement, TurnParams> turn_params_medium = {
 };
 
 static std::map<Movement, ForwardParams> forward_params_medium = {
-    {Movement::START, {1.5, 6.0, 6.0, HALF_CELL_SIZE_CM + ROBOT_DIST_FROM_CENTER_START_CM}},
+    {Movement::START, {1.0, 5.0, 6.0, HALF_CELL_SIZE_CM + ROBOT_DIST_FROM_CENTER_START_CM}},
     {Movement::FORWARD, {2.0, 6.0, 10.0, CELL_SIZE_CM}},
     {Movement::DIAGONAL, {2.0, 6.0, 10.0, CELL_DIAGONAL_SIZE_CM}},
     {Movement::STOP, {1.0, 1.0, 15.0, (HALF_CELL_SIZE_CM)}},
@@ -157,7 +157,7 @@ static std::map<Movement, TurnParams> turn_params_fast = {
 };
 
 static std::map<Movement, ForwardParams> forward_params_fast = {
-    {Movement::START, {1.5, 10.0, 20.0, HALF_CELL_SIZE_CM + ROBOT_DIST_FROM_CENTER_START_CM}},
+    {Movement::START, {1.0, 5.0, 20.0, HALF_CELL_SIZE_CM + ROBOT_DIST_FROM_CENTER_START_CM}}, //Speed reached in the start end is = 1.0m/s (sqrt(2*5*0.11))
 
     {Movement::FORWARD, {4.0, 20.0, 35.0, CELL_SIZE_CM}},
 

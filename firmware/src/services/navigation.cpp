@@ -68,12 +68,12 @@ void Navigation::reset(bool search_mode) {
     }
 
     current_movement = Movement::START;
-    target_travel_cm = forward_params[current_movement].target_travel_cm;
-    forward_end_speed = forward_params[current_movement].max_speed;
+    target_travel_cm = forward_params[Movement::START].target_travel_cm;
+    forward_end_speed = forward_params[Movement::START].max_speed;
 }
 
 float Navigation::get_torricelli_distance(float final_speed, float initial_speed, float acceleration) {
-    return (final_speed * final_speed - initial_speed * initial_speed) / (2 * acceleration);
+    return (final_speed * final_speed - initial_speed * initial_speed) / (2.0f * acceleration);
 }
 
 void Navigation::update(void) {
@@ -109,10 +109,10 @@ bool Navigation::step() {
         bool front_emergency = ir_reading(SensingDirection::FRONT_LEFT) > 2850 &&
                                ir_reading(SensingDirection::FRONT_RIGHT) > 2850 &&
                                ir_reading(SensingDirection::LEFT) > 2470 && ir_reading(SensingDirection::RIGHT) > 2850;
-        
-        if (current_movement == Movement::STOP){
+
+        if (current_movement == Movement::STOP) {
             forward_end_speed = 0.0;
-        }                              
+        }
 
         float max_speed = forward_params[current_movement].max_speed;
         float control_linear_speed = control->get_target_linear_speed();
@@ -132,7 +132,8 @@ bool Navigation::step() {
         }
 
         if (std::abs(traveled_dist_cm) <
-            (target_travel_cm - (100 * get_torricelli_distance(forward_end_speed, control_linear_speed, -deceleration)))) {
+            (target_travel_cm -
+             (100.0f * get_torricelli_distance(forward_end_speed, control_linear_speed, -deceleration)))) {
             if (control_linear_speed < max_speed) {
                 control_linear_speed += acceleration / CONTROL_FREQUENCY_HZ;
                 control_linear_speed = std::min(control_linear_speed, max_speed);
@@ -186,14 +187,22 @@ bool Navigation::step() {
     case Movement::TURN_RIGHT_135_FROM_45:
     case Movement::TURN_LEFT_135_FROM_45: {
 
-        float angular_acceleration = turn_params[current_movement].angular_accel;
-        float angular_speed = turn_params[current_movement].max_angular_speed;
+        // If the robot is moving too slow, we use the medium turn params.
+        // This can happen if the robot is turning right afer the start movement. TODO: generalize this function
+        auto current_turn_params = turn_params[current_movement];
+        if (bsp::encoders::get_linear_velocity_m_s() < current_turn_params.turn_linear_speed - 0.25) {
+            current_turn_params = turn_params_medium[current_movement];
+        }
 
-        uint16_t elapsed_t_accel = turn_params[current_movement].t_accel;
-        uint16_t elapsed_t_max_ang_vel = elapsed_t_accel + turn_params[current_movement].t_max_ang_vel;
-        uint16_t elapsed_t_decel = elapsed_t_max_ang_vel + turn_params[current_movement].t_accel;
+        // Start turn parameters
+        float angular_acceleration = current_turn_params.angular_accel;
+        float angular_speed = current_turn_params.max_angular_speed;
 
-        int turn_sign = turn_params[current_movement].sign;
+        uint16_t elapsed_t_accel = current_turn_params.t_accel;
+        uint16_t elapsed_t_max_ang_vel = elapsed_t_accel + current_turn_params.t_max_ang_vel;
+        uint16_t elapsed_t_decel = elapsed_t_max_ang_vel + current_turn_params.t_accel;
+
+        int turn_sign = current_turn_params.sign;
 
         uint32_t elapsed_time = bsp::get_tick_ms() - reference_time;
 
@@ -329,7 +338,7 @@ void Navigation::move(Direction dir) {
     traveled_dist_cm = 0;
     reference_time = bsp::get_tick_ms();
     target_travel_cm = forward_params[current_movement].target_travel_cm;
-    
+
     if (current_movement == Movement::STOP || current_movement == Movement::TURN_AROUND) {
         forward_end_speed = 0;
     } else {
@@ -388,7 +397,7 @@ void Navigation::set_movement(Movement movement, Movement prev_movement, Movemen
 
     target_travel_cm = complete_prev_move_travel + (forward_params[movement].target_travel_cm * count) +
                        turn_params[next_movement].start;
-    
+
     if (current_movement == Movement::STOP || current_movement == Movement::TURN_AROUND) {
         forward_end_speed = 0;
         bsp::leds::stripe_set(Color::Blue);
