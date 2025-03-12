@@ -101,8 +101,6 @@ bool Navigation::step() {
     switch (current_movement) {
     case Movement::START:
     case Movement::FORWARD:
-    case Movement::FORWARD_BEFORE_TURN_45:
-    case Movement::FORWARD_AFTER_DIAGONAL:
     case Movement::DIAGONAL:
     case Movement::STOP: {
         using bsp::analog_sensors::ir_reading;
@@ -526,17 +524,9 @@ Navigation::get_diagonal_movements(std::vector<std::pair<Movement, uint8_t>> def
         Movement movement = temp_target_movements[i].first;
         uint8_t mov_count = temp_target_movements[i].second;
         Movement next_movement = temp_target_movements[i + 1].first;
-        uint8_t next_movement_count = temp_target_movements[i + 1].second;
         Movement prev_movement = temp_target_movements[i - 1].first;
 
-        if (movement == Movement::FORWARD && (next_movement == TURN_LEFT_45 || next_movement == TURN_RIGHT_45)) {
-
-            if (mov_count > 1) {
-                final_target_movements.push_back({Movement::FORWARD, (mov_count - 1)});
-            }
-
-            final_target_movements.push_back({Movement::FORWARD_BEFORE_TURN_45, 1});
-        } else if (movement == Movement::DIAGONAL) {
+        if (movement == Movement::DIAGONAL) {
             if (mov_count > 1) {
                 final_target_movements.push_back({Movement::DIAGONAL, mov_count - 1});
             }
@@ -546,11 +536,6 @@ Navigation::get_diagonal_movements(std::vector<std::pair<Movement, uint8_t>> def
             if (diagonal_start_right) {
                 if (next_movement == FORWARD || next_movement == STOP) {
                     final_target_movements.push_back({Movement::TURN_LEFT_45_FROM_45, 1});
-                    final_target_movements.push_back({Movement::FORWARD_AFTER_DIAGONAL, 1});
-
-                    if (next_movement_count > 2) {
-                        final_target_movements.push_back({Movement::FORWARD, (next_movement_count - 1)});
-                    }
                 } else if (next_movement == TURN_LEFT_45) {
                     final_target_movements.push_back({Movement::TURN_LEFT_90_FROM_45, 1});
                 } else if (next_movement == TURN_LEFT_90) {
@@ -560,10 +545,6 @@ Navigation::get_diagonal_movements(std::vector<std::pair<Movement, uint8_t>> def
             } else {
                 if ((next_movement == FORWARD || next_movement == STOP) && !diagonal_start_right) {
                     final_target_movements.push_back({Movement::TURN_RIGHT_45_FROM_45, 1});
-                    final_target_movements.push_back({Movement::FORWARD_AFTER_DIAGONAL, 1});
-                    if (next_movement_count > 2) {
-                        final_target_movements.push_back({Movement::FORWARD, (next_movement_count - 1)});
-                    }
                 } else if (next_movement == TURN_RIGHT_45) {
                     final_target_movements.push_back({Movement::TURN_RIGHT_90_FROM_45, 1});
                 } else if (next_movement == TURN_RIGHT_90) {
@@ -571,7 +552,6 @@ Navigation::get_diagonal_movements(std::vector<std::pair<Movement, uint8_t>> def
                 }
             }
 
-            i++;
         } else {
             final_target_movements.push_back({movement, mov_count});
         }

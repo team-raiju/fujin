@@ -28,8 +28,6 @@ static constexpr uint8_t operator<<(uint8_t x, const Direction n) {
 enum Movement {
     START,
     FORWARD,
-    FORWARD_BEFORE_TURN_45,
-    FORWARD_AFTER_DIAGONAL,
     DIAGONAL,
     TURN_RIGHT_45,
     TURN_LEFT_45,
@@ -53,8 +51,6 @@ enum Movement {
 const std::pair<Movement, const char*> movementInfoMap[] = {
     {START, "START"},
     {FORWARD, "FORWARD"},
-    {FORWARD_BEFORE_TURN_45, "FORWARD_BEFORE_TURN_45"},
-    {FORWARD_AFTER_DIAGONAL, "FORWARD_AFTER_DIAGONAL"},
     {DIAGONAL, "DIAGONAL"},
     {TURN_RIGHT_45, "TURN_RIGHT_45"},
     {TURN_LEFT_45, "TURN_LEFT_45"},
