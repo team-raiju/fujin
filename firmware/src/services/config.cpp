@@ -1,8 +1,8 @@
-#include <utility>
 #include <cstdio>
+#include <utility>
 
-#include "bsp/timers.hpp"
 #include "bsp/eeprom.hpp"
+#include "bsp/timers.hpp"
 #include "services/config.hpp"
 #include "utils/math.hpp"
 
@@ -10,27 +10,33 @@ namespace services {
 
 static bool write_default = false;
 
-float Config::angular_kp = 0.40;
-float Config::angular_ki = 0.020;
+float Config::angular_kp = 0.16;
+float Config::angular_ki = 0.008;
 float Config::angular_kd = 0;
 
 float Config::wall_kp = 0.0035;
 float Config::wall_ki = 0;
 float Config::wall_kd = 0.006;
 
-float Config::min_move_speed = 0.1;         // [m/s]
-float Config::min_turn_speed = 0.1;         // [m/s]
-float Config::fix_position_speed = 0.3;     // [m/s]
-float Config::search_speed = 0.5;           // [m/s]
-float Config::angular_speed = 5.585;         // [rad/s]
-float Config::run_speed = 0.75;             // [m/s]
+float Config::min_move_speed = 0.1;     // [m/s]
+float Config::min_turn_speed = 0.1;     // [m/s]
+float Config::fix_position_speed = 0.3; // [m/s]
+float Config::search_speed = 0.5;       // [m/s]
+float Config::angular_speed = 5.585;    // [rad/s]
+float Config::run_speed = 0.75;         // [m/s]
 
-float Config::linear_acceleration = 2.0;     // [m/s^2]
+float Config::linear_acceleration = 2.0;    // [m/s^2]
 float Config::angular_acceleration = 100.0; // [rad/s^2]
 
-float Config::linear_vel_kp = 20.0;
-float Config::linear_vel_ki = 0.2;
+float Config::linear_vel_kp = 8.0;
+float Config::linear_vel_ki = 0.11;
 float Config::linear_vel_kd = 0;
+
+float Config::diagonal_walls_kp = 0.015;
+float Config::diagonal_walls_ki = 0;
+float Config::diagonal_walls_kd = 0.015;
+
+float Config::fan_speed = 0.0; //[0-1000]
 
 // All params
 static std::pair<float*, bsp::eeprom::param_addresses_t> params[] = {
@@ -50,7 +56,11 @@ static std::pair<float*, bsp::eeprom::param_addresses_t> params[] = {
     {&Config::angular_acceleration, bsp::eeprom::ADDR_ANGULAR_ACCELERATION},
     {&Config::linear_vel_kp, bsp::eeprom::ADDR_LINEAR_VEL_KP},
     {&Config::linear_vel_ki, bsp::eeprom::ADDR_LINEAR_VEL_KI},
-    {&Config::linear_vel_kd, bsp::eeprom::ADDR_LINEAR_VEL_KD}};
+    {&Config::linear_vel_kd, bsp::eeprom::ADDR_LINEAR_VEL_KD},
+    {&Config::diagonal_walls_kp, bsp::eeprom::ADDR_DIAGONAL_WALLS_KP},
+    {&Config::diagonal_walls_ki, bsp::eeprom::ADDR_DIAGONAL_WALLS_KI},
+    {&Config::diagonal_walls_kd, bsp::eeprom::ADDR_DIAGONAL_WALLS_KD},
+    {&Config::fan_speed, bsp::eeprom::ADDR_FAN_SPEED}};
 
 union _float {
     float value;
@@ -116,6 +126,26 @@ int Config::write_default_params() {
     }
 
     return 0;
+}
+
+void Config::send_parameters() {
+    uint8_t packet[7] = {0};
+    packet[0] = bsp::ble::header;
+    packet[1] = bsp::ble::BlePacketType::RequestParameters;
+
+    for (size_t i = 0; i < len(params); i++) {
+        _float f;
+        f.value = *params[i].first;
+
+        packet[2] = i;
+        for (size_t j = 0; j < sizeof(float); j++) {
+            packet[3 + j] = f.raw[j];
+        }
+
+        bsp::ble::transmit(packet, sizeof(packet));
+
+        bsp::delay_ms(50);
+    }
 }
 
 }

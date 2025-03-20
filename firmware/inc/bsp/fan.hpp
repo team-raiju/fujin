@@ -6,6 +6,8 @@ namespace bsp::fan {
 
 void init(void);
 
-void set(uint8_t speed);
+void set(uint16_t speed);
+
+float get_max_fan_voltage(void);
 
 }

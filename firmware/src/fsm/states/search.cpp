@@ -185,7 +185,7 @@ State* Search::react(Timeout const&) {
         }
 
         if (robot_pos == services::Maze::ORIGIN && returning) {
-            navigation->set_movement(Movement::STOP, 1);
+            navigation->set_movement(Movement::STOP, Movement::STOP, Movement::STOP, 1);
             stop_next_move = true;
         } else {
             auto dir = maze->next_step(robot_pos, walls, returning, true);

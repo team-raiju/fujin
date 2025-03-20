@@ -8,6 +8,8 @@
 #include "bsp/timers.hpp"
 #include "bsp/ble.hpp"
 #include "services/logger.hpp"
+#include "bsp/fan.hpp"
+#include "services/config.hpp"
 
 namespace fsm {
 
@@ -23,6 +25,7 @@ void Idle::enter() {
     }
 
     bsp::motors::set(0, 0);
+    bsp::fan::set(0);
     bsp::ble::unlock_config_rcv();
 }
 
@@ -45,6 +48,10 @@ State* Idle::react(ButtonPressed const& event) {
 
     if (event.button == ButtonPressed::LONG1) {
         services::Logger::instance()->print_log();
+    }
+
+    if (event.button == ButtonPressed::LONG2) {
+        services::Config::send_parameters();
     }
 
     return nullptr;

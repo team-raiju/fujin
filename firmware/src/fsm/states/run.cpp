@@ -12,6 +12,7 @@
 #include "bsp/motors.hpp"
 #include "bsp/timers.hpp"
 #include "fsm/state.hpp"
+#include "services/config.hpp"
 #include "services/logger.hpp"
 #include "services/maze.hpp"
 #include "services/navigation.hpp"
@@ -22,6 +23,9 @@ using bsp::leds::Color;
 
 namespace fsm {
 
+static bool indicate_read = false;
+static uint32_t last_indication = 0;
+
 void PreRun::enter() {
 
     bsp::debug::print("state:PreRun");
@@ -29,6 +33,7 @@ void PreRun::enter() {
     bsp::leds::stripe_set(Color::Green);
 
     bsp::motors::set(0, 0);
+    bsp::fan::set(0);
 
     /* Only start IR if powered by the battery */
     if (bsp::analog_sensors::battery_latest_reading_mv() > 7000) {
@@ -95,6 +100,9 @@ void Run::enter() {
     bsp::delay_ms(2000);
     bsp::buzzer::stop();
 
+    services::Control::instance()->start_fan();
+    bsp::delay_ms(250);
+                                                                                               
     soft_timer::start(1, soft_timer::CONTINUOUS);
 
     navigation->reset(false);
@@ -109,6 +117,7 @@ void Run::enter() {
     std::vector<std::pair<Movement, uint8_t>> default_target_movements =
         navigation->get_default_target_movements(target_directions);
 
+    target_movements.clear();
     bool use_diagonal = true;
 
     if (use_diagonal) {
@@ -117,7 +126,24 @@ void Run::enter() {
         target_movements = navigation->get_smooth_movements(default_target_movements);
     }
 
+
+    // target_movements.push_back({Movement::START, 1});
+    // target_movements.push_back({Movement::FORWARD, 1});
+    // target_movements.push_back({Movement::TURN_RIGHT_180, 1});
+    // target_movements.push_back({Movement::FORWARD, 1});
+    // target_movements.push_back({Movement::TURN_LEFT_90, 1});
+    // target_movements.push_back({Movement::FORWARD, 1});
+    // target_movements.push_back({Movement::TURN_LEFT_90, 1});
+    // target_movements.push_back({Movement::FORWARD, 5});
+    // target_movements.push_back({Movement::TURN_LEFT_180, 1});
+    // target_movements.push_back({Movement::FORWARD, 1});
+    // target_movements.push_back({Movement::TURN_RIGHT_135, 1});
+    // target_movements.push_back({Movement::DIAGONAL, 1});
+    // target_movements.push_back({Movement::TURN_RIGHT_45_FROM_45, 1});
+    // target_movements.push_back({Movement::STOP, 1});
+
     move_count = 0;
+    emergency = false;
 }
 
 State* Run::react(ButtonPressed const& event) {
@@ -144,9 +170,6 @@ State* Run::react(BleCommand const&) {
     return nullptr;
 }
 
-static bool indicate_read = false;
-static uint32_t last_indication = 0;
-
 State* Run::react(Timeout const&) {
     using bsp::analog_sensors::ir_reading_wall;
     using bsp::analog_sensors::SensingDirection;
@@ -163,30 +186,55 @@ State* Run::react(Timeout const&) {
 
     if (done) {
 
-        last_indication = bsp::get_tick_ms();
-        indicate_read = true;
-        bsp::leds::stripe_set(Color::Green);
-
         move_count++;
         if (move_count >= target_movements.size()) {
             return &State::get<Idle>();
         }
 
+        last_indication = bsp::get_tick_ms();
+        indicate_read = true;
+        bsp::leds::stripe_set(Color::Green);
+
         auto movement = target_movements[move_count].first;
+
+        auto prev_movement =
+            ((move_count) >= 1) ? target_movements[move_count - 1].first : Movement::STOP;
+
+        auto next_movement =
+            ((move_count + 1) < target_movements.size()) ? target_movements[move_count + 1].first : Movement::STOP;
+        
+
         auto cells = target_movements[move_count].second;
 
-        navigation->set_movement(movement, cells);
+        navigation->set_movement(movement, prev_movement, next_movement, cells);
+    }
+
+    if (bsp::imu::is_imu_emergency() && move_count > 1) {
+        emergency = true;
+        soft_timer::stop();
+        bsp::motors::set(0, 0);
+        bsp::fan::set(0);
+        bsp::leds::stripe_set(Color::Orange);
+        bsp::buzzer::start();
+        bsp::delay_ms(500);
+        bsp::buzzer::stop();
+        return &State::get<Idle>();
     }
 
     return nullptr;
 }
 
 void Run::exit() {
+    soft_timer::stop();
     bsp::motors::set(0, 0);
+    if(!emergency) {
+    services::Control::instance()->stop_fan();
+    }
+    bsp::fan::set(0);
+    bsp::leds::stripe_set(Color::Black);
     bsp::analog_sensors::enable_modulation(false);
     bsp::leds::ir_emitter_all_off();
     bsp::leds::indication_off();
-    soft_timer::stop();
     logger->save_size();
 }
 

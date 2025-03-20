@@ -29,9 +29,16 @@ public:
     static float linear_vel_ki;
     static float linear_vel_kd;
 
+    static float diagonal_walls_kp;
+    static float diagonal_walls_ki;
+    static float diagonal_walls_kd;
+
+    static float fan_speed;
+
     static void init();
     static int parse_packet(uint8_t packet[bsp::ble::max_packet_size]);
     static int write_default_params();
+    static void send_parameters();
 };
 
 }

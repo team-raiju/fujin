@@ -57,16 +57,16 @@ def plot_robot_positions(ideal_positions: Position, real_positions: Position):
     #     plt.plot([i + 360, i + 360], [i, i + 180], 'g-', linewidth=3)
     
     ## Discomment to add 135deg ladder pattern
-    # plt.plot([180, 360], [180, 180], 'g-', linewidth=3)
-    # plt.plot([360, 360], [180, 0], 'g-', linewidth=3)
-    # plt.plot([360, 540], [0, 0], 'g-', linewidth=3)
+    plt.plot([180, 360], [180, 180], 'g-', linewidth=3)
+    plt.plot([360, 360], [180, 0], 'g-', linewidth=3)
+    plt.plot([360, 540], [0, 0], 'g-', linewidth=3)
 
-    # for i in range (180, 3600, 180):
-    #     plt.plot([i, i], [180 - i, -i], 'g-', linewidth=3)
-    #     plt.plot([i, i + 180], [-i, -i], 'g-', linewidth=3)
+    for i in range (180, 3600, 180):
+        plt.plot([i, i], [180 - i, -i], 'g-', linewidth=3)
+        plt.plot([i, i + 180], [-i, -i], 'g-', linewidth=3)
 
-    #     plt.plot([i + 360, i + 360], [180 - i, -i], 'g-', linewidth=3)
-    #     plt.plot([i + 360, i + 360 + 180], [-i, -i], 'g-', linewidth=3)
+        plt.plot([i + 360, i + 360], [180 - i, -i], 'g-', linewidth=3)
+        plt.plot([i + 360, i + 360 + 180], [-i, -i], 'g-', linewidth=3)
 
 
     # Add labels and legend
@@ -97,17 +97,17 @@ def plot_angular_speeds(ideal_speeds, real_speeds):
 def main():
 
     #### Inputs ####
-    linear_speed_m_s = 0.5
-    turn_angle_deg = 90
-    turn_radius_mm = 75
+    linear_speed_m_s = 1.0
+    turn_angle_deg = 135
+    turn_radius_mm = 60
 
-    angular_acceleration_deg_s2 = 5729.578
-    angular_desacceleration_deg_s2 = 5729.578
-    maximum_angular_speed_deg_s = 500
+    angular_acceleration_deg_s2 = 16000
+    angular_desacceleration_deg_s2 = 16000
+    maximum_angular_speed_deg_s = 900
 
-    mm_before_turn = 10
-    mm_after_turn = 10
-    initial_theta_deg = 0
+    mm_before_turn = 80
+    mm_after_turn = 0
+    initial_theta_deg = 45
 
 
 

@@ -6,8 +6,14 @@
 #include "services/control.hpp"
 #include "services/config.hpp"
 #include "bsp/imu.hpp"
+#include "bsp/fan.hpp"
+#include "bsp/timers.hpp"
+
 
 static constexpr float max_battery_voltage = 12.6;
+static constexpr float mot_kt = 0.0064; // motor torque constant [Nm/A]
+static constexpr float mot_ra = 2.5; // armature resistance[Ohms]
+
 
 namespace services {
 
@@ -31,13 +37,19 @@ void Control::reset(void) {
     angular_vel_pid.kp = Config::angular_kp;
     angular_vel_pid.ki = Config::angular_ki;
     angular_vel_pid.kd = Config::angular_kd;
-    angular_vel_pid.integral_limit = 1000; // approximately (max_bat_voltage / Config::angular_ki)
+    angular_vel_pid.integral_limit = 500; // approximately (max_bat_voltage / Config::angular_ki)
 
     walls_pid.reset();
     walls_pid.kp = Config::wall_kp;
     walls_pid.ki = Config::wall_ki;
     walls_pid.kd = Config::wall_kd;
     walls_pid.integral_limit = 0;
+
+    diagonal_walls_pid.reset();
+    diagonal_walls_pid.kp = Config::diagonal_walls_kp;
+    diagonal_walls_pid.ki = Config::diagonal_walls_ki;
+    diagonal_walls_pid.kd = Config::diagonal_walls_kd;
+    diagonal_walls_pid.integral_limit = 0;
 
     target_angular_speed_rad_s = 0;
     target_linear_speed_m_s = 0;
@@ -49,20 +61,87 @@ void Control::update() {
     if (wall_pid_enabled){
         target_angular_speed_rad_s += walls_pid.calculate(0.0, bsp::analog_sensors::ir_side_wall_error());
     }
+
+    if (diagonal_pid_enabled) {
+        target_angular_speed_rad_s += diagonal_walls_pid.calculate(0.0, bsp::analog_sensors::ir_diagonal_error());
+    }
     
     float mean_velocity_m_s = bsp::encoders::get_filtered_velocity_m_s();
 
     float linear_ratio = linear_vel_pid.calculate(target_linear_speed_m_s, mean_velocity_m_s);
     float rotation_ratio = -angular_vel_pid.calculate(target_angular_speed_rad_s, bsp::imu::get_rad_per_s());
 
-    float l_voltage = linear_ratio + rotation_ratio;
-    float r_voltage = linear_ratio - rotation_ratio;
+    float l_current = linear_ratio + rotation_ratio;
+    float r_current = linear_ratio - rotation_ratio;
 
-    pwm_duty_l = (l_voltage / max_battery_voltage) * 1000;
-    pwm_duty_r = (r_voltage / max_battery_voltage) * 1000;
+    float bat_volts = bsp::analog_sensors::battery_latest_reading_mv() / 1000.0;
+
+    float left_ang_vel = bsp::encoders::get_left_filtered_ang_vel_rad_s();
+    float right_ang_vel = bsp::encoders::get_right_filtered_ang_vel_rad_s();
+
+    pwm_duty_l = ((l_current * mot_ra + left_ang_vel * mot_kt) / bat_volts) * 1000;
+    pwm_duty_r = ((r_current * mot_ra + right_ang_vel * mot_kt) / bat_volts) * 1000;
+
+    if (pwm_duty_l > 1000 || pwm_duty_r > 1000){
+        if (pwm_duty_l > pwm_duty_r){
+            int16_t diff = pwm_duty_l - pwm_duty_r;
+            pwm_duty_r = 1000 - diff;
+            pwm_duty_l = 1000;
+        } else {
+            int32_t diff = pwm_duty_r - pwm_duty_l;
+            pwm_duty_l = 1000 - diff;
+            pwm_duty_r = 1000;
+        }
+    }
 
     bsp::motors::set(pwm_duty_l, pwm_duty_r);
 
+
+    /* Fan control */
+    float target_fan_speed = std::min(services::Config::fan_speed, 1000.0f);
+    float desired_fan_voltage = (target_fan_speed / 1000.0f) * bsp::fan::get_max_fan_voltage();
+
+    if (bat_volts > 5.0) { // To avoid turning on fan when batery measurement is not reliable
+        uint16_t fan_pwm = (desired_fan_voltage / bat_volts) * 1000;
+        bsp::fan::set(fan_pwm);
+    } else {
+        bsp::fan::set(0);
+    }
+    
+
+}
+
+void Control::start_fan() {
+    float target_fan_speed = std::min(services::Config::fan_speed, 1000.0f);
+    float desired_fan_voltage = (target_fan_speed / 1000.0) * bsp::fan::get_max_fan_voltage();
+
+    for (float volts = 0; volts < desired_fan_voltage; volts += 0.1) {
+        float bat_volts = bsp::analog_sensors::battery_latest_reading_mv() / 1000.0;
+        if (bat_volts < 5.0) {
+            bsp::fan::set(0);
+            break;
+        }
+        uint16_t fan_pwm = (volts / bat_volts) * 1000;
+        std::printf("volts: %f, bat: %f, pwm: %d\r\n", volts, bat_volts, fan_pwm);
+        bsp::fan::set(fan_pwm);
+        bsp::delay_ms(20);
+    }
+}
+
+void Control::stop_fan() {
+    float target_fan_speed = std::min(services::Config::fan_speed, 1000.0f);
+    float desired_fan_voltage = (target_fan_speed / 1000.0) * bsp::fan::get_max_fan_voltage();
+    for (float volts = desired_fan_voltage; volts > 0; volts -= 0.1) {
+        float bat_volts = bsp::analog_sensors::battery_latest_reading_mv() / 1000.0;
+        if (bat_volts < 5.0) { 
+            bsp::fan::set(0);
+            break;
+        }
+        uint16_t fan_pwm = (volts / bat_volts) * 1000;
+        bsp::fan::set(fan_pwm);
+        bsp::delay_ms(20);
+    }
+    bsp::fan::set(0);
 }
 
 }
