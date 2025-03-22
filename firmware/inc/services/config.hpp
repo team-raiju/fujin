@@ -7,6 +7,8 @@ namespace services {
 class Config {
 public:
 
+    static float fan_speed;
+
     static float angular_kp;
     static float angular_ki;
     static float angular_kd;
@@ -14,16 +16,6 @@ public:
     static float wall_kp;
     static float wall_ki;
     static float wall_kd;
-
-    static float min_move_speed;
-    static float min_turn_speed;
-    static float fix_position_speed;
-    static float search_speed;
-    static float angular_speed;
-    static float run_speed;
-
-    static float linear_acceleration;
-    static float angular_acceleration;
 
     static float linear_vel_kp;
     static float linear_vel_ki;
@@ -33,7 +25,22 @@ public:
     static float diagonal_walls_ki;
     static float diagonal_walls_kd;
 
-    static float fan_speed;
+    static float min_move_speed;
+
+    static float ir_wall_dist_ref_right;
+    static float ir_wall_dist_ref_front_left;
+    static float ir_wall_dist_ref_front_right;
+    static float ir_wall_dist_ref_left;
+
+    static float ir_wall_control_th_right;
+    static float ir_wall_control_th_front_left;
+    static float ir_wall_control_th_front_right;
+    static float ir_wall_control_th_left;
+
+    static float ir_wall_detect_th_right;
+    static float ir_wall_detect_th_front_left;
+    static float ir_wall_detect_th_front_right;
+    static float ir_wall_detect_th_left;
 
     static void init();
     static int parse_packet(uint8_t packet[bsp::ble::max_packet_size]);

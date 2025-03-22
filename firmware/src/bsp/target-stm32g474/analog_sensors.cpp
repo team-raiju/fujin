@@ -4,6 +4,7 @@
 #include "bsp/leds.hpp"
 #include "bsp/timers.hpp"
 #include "utils/math.hpp"
+#include "services/config.hpp"
 
 namespace bsp::analog_sensors {
 
@@ -55,59 +56,6 @@ static bool modulation_enabled;
 static uint32_t ir_window[4][IR_AVG_WINDOW];
 static size_t window_idx[4];
 
-#define ROBOT_1 false // If robot hardware 1 or 2
-
-#if ROBOT_1
-
-/* Reading value when robot is in the middle of the cell */
-static uint32_t ir_wall_dist_reference[4] = {
-    820, // RIGHT
-    150,  // FRONT_LEFT
-    150,  // FRONT_RIGHT
-    570  // LEFT
-};
-
-/* Threshold to calculate PID error */
-static uint32_t ir_threshold_control[4] = {
-    600,  // RIGHT
-    250, // FRONT_LEFT
-    250, // FRONT_RIGHT
-    400   // LEFT
-};
-
-/* Reading on the cell start for considering wall on the next cell */
-static uint32_t ir_wall_threshold[4] = {
-    420, // RIGHT
-    900, // FRONT_LEFT
-    900, // FRONT_RIGHT
-    420  // LEFT
-};
-
-#else
-/* Reading value when robot is in the middle of the cell */
-static uint32_t ir_wall_dist_reference[4] = {
-    1310, // RIGHT
-    150,  // FRONT_LEFT -> used to diagonal corection
-    150,  // FRONT_RIGHT -> used to diagonal corection
-    832  // LEFT
-};
-
-/* Threshold to calculate PID error */
-static uint32_t ir_threshold_control[4] = {
-    700,  // RIGHT
-    250, // FRONT_LEFT
-    250, // FRONT_RIGHT
-    650   // LEFT
-};
-
-/* Reading on the cell start for considering wall on the next cell */
-static uint32_t ir_wall_threshold[4] = {
-    850, // RIGHT
-    600, // FRONT_LEFT
-    800, // FRONT_RIGHT
-    650  // LEFT
-};
-#endif
 
 /// @section Interface implementation
 
@@ -160,12 +108,23 @@ uint32_t ir_reading(SensingDirection direction) {
 }
 
 bool ir_reading_wall(SensingDirection direction) {
-    return (ir_readings[direction] > ir_wall_threshold[direction]);
+    switch (direction) {
+        case SensingDirection::RIGHT:
+            return ir_readings[direction] > services::Config::ir_wall_detect_th_right;
+        case SensingDirection::FRONT_LEFT:
+            return ir_readings[direction] > services::Config::ir_wall_detect_th_front_left;
+        case SensingDirection::FRONT_RIGHT:
+            return ir_readings[direction] > services::Config::ir_wall_detect_th_front_right;
+        case SensingDirection::LEFT:
+            return ir_readings[direction] > services::Config::ir_wall_detect_th_left;
+        default:
+            return false;
+    }
 }
 
 int32_t ir_side_wall_error() {
-    int32_t left_error = ir_readings[SensingDirection::LEFT] - ir_wall_dist_reference[SensingDirection::LEFT];
-    int32_t right_error = ir_readings[SensingDirection::RIGHT] - ir_wall_dist_reference[SensingDirection::RIGHT];
+    int32_t left_error = ir_readings[SensingDirection::LEFT] - services::Config::ir_wall_dist_ref_left;
+    int32_t right_error = ir_readings[SensingDirection::RIGHT] - services::Config::ir_wall_dist_ref_right;
 
     int32_t ir_error;
     if (ir_wall_control_valid(SensingDirection::LEFT) && ir_wall_control_valid(SensingDirection::RIGHT)) {
@@ -187,9 +146,9 @@ int32_t ir_diagonal_error() {
     int32_t ir_error;
 
     if (greater_error_left && ir_wall_control_valid(SensingDirection::FRONT_LEFT)) {
-        ir_error = ir_readings[SensingDirection::FRONT_LEFT] - ir_wall_dist_reference[SensingDirection::FRONT_LEFT];
+        ir_error = ir_readings[SensingDirection::FRONT_LEFT] - services::Config::ir_wall_dist_ref_front_left;
     } else if (!greater_error_left && ir_wall_control_valid(SensingDirection::FRONT_RIGHT)) {
-        ir_error = -(ir_readings[SensingDirection::FRONT_RIGHT] - ir_wall_dist_reference[SensingDirection::FRONT_RIGHT]);
+        ir_error = -(ir_readings[SensingDirection::FRONT_RIGHT] - services::Config::ir_wall_dist_ref_front_right);
     } else {
         ir_error = 0;
     }
@@ -198,7 +157,18 @@ int32_t ir_diagonal_error() {
 }
 
 bool ir_wall_control_valid(SensingDirection direction) {
-    return (ir_readings[direction] > ir_threshold_control[direction]);
+    switch (direction) {
+        case SensingDirection::RIGHT:
+            return ir_readings[direction] > services::Config::ir_wall_control_th_right;
+        case SensingDirection::FRONT_LEFT:
+            return ir_readings[direction] > services::Config::ir_wall_control_th_front_left;
+        case SensingDirection::FRONT_RIGHT:
+            return ir_readings[direction] > services::Config::ir_wall_control_th_front_right;
+        case SensingDirection::LEFT:
+            return ir_readings[direction] > services::Config::ir_wall_control_th_left;
+        default:
+            return false;
+    }
 }
 
 void enable_modulation(bool enable) {

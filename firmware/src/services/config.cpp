@@ -10,57 +10,69 @@ namespace services {
 
 static bool write_default = false;
 
-float Config::angular_kp = 0.16;
-float Config::angular_ki = 0.008;
-float Config::angular_kd = 0;
+float Config::fan_speed = 0.0; //[0-1000]
 
-float Config::wall_kp = 0.0035;
-float Config::wall_ki = 0;
-float Config::wall_kd = 0.006;
+float Config::angular_kp = 0.10;
+float Config::angular_ki = 0.010;
+float Config::angular_kd = 0.0;
 
-float Config::min_move_speed = 0.1;     // [m/s]
-float Config::min_turn_speed = 0.1;     // [m/s]
-float Config::fix_position_speed = 0.3; // [m/s]
-float Config::search_speed = 0.5;       // [m/s]
-float Config::angular_speed = 5.585;    // [rad/s]
-float Config::run_speed = 0.75;         // [m/s]
-
-float Config::linear_acceleration = 2.0;    // [m/s^2]
-float Config::angular_acceleration = 100.0; // [rad/s^2]
+float Config::wall_kp = 0.0025;
+float Config::wall_ki = 0.0;
+float Config::wall_kd = 0.0050;
 
 float Config::linear_vel_kp = 8.0;
 float Config::linear_vel_ki = 0.11;
-float Config::linear_vel_kd = 0;
+float Config::linear_vel_kd = 0.0;
 
-float Config::diagonal_walls_kp = 0.015;
+float Config::diagonal_walls_kp = 0.005;
 float Config::diagonal_walls_ki = 0;
-float Config::diagonal_walls_kd = 0.015;
+float Config::diagonal_walls_kd = 0.005;
 
-float Config::fan_speed = 0.0; //[0-1000]
+float Config::min_move_speed = 0.05; // [m/s]
+
+float Config::ir_wall_dist_ref_right = 1310;
+float Config::ir_wall_dist_ref_front_left = 150;
+float Config::ir_wall_dist_ref_front_right = 150;
+float Config::ir_wall_dist_ref_left = 832;
+
+float Config::ir_wall_control_th_right = 700;
+float Config::ir_wall_control_th_front_left = 250;
+float Config::ir_wall_control_th_front_right = 250;
+float Config::ir_wall_control_th_left = 650;
+
+float Config::ir_wall_detect_th_right = 850;
+float Config::ir_wall_detect_th_front_left = 600;
+float Config::ir_wall_detect_th_front_right = 800;
+float Config::ir_wall_detect_th_left = 650;
 
 // All params
 static std::pair<float*, bsp::eeprom::param_addresses_t> params[] = {
+    {&Config::fan_speed, bsp::eeprom::ADDR_FAN_SPEED},
     {&Config::angular_kp, bsp::eeprom::ADDR_ANGULAR_KP},
     {&Config::angular_ki, bsp::eeprom::ADDR_ANGULAR_KI},
     {&Config::angular_kd, bsp::eeprom::ADDR_ANGULAR_KD},
     {&Config::wall_kp, bsp::eeprom::ADDR_WALL_KP},
     {&Config::wall_ki, bsp::eeprom::ADDR_WALL_KI},
     {&Config::wall_kd, bsp::eeprom::ADDR_WALL_KD},
-    {&Config::min_move_speed, bsp::eeprom::ADDR_MIN_MOVE_SPEED},
-    {&Config::min_turn_speed, bsp::eeprom::ADDR_MIN_TURN_SPEED},
-    {&Config::fix_position_speed, bsp::eeprom::ADDR_FIX_POSITION_SPEED},
-    {&Config::search_speed, bsp::eeprom::ADDR_SEARCH_SPEED},
-    {&Config::angular_speed, bsp::eeprom::ADDR_ANGULAR_SPEED},
-    {&Config::run_speed, bsp::eeprom::ADDR_RUN_SPEED},
-    {&Config::linear_acceleration, bsp::eeprom::ADDR_LINEAR_ACCELERATION},
-    {&Config::angular_acceleration, bsp::eeprom::ADDR_ANGULAR_ACCELERATION},
     {&Config::linear_vel_kp, bsp::eeprom::ADDR_LINEAR_VEL_KP},
     {&Config::linear_vel_ki, bsp::eeprom::ADDR_LINEAR_VEL_KI},
     {&Config::linear_vel_kd, bsp::eeprom::ADDR_LINEAR_VEL_KD},
     {&Config::diagonal_walls_kp, bsp::eeprom::ADDR_DIAGONAL_WALLS_KP},
     {&Config::diagonal_walls_ki, bsp::eeprom::ADDR_DIAGONAL_WALLS_KI},
     {&Config::diagonal_walls_kd, bsp::eeprom::ADDR_DIAGONAL_WALLS_KD},
-    {&Config::fan_speed, bsp::eeprom::ADDR_FAN_SPEED}};
+    {&Config::min_move_speed, bsp::eeprom::ADDR_MIN_MOVE_SPEED},
+    {&Config::ir_wall_dist_ref_right, bsp::eeprom::ADDR_IR_WALL_DIST_REF_RIGHT},
+    {&Config::ir_wall_dist_ref_front_left, bsp::eeprom::ADDR_IR_WALL_DIST_REF_FRONT_LEFT},
+    {&Config::ir_wall_dist_ref_front_right, bsp::eeprom::ADDR_IR_WALL_DIST_REF_FRONT_RIGHT},
+    {&Config::ir_wall_dist_ref_left, bsp::eeprom::ADDR_IR_WALL_DIST_REF_LEFT},
+    {&Config::ir_wall_control_th_right, bsp::eeprom::ADDR_IR_WALL_CONTROL_TH_RIGHT},
+    {&Config::ir_wall_control_th_front_left, bsp::eeprom::ADDR_IR_WALL_CONTROL_TH_FRONT_LEFT},
+    {&Config::ir_wall_control_th_front_right, bsp::eeprom::ADDR_IR_WALL_CONTROL_TH_FRONT_RIGHT},
+    {&Config::ir_wall_control_th_left, bsp::eeprom::ADDR_IR_WALL_CONTROL_TH_LEFT},
+    {&Config::ir_wall_detect_th_right, bsp::eeprom::ADDR_IR_WALL_DETECT_TH_RIGHT},
+    {&Config::ir_wall_detect_th_front_left, bsp::eeprom::ADDR_IR_WALL_DETECT_TH_FRONT_LEFT},
+    {&Config::ir_wall_detect_th_front_right, bsp::eeprom::ADDR_IR_WALL_DETECT_TH_FRONT_RIGHT},
+    {&Config::ir_wall_detect_th_left, bsp::eeprom::ADDR_IR_WALL_DETECT_TH_LEFT}};
 
 union _float {
     float value;

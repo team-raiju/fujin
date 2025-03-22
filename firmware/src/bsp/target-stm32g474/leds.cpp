@@ -22,7 +22,7 @@ Color Color::Pink = Color(0x1F, 0xC8, 0x64);
 Color Color::Cyan = Color(0xD2, 0x32, 0x12);
 
 uint32_t Color::encode() const {
-    return bit_reverse(b) << 16 | bit_reverse(r) << 8 | bit_reverse(g);
+    return (bit_reverse(b) << 16) | (bit_reverse(r) << 8) | bit_reverse(g);
 }
 
 /// @section Private variables
