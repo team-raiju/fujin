@@ -87,8 +87,8 @@ static std::map<Movement, TurnParams> turn_params_slow = {
     {Movement::TURN_LEFT_135, {0, -7.4, 0.5, 100.00, 7.5049, 75, 239, 1}},
     {Movement::TURN_RIGHT_180, {0, 0, 0.5, 100.00, 5.5850, 56, 507, -1}},
     {Movement::TURN_LEFT_180, {0, 0, 0.5, 100.00, 5.5850, 56, 507, 1}},
-    {Movement::TURN_RIGHT_45_FROM_45, {8.0, 4.6, 0.5, 100.0, 7.8539, 79, 21, -1}},
-    {Movement::TURN_LEFT_45_FROM_45, {8.0, 4.6, 0.5, 100.0, 7.8539, 79, 21, 1}},
+    {Movement::TURN_RIGHT_45_FROM_45, {9.5, 4.6, 0.5, 100.0, 7.8539, 79, 21, -1}},
+    {Movement::TURN_LEFT_45_FROM_45, {9.5, 4.6, 0.5, 100.0, 7.8539, 79, 21, 1}},
     {Movement::TURN_RIGHT_90_FROM_45, {5.0, -5.0, 0.5, 100.0, 10.472, 105, 45, -1}},
     {Movement::TURN_LEFT_90_FROM_45, {5.0, -5.0, 0.5, 100.0, 10.472, 105, 45, 1}},
     {Movement::TURN_RIGHT_135_FROM_45, {7.0, 0, 0.5, 100.0, 7.8539, 79, 230, -1}},
@@ -133,10 +133,12 @@ static std::map<Movement, ForwardParams> forward_params_medium = {
 };
 
 static std::map<Movement, TurnParams> turn_params_fast = {
-    {Movement::TURN_RIGHT_45, {-4.3, -8.2, 1.5, 785.39, 22.69, 28, 5, -1}},
-    {Movement::TURN_LEFT_45, {-4.3, -8.2, 1.5, 785.39, 22.69, 28, 5, 1}},
-    {Movement::TURN_RIGHT_90, {-1.3, -1.3, 1.5, 785.39, 24.96, 32, 28, -1}}, 
-    {Movement::TURN_LEFT_90, {-1.3, -1.3, 1.5, 785.39, 24.96, 32, 28, 1}},
+    {Movement::TURN_RIGHT_45, {-2.0, -8.2, 1.5, 785.39, 22.69, 28, 5, -1}},
+    {Movement::TURN_LEFT_45, {-2.0, -8.2, 1.5, 785.39, 22.69, 28, 5, 1}},
+
+
+    {Movement::TURN_RIGHT_90, {0.0, -1.3, 1.5, 785.39, 24.96, 32, 28, -1}}, 
+    {Movement::TURN_LEFT_90, {0.0, -1.3, 1.5, 785.39, 24.96, 32, 28, 1}},
     {Movement::TURN_RIGHT_135, {-2.9, -9.1, 1.5, 610.865, 20.94, 34, 78, -1}},
     {Movement::TURN_LEFT_135, {-2.9, -9.1, 1.5, 610.865, 20.94, 34, 78, 1}},
     {Movement::TURN_RIGHT_180, {-2.9, 0.2, 1.5, 610.865, 16.05, 26, 169, -1}},
@@ -159,9 +161,9 @@ static std::map<Movement, TurnParams> turn_params_fast = {
 static std::map<Movement, ForwardParams> forward_params_fast = {
     {Movement::START, {1.0, 5.0, 20.0, HALF_CELL_SIZE_CM + ROBOT_DIST_FROM_CENTER_START_CM}}, //Speed reached in the start end is = 1.0m/s (sqrt(2*5*0.11))
 
-    {Movement::FORWARD, {4.0, 20.0, 35.0, CELL_SIZE_CM}},
+    {Movement::FORWARD, {3.5, 15.0, 30.0, CELL_SIZE_CM}},
 
-    {Movement::DIAGONAL, {3.0, 20.0, 35.0, CELL_DIAGONAL_SIZE_CM}},
+    {Movement::DIAGONAL, {2.5, 15.0, 35.0, CELL_DIAGONAL_SIZE_CM}},
 
     {Movement::STOP, {0.75, 2.0, 35.0, (HALF_CELL_SIZE_CM)}},
 
