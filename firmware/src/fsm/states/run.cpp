@@ -109,38 +109,91 @@ void Run::enter() {
 
     logger->init();
 
-    maze->read_maze_from_memory();
+/*     maze->read_maze_from_memory();
     maze->print(maze->ORIGIN);
     target_directions = maze->directions_to_goal();
     maze->print(maze->ORIGIN);
 
     std::vector<std::pair<Movement, uint8_t>> default_target_movements =
-        navigation->get_default_target_movements(target_directions);
+        navigation->get_default_target_movements(target_directions); */
 
     target_movements.clear();
-    bool use_diagonal = true;
+    // bool use_diagonal = true;
 
-    if (use_diagonal) {
-        target_movements = navigation->get_diagonal_movements(default_target_movements);
-    } else {
-        target_movements = navigation->get_smooth_movements(default_target_movements);
-    }
+    // if (use_diagonal) {
+    //     target_movements = navigation->get_diagonal_movements(default_target_movements);
+    // } else {
+    //     target_movements = navigation->get_smooth_movements(default_target_movements);
+    // }
 
-
+    // Path 1
     // target_movements.push_back({Movement::START, 1});
-    // target_movements.push_back({Movement::FORWARD, 1});
-    // target_movements.push_back({Movement::TURN_RIGHT_180, 1});
-    // target_movements.push_back({Movement::FORWARD, 1});
-    // target_movements.push_back({Movement::TURN_LEFT_90, 1});
-    // target_movements.push_back({Movement::FORWARD, 1});
-    // target_movements.push_back({Movement::TURN_LEFT_90, 1});
     // target_movements.push_back({Movement::FORWARD, 5});
-    // target_movements.push_back({Movement::TURN_LEFT_180, 1});
+    // target_movements.push_back({Movement::TURN_RIGHT_45, 1});
+    // target_movements.push_back({Movement::DIAGONAL, 4});
+    // target_movements.push_back({Movement::TURN_LEFT_90_FROM_45, 1});
+    // target_movements.push_back({Movement::DIAGONAL, 4});
+    // target_movements.push_back({Movement::TURN_RIGHT_45_FROM_45, 1});
     // target_movements.push_back({Movement::FORWARD, 1});
-    // target_movements.push_back({Movement::TURN_RIGHT_135, 1});
+    // target_movements.push_back({Movement::TURN_RIGHT_45, 1});
     // target_movements.push_back({Movement::DIAGONAL, 1});
     // target_movements.push_back({Movement::TURN_RIGHT_45_FROM_45, 1});
+    // target_movements.push_back({Movement::FORWARD, 3});
+    // target_movements.push_back({Movement::TURN_LEFT_90, 1});
+    // target_movements.push_back({Movement::TURN_RIGHT_90, 1});
+    // target_movements.push_back({Movement::FORWARD, 9});
+    // target_movements.push_back({Movement::TURN_LEFT_135, 1});
+    // target_movements.push_back({Movement::DIAGONAL, 6});
+    // target_movements.push_back({Movement::TURN_LEFT_45_FROM_45, 1});
+    // target_movements.push_back({Movement::FORWARD, 2});
+    // target_movements.push_back({Movement::TURN_RIGHT_180, 1});
+    // target_movements.push_back({Movement::FORWARD, 4});
+    // target_movements.push_back({Movement::TURN_LEFT_180, 1});
+    // target_movements.push_back({Movement::FORWARD, 6});
+    // target_movements.push_back({Movement::TURN_RIGHT_90, 1});
+    // target_movements.push_back({Movement::FORWARD, 1});
+    // target_movements.push_back({Movement::TURN_RIGHT_90, 1});
+    // target_movements.push_back({Movement::FORWARD, 1});
     // target_movements.push_back({Movement::STOP, 1});
+
+    // Path 2
+    target_movements.push_back({Movement::START, 1});
+    target_movements.push_back({Movement::FORWARD, 2});
+    target_movements.push_back({Movement::TURN_RIGHT_180, 1});
+    target_movements.push_back({Movement::FORWARD, 2});
+    target_movements.push_back({Movement::TURN_LEFT_90, 1});
+    target_movements.push_back({Movement::FORWARD, 3});
+    target_movements.push_back({Movement::TURN_LEFT_90, 1});
+    target_movements.push_back({Movement::FORWARD, 2});
+    target_movements.push_back({Movement::TURN_RIGHT_90, 1});
+    target_movements.push_back({Movement::FORWARD, 1});
+    target_movements.push_back({Movement::TURN_RIGHT_90, 1});
+    target_movements.push_back({Movement::FORWARD, 2});
+    target_movements.push_back({Movement::TURN_LEFT_90, 1});
+    target_movements.push_back({Movement::FORWARD, 2});
+    target_movements.push_back({Movement::TURN_LEFT_90, 1});
+    target_movements.push_back({Movement::FORWARD, 1});
+    target_movements.push_back({Movement::TURN_RIGHT_90, 1});
+    target_movements.push_back({Movement::FORWARD, 4});
+    target_movements.push_back({Movement::TURN_LEFT_90, 1});
+    target_movements.push_back({Movement::FORWARD, 2});
+    target_movements.push_back({Movement::TURN_LEFT_90, 1});
+    target_movements.push_back({Movement::FORWARD, 1});
+    target_movements.push_back({Movement::TURN_RIGHT_90, 1});
+    target_movements.push_back({Movement::FORWARD, 1});
+    target_movements.push_back({Movement::TURN_LEFT_180, 1});
+    target_movements.push_back({Movement::FORWARD, 1});
+    target_movements.push_back({Movement::TURN_LEFT_90, 1});
+    target_movements.push_back({Movement::FORWARD, 6});
+    target_movements.push_back({Movement::TURN_LEFT_90, 1});
+    target_movements.push_back({Movement::FORWARD, 6});
+    target_movements.push_back({Movement::TURN_RIGHT_180, 1});
+    target_movements.push_back({Movement::FORWARD, 5});
+    target_movements.push_back({Movement::TURN_LEFT_180, 1});
+    target_movements.push_back({Movement::FORWARD, 1});
+    target_movements.push_back({Movement::STOP, 1});
+
+
 
     move_count = 0;
     emergency = false;

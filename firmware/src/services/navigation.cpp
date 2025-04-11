@@ -59,12 +59,12 @@ void Navigation::reset(bool search_mode) {
         turn_params = turn_params_search;
         forward_params = forward_params_search;
     } else {
-        // turn_params = turn_params_slow;
-        // forward_params = forward_params_slow;
+        turn_params = turn_params_slow;
+        forward_params = forward_params_slow;
         // turn_params = turn_params_medium;
         // forward_params = forward_params_medium;
-        turn_params = turn_params_fast;
-        forward_params = forward_params_fast;
+        // turn_params = turn_params_fast;
+        // forward_params = forward_params_fast;
     }
 
     current_movement = Movement::START;
