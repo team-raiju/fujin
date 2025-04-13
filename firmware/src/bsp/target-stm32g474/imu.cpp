@@ -262,8 +262,8 @@ void set_g_bias(int32_t bias) {
 }
 
 bool is_imu_emergency() {
-    bool emergency_z_linear_accel = (bsp::imu::get_z_acceleration() > 4.5 || bsp::imu::get_z_acceleration() < -2.5);
-    bool emergency_z_angular_accel = α > 4500.0f;
+    bool emergency_z_linear_accel = (bsp::imu::get_z_acceleration() > 5.5 || bsp::imu::get_z_acceleration() < -5.5);
+    bool emergency_z_angular_accel = α > 5500.0f;
 
     return emergency_z_linear_accel || emergency_z_angular_accel;
 }
