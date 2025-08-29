@@ -65,6 +65,20 @@ private:
     uint32_t wall_right_counter_off = 0;
     uint32_t wall_left_counter_off = 0;
     bool wall_break_already_detected = false;
+
+    enum class PathState {
+        Start,
+        Ortho_F,      // Moving straight
+        Ortho_R,      // Made a single Right 90 turn
+        Ortho_L,      // Made a single Left 90 turn
+        Ortho_RR,     // Made two Right 90 turns (180)
+        Ortho_LL,     // Made two Left 90 turns (180)
+        Diag_LR,      // On a diagonal path, last turn was Right
+        Diag_RL,      // On a diagonal path, last turn was Left
+        Diag_RR,      // In a diagonal turn sequence (R-R)
+        Diag_LL,      // In a diagonal turn sequence (L-L)
+        Stop,
+    };
 };
 
 }

@@ -531,131 +531,220 @@ Navigation::get_smooth_movements(std::vector<std::pair<Movement, uint8_t>> defau
 
 std::vector<std::pair<Movement, uint8_t>>
 Navigation::get_diagonal_movements(std::vector<std::pair<Movement, uint8_t>> default_target_movements) {
-    std::vector<std::pair<Movement, uint8_t>> temp_target_movements = {};
-    std::vector<std::pair<Movement, uint8_t>> final_target_movements = {};
+    if (default_target_movements.empty()) {
+        return {};
+    }
 
-    uint8_t diagonal_count = 0;
-    uint8_t forward_count = 1;
-    temp_target_movements.push_back(default_target_movements[0]);
-
-    for (uint32_t i = 1; i < default_target_movements.size() - 2; i++) {
-        Movement movement = default_target_movements[i].first;
-        Movement next_movement_1 = default_target_movements[i + 1].first;
-        Movement next_movement_2 = default_target_movements[i + 2].first;
-
-        if (movement == Movement::TURN_LEFT_90) {
-            if (!diagonal_count) {
-                if (next_movement_1 == Movement::TURN_RIGHT_90) {
-                    temp_target_movements.push_back({Movement::TURN_LEFT_45, 1});
-                    diagonal_count = 1;
-                } else if (next_movement_1 == Movement::TURN_LEFT_90 && next_movement_2 == Movement::TURN_RIGHT_90) {
-                    temp_target_movements.push_back({Movement::TURN_LEFT_135, 1});
-                    diagonal_count = 1;
-                    i++;
-                } else if (next_movement_1 == Movement::TURN_LEFT_90) {
-                    temp_target_movements.push_back({Movement::TURN_LEFT_180, 1});
-                    i++;
-                } else {
-                    temp_target_movements.push_back(default_target_movements[i]);
-                }
-            } else {
-                if (next_movement_1 == Movement::TURN_RIGHT_90) {
-                    diagonal_count++;
-                } else {
-                    temp_target_movements.push_back({Movement::DIAGONAL, diagonal_count});
-                    diagonal_count = 0;
-                }
-            }
-        } else if (movement == Movement::TURN_RIGHT_90) {
-            if (!diagonal_count) {
-                if (next_movement_1 == Movement::TURN_LEFT_90) {
-                    temp_target_movements.push_back({Movement::TURN_RIGHT_45, 1});
-                    diagonal_count = 1;
-                } else if (next_movement_1 == Movement::TURN_RIGHT_90 && next_movement_2 == Movement::TURN_LEFT_90) {
-                    temp_target_movements.push_back({Movement::TURN_RIGHT_135, 1});
-                    diagonal_count = 1;
-                    i++;
-                } else if (next_movement_1 == Movement::TURN_RIGHT_90) {
-                    temp_target_movements.push_back({Movement::TURN_RIGHT_180, 1});
-                    i++;
-                } else {
-                    temp_target_movements.push_back(default_target_movements[i]);
-                }
-            } else {
-                if (next_movement_1 == Movement::TURN_LEFT_90) {
-                    diagonal_count++;
-                } else {
-                    temp_target_movements.push_back({Movement::DIAGONAL, diagonal_count});
-                    diagonal_count = 0;
-                }
-            }
-        } else if (movement == Movement::FORWARD && next_movement_1 == Movement::FORWARD) {
-            forward_count++;
-        } else if (movement == Movement::FORWARD && next_movement_1 != Movement::FORWARD) {
-            temp_target_movements.push_back({Movement::FORWARD, forward_count});
-            forward_count = 1;
-        } else {
-            temp_target_movements.push_back(default_target_movements[i]);
+    std::vector<Movement> flat_moves;
+    for (const auto& move_pair : default_target_movements) {
+        for (uint8_t i = 0; i < move_pair.second; ++i) {
+            flat_moves.push_back(move_pair.first);
         }
     }
 
-    if (diagonal_count > 0) {
-        temp_target_movements.push_back({Movement::DIAGONAL, diagonal_count});
-    } else if (forward_count > 1) {
-        temp_target_movements.push_back({Movement::FORWARD, forward_count});
-    } else if (temp_target_movements.back().first != Movement::TURN_LEFT_180 &&
-               temp_target_movements.back().first != Movement::TURN_RIGHT_180) {
-        temp_target_movements.push_back(default_target_movements[default_target_movements.size() - 2]);
-    }
+    // Initialize the FSM
+    std::vector<std::pair<Movement, uint8_t>> output_movements;
+    PathState state = PathState::Start;
+    uint8_t run_length = 0;
 
-    temp_target_movements.push_back({Movement::STOP, 1});
+    // Process the flat list of moves through the state machine
+    for (const auto& move : flat_moves) {
 
-    // print_movement_sequence(temp_target_movements, "Temp: ");
-
-    // Fix movements after and before diagonals
-    final_target_movements.push_back(temp_target_movements[0]);
-    for (uint32_t i = 1; i < temp_target_movements.size() - 1; i++) {
-        Movement movement = temp_target_movements[i].first;
-        uint8_t mov_count = temp_target_movements[i].second;
-        Movement next_movement = temp_target_movements[i + 1].first;
-        Movement prev_movement = temp_target_movements[i - 1].first;
-
-        if (movement == Movement::DIAGONAL) {
-            if (mov_count > 1) {
-                final_target_movements.push_back({Movement::DIAGONAL, mov_count - 1});
+        switch (state) {
+        case PathState::Start:
+            if (move == Movement::START) {
+                output_movements.push_back({Movement::START, 1});
+                state = PathState::Ortho_F;
+                run_length = 0;
+            } else if (move == Movement::STOP) {
+                state = PathState::Stop;
             }
+            break;
 
-            bool diagonal_start_right = (prev_movement == TURN_RIGHT_45 || prev_movement == TURN_RIGHT_135);
-
-            if (diagonal_start_right) {
-                if (next_movement == FORWARD || next_movement == STOP) {
-                    final_target_movements.push_back({Movement::TURN_LEFT_45_FROM_45, 1});
-                } else if (next_movement == TURN_LEFT_45) {
-                    final_target_movements.push_back({Movement::TURN_LEFT_90_FROM_45, 1});
-                } else if (next_movement == TURN_LEFT_90) {
-                    final_target_movements.push_back({Movement::TURN_LEFT_135_FROM_45, 1});
-                }
-
+        case PathState::Ortho_F:
+            if (move == Movement::FORWARD) {
+                run_length++;
             } else {
-                if ((next_movement == FORWARD || next_movement == STOP) && !diagonal_start_right) {
-                    final_target_movements.push_back({Movement::TURN_RIGHT_45_FROM_45, 1});
-                } else if (next_movement == TURN_RIGHT_45) {
-                    final_target_movements.push_back({Movement::TURN_RIGHT_90_FROM_45, 1});
-                } else if (next_movement == TURN_RIGHT_90) {
-                    final_target_movements.push_back({Movement::TURN_RIGHT_135_FROM_45, 1});
+                if (run_length > 0) {
+                    output_movements.push_back({Movement::FORWARD, run_length});
+                    run_length = 0;
                 }
+                if (move == Movement::TURN_RIGHT_90)
+                    state = PathState::Ortho_R;
+                else if (move == Movement::TURN_LEFT_90)
+                    state = PathState::Ortho_L;
+                else if (move == Movement::STOP)
+                    state = PathState::Stop;
             }
+            break;
 
-        } else {
-            final_target_movements.push_back({movement, mov_count});
+        case PathState::Ortho_R:             // Previous move was TURN_RIGHT_90
+            if (move == Movement::FORWARD) { // R-F -> Simple 90-degree turn
+                output_movements.push_back({Movement::TURN_RIGHT_90, 1});
+                run_length = 1;
+                state = PathState::Ortho_F;
+            } else if (move == Movement::TURN_RIGHT_90) { // R-R -> Potential 180 turn
+                state = PathState::Ortho_RR;
+            } else if (move == Movement::TURN_LEFT_90) { // R-L -> Enter Diagonal
+                output_movements.push_back({Movement::TURN_RIGHT_45, 1});
+                run_length = 0;
+                state = PathState::Diag_RL;
+            } else if (move == Movement::STOP) { // Path ends with a turn
+                output_movements.push_back({Movement::TURN_RIGHT_90, 1});
+                state = PathState::Stop;
+            }
+            break;
+
+        case PathState::Ortho_L:             // Previous move was TURN_LEFT_90
+            if (move == Movement::FORWARD) { // L-F -> Simple 90-degree turn
+                output_movements.push_back({Movement::TURN_LEFT_90, 1});
+                run_length = 1;
+                state = PathState::Ortho_F;
+            } else if (move == Movement::TURN_LEFT_90) { // L-L -> Potential 180 turn
+                state = PathState::Ortho_LL;
+            } else if (move == Movement::TURN_RIGHT_90) { // L-R -> Enter Diagonal
+                output_movements.push_back({Movement::TURN_LEFT_45, 1});
+                run_length = 0;
+                state = PathState::Diag_LR;
+            } else if (move == Movement::STOP) {
+                output_movements.push_back({Movement::TURN_LEFT_90, 1});
+                state = PathState::Stop;
+            }
+            break;
+
+        case PathState::Ortho_RR:            // Previous moves were R-R
+            if (move == Movement::FORWARD) { // R-R-F -> 180-degree turn
+                output_movements.push_back({Movement::TURN_RIGHT_180, 1});
+                run_length = 1;
+                state = PathState::Ortho_F;
+            } else if (move == Movement::TURN_LEFT_90) { // R-R-L -> Enter Diagonal 135
+                output_movements.push_back({Movement::TURN_RIGHT_135, 1});
+                run_length = 0;
+                state = PathState::Diag_RL;
+            } else if (move == Movement::STOP) {
+                output_movements.push_back({Movement::TURN_RIGHT_180, 1});
+                state = PathState::Stop;
+            }
+            break;
+
+        case PathState::Ortho_LL:            // Previous moves were L-L
+            if (move == Movement::FORWARD) { // L-L-F -> 180-degree turn
+                output_movements.push_back({Movement::TURN_LEFT_180, 1});
+                run_length = 1;
+                state = PathState::Ortho_F;
+            } else if (move == Movement::TURN_RIGHT_90) { // L-L-R -> Enter Diagonal 135
+                output_movements.push_back({Movement::TURN_LEFT_135, 1});
+                run_length = 0;
+                state = PathState::Diag_LR;
+            } else if (move == Movement::STOP) {
+                output_movements.push_back({Movement::TURN_LEFT_180, 1});
+                state = PathState::Stop;
+            }
+            break;
+
+        case PathState::Diag_RL:             // On diagonal, last Turn was Left
+            if (move == Movement::FORWARD) { // Exit diagonal path
+                if (run_length > 0) {
+                    output_movements.push_back({Movement::DIAGONAL, run_length});
+                }
+                output_movements.push_back({Movement::TURN_LEFT_45_FROM_45, 1});
+                run_length = 1;
+                state = PathState::Ortho_F;
+            } else if (move == Movement::TURN_RIGHT_90) { // Turn right
+                run_length++;
+                state = PathState::Diag_LR;
+            } else if (move == Movement::TURN_LEFT_90) { // Potential D-D turn
+                state = PathState::Diag_LL;
+            } else if (move == Movement::STOP) {
+                if (run_length > 0) {
+                    output_movements.push_back({Movement::DIAGONAL, run_length});
+                }
+                output_movements.push_back({Movement::TURN_LEFT_45_FROM_45, 1});
+                state = PathState::Stop;
+            }
+            break;
+
+        case PathState::Diag_LR:             // On diagonal, last turn was Right
+            if (move == Movement::FORWARD) { // Exit diagonal path
+                if (run_length > 0) {
+                    output_movements.push_back({Movement::DIAGONAL, run_length});
+                }
+                output_movements.push_back({Movement::TURN_RIGHT_45_FROM_45, 1});
+                run_length = 1;
+                state = PathState::Ortho_F;
+            } else if (move == Movement::TURN_LEFT_90) { // Turn left
+                run_length++;
+                state = PathState::Diag_RL;
+            } else if (move == Movement::TURN_RIGHT_90) { // Potential D-D turn
+                state = PathState::Diag_RR;
+            } else if (move == Movement::STOP) {
+                if (run_length > 0) {
+                    output_movements.push_back({Movement::DIAGONAL, run_length});
+                }
+                output_movements.push_back({Movement::TURN_RIGHT_45_FROM_45, 1});
+                state = PathState::Stop;
+            }
+            break;
+
+        case PathState::Diag_LL:                   // On diagonal, saw L-L pattern
+            if (move == Movement::TURN_RIGHT_90) { // L-L-R -> 90-degree D-D turn
+                if (run_length > 0) {
+                    output_movements.push_back({Movement::DIAGONAL, run_length});
+                }
+                output_movements.push_back({Movement::TURN_LEFT_90_FROM_45, 1});
+                run_length = 0;
+                state = PathState::Diag_LR;
+            } else if (move == Movement::FORWARD) { // L-L-F -> 135-degree exit
+                if (run_length > 0) {
+                    output_movements.push_back({Movement::DIAGONAL, run_length});
+                }
+                output_movements.push_back({Movement::TURN_LEFT_135_FROM_45, 1});
+                run_length = 1;
+                state = PathState::Ortho_F;
+            } else if (move == Movement::STOP) {
+                if (run_length > 0) {
+                    output_movements.push_back({Movement::DIAGONAL, run_length});
+                }
+                output_movements.push_back({Movement::TURN_LEFT_135_FROM_45, 1});
+                state = PathState::Stop;
+            }
+            break;
+
+        case PathState::Diag_RR:                  // On diagonal, saw R-R pattern
+            if (move == Movement::TURN_LEFT_90) { // R-R-L -> 90-degree D-D turn
+                if (run_length > 0) {
+                    output_movements.push_back({Movement::DIAGONAL, run_length});
+                }
+                output_movements.push_back({Movement::TURN_RIGHT_90_FROM_45, 1});
+                run_length = 0;
+                state = PathState::Diag_RL;
+            } else if (move == Movement::FORWARD) { // R-R-F -> 135-degree exit
+                if (run_length > 0) {
+                    output_movements.push_back({Movement::DIAGONAL, run_length});
+                }
+                output_movements.push_back({Movement::TURN_RIGHT_135_FROM_45, 1});
+                run_length = 1;
+                state = PathState::Ortho_F;
+            } else if (move == Movement::STOP) {
+                if (run_length > 0) {
+                    output_movements.push_back({Movement::DIAGONAL, run_length});
+                }
+                output_movements.push_back({Movement::TURN_RIGHT_135_FROM_45, 1});
+                state = PathState::Stop;
+            }
+            break;
+
+        case PathState::Stop:
+            break;
         }
+
+        break;
     }
 
-    final_target_movements.push_back({Movement::STOP, 1});
+    output_movements.push_back({Movement::STOP, 1});
+    print_movement_sequence(output_movements, "Diagonal");
 
-    print_movement_sequence(final_target_movements, "Final: ");
-
-    return final_target_movements;
+    return output_movements;
 }
 
 void Navigation::print_movement_sequence(std::vector<std::pair<Movement, uint8_t>> movements, std::string name) {
