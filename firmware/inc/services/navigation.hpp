@@ -40,6 +40,8 @@ private:
     void update_position();
     Movement get_movement(Direction target_dir, Direction current_dir);
     float get_torricelli_distance(float final_speed, float initial_speed, float acceleration);
+    bool wall_break_detected();
+    void reset_wall_break();
 
     services::Control* control;
 
@@ -57,6 +59,12 @@ private:
     Direction current_direction;
     Movement current_movement;
     Direction target_direction;
+
+    uint32_t wall_right_counter_on = 0;
+    uint32_t wall_left_counter_on = 0;
+    uint32_t wall_right_counter_off = 0;
+    uint32_t wall_left_counter_off = 0;
+    bool wall_break_already_detected = false;
 };
 
 }

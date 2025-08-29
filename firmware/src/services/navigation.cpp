@@ -16,6 +16,8 @@
 /// @section Constants
 
 static constexpr float CONTROL_FREQUENCY_HZ = 1000.0;
+static constexpr bool fix_position_enabled = false;
+static constexpr float dist_start_seeing_wall_break_cm = 6.0;
 
 static std::map<Movement, TurnParams> turn_params;
 static std::map<Movement, ForwardParams> forward_params;
@@ -76,6 +78,63 @@ float Navigation::get_torricelli_distance(float final_speed, float initial_speed
     return (final_speed * final_speed - initial_speed * initial_speed) / (2.0f * acceleration);
 }
 
+void Navigation::reset_wall_break() {
+    wall_right_counter_on = 0;
+    wall_left_counter_on = 0;
+
+    wall_right_counter_off = 0;
+    wall_left_counter_off = 0;
+
+    wall_break_already_detected = false;
+}
+
+bool Navigation::wall_break_detected() {
+    // We only return one wall break. This only resets when reset_wall_break is called
+    if (wall_break_already_detected) {
+        return false;
+    }
+
+    bool right_seeing = bsp::analog_sensors::ir_reading_wall(bsp::analog_sensors::SensingDirection::RIGHT);
+    bool left_seeing = bsp::analog_sensors::ir_reading_wall(bsp::analog_sensors::SensingDirection::LEFT);
+
+    if (right_seeing) {
+        wall_right_counter_on += 1;
+    } else {
+        wall_right_counter_off += 1;
+    }
+
+    if (left_seeing) {
+        wall_left_counter_on += 1;
+    } else {
+        wall_left_counter_off += 1;
+    }
+
+    if (right_seeing) {
+        wall_right_counter_off = 0;
+    }
+
+    if (left_seeing) {
+        wall_right_counter_off = 0;
+    }
+
+    // If more than 10 consecutive wall "off" are read, and we already measured sufficient
+    // wall "on" states, we consider we are on a wall break state
+
+    // TODO: change this counter depending on the speed of the robot
+    // When the robot is slow, this value should be larger
+    if (wall_right_counter_on > 100 && wall_right_counter_off > 10) {
+        wall_break_already_detected = true;
+        return true;
+    }
+
+    if (wall_left_counter_on > 100 && wall_left_counter_off > 10) {
+        wall_break_already_detected = true;
+        return true;
+    }
+
+    return false;
+}
+
 void Navigation::update(void) {
     bsp::imu::update();
     bsp::encoders::update_ticks();
@@ -129,6 +188,15 @@ bool Navigation::step() {
 
         if (control_linear_speed > 4.8) {
             acceleration *= 0.65;
+        }
+
+        if (fix_position_enabled && wall_break_detected()) {
+            int cells_traveled = (traveled_dist_cm / CELL_SIZE_CM);
+            float corrected_distance_cm = (cells_traveled * CELL_SIZE_CM) + dist_start_seeing_wall_break_cm;
+            float distance_error_cm = traveled_dist_cm - corrected_distance_cm;
+            if (std::abs(distance_error_cm) < 1.0) {
+                traveled_dist_cm = corrected_distance_cm;
+            }
         }
 
         if (std::abs(traveled_dist_cm) <
@@ -390,6 +458,7 @@ void Navigation::set_movement(Movement movement, Movement prev_movement, Movemen
     current_movement = movement;
 
     traveled_dist_cm = 0;
+    reset_wall_break();
     reference_time = bsp::get_tick_ms();
     is_finished = false;
 
