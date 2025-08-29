@@ -7,6 +7,7 @@
 
 #include "algorithms/flood_fill.hpp"
 #include "navigation.hpp"
+#include "utils/types.hpp"
 
 namespace services {
 
@@ -16,7 +17,9 @@ public:
     static constexpr int CELLS_Y = 7;
 
     static constexpr Point ORIGIN = {0, 0};
-    static constexpr Point GOAL_POS = {0, 6};
+    static constexpr std::array<Point, 1> ORIGIN_ARRAY = {{ORIGIN}};
+    // static constexpr std::array<Point, 4> GOAL_POSITIONS = {{{7, 7}, {7, 8}, {8, 7}, {8, 8}}};
+    static constexpr std::array<Point, 1> GOAL_POSITIONS = {{{0, 6}}};
 
     static Maze* instance();
 

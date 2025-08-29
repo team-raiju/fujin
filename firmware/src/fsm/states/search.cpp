@@ -178,7 +178,11 @@ State* Search::react(Timeout const&) {
 
         uint8_t walls = (front_seeing * N | right_seeing * E | left_seeing * W) << robot_dir;
 
-        if (robot_pos == services::Maze::GOAL_POS && !returning) {
+        bool goal_reached =
+            std::any_of(std::begin(services::Maze::GOAL_POSITIONS), std::end(services::Maze::GOAL_POSITIONS),
+                        [&](const Point& goal) { return goal == robot_pos; });
+
+        if (goal_reached && !returning) {
             bsp::buzzer::start();
             save_maze = true;
             returning = true;

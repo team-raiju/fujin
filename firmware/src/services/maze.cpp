@@ -61,9 +61,9 @@ Direction Maze::next_step(Point const& current_position, uint8_t walls, bool ret
 
     // Recalculate the distances
     if (returning) {
-        algorithm::flood_fill(map, ORIGIN, search_mode);
+        algorithm::flood_fill(map, ORIGIN_ARRAY, search_mode);
     } else {
-        algorithm::flood_fill(map, GOAL_POS, search_mode);
+        algorithm::flood_fill(map, GOAL_POSITIONS, search_mode);
     }
 
     // Check all directions for the best option
@@ -114,7 +114,9 @@ std::vector<Direction> Maze::directions_to_goal() {
     std::vector<Direction> target_directions = {};
     Point pos = {ORIGIN.x, ORIGIN.y + 1}; // start from the cell (0,1)
 
-    while (pos != GOAL_POS) {
+    bool goal_reached = false;
+
+    while (!goal_reached) {
         auto dir = next_step(pos, map[pos.x][pos.y].walls, false, false);
         target_directions.push_back(dir);
         switch (dir) {
@@ -131,6 +133,10 @@ std::vector<Direction> Maze::directions_to_goal() {
             pos.x -= 1;
             break;
         }
+
+        // If position is equal to any of the desired goals
+        goal_reached = std::any_of(std::begin(GOAL_POSITIONS), std::end(GOAL_POSITIONS),
+                            [&](const Point& goal) { return goal == pos; });
     }
 
     return target_directions;
