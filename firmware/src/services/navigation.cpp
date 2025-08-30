@@ -416,7 +416,7 @@ bool Navigation::step() {
             control->set_target_linear_speed(control_linear_speed);
             control->set_target_angular_speed(0);
 
-            if (std::abs(traveled_dist_cm) >= target_travel_cm ||  front_emergency) {
+            if (std::abs(traveled_dist_cm) >= target_travel_cm || front_emergency) {
                 if (mini_fsm_state == 0) {
                     mini_fsm_state = 1;
                     traveled_dist_cm = 0;

@@ -3,8 +3,8 @@
 #include "bsp/analog_sensors.hpp"
 #include "bsp/leds.hpp"
 #include "bsp/timers.hpp"
-#include "utils/math.hpp"
 #include "services/config.hpp"
+#include "utils/math.hpp"
 
 namespace bsp::analog_sensors {
 
@@ -55,7 +55,6 @@ static uint32_t current_reading[2];
 static bool modulation_enabled;
 static uint32_t ir_window[4][IR_AVG_WINDOW];
 static size_t window_idx[4];
-
 
 /// @section Interface implementation
 
@@ -109,16 +108,16 @@ uint32_t ir_reading(SensingDirection direction) {
 
 bool ir_reading_wall(SensingDirection direction) {
     switch (direction) {
-        case SensingDirection::RIGHT:
-            return ir_readings[direction] > services::Config::ir_wall_detect_th_right;
-        case SensingDirection::FRONT_LEFT:
-            return ir_readings[direction] > services::Config::ir_wall_detect_th_front_left;
-        case SensingDirection::FRONT_RIGHT:
-            return ir_readings[direction] > services::Config::ir_wall_detect_th_front_right;
-        case SensingDirection::LEFT:
-            return ir_readings[direction] > services::Config::ir_wall_detect_th_left;
-        default:
-            return false;
+    case SensingDirection::RIGHT:
+        return ir_readings[direction] > services::Config::ir_wall_detect_th_right;
+    case SensingDirection::FRONT_LEFT:
+        return ir_readings[direction] > services::Config::ir_wall_detect_th_front_left;
+    case SensingDirection::FRONT_RIGHT:
+        return ir_readings[direction] > services::Config::ir_wall_detect_th_front_right;
+    case SensingDirection::LEFT:
+        return ir_readings[direction] > services::Config::ir_wall_detect_th_left;
+    default:
+        return false;
     }
 }
 
@@ -140,7 +139,7 @@ int32_t ir_side_wall_error() {
     return ir_error;
 }
 
-SensingStatus ir_get_sensing_status(){
+SensingStatus ir_get_sensing_status() {
     SensingPattern current_pattern;
     current_pattern.FL = ir_reading(FRONT_LEFT);
     current_pattern.FR = ir_reading(FRONT_RIGHT);
@@ -150,12 +149,12 @@ SensingStatus ir_get_sensing_status(){
     // Compares the current value to all references and find the closest match
     uint32_t min_diff = 10000;
     uint8_t pattern_idx = 0;
-    for (uint8_t i = 0; i < ir_wall_patterns.size(); i++){
+    for (uint8_t i = 0; i < ir_wall_patterns.size(); i++) {
         uint32_t diff = std::abs((int32_t)current_pattern.FL - (int32_t)ir_wall_patterns[i].FL) +
                         std::abs((int32_t)current_pattern.FR - (int32_t)ir_wall_patterns[i].FR) +
                         std::abs((int32_t)current_pattern.L - (int32_t)ir_wall_patterns[i].L) +
                         std::abs((int32_t)current_pattern.R - (int32_t)ir_wall_patterns[i].R);
-        if (diff < min_diff){
+        if (diff < min_diff) {
             min_diff = diff;
             pattern_idx = i;
         }
@@ -164,42 +163,42 @@ SensingStatus ir_get_sensing_status(){
     SensingStatus status = {false, false, false};
 
     switch (pattern_idx) {
-        case 0:
-            // F-L-R
-            status.front_seeing = true;
-            status.left_seeing = true;
-            status.right_seeing = true;
-            break;
-        case 1:
-            // F-L
-            status.front_seeing = true;
-            status.left_seeing = true;
-            break;
-        case 2:
-            // F-R
-            status.front_seeing = true;
-            status.right_seeing = true;
-            break;
-        case 3:
-            // F
-            status.front_seeing = true;
-            break;
-        case 4:
-            // L-R
-            status.left_seeing = true;
-            status.right_seeing = true;
-            break;
-        case 5:
-            // L
-            status.left_seeing = true;
-            break;
-        case 6:
-            // R
-            status.right_seeing = true;
-            break;
-        case 7:
-            // None
-            break;
+    case 0:
+        // F-L-R
+        status.front_seeing = true;
+        status.left_seeing = true;
+        status.right_seeing = true;
+        break;
+    case 1:
+        // F-L
+        status.front_seeing = true;
+        status.left_seeing = true;
+        break;
+    case 2:
+        // F-R
+        status.front_seeing = true;
+        status.right_seeing = true;
+        break;
+    case 3:
+        // F
+        status.front_seeing = true;
+        break;
+    case 4:
+        // L-R
+        status.left_seeing = true;
+        status.right_seeing = true;
+        break;
+    case 5:
+        // L
+        status.left_seeing = true;
+        break;
+    case 6:
+        // R
+        status.right_seeing = true;
+        break;
+    case 7:
+        // None
+        break;
     }
 
     return status;
@@ -223,16 +222,16 @@ int32_t ir_diagonal_error() {
 
 bool ir_wall_control_valid(SensingDirection direction) {
     switch (direction) {
-        case SensingDirection::RIGHT:
-            return ir_readings[direction] > services::Config::ir_wall_control_th_right;
-        case SensingDirection::FRONT_LEFT:
-            return ir_readings[direction] > services::Config::ir_wall_control_th_front_left;
-        case SensingDirection::FRONT_RIGHT:
-            return ir_readings[direction] > services::Config::ir_wall_control_th_front_right;
-        case SensingDirection::LEFT:
-            return ir_readings[direction] > services::Config::ir_wall_control_th_left;
-        default:
-            return false;
+    case SensingDirection::RIGHT:
+        return ir_readings[direction] > services::Config::ir_wall_control_th_right;
+    case SensingDirection::FRONT_LEFT:
+        return ir_readings[direction] > services::Config::ir_wall_control_th_front_left;
+    case SensingDirection::FRONT_RIGHT:
+        return ir_readings[direction] > services::Config::ir_wall_control_th_front_right;
+    case SensingDirection::LEFT:
+        return ir_readings[direction] > services::Config::ir_wall_control_th_left;
+    default:
+        return false;
     }
 }
 

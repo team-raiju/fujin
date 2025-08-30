@@ -171,7 +171,9 @@ State* Search::react(Timeout const&) {
         auto robot_pos = navigation->get_robot_position();
         auto robot_dir = navigation->get_robot_direction();
 
-        uint8_t walls = (sensingStatus.front_seeing * N | sensingStatus.right_seeing * E | sensingStatus.left_seeing * W) << robot_dir;
+        uint8_t walls =
+            (sensingStatus.front_seeing * N | sensingStatus.right_seeing * E | sensingStatus.left_seeing * W)
+            << robot_dir;
 
         bool goal_reached =
             std::any_of(std::begin(services::Maze::GOAL_POSITIONS), std::end(services::Maze::GOAL_POSITIONS),
