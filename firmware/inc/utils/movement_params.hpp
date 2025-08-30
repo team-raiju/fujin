@@ -12,8 +12,8 @@ static constexpr float ROBOT_DIST_FROM_CENTER_START_CM = 2.0;
  * @brief Parameters for defining a turn movement.
  *
  *
- * @param start Where the movement begins in relation to the start of the cell [cm] (can be negative or positive)
- * @param end Where the movement ends in relation to the start of the cell [cm] (can be negative or positive)
+ * @param start Where the movement begins in relation to the start of the cell [cm] (can be negative (before the cell begin) or positive (after the cell begin))
+ * @param end Where the movement ends in relation to the start of the cell [cm] (can be negative (before the cell begin) or positive (after the cell begin))
  * @param turn_linear_speed The linear speed during the turn in [m/s]
  * @param angular_accel The angular acceleration during the turn in [rad/s^2]
  * @param max_angular_speed The maximum angular speed during the turn in [rad/s]
@@ -64,16 +64,18 @@ struct ForwardParams {
 };
 
 static std::map<Movement, TurnParams> turn_params_search = {
-    {Movement::TURN_RIGHT_90, {33, 33, 0.25, 69.8132, 5.236, 75, 225, -1}},
-    {Movement::TURN_LEFT_90, {33, 33, 0.25, 69.8132, 5.236, 75, 225, 1}},
     {Movement::TURN_AROUND, {HALF_CELL_SIZE_CM, HALF_CELL_SIZE_CM, 0.0, 69.8132, 5.236, 60, 540, -1}},
+    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0, 0, 0.25, 104.72, 6.98, 67, 158, -1}},
+    {Movement::TURN_LEFT_90_SEARCH_MODE, {0, 0, 0.25, 104.72, 6.98, 67, 158, 1}},
 };
 
 static std::map<Movement, ForwardParams> forward_params_search = {
     {Movement::START, {0.25, 1.0, 1.0, HALF_CELL_SIZE_CM + ROBOT_DIST_FROM_CENTER_START_CM}},
     {Movement::FORWARD, {0.25, 1.0, 1.0, CELL_SIZE_CM}},
-    {Movement::STOP, {0.25, 1.0, 1.0, (HALF_CELL_SIZE_CM)}},
+    {Movement::STOP, {0.25, 0.5, 0.5, (HALF_CELL_SIZE_CM)}},
     {Movement::TURN_AROUND, {0.25, 1.0, 1.0, HALF_CELL_SIZE_CM}},
+    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.25, 1.0, 1.0, (HALF_CELL_SIZE_CM / 2)}},
+    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.25, 1.0, 1.0, (HALF_CELL_SIZE_CM / 2)}},
 };
 
 static std::map<Movement, TurnParams> turn_params_slow = {

@@ -129,7 +129,8 @@ void Run::enter() {
     // Path 2
     target_movements.push_back({Movement::START, 1});
     target_movements.push_back({Movement::FORWARD, 1});
-    // target_movements.push_back({Movement::STOP, 1});
+    target_movements.push_back({Movement::TURN_RIGHT_90_SEARCH_MODE, 1});
+    target_movements.push_back({Movement::STOP, 1});
 
     move_count = 0;
     emergency = false;

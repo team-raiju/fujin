@@ -139,7 +139,7 @@ State* Search::react(Timeout const&) {
     using bsp::analog_sensors::SensingDirection;
     using bsp::analog_sensors::SensingStatus;
 
-    if (indicate_read && bsp::get_tick_ms() - last_indication > 150) {
+    if (indicate_read && ((bsp::get_tick_ms() - last_indication) > 150)) {
         bsp::leds::stripe_set(Color::Black);
         indicate_read = false;
         bsp::buzzer::stop();
@@ -188,7 +188,7 @@ State* Search::react(Timeout const&) {
             stop_next_move = true;
         } else {
             auto dir = maze->next_step(robot_pos, walls, returning, true);
-            navigation->move(dir);
+            navigation->set_movement(dir);
         }
     }
 

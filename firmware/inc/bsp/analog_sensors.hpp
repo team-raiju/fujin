@@ -35,7 +35,7 @@ struct SensingPattern {
 /// @brief Sensor raw values in every wall combination
 constexpr std::array<SensingPattern, 8> ir_wall_patterns = {{
     {971, 840, 1359, 1415}, // F-L-R
-    {903, 846, 1207, 650},  // F-L
+    {903, 846, 1207, 800},  // F-L
     {376, 685, 1247, 1367}, // F-R
     {394, 691, 1119, 559},  // F
     {805, 67, 246, 1336},   // L-R

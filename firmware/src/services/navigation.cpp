@@ -378,6 +378,93 @@ bool Navigation::step() {
 
         break;
     }
+
+    case TURN_RIGHT_90_SEARCH_MODE:
+    case TURN_LEFT_90_SEARCH_MODE: {
+        // Mini FSM
+        // 0. Move forward
+        // 1. Turn 90 degrees
+        // 2. Move forward
+        static int mini_fsm_state = 0;
+
+        if (mini_fsm_state == 0 || mini_fsm_state == 2) { // Move Forward
+
+            bool front_emergency =
+                ir_reading(SensingDirection::FRONT_LEFT) > 2850 && ir_reading(SensingDirection::FRONT_RIGHT) > 2850 &&
+                ir_reading(SensingDirection::LEFT) > 2470 && ir_reading(SensingDirection::RIGHT) > 2850;
+
+            float max_speed = forward_params[current_movement].max_speed;
+            float control_linear_speed = control->get_target_linear_speed();
+            float acceleration = forward_params[current_movement].acceleration;
+            float deceleration = forward_params[current_movement].deceleration;
+            float final_speed = forward_params[current_movement].max_speed;
+
+            if (std::abs(traveled_dist_cm) <
+                (target_travel_cm -
+                 (100.0f * get_torricelli_distance(final_speed, control_linear_speed, -deceleration)))) {
+                if (control_linear_speed < max_speed) {
+                    control_linear_speed += acceleration / CONTROL_FREQUENCY_HZ;
+                    control_linear_speed = std::min(control_linear_speed, max_speed);
+                }
+            } else {
+                if (control_linear_speed > final_speed) {
+                    control_linear_speed -= deceleration / CONTROL_FREQUENCY_HZ;
+                    control_linear_speed = std::max(control_linear_speed, Config::min_move_speed);
+                }
+            }
+
+            control->set_target_linear_speed(control_linear_speed);
+            control->set_target_angular_speed(0);
+
+            if (std::abs(traveled_dist_cm) >= target_travel_cm ||  front_emergency) {
+                if (mini_fsm_state == 0) {
+                    mini_fsm_state = 1;
+                    traveled_dist_cm = 0;
+                    reference_time = bsp::get_tick_ms();
+                } else {
+                    is_finished = true;
+                    mini_fsm_state = 0;
+                }
+            }
+        } else if (mini_fsm_state == 1) { // Turn Left or Right
+            auto current_turn_params = turn_params[current_movement];
+            float angular_acceleration = current_turn_params.angular_accel;
+            float angular_speed = current_turn_params.max_angular_speed;
+
+            uint16_t elapsed_t_accel = current_turn_params.t_accel;
+            uint16_t elapsed_t_max_ang_vel = elapsed_t_accel + current_turn_params.t_max_ang_vel;
+            uint16_t elapsed_t_decel = elapsed_t_max_ang_vel + current_turn_params.t_accel;
+
+            int turn_sign = current_turn_params.sign;
+
+            uint32_t elapsed_time = bsp::get_tick_ms() - reference_time;
+
+            if (elapsed_time <= elapsed_t_accel) {
+                float ideal_rad_s =
+                    std::abs(control->get_target_angular_speed()) + (angular_acceleration / CONTROL_FREQUENCY_HZ);
+                ideal_rad_s = std::min(ideal_rad_s, angular_speed);
+                control->set_target_angular_speed(ideal_rad_s * turn_sign);
+            } else if (elapsed_time <= elapsed_t_max_ang_vel) {
+                float ideal_rad_s = angular_speed;
+                control->set_target_angular_speed(ideal_rad_s * turn_sign);
+            } else if (elapsed_time <= elapsed_t_decel) {
+                float ideal_rad_s =
+                    std::abs(control->get_target_angular_speed()) - (angular_acceleration / CONTROL_FREQUENCY_HZ);
+                ideal_rad_s = std::max(ideal_rad_s, 0.0f);
+                control->set_target_angular_speed(ideal_rad_s * turn_sign);
+            } else {
+                control->set_target_angular_speed(0);
+                mini_fsm_state = 2;
+                traveled_dist_cm = 0;
+            }
+
+        } else { // Should not be here
+            is_finished = true;
+            mini_fsm_state = 0;
+        }
+        control->set_wall_pid_enabled(false);
+        control->set_diagonal_pid_enabled(false);
+    }
     }
 
     if (is_finished) {
@@ -397,14 +484,17 @@ Direction Navigation::get_robot_direction(void) {
     return current_direction;
 }
 
-void Navigation::move(Direction dir) {
+void Navigation::set_movement(Direction dir) {
     bsp::imu::reset_angle();
 
     target_direction = dir;
-    current_movement = get_movement(dir, current_direction);
+    current_movement = get_movement(dir, current_direction, true);
 
     traveled_dist_cm = 0;
+    reset_wall_break();
     reference_time = bsp::get_tick_ms();
+    is_finished = false;
+
     target_travel_cm = forward_params[current_movement].target_travel_cm;
 
     if (current_movement == Movement::STOP || current_movement == Movement::TURN_AROUND) {
@@ -412,23 +502,21 @@ void Navigation::move(Direction dir) {
     } else {
         forward_end_speed = forward_params[Movement::FORWARD].max_speed;
     }
-
-    is_finished = false;
 }
 
-Movement Navigation::get_movement(Direction target_dir, Direction current_dir) {
+Movement Navigation::get_movement(Direction target_dir, Direction current_dir, bool search_mode) {
     using enum Direction;
 
     if (target_dir == current_dir) {
         return FORWARD;
     } else if ((target_dir == NORTH && current_dir == WEST) || (target_dir == EAST && current_dir == NORTH) ||
                (target_dir == SOUTH && current_dir == EAST) || (target_dir == WEST && current_dir == SOUTH)) {
-        return TURN_RIGHT_90;
+        return search_mode ? TURN_RIGHT_90_SEARCH_MODE : TURN_RIGHT_90;
     } else if ((target_dir == NORTH && current_dir == SOUTH) || (target_dir == EAST && current_dir == WEST) ||
                (target_dir == SOUTH && current_dir == NORTH) || (target_dir == WEST && current_dir == EAST)) {
         return TURN_AROUND;
     } else {
-        return TURN_LEFT_90;
+        return search_mode ? TURN_LEFT_90_SEARCH_MODE : TURN_LEFT_90;
     }
 }
 
@@ -486,7 +574,7 @@ Navigation::get_default_target_movements(std::vector<Direction> target_direction
     default_target_movements.push_back({Movement::START, 1});
 
     for (auto target_dir : target_directions) {
-        Movement movement = get_movement(target_dir, robot_direction);
+        Movement movement = get_movement(target_dir, robot_direction, false);
         default_target_movements.push_back({movement, 1});
         robot_direction = target_dir;
     }
