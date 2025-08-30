@@ -137,6 +137,7 @@ static uint32_t last_indication = 0;
 State* Search::react(Timeout const&) {
     using bsp::analog_sensors::ir_reading_wall;
     using bsp::analog_sensors::SensingDirection;
+    using bsp::analog_sensors::SensingStatus;
 
     if (indicate_read && bsp::get_tick_ms() - last_indication > 150) {
         bsp::leds::stripe_set(Color::Black);
@@ -153,30 +154,24 @@ State* Search::react(Timeout const&) {
             return &State::get<Idle>();
         }
 
-        bool front_seeing =
-            ir_reading_wall(SensingDirection::FRONT_LEFT) || ir_reading_wall(SensingDirection::FRONT_RIGHT);
-        bool right_seeing = ir_reading_wall(SensingDirection::RIGHT);
-        bool left_seeing = ir_reading_wall(SensingDirection::LEFT);
+        SensingStatus sensingStatus = bsp::analog_sensors::ir_get_sensing_status();
 
         last_indication = bsp::get_tick_ms();
         indicate_read = true;
-        if (ir_reading_wall(SensingDirection::FRONT_LEFT)) {
-            bsp::leds::stripe_set(0, left_seeing ? Color::Blue : Color::Red);
+        if (sensingStatus.front_seeing) {
+            bsp::leds::stripe_set(0, sensingStatus.left_seeing ? Color::Blue : Color::Red);
+            bsp::leds::stripe_set(1, sensingStatus.right_seeing ? Color::Blue : Color::Red);
         } else {
-            bsp::leds::stripe_set(0, left_seeing ? Color::Green : Color::Black);
+            bsp::leds::stripe_set(0, sensingStatus.left_seeing ? Color::Green : Color::Black);
+            bsp::leds::stripe_set(1, sensingStatus.right_seeing ? Color::Green : Color::Black);
         }
 
-        if (ir_reading_wall(SensingDirection::FRONT_RIGHT)) {
-            bsp::leds::stripe_set(1, right_seeing ? Color::Blue : Color::Red);
-        } else {
-            bsp::leds::stripe_set(1, right_seeing ? Color::Green : Color::Black);
-        }
         bsp::leds::stripe_send();
 
         auto robot_pos = navigation->get_robot_position();
         auto robot_dir = navigation->get_robot_direction();
 
-        uint8_t walls = (front_seeing * N | right_seeing * E | left_seeing * W) << robot_dir;
+        uint8_t walls = (sensingStatus.front_seeing * N | sensingStatus.right_seeing * E | sensingStatus.left_seeing * W) << robot_dir;
 
         bool goal_reached =
             std::any_of(std::begin(services::Maze::GOAL_POSITIONS), std::end(services::Maze::GOAL_POSITIONS),

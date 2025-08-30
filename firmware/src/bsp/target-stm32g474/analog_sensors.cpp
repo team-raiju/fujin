@@ -140,6 +140,71 @@ int32_t ir_side_wall_error() {
     return ir_error;
 }
 
+SensingStatus ir_get_sensing_status(){
+    SensingPattern current_pattern;
+    current_pattern.FL = ir_reading(FRONT_LEFT);
+    current_pattern.FR = ir_reading(FRONT_RIGHT);
+    current_pattern.L = ir_reading(LEFT);
+    current_pattern.R = ir_reading(RIGHT);
+
+    // Compares the current value to all references and find the closest match
+    uint32_t min_diff = 10000;
+    uint8_t pattern_idx = 0;
+    for (uint8_t i = 0; i < ir_wall_patterns.size(); i++){
+        uint32_t diff = std::abs((int32_t)current_pattern.FL - (int32_t)ir_wall_patterns[i].FL) +
+                        std::abs((int32_t)current_pattern.FR - (int32_t)ir_wall_patterns[i].FR) +
+                        std::abs((int32_t)current_pattern.L - (int32_t)ir_wall_patterns[i].L) +
+                        std::abs((int32_t)current_pattern.R - (int32_t)ir_wall_patterns[i].R);
+        if (diff < min_diff){
+            min_diff = diff;
+            pattern_idx = i;
+        }
+    }
+
+    SensingStatus status = {false, false, false};
+
+    switch (pattern_idx) {
+        case 0:
+            // F-L-R
+            status.front_seeing = true;
+            status.left_seeing = true;
+            status.right_seeing = true;
+            break;
+        case 1:
+            // F-L
+            status.front_seeing = true;
+            status.left_seeing = true;
+            break;
+        case 2:
+            // F-R
+            status.front_seeing = true;
+            status.right_seeing = true;
+            break;
+        case 3:
+            // F
+            status.front_seeing = true;
+            break;
+        case 4:
+            // L-R
+            status.left_seeing = true;
+            status.right_seeing = true;
+            break;
+        case 5:
+            // L
+            status.left_seeing = true;
+            break;
+        case 6:
+            // R
+            status.right_seeing = true;
+            break;
+        case 7:
+            // None
+            break;
+    }
+
+    return status;
+}
+
 int32_t ir_diagonal_error() {
     bool greater_error_left = ir_readings[SensingDirection::FRONT_LEFT] > ir_readings[SensingDirection::FRONT_RIGHT];
 

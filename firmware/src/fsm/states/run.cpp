@@ -105,7 +105,7 @@ void Run::enter() {
                                                                                                
     soft_timer::start(1, soft_timer::CONTINUOUS);
 
-    navigation->reset(false);
+    navigation->reset(true);
 
     logger->init();
 
@@ -126,74 +126,10 @@ void Run::enter() {
     //     target_movements = navigation->get_smooth_movements(default_target_movements);
     // }
 
-    // Path 1
-    // target_movements.push_back({Movement::START, 1});
-    // target_movements.push_back({Movement::FORWARD, 5});
-    // target_movements.push_back({Movement::TURN_RIGHT_45, 1});
-    // target_movements.push_back({Movement::DIAGONAL, 4});
-    // target_movements.push_back({Movement::TURN_LEFT_90_FROM_45, 1});
-    // target_movements.push_back({Movement::DIAGONAL, 4});
-    // target_movements.push_back({Movement::TURN_RIGHT_45_FROM_45, 1});
-    // target_movements.push_back({Movement::FORWARD, 1});
-    // target_movements.push_back({Movement::TURN_RIGHT_45, 1});
-    // target_movements.push_back({Movement::DIAGONAL, 1});
-    // target_movements.push_back({Movement::TURN_RIGHT_45_FROM_45, 1});
-    // target_movements.push_back({Movement::FORWARD, 3});
-    // target_movements.push_back({Movement::TURN_LEFT_90, 1});
-    // target_movements.push_back({Movement::TURN_RIGHT_90, 1});
-    // target_movements.push_back({Movement::FORWARD, 9});
-    // target_movements.push_back({Movement::TURN_LEFT_135, 1});
-    // target_movements.push_back({Movement::DIAGONAL, 6});
-    // target_movements.push_back({Movement::TURN_LEFT_45_FROM_45, 1});
-    // target_movements.push_back({Movement::FORWARD, 2});
-    // target_movements.push_back({Movement::TURN_RIGHT_180, 1});
-    // target_movements.push_back({Movement::FORWARD, 4});
-    // target_movements.push_back({Movement::TURN_LEFT_180, 1});
-    // target_movements.push_back({Movement::FORWARD, 6});
-    // target_movements.push_back({Movement::TURN_RIGHT_90, 1});
-    // target_movements.push_back({Movement::FORWARD, 1});
-    // target_movements.push_back({Movement::TURN_RIGHT_90, 1});
-    // target_movements.push_back({Movement::FORWARD, 1});
-    // target_movements.push_back({Movement::STOP, 1});
-
     // Path 2
     target_movements.push_back({Movement::START, 1});
-    target_movements.push_back({Movement::FORWARD, 2});
-    target_movements.push_back({Movement::TURN_RIGHT_180, 1});
-    target_movements.push_back({Movement::FORWARD, 2});
-    target_movements.push_back({Movement::TURN_LEFT_90, 1});
-    target_movements.push_back({Movement::FORWARD, 3});
-    target_movements.push_back({Movement::TURN_LEFT_90, 1});
-    target_movements.push_back({Movement::FORWARD, 2});
-    target_movements.push_back({Movement::TURN_RIGHT_90, 1});
     target_movements.push_back({Movement::FORWARD, 1});
-    target_movements.push_back({Movement::TURN_RIGHT_90, 1});
-    target_movements.push_back({Movement::FORWARD, 2});
-    target_movements.push_back({Movement::TURN_LEFT_90, 1});
-    target_movements.push_back({Movement::FORWARD, 2});
-    target_movements.push_back({Movement::TURN_LEFT_90, 1});
-    target_movements.push_back({Movement::FORWARD, 1});
-    target_movements.push_back({Movement::TURN_RIGHT_90, 1});
-    target_movements.push_back({Movement::FORWARD, 4});
-    target_movements.push_back({Movement::TURN_LEFT_90, 1});
-    target_movements.push_back({Movement::FORWARD, 2});
-    target_movements.push_back({Movement::TURN_LEFT_90, 1});
-    target_movements.push_back({Movement::FORWARD, 1});
-    target_movements.push_back({Movement::TURN_RIGHT_90, 1});
-    target_movements.push_back({Movement::FORWARD, 1});
-    target_movements.push_back({Movement::TURN_LEFT_180, 1});
-    target_movements.push_back({Movement::FORWARD, 1});
-    target_movements.push_back({Movement::TURN_LEFT_90, 1});
-    target_movements.push_back({Movement::FORWARD, 6});
-    target_movements.push_back({Movement::TURN_LEFT_90, 1});
-    target_movements.push_back({Movement::FORWARD, 6});
-    target_movements.push_back({Movement::TURN_RIGHT_180, 1});
-    target_movements.push_back({Movement::FORWARD, 5});
-    target_movements.push_back({Movement::TURN_LEFT_180, 1});
-    target_movements.push_back({Movement::FORWARD, 1});
-    target_movements.push_back({Movement::STOP, 1});
-
-
+    // target_movements.push_back({Movement::STOP, 1});
 
     move_count = 0;
     emergency = false;
