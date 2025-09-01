@@ -30,17 +30,17 @@ float Config::diagonal_walls_kd = 0.005;
 
 float Config::min_move_speed = 0.05; // [m/s]
 
-float Config::ir_wall_dist_ref_right = 1310;
+float Config::ir_wall_dist_ref_right = 1360;
 float Config::ir_wall_dist_ref_front_left = 150;
 float Config::ir_wall_dist_ref_front_right = 150;
-float Config::ir_wall_dist_ref_left = 832;
+float Config::ir_wall_dist_ref_left = 774;
 
-float Config::ir_wall_control_th_right = 700;
+float Config::ir_wall_control_th_right = 1000;
 float Config::ir_wall_control_th_front_left = 250;
 float Config::ir_wall_control_th_front_right = 250;
-float Config::ir_wall_control_th_left = 650;
+float Config::ir_wall_control_th_left = 750;
 
-float Config::ir_wall_detect_th_right = 850;
+float Config::ir_wall_detect_th_right = 1200;
 float Config::ir_wall_detect_th_front_left = 600;
 float Config::ir_wall_detect_th_front_right = 800;
 float Config::ir_wall_detect_th_left = 650;

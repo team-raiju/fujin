@@ -12,12 +12,13 @@
 #include "utils/math.hpp"
 #include "utils/movement_params.hpp"
 #include "utils/types.hpp"
+#include "bsp/buzzer.hpp"
 
 /// @section Constants
 
 static constexpr float CONTROL_FREQUENCY_HZ = 1000.0;
 static constexpr bool fix_position_enabled = false;
-static constexpr float dist_start_seeing_wall_break_cm = 6.0;
+static constexpr float dist_start_seeing_wall_break_cm = 5.5;
 
 static std::map<Movement, TurnParams> turn_params;
 static std::map<Movement, ForwardParams> forward_params;
@@ -194,8 +195,10 @@ bool Navigation::step() {
             int cells_traveled = (traveled_dist_cm / CELL_SIZE_CM);
             float corrected_distance_cm = (cells_traveled * CELL_SIZE_CM) + dist_start_seeing_wall_break_cm;
             float distance_error_cm = traveled_dist_cm - corrected_distance_cm;
-            if (std::abs(distance_error_cm) < 1.0) {
+            if (std::abs(distance_error_cm) < 2.0) {
                 traveled_dist_cm = corrected_distance_cm;
+                //bsp::buzzer::start();
+                //bsp::leds::stripe_set(Color::Blue);
             }
         }
 
