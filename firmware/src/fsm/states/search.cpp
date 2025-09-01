@@ -158,15 +158,8 @@ State* Search::react(Timeout const&) {
 
         last_indication = bsp::get_tick_ms();
         indicate_read = true;
-        if (sensingStatus.front_seeing) {
-            bsp::leds::stripe_set(0, sensingStatus.left_seeing ? Color::Blue : Color::Red);
-            bsp::leds::stripe_set(1, sensingStatus.right_seeing ? Color::Blue : Color::Red);
-        } else {
-            bsp::leds::stripe_set(0, sensingStatus.left_seeing ? Color::Green : Color::Black);
-            bsp::leds::stripe_set(1, sensingStatus.right_seeing ? Color::Green : Color::Black);
-        }
-
-        bsp::leds::stripe_send();
+        bsp::leds::stripe_set(Color::Black);
+        bsp::leds::stripe_set(Color::Green);
 
         auto robot_pos = navigation->get_robot_position();
         auto robot_dir = navigation->get_robot_direction();

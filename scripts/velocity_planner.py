@@ -97,17 +97,17 @@ def plot_angular_speeds(ideal_speeds, real_speeds):
 def main():
 
     #### Inputs ####
-    linear_speed_m_s = 1.0
-    turn_angle_deg = 135
-    turn_radius_mm = 60
+    linear_speed_m_s = 0.25
+    turn_angle_deg = 90
+    turn_radius_mm = 45
 
-    angular_acceleration_deg_s2 = 16000
-    angular_desacceleration_deg_s2 = 16000
-    maximum_angular_speed_deg_s = 900
+    angular_acceleration_deg_s2 = 4500
+    angular_desacceleration_deg_s2 = 4500
+    maximum_angular_speed_deg_s = 250
 
-    mm_before_turn = 80
-    mm_after_turn = 0
-    initial_theta_deg = 45
+    mm_before_turn = 25
+    mm_after_turn = 25
+    initial_theta_deg = 0
 
 
 
@@ -141,19 +141,31 @@ def main():
         t3_ms = t1_ms * (angular_acceleration_rad_s2 / angular_desacceleration_rad_s2)
 
 
-    t1_ms = round(t1_ms)
-    t2_ms = round(t2_ms)
-    t3_ms = round(t3_ms)
-
     T_ms = t1_ms + t2_ms + t3_ms
 
     print("Max angular speed (deg/s): ", maximum_angular_speed_deg_s, " (=", maximum_angular_speed_rad_s, "rad/s)")
-    print("Acc (deg/s^2): ", angular_acceleration_deg_s2, " (=", angular_acceleration_rad_s2, "rad/s^2)")
-    print("Desacc (deg/s^2): ", angular_desacceleration_deg_s2, " (=", angular_desacceleration_rad_s2, "rad/s^2)")
-    print("t1 (ms): ", t1_ms)
-    print("t2 (ms): ", t2_ms)
-    print("t3 (ms): ", t3_ms)
-    print("T (ms): ", T_ms)
+    print("Acceleration (deg/s^2): ", angular_acceleration_deg_s2, " (=", angular_acceleration_rad_s2, "rad/s^2)")
+    print("Deceleration (deg/s^2): ", angular_desacceleration_deg_s2, " (=", angular_desacceleration_rad_s2, "rad/s^2)")
+    print("t1 (ms): ", round(t1_ms))
+    print("t2 (ms): ", round(t2_ms))
+    print("t3 (ms): ", round(t3_ms))
+    print("T (ms) : ", round(T_ms))
+    print("")
+
+    #### Calculated real angles:
+    angle_until_max_speed = (1 / 2) * angular_acceleration_rad_s2 * (t1_ms / 1000)**2
+    angle_until_start_deceleration = angle_until_max_speed + (maximum_angular_speed_rad_s * (t2_ms / 1000))
+    angle_final = turn_angle_rad
+
+    print(f"Angle until max speed (deg) : {0:.3f} to {np.rad2deg(angle_until_max_speed):.3f}")
+    print(f"Angle on max speed (deg)    : {np.rad2deg(angle_until_max_speed):.3f} to {np.rad2deg(angle_until_start_deceleration):.3f}")
+    print(f"Final angle (deg)           : {np.rad2deg(angle_until_start_deceleration):.3f} to {np.rad2deg(angle_final):.3f}")
+    print("")
+
+    print(f"Angle until max speed (rad) : {0:.3f} to {angle_until_max_speed:.3f}")
+    print(f"Angle on max speed (rad)    : {angle_until_max_speed:.3f} to {angle_until_start_deceleration:.3f}")
+    print(f"Final angle (rad)           : {angle_until_start_deceleration:.3f} to {angle_final:.3f}")
+    print("")
 
 
     #### Calculate Ideal Positions ####
@@ -194,7 +206,7 @@ def main():
                   initial_theta_rad)
     ]
 
-    for t in range(1, T_ms + 1):
+    for t in range(1, round(T_ms + 1)):
         if t <= t1_ms:
             angular_speed_rad_s += angular_acceleration_rad_s2 / 1000
         elif t <= t1_ms + t2_ms:
@@ -219,8 +231,8 @@ def main():
         real_positions.append(Position(x, y, theta))
         real_ang_speeds.append(angular_speed_rad_s * 180 / np.pi)
         # print("t: ", t, "x: ", x, "y: ", y, " angular_speed_rad_s: ", angular_speed_rad_s, " theta: ", theta * 180 / np.pi)
-    
-    print("Final Real Position: ", real_positions[-1].x, real_positions[-1].y, real_positions[-1].theta * 180 / np.pi)
+
+    print(f"Final Real Position: {real_positions[-1].x:.3f}, {real_positions[-1].y:.3f}, {real_positions[-1].theta * 180 / np.pi:.3f}")
 
 
     #### Manually add the mm_after_turn ####

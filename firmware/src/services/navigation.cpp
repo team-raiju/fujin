@@ -2,6 +2,7 @@
 #include <string>
 
 #include "bsp/analog_sensors.hpp"
+#include "bsp/buzzer.hpp"
 #include "bsp/encoders.hpp"
 #include "bsp/imu.hpp"
 #include "bsp/leds.hpp"
@@ -12,7 +13,6 @@
 #include "utils/math.hpp"
 #include "utils/movement_params.hpp"
 #include "utils/types.hpp"
-#include "bsp/buzzer.hpp"
 
 /// @section Constants
 
@@ -197,8 +197,8 @@ bool Navigation::step() {
             float distance_error_cm = traveled_dist_cm - corrected_distance_cm;
             if (std::abs(distance_error_cm) < 2.0) {
                 traveled_dist_cm = corrected_distance_cm;
-                //bsp::buzzer::start();
-                //bsp::leds::stripe_set(Color::Blue);
+                // bsp::buzzer::start();
+                // bsp::leds::stripe_set(Color::Blue);
             }
         }
 
@@ -269,23 +269,24 @@ bool Navigation::step() {
         float angular_acceleration = current_turn_params.angular_accel;
         float angular_speed = current_turn_params.max_angular_speed;
 
-        uint16_t elapsed_t_accel = current_turn_params.t_accel;
-        uint16_t elapsed_t_max_ang_vel = elapsed_t_accel + current_turn_params.t_max_ang_vel;
-        uint16_t elapsed_t_decel = elapsed_t_max_ang_vel + current_turn_params.t_accel;
+        float angle_until_acceleration = std::abs(current_turn_params.angle_accel_rad);
+        float angle_untill_start_deceleration = std::abs(current_turn_params.angle_max_ang_speed_rad);
+
+        float deceleration_angle = angle_until_acceleration;
+        float final_angle_rad = angle_untill_start_deceleration + deceleration_angle;
 
         int turn_sign = current_turn_params.sign;
 
-        uint32_t elapsed_time = bsp::get_tick_ms() - reference_time;
-
-        if (elapsed_time <= elapsed_t_accel) {
+        // TODO: take care of 180 degrees case
+        if (std::abs(bsp::imu::get_angle()) < angle_until_acceleration) {
             float ideal_rad_s =
                 std::abs(control->get_target_angular_speed()) + (angular_acceleration / CONTROL_FREQUENCY_HZ);
             ideal_rad_s = std::min(ideal_rad_s, angular_speed);
             control->set_target_angular_speed(ideal_rad_s * turn_sign);
-        } else if (elapsed_time <= elapsed_t_max_ang_vel) {
+        } else if (std::abs(bsp::imu::get_angle()) < angle_untill_start_deceleration) {
             float ideal_rad_s = angular_speed;
             control->set_target_angular_speed(ideal_rad_s * turn_sign);
-        } else if (elapsed_time <= elapsed_t_decel) {
+        } else if (std::abs(bsp::imu::get_angle()) < final_angle_rad) {
             float ideal_rad_s =
                 std::abs(control->get_target_angular_speed()) - (angular_acceleration / CONTROL_FREQUENCY_HZ);
             ideal_rad_s = std::max(ideal_rad_s, 0.0f);
@@ -424,6 +425,7 @@ bool Navigation::step() {
                     mini_fsm_state = 1;
                     traveled_dist_cm = 0;
                     reference_time = bsp::get_tick_ms();
+                    bsp::imu::reset_angle();
                 } else {
                     is_finished = true;
                     mini_fsm_state = 0;
@@ -434,23 +436,23 @@ bool Navigation::step() {
             float angular_acceleration = current_turn_params.angular_accel;
             float angular_speed = current_turn_params.max_angular_speed;
 
-            uint16_t elapsed_t_accel = current_turn_params.t_accel;
-            uint16_t elapsed_t_max_ang_vel = elapsed_t_accel + current_turn_params.t_max_ang_vel;
-            uint16_t elapsed_t_decel = elapsed_t_max_ang_vel + current_turn_params.t_accel;
+            float angle_until_acceleration = std::abs(current_turn_params.angle_accel_rad);
+            float angle_untill_start_deceleration = std::abs(current_turn_params.angle_max_ang_speed_rad);
+
+            float deceleration_angle = angle_until_acceleration;
+            float final_angle_rad = angle_untill_start_deceleration + deceleration_angle;
 
             int turn_sign = current_turn_params.sign;
 
-            uint32_t elapsed_time = bsp::get_tick_ms() - reference_time;
-
-            if (elapsed_time <= elapsed_t_accel) {
+            if (std::abs(bsp::imu::get_angle()) < angle_until_acceleration) {
                 float ideal_rad_s =
                     std::abs(control->get_target_angular_speed()) + (angular_acceleration / CONTROL_FREQUENCY_HZ);
                 ideal_rad_s = std::min(ideal_rad_s, angular_speed);
                 control->set_target_angular_speed(ideal_rad_s * turn_sign);
-            } else if (elapsed_time <= elapsed_t_max_ang_vel) {
+            } else if (std::abs(bsp::imu::get_angle()) < angle_untill_start_deceleration) {
                 float ideal_rad_s = angular_speed;
                 control->set_target_angular_speed(ideal_rad_s * turn_sign);
-            } else if (elapsed_time <= elapsed_t_decel) {
+            } else if (std::abs(bsp::imu::get_angle()) < final_angle_rad) {
                 float ideal_rad_s =
                     std::abs(control->get_target_angular_speed()) - (angular_acceleration / CONTROL_FREQUENCY_HZ);
                 ideal_rad_s = std::max(ideal_rad_s, 0.0f);
