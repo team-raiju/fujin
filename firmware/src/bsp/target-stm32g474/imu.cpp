@@ -1,5 +1,6 @@
 #include <lsm6dsr.h>
 #include <motion_gc.h>
+#include <cstdio>
 
 #include "st/hal.h"
 
@@ -12,23 +13,24 @@ namespace bsp::imu {
 
 /// @section Constants
 
-#define USE_MOTION_GC true
-
-#define OUTPUT_DATA_RATE_HZ 1200
 #define WHO_I_AM_EXPECTED 0x6B
 #define INITIAL_VALUE_FLAG 0xffffffff
 #define SAMPLE_FREQ_HZ 1000
 #define I2C_TIMEOUT 1000
 
 /// @section Private variables
+// If OUTPUT_DATA_RATE_HZ > 415, motion gc will not work. bias is not updated
+static bool enable_motion_gc = false;
+static uint16_t output_data_rate = 1200;
+static uint16_t motion_gc_data_rate = 415;
 
 static LSM6DSR_Object_t lsm6dsr_ctx;
 static LSM6DSR_IO_t lsm6dsr_io;
 static uint8_t who_i_am_val = 0;
 
-static float x_gbias = 0.0;
-static float y_gbias = 0.0;
-static float z_gbias = 0.0;
+static float init_x_gbias = 0.33;
+static float init_y_gbias = -0.426;
+static float init_z_gbias = -0.290;
 
 // Angular Velocity in rad/s
 static float ω;
@@ -66,9 +68,9 @@ void init_motion_gc() {
     MotionGC_SetKnobs(&knobs);
 
     MGC_output_t initial_calib = {
-        .GyroBiasX = x_gbias,
-        .GyroBiasY = y_gbias,
-        .GyroBiasZ = z_gbias,
+        .GyroBiasX = init_x_gbias,
+        .GyroBiasY = init_y_gbias,
+        .GyroBiasZ = init_z_gbias,
     };
 
     MotionGC_SetCalParams(&initial_calib);
@@ -142,17 +144,15 @@ ImuResult init() {
         return ERROR;
     }
 
-    if (LSM6DSR_ACC_SetOutputDataRate(&lsm6dsr_ctx, OUTPUT_DATA_RATE_HZ) != LSM6DSR_OK) {
+    if (LSM6DSR_ACC_SetOutputDataRate(&lsm6dsr_ctx, output_data_rate) != LSM6DSR_OK) {
         return ERROR;
     }
 
-    if (LSM6DSR_GYRO_SetOutputDataRate(&lsm6dsr_ctx, OUTPUT_DATA_RATE_HZ) != LSM6DSR_OK) {
+    if (LSM6DSR_GYRO_SetOutputDataRate(&lsm6dsr_ctx, output_data_rate) != LSM6DSR_OK) {
         return ERROR;
     }
 
-#if USE_MOTION_GC
     init_motion_gc();
-#endif
 
     return OK;
 }
@@ -168,11 +168,11 @@ ImuResult update() {
     MGC_output_t data_out_gc;
     int bias_update;
 
-#if USE_MOTION_GC
-    if (LSM6DSR_ACC_GetAxes(&lsm6dsr_ctx, &mg) != LSM6DSR_OK) {
-        return ERROR;
+    if (enable_motion_gc) {
+        if (LSM6DSR_ACC_GetAxes(&lsm6dsr_ctx, &mg) != LSM6DSR_OK) {
+            return ERROR;
+        }
     }
-#endif
 
     if (LSM6DSR_GYRO_GetAxes(&lsm6dsr_ctx, &mω) != LSM6DSR_OK) {
         return ERROR;
@@ -183,23 +183,25 @@ ImuResult update() {
     ω = deg2rad(mω.z / 1000.0f);
     a_z = mg.z / 1000.0f;
 
-#if USE_MOTION_GC
-    if (δt > 0.000001) {
-        float new_frequency = 1.0f / δt;
-        MotionGC_SetFrequency(&new_frequency);
+    if (enable_motion_gc) {
+        if (δt > 0.000001) {
+            float new_frequency = 1.0f / δt;
+            MotionGC_SetFrequency(&new_frequency);
+        }
+
+        data_in_gc.Acc[0] = (mg.x / 1000.0f);
+        data_in_gc.Acc[1] = (mg.y / 1000.0f);
+        data_in_gc.Acc[2] = (mg.z / 1000.0f);
+
+        data_in_gc.Gyro[0] = mω.x / 1000.0f;
+        data_in_gc.Gyro[1] = mω.y / 1000.0f;
+        data_in_gc.Gyro[2] = mω.z / 1000.0f;
+        MotionGC_Update(&data_in_gc, &data_out_gc, &bias_update);
+
+        ω = deg2rad(data_in_gc.Gyro[2] - data_out_gc.GyroBiasZ);
+    } else {
+        ω = deg2rad((mω.z / 1000.0f) - get_g_bias_z());
     }
-
-    data_in_gc.Acc[0] = (mg.x / 1000.0f);
-    data_in_gc.Acc[1] = (mg.y / 1000.0f);
-    data_in_gc.Acc[2] = (mg.z / 1000.0f);
-
-    data_in_gc.Gyro[0] = mω.x / 1000.0f;
-    data_in_gc.Gyro[1] = mω.y / 1000.0f;
-    data_in_gc.Gyro[2] = mω.z / 1000.0f;
-    MotionGC_Update(&data_in_gc, &data_out_gc, &bias_update);
-
-    ω = deg2rad(data_in_gc.Gyro[2] - data_out_gc.GyroBiasZ);
-#endif
 
     if (δt > 0.000001) {
         α = (ω - last_ω) / δt;
@@ -235,7 +237,6 @@ float get_incremental_angle() {
     return incremental_φ;
 }
 
-
 void reset_angle() {
     last_time_imu = 0;
     φ = 0;
@@ -250,25 +251,37 @@ float get_z_acceleration() {
     return a_z;
 }
 
-void update_g_bias() {
-    MGC_output_t gyro_bias;
-    MotionGC_GetCalParams(&gyro_bias);
-
-    x_gbias = gyro_bias.GyroBiasX;
-    y_gbias = gyro_bias.GyroBiasY;
-    z_gbias = gyro_bias.GyroBiasZ;
-}
-
-void set_g_bias(int32_t bias) {
-    z_gbias = bias / 1000.0f;
+void set_g_bias_z(float z_gbias) {
 
     MGC_output_t gyro_bias = {
-        .GyroBiasX = x_gbias,
-        .GyroBiasY = y_gbias,
+        .GyroBiasX = init_x_gbias,
+        .GyroBiasY = init_y_gbias,
         .GyroBiasZ = z_gbias,
     };
 
     MotionGC_SetCalParams(&gyro_bias);
+}
+
+float get_g_bias_z() {
+    MGC_output_t gyro_bias;
+    MotionGC_GetCalParams(&gyro_bias);
+
+    float z_gbias = gyro_bias.GyroBiasZ;
+    return z_gbias;
+}
+
+void enable_motion_gc_filter(bool enable) {
+    enable_motion_gc = enable;
+
+    uint16_t new_data_rate = enable ? motion_gc_data_rate : output_data_rate;
+
+    if (LSM6DSR_ACC_SetOutputDataRate(&lsm6dsr_ctx, new_data_rate) != LSM6DSR_OK) {
+        std::printf("Error setting ACC output data rate\n");
+    }
+
+    if (LSM6DSR_GYRO_SetOutputDataRate(&lsm6dsr_ctx, new_data_rate) != LSM6DSR_OK) {
+        std::printf("Error setting Gyro output data rate\n");
+    }
 }
 
 bool is_imu_emergency() {
@@ -276,10 +289,6 @@ bool is_imu_emergency() {
     bool emergency_z_angular_accel = α > 5500.0f;
 
     return emergency_z_linear_accel || emergency_z_angular_accel;
-}
-
-int32_t get_g_bias() {
-    return z_gbias;
 }
 
 } // namespace

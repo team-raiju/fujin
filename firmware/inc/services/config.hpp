@@ -42,10 +42,13 @@ public:
     static float ir_wall_detect_th_front_right;
     static float ir_wall_detect_th_left;
 
+    static float z_imu_bias;
+
     static void init();
     static int parse_packet(uint8_t packet[bsp::ble::max_packet_size]);
     static int write_default_params();
     static void send_parameters();
+    static int save_z_bias();
 };
 
 }

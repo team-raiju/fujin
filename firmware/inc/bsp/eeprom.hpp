@@ -43,6 +43,8 @@ typedef enum : uint16_t {
     ADDR_IR_WALL_DETECT_TH_FRONT_LEFT = 0x0060,
     ADDR_IR_WALL_DETECT_TH_FRONT_RIGHT = 0x0064,
     ADDR_IR_WALL_DETECT_TH_LEFT = 0x0068,
+
+    ADDR_Z_IMU_BIAS = 0x006C,
     
     // MAZE 0x1000 ~ 0x13FF
     ADDR_MAZE_START = 0x1000,
@@ -76,6 +78,7 @@ const ParamInfo paramInfoArray[] = {
     {ADDR_DIAGONAL_WALLS_KI, "ADDR_DIAGONAL_WALLS_KI"},
     {ADDR_DIAGONAL_WALLS_KD, "ADDR_DIAGONAL_WALLS_KD"},
     {ADDR_MIN_MOVE_SPEED, "ADDR_MIN_MOVE_SPEED"},
+    {ADDR_Z_IMU_BIAS, "ADDR_Z_IMU_BIAS"},
 };
 
 /// @section Interface definition

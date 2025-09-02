@@ -123,9 +123,26 @@ public:
     State* react(ButtonPressed const&) override;
 };
 
-class Calib : public State {
+class CalibrationModeSelect : public State {
 public:
-    Calib();
+    CalibrationModeSelect();
+
+    void enter() override;
+
+    State* react(ButtonPressed const&) override;
+
+private:
+    enum calibration_mode_t {
+        IR_CALIBRATION,
+        IMU_CALIBRATION,
+    };
+
+    calibration_mode_t calibration_mode;
+};
+
+class CalibrationIRSensors : public State {
+public:
+    CalibrationIRSensors();
 
     void enter() override;
     void exit() override;
@@ -136,5 +153,20 @@ public:
 private:
     services::Notification* notification;
 };
+
+class CalibrationIMU : public State {
+public:
+    CalibrationIMU();
+
+    void enter() override;
+    void exit() override;
+
+    State* react(ButtonPressed const&) override;
+    State* react(Timeout const&) override;
+
+private:
+    int loop_counter;
+};
+
 
 }

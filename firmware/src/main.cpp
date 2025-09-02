@@ -9,6 +9,8 @@
 #include "fsm/fsm.hpp"
 #include "fsm/state.hpp"
 #include "services/config.hpp"
+#include "bsp/imu.hpp"
+
 void startup() {
     bsp::buzzer::set_frequency(2000);
     bsp::buzzer::set_volume(1);
@@ -26,6 +28,7 @@ void startup() {
     services::Config::init();
     bsp::ble::init();
     bsp::ble::start();
+    bsp::imu::set_g_bias_z(services::Config::z_imu_bias);
 }
 
 int main() {

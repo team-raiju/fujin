@@ -95,9 +95,12 @@ void ir_emitter_all_off(void) {
     ir_emitter_off(RIGHT_SIDE);
 }
 
-void stripe_set(uint8_t num, Color const& color) {
-    ws.set(num, color.encode());
+void stripe_set(Color const& color_1, Color const& color_2) {
+    ws.set(0, color_1.encode());
+    ws.set(1, color_2.encode());
+    stripe_send();
 }
+
 
 void stripe_set(Color const& color) {
     uint32_t encoded = color.encode();

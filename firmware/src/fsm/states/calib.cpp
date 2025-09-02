@@ -7,6 +7,8 @@
 #include "bsp/timers.hpp"
 #include "fsm/state.hpp"
 #include "utils/soft_timer.hpp"
+#include "bsp/imu.hpp"
+#include "services/config.hpp"
 
 namespace fsm {
 
@@ -32,7 +34,7 @@ State* PreCalib::react(ButtonPressed const& event) {
     }
 
     if (event.button == ButtonPressed::LONG1) {
-        return &State::get<Calib>();
+        return &State::get<CalibrationModeSelect>();
     }
 
     return nullptr;
@@ -40,16 +42,60 @@ State* PreCalib::react(ButtonPressed const& event) {
 
 void PreCalib::exit() {}
 
-Calib::Calib() {
+CalibrationModeSelect::CalibrationModeSelect() {
+    calibration_mode = IR_CALIBRATION;
+}
+
+void CalibrationModeSelect::enter() {
+    bsp::leds::stripe_set(bsp::leds::Color::Blue, bsp::leds::Color::Black);
+    calibration_mode = IR_CALIBRATION;
+}
+
+State* CalibrationModeSelect::react(ButtonPressed const& event) {
+    if (event.button == ButtonPressed::SHORT2) {
+        if (calibration_mode == IR_CALIBRATION) {
+            bsp::leds::stripe_set(bsp::leds::Color::Blue, bsp::leds::Color::Blue);
+            calibration_mode = IMU_CALIBRATION;
+        } else {
+            bsp::leds::stripe_set(bsp::leds::Color::Blue, bsp::leds::Color::Black);
+            calibration_mode = IR_CALIBRATION;
+        }
+        return nullptr;
+    }
+
+    if (event.button == ButtonPressed::SHORT1) {
+        if (calibration_mode == IR_CALIBRATION) {
+            bsp::leds::stripe_set(bsp::leds::Color::Blue, bsp::leds::Color::Blue);
+            calibration_mode = IMU_CALIBRATION;
+        } else {
+            bsp::leds::stripe_set(bsp::leds::Color::Blue, bsp::leds::Color::Black);
+            calibration_mode = IR_CALIBRATION;
+        }
+    }
+
+    if (event.button == ButtonPressed::LONG1) {
+        if (calibration_mode == IR_CALIBRATION) {
+            return &State::get<CalibrationIRSensors>();
+        } else {
+            return &State::get<CalibrationIMU>();
+        }
+    }
+
+    if (event.button == ButtonPressed::LONG2) {
+        return &State::get<PreCalib>();
+    }
+
+    return nullptr;
+}
+
+CalibrationIRSensors::CalibrationIRSensors() {
     notification = services::Notification::instance();
 }
 
-void Calib::enter() {
-    using bsp::leds::Color;
+void CalibrationIRSensors::enter() {
+    bsp::debug::print("state:CalibrationIRSensors");
 
-    bsp::debug::print("state:Calib");
-
-    bsp::leds::stripe_set(Color::Black);
+    bsp::leds::stripe_set(bsp::leds::Color::Black);
 
     bsp::leds::ir_emitter_all_on();
     bsp::analog_sensors::enable_modulation();
@@ -63,15 +109,71 @@ void Calib::enter() {
     soft_timer::start(1, soft_timer::CONTINUOUS);
 }
 
-State* Calib::react(ButtonPressed const&) {
+State* CalibrationIRSensors::react(ButtonPressed const&) {
     return &State::get<PreCalib>();
 }
 
-State* Calib::react(Timeout const&) {
+State* CalibrationIRSensors::react(Timeout const&) {
     notification->update(true);
     return nullptr;
 }
 
-void Calib::exit() {}
+void CalibrationIRSensors::exit() {}
+
+CalibrationIMU::CalibrationIMU() {}
+
+void CalibrationIMU::enter() {
+    bsp::leds::stripe_set(bsp::leds::Color::Red, bsp::leds::Color::Red);
+    bsp::imu::enable_motion_gc_filter(true);
+    soft_timer::start(1, soft_timer::CONTINUOUS);
+    bsp::imu::reset_angle();
+    loop_counter = 0;
+}
+
+State* CalibrationIMU::react(ButtonPressed const& event) {
+    if (event.button == ButtonPressed::SHORT1) {
+        return &State::get<PreCalib>();
+    }
+
+    if (event.button == ButtonPressed::SHORT2) {
+        return &State::get<PreCalib>();
+    }
+
+    if (event.button == ButtonPressed::LONG1) {
+        return &State::get<PreCalib>();
+    }
+
+    if (event.button == ButtonPressed::LONG2) {
+        return &State::get<PreCalib>();
+    }
+
+    return nullptr;
+}
+
+State* CalibrationIMU::react(Timeout const&) {
+    if (loop_counter > 10000) {
+        soft_timer::stop();
+        return &State::get<PreCalib>();
+    }
+
+    loop_counter++;
+    if (loop_counter % 200 == 0) {
+        std::printf("bias: %f; Angle: %f; Loop: %d\r\n", bsp::imu::get_g_bias_z(), bsp::imu::get_angle(), loop_counter);
+    }
+
+    bsp::imu::update();
+
+    return nullptr;
+}
+
+void CalibrationIMU::exit() {
+    soft_timer::stop();
+    bsp::motors::set(0, 0);
+
+    services::Config::z_imu_bias = bsp::imu::get_g_bias_z();
+    std::printf("saving z_imu_bias: %f\r\n", services::Config::z_imu_bias);
+    services::Config::save_z_bias();
+    bsp::imu::enable_motion_gc_filter(false);
+}
 
 }

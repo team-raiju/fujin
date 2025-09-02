@@ -45,6 +45,8 @@ float Config::ir_wall_detect_th_front_left = 600;
 float Config::ir_wall_detect_th_front_right = 800;
 float Config::ir_wall_detect_th_left = 650;
 
+float Config::z_imu_bias = 0.0;
+
 // All params
 static std::pair<float*, bsp::eeprom::param_addresses_t> params[] = {
     {&Config::fan_speed, bsp::eeprom::ADDR_FAN_SPEED},
@@ -72,7 +74,8 @@ static std::pair<float*, bsp::eeprom::param_addresses_t> params[] = {
     {&Config::ir_wall_detect_th_right, bsp::eeprom::ADDR_IR_WALL_DETECT_TH_RIGHT},
     {&Config::ir_wall_detect_th_front_left, bsp::eeprom::ADDR_IR_WALL_DETECT_TH_FRONT_LEFT},
     {&Config::ir_wall_detect_th_front_right, bsp::eeprom::ADDR_IR_WALL_DETECT_TH_FRONT_RIGHT},
-    {&Config::ir_wall_detect_th_left, bsp::eeprom::ADDR_IR_WALL_DETECT_TH_LEFT}};
+    {&Config::ir_wall_detect_th_left, bsp::eeprom::ADDR_IR_WALL_DETECT_TH_LEFT},
+    {&Config::z_imu_bias, bsp::eeprom::ADDR_Z_IMU_BIAS}};
 
 union _float {
     float value;
@@ -158,6 +161,17 @@ void Config::send_parameters() {
 
         bsp::delay_ms(50);
     }
+}
+
+int Config::save_z_bias() {
+    _float f;
+    f.value = Config::z_imu_bias;
+
+    if (bsp::eeprom::write_u32(bsp::eeprom::ADDR_Z_IMU_BIAS, f.u32) != bsp::eeprom::OK) {
+        return -1;
+    }
+
+    return 0;
 }
 
 }

@@ -24,9 +24,11 @@ float get_rad_per_s();
 
 float get_z_acceleration();
 
-void update_g_bias();
-void set_g_bias(int32_t bias);
-int32_t get_g_bias();
+void set_g_bias_z(float z_gbias);
+float get_g_bias_z();
+
+void enable_motion_gc_filter(bool enable);
+
 bool is_imu_emergency();
 
 } // namespace
