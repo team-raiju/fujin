@@ -9,6 +9,7 @@
 #include "bsp/timers.hpp"
 #include "services/control.hpp"
 #include "services/logger.hpp"
+#include "services/navigation.hpp"
 
 /// @section Constants
 
@@ -21,11 +22,9 @@ const Logger::ParamInfo paramInfoArray[] = {
     {4095, -5, 10, 270.0f},     // target_velocity_ms
     {4095, -70, 70, 29.0f},     // angular_speed_rad_s
     {4095, -70, 70, 29.0f},     // target_rad_s
-    {255, -1000, 1000, 0.127f}, // pwm_left
-    {255, -1000, 1000, 0.127f}, // pwm_right
-    {255, 0, 13000, 0.0195f},   // battery
-    {255, -100, 100, 1.274f},   // integral_vel
-    {255, -500, 500, 0.254f},   // integral_angular
+    {65535, -250, 250, 131.0f}, // position_mm_x
+    {65535, -250, 250, 131.0f}, // position_mm_y
+    {65535, -180, 180, 182.0f}, // angle
 };
 
 Logger* Logger::instance() {
@@ -53,6 +52,7 @@ void Logger::update() {
     }
 
     auto control = services::Control::instance();
+    auto nav = services::Navigation::instance();
 
     float param_velocity_ms = bsp::encoders::get_filtered_velocity_m_s() + std::abs(paramInfoArray[0].min_param_value);
     param_velocity_ms *= paramInfoArray[0].scale;
@@ -66,20 +66,14 @@ void Logger::update() {
     float param_target_rad_s = control->get_target_angular_speed() + std::abs(paramInfoArray[3].min_param_value);
     param_target_rad_s *= paramInfoArray[3].scale;
 
-    float pwm_left = control->get_pwm_duty_l() + std::abs(paramInfoArray[4].min_param_value);
-    pwm_left *= paramInfoArray[4].scale;
+    float param_position_x = nav->get_robot_position().x + std::abs(paramInfoArray[4].min_param_value);
+    param_position_x *= paramInfoArray[4].scale;
 
-    float pwm_right = control->get_pwm_duty_r() + std::abs(paramInfoArray[5].min_param_value);
-    pwm_right *= paramInfoArray[5].scale;
+    float param_position_y = nav->get_robot_position().y + std::abs(paramInfoArray[5].min_param_value);
+    param_position_y *= paramInfoArray[5].scale;
 
-    float battery = bsp::analog_sensors::battery_latest_reading_mv() + std::abs(paramInfoArray[6].min_param_value);
-    battery *= paramInfoArray[6].scale;
-
-    float integral_vel = control->get_integral_vel() + std::abs(paramInfoArray[7].min_param_value);
-    integral_vel *= paramInfoArray[7].scale;
-
-    float integral_angular = control->get_integral_angular() + std::abs(paramInfoArray[8].min_param_value);
-    integral_angular *= paramInfoArray[8].scale;
+    float param_angle = (bsp::imu::get_angle() * (180.0 / M_PI)) + std::abs(paramInfoArray[6].min_param_value);
+    param_angle *= paramInfoArray[6].scale;
 
     logdata[log_data_idx].fields.velocity_ms = std::min(param_velocity_ms, (float)paramInfoArray[0].max_store_value);
     logdata[log_data_idx].fields.target_velocity_ms =
@@ -87,12 +81,9 @@ void Logger::update() {
     logdata[log_data_idx].fields.angular_speed_rad_s =
         std::min(param_angular_speed_rad_s, (float)paramInfoArray[2].max_store_value);
     logdata[log_data_idx].fields.target_rad_s = std::min(param_target_rad_s, (float)paramInfoArray[3].max_store_value);
-    logdata[log_data_idx].fields.pwm_left = std::min(pwm_left, (float)paramInfoArray[4].max_store_value);
-    logdata[log_data_idx].fields.pwm_right = std::min(pwm_right, (float)paramInfoArray[5].max_store_value);
-    logdata[log_data_idx].fields.battery = std::min(battery, (float)paramInfoArray[6].max_store_value);
-    logdata[log_data_idx].fields.integral_vel = std::min(integral_vel, (float)paramInfoArray[7].max_store_value);
-    logdata[log_data_idx].fields.integral_angular =
-        std::min(integral_angular, (float)paramInfoArray[8].max_store_value);
+    logdata[log_data_idx].fields.position_mm_x = std::min(param_position_x, (float)paramInfoArray[4].max_store_value);
+    logdata[log_data_idx].fields.position_mm_y = std::min(param_position_y, (float)paramInfoArray[5].max_store_value);
+    logdata[log_data_idx].fields.angle = std::min(param_angle, (float)paramInfoArray[6].max_store_value);
 
     log_data_idx++;
     if (log_data_idx >= (sizeof(logdata) / sizeof(logdata[0]))) {
@@ -106,7 +97,7 @@ void Logger::update() {
 
 void Logger::print_log() {
 
-    std::printf("t;Vel;TargetVel;AngVel;TargetAngrVel;PWM_L;PWM_R,Bat,IntVel,IntW\r\n");
+    std::printf("t;Vel;TargetVel;AngVel;TargetAngrVel;PosX;PosY;Angle\r\n");
     bsp::delay_ms(5);
 
     uint32_t saved_size = addr_offset;
@@ -127,19 +118,19 @@ void Logger::print_log() {
         uint16_t idx = i / sizeof(LogData);
 
         std::printf(
-            "%d;%0.4f;%0.4f;%0.4f;%0.4f;%0.4f;%0.4f;%0.4f;%0.4f;%0.4f\r\n", idx,
+            "%d;%0.4f;%0.4f;%0.4f;%0.4f;%0.4f;%0.4f;%0.4f\r\n", idx,
             (read_logdata.fields.velocity_ms / paramInfoArray[0].scale) - std::abs(paramInfoArray[0].min_param_value),
             (read_logdata.fields.target_velocity_ms / paramInfoArray[1].scale) -
                 std::abs(paramInfoArray[1].min_param_value),
             (read_logdata.fields.angular_speed_rad_s / paramInfoArray[2].scale) -
                 std::abs(paramInfoArray[2].min_param_value),
+
             (read_logdata.fields.target_rad_s / paramInfoArray[3].scale) - std::abs(paramInfoArray[3].min_param_value),
-            (read_logdata.fields.pwm_left / paramInfoArray[4].scale) - std::abs(paramInfoArray[4].min_param_value),
-            (read_logdata.fields.pwm_right / paramInfoArray[5].scale) - std::abs(paramInfoArray[5].min_param_value),
-            (read_logdata.fields.battery / paramInfoArray[6].scale) - std::abs(paramInfoArray[6].min_param_value),
-            (read_logdata.fields.integral_vel / paramInfoArray[7].scale) - std::abs(paramInfoArray[7].min_param_value),
-            (read_logdata.fields.integral_angular / paramInfoArray[8].scale) -
-                std::abs(paramInfoArray[8].min_param_value));
+            (read_logdata.fields.position_mm_x / paramInfoArray[4].scale) - std::abs(paramInfoArray[4].min_param_value),
+            (read_logdata.fields.position_mm_y / paramInfoArray[5].scale) - std::abs(paramInfoArray[5].min_param_value),
+            (read_logdata.fields.angle / paramInfoArray[6].scale) - std::abs(paramInfoArray[6].min_param_value)
+
+        );
 
         bsp::delay_ms(3);
     }

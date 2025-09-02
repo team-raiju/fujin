@@ -75,3 +75,35 @@ static constexpr uint32_t moving_average(uint32_t* window, size_t window_size, s
     *idx = (*idx + 1) % window_size;
     return sum / window_size;
 }
+
+static constexpr float get_shortest_delta_angle(float a, float b) {
+    float delta = a - b;
+    if (delta > M_PI) {
+        delta -= 2 * M_PI;
+    } else if (delta < -M_PI) {
+        delta += 2 * M_PI;
+    }
+    return delta;
+}
+
+static constexpr float limit_angle_minus_pi_pi(float angle) {
+    while (angle > M_PI) {
+        angle -= 2 * M_PI;
+    }
+    while (angle <= -M_PI) {
+        angle += 2 * M_PI;
+    }
+    return angle;
+}
+
+static constexpr float angle_to_point(Point const& p_origin, Point const& p_target, float origin_angle) {
+    float dx = p_target.x - p_origin.x;
+    float dy = p_target.y - p_origin.y;
+
+    // calculate the angle in radians
+    float angleDiffRaw = atan2f(dy, dx);
+
+    float angleDiff = angleDiffRaw + origin_angle;
+
+    return limit_angle_minus_pi_pi(angleDiff);
+}

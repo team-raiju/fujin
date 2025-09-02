@@ -50,7 +50,9 @@ void Navigation::reset(bool search_mode) {
     traveled_dist_cm = 0;
     encoder_left_counter = 0;
     encoder_right_counter = 0;
-    current_position = {0, 0};
+    current_cell = {0, 0};
+    current_position_mm = {0, 0};
+    current_angle_rad = 0;
     current_direction = Direction::NORTH;
 
     is_finished = false;
@@ -144,6 +146,7 @@ void Navigation::update(void) {
 
     bsp::encoders::EncoderData left_encoder = bsp::encoders::get_data(bsp::encoders::EncoderSide::LEFT);
     bsp::encoders::EncoderData right_encoder = bsp::encoders::get_data(bsp::encoders::EncoderSide::RIGHT);
+    float measured_angle_rad = bsp::imu::get_angle();
 
     if (left_encoder.ticks != 0 || right_encoder.ticks != 0) {
         float estimated_delta_l_mm = (left_encoder.ticks * bsp::encoders::get_encoder_dist_mm_pulse());
@@ -151,8 +154,20 @@ void Navigation::update(void) {
 
         float delta_x_mm = (estimated_delta_l_mm + estimated_delta_r_mm) / 2.0;
         traveled_dist_cm += delta_x_mm / 10.0;
+
+        float delta_angle_rad = get_shortest_delta_angle(measured_angle_rad, current_angle_rad);
+
+        float intermediate_angle_rad = current_angle_rad + (delta_angle_rad / 2.0);
+        intermediate_angle_rad = limit_angle_minus_pi_pi(intermediate_angle_rad);
+
+        Position rotated_delta;
+        rotated_delta.x = delta_x_mm * std::cos(intermediate_angle_rad);
+        rotated_delta.y = delta_x_mm * std::sin(intermediate_angle_rad);
+        current_position_mm.x += rotated_delta.x;
+        current_position_mm.y += rotated_delta.y;
     }
 
+    current_angle_rad = measured_angle_rad;
     bsp::encoders::clear_ticks();
 }
 
@@ -328,9 +343,23 @@ bool Navigation::step() {
             float final_speed = forward_params[current_movement].max_speed;
             if (current_movement == Movement::TURN_AROUND && mini_fsm_state == 0) {
                 final_speed = 0.0f;
-                target_travel_cm = 9.0 + 1.2;
-            } else if(current_movement == Movement::TURN_AROUND){
-                target_travel_cm = 9.0;
+                target_travel_cm = 9.0 + 1.6;
+            } else if (current_movement == Movement::TURN_AROUND) {
+                target_travel_cm = 8.8;
+            }
+
+            if (current_movement == Movement::TURN_RIGHT_90_SEARCH_MODE && mini_fsm_state == 0) {
+                target_travel_cm = 2.1; //1.3
+            } else if (current_movement == Movement::TURN_RIGHT_90_SEARCH_MODE) {
+                //target_travel_cm = std::abs(-90.0 - current_position_mm.y);
+                // target_travel_cm = 1.6;
+            }
+
+            if (current_movement == Movement::TURN_LEFT_90_SEARCH_MODE && mini_fsm_state == 0) {
+                target_travel_cm = 2.1; //1.9
+            } else if (current_movement == Movement::TURN_LEFT_90_SEARCH_MODE) {
+                //target_travel_cm = 90 - current_position_mm.y;
+                // target_travel_cm = 1.8;
             }
 
             float control_linear_speed = control->get_target_linear_speed();
@@ -403,7 +432,7 @@ bool Navigation::step() {
             } else {
                 if (control_angular_speed_abs > angular_end_speed) {
                     control_angular_speed_abs -= angular_acceleration / CONTROL_FREQUENCY_HZ;
-                    control_angular_speed_abs = std::max(control_angular_speed_abs, 0.0525f);
+                    control_angular_speed_abs = std::max(control_angular_speed_abs, 0.100f);
                 }
             }
 
@@ -422,6 +451,8 @@ bool Navigation::step() {
                     }
                 } else {
                     control->set_target_angular_speed(0);
+                    target_travel_cm = (90.0 - std::abs(current_position_mm.y)) / 10.0f;
+
                     mini_fsm_state = 2;
                     traveled_dist_cm = 0;
                 }
@@ -431,7 +462,7 @@ bool Navigation::step() {
             is_finished = true;
             mini_fsm_state = 0;
         }
-        
+
         control->set_wall_pid_enabled(false);
         control->set_diagonal_pid_enabled(false);
         break;
@@ -447,8 +478,12 @@ bool Navigation::step() {
     return is_finished;
 }
 
-Point Navigation::get_robot_position(void) {
-    return current_position;
+Point Navigation::get_robot_cell_position(void) {
+    return current_cell;
+}
+
+Position Navigation::get_robot_position(void) {
+    return current_position_mm;
 }
 
 Direction Navigation::get_robot_direction(void) {
@@ -463,6 +498,8 @@ void Navigation::set_movement(Direction dir) {
     current_movement = get_movement(dir, current_direction, true);
 
     traveled_dist_cm = 0;
+    current_position_mm = {0, 0};
+    current_angle_rad = 0;
     reset_wall_break();
     reference_time = bsp::get_tick_ms();
     is_finished = false;
@@ -496,16 +533,16 @@ void Navigation::update_position() {
     current_direction = target_direction;
     switch (current_direction) {
     case Direction::NORTH:
-        current_position.y++;
+        current_cell.y++;
         break;
     case Direction::EAST:
-        current_position.x++;
+        current_cell.x++;
         break;
     case Direction::SOUTH:
-        current_position.y--;
+        current_cell.y--;
         break;
     case Direction::WEST:
-        current_position.x--;
+        current_cell.x--;
         break;
     default:
         break;
@@ -519,6 +556,8 @@ void Navigation::set_movement(Movement movement, Movement prev_movement, Movemen
     current_movement = movement;
 
     traveled_dist_cm = 0;
+    current_position_mm = {0, 0};
+    current_angle_rad = 0;
     reset_wall_break();
     reference_time = bsp::get_tick_ms();
     is_finished = false;

@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include <utility>
+#include <cmath>
 
 enum class Direction : uint8_t {
     NORTH,
@@ -77,6 +78,11 @@ struct Point {
     int y;
 };
 
+struct Position {
+    float x;
+    float y;
+};
+
 inline bool operator==(Point const& p1, Point const& p2) {
     return p1.x == p2.x && p1.y == p2.y;
 }
@@ -84,3 +90,25 @@ inline bool operator==(Point const& p1, Point const& p2) {
 inline Point operator+(Point const& p1, Point const& p2) {
     return {p1.x + p2.x, p1.y + p2.y};
 }
+
+
+inline bool operator==(Position const& p1, Position const& p2) {
+    return p1.x == p2.x && p1.y == p2.y;
+}
+
+inline Position operator+(Position const& p1, Position const& p2) {
+    return {p1.x + p2.x, p1.y + p2.y};
+}
+
+
+inline Position operator*(Position const& p, float scalar) {
+    return {p.x * scalar, p.y * scalar};
+}
+
+inline Position rotate(Position const& p, float radians) {
+    return {
+        p.x * std::cos(radians) - p.y * std::sin(radians),
+        p.x * std::sin(radians) + p.y * std::cos(radians),
+    };
+}
+

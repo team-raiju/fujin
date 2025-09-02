@@ -70,8 +70,8 @@ struct ForwardParams {
 
 static std::map<Movement, TurnParams> turn_params_search = {
     {Movement::TURN_AROUND, {0, 0, 0.0, 52.36, 3.49, 67, 833, 0.116, 3.025, -1}},
-    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0, 0, 0.25, 43.633, 4.014, 92, 299, 0.185, 1.386, -1}},
-    {Movement::TURN_LEFT_90_SEARCH_MODE, {0, 0, 0.25, 43.633, 4.014, 92, 299, 0.185, 1.386, 1}},
+    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0, 0, 0.25, 43.633, 4.014, 92, 299, 0.185, 1.37, -1}},
+    {Movement::TURN_LEFT_90_SEARCH_MODE, {0, 0, 0.25, 43.633, 4.014, 92, 299, 0.185, 1.37, 1}},
 };
 
 static std::map<Movement, ForwardParams> forward_params_search = {

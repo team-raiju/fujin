@@ -20,7 +20,8 @@ public:
     void update();
     bool step();
 
-    Point get_robot_position();
+    Point get_robot_cell_position();
+    Position get_robot_position();
     Direction get_robot_direction();
 
     /// @brief Configure and reset movement variables based on a target direction. Update method will execute the movement
@@ -71,7 +72,9 @@ private:
     float traveled_dist_cm = 0; 
     int32_t encoder_right_counter;
     int32_t encoder_left_counter;
-    Point current_position;
+    Point current_cell;
+    Position current_position_mm = {0, 0};
+    float current_angle_rad = 0;
     Direction current_direction;
     Movement current_movement;
     Direction target_direction;

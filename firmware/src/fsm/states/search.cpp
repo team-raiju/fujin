@@ -160,7 +160,7 @@ State* Search::react(Timeout const&) {
         bsp::leds::stripe_set(Color::Black);
         bsp::leds::stripe_set(Color::Green);
 
-        auto robot_pos = navigation->get_robot_position();
+        auto robot_pos = navigation->get_robot_cell_position();
         auto robot_dir = navigation->get_robot_direction();
 
         uint8_t walls =

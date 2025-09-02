@@ -154,5 +154,5 @@ if __name__ == "__main__":
     file_name = filter + '/kp_' + kp + '_ki_' + ki + '.txt'
     file_path = os.path.join(script_dir, file_name)
     plot_velocities(file_path)
-    plot_integral(file_path)
-    plot_pwm_and_bat(file_path)
+    # plot_integral(file_path)
+    # plot_pwm_and_bat(file_path)

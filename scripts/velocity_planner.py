@@ -101,12 +101,12 @@ def main():
     turn_angle_deg = 90
     turn_radius_mm = 45
 
-    angular_acceleration_deg_s2 = 4500
-    angular_desacceleration_deg_s2 = 4500
-    maximum_angular_speed_deg_s = 250
+    angular_acceleration_deg_s2 = 2500
+    angular_desacceleration_deg_s2 = 2500
+    maximum_angular_speed_deg_s = 230
 
-    mm_before_turn = 25
-    mm_after_turn = 25
+    mm_before_turn = 15
+    mm_after_turn = 15
     initial_theta_deg = 0
 
 

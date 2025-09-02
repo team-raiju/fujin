@@ -129,9 +129,9 @@ int32_t ir_side_wall_error() {
     if (ir_wall_control_valid(SensingDirection::LEFT) && ir_wall_control_valid(SensingDirection::RIGHT)) {
         ir_error = left_error - right_error;
     } else if (ir_wall_control_valid(SensingDirection::LEFT)) {
-        ir_error = 2.0 * left_error;
+        ir_error = 1.5 * left_error;
     } else if (ir_wall_control_valid(SensingDirection::RIGHT)) {
-        ir_error = -2.0 * right_error;
+        ir_error = -1.5 * right_error;
     } else {
         ir_error = 0;
     }

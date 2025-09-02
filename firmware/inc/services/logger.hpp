@@ -9,7 +9,7 @@ public:
 
     union LogData {
 
-       uint8_t data[11];
+       uint8_t data[12];
 
         struct {
             uint16_t velocity_ms : 12;
@@ -18,14 +18,9 @@ public:
             uint16_t angular_speed_rad_s : 12;
             uint16_t target_rad_s : 12;
 
-            uint8_t pwm_left : 8;
-            uint8_t pwm_right : 8;
-
-            uint8_t battery : 8;
-
-            uint8_t integral_vel : 8;
-            uint8_t integral_angular : 8;
-
+            uint16_t position_mm_x: 16;
+            uint16_t position_mm_y: 16;
+            uint16_t angle: 16;
 
         } __attribute__((packed)) fields;
     };
@@ -53,7 +48,7 @@ private:
     LogData logdata[7];
     uint8_t log_data_idx;
     uint32_t addr_offset;
-    uint8_t ram_logger[40000]; //Max log number is 30000 / sizeof(LogData)
+    uint8_t ram_logger[60000]; //Max log number is 30000 / sizeof(LogData)
 
 };
 
