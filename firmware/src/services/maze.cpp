@@ -18,6 +18,22 @@ Maze* Maze::instance() {
 }
 
 Maze::Maze() {
+    this->reset();
+}
+
+void Maze::reset() {
+    for (int x = 0; x < CELLS_X; x++) {
+        for (int y = 0; y < CELLS_Y; y++) {
+            map[x][y].walls = 0;
+            map[x][y].visited = false;
+            map[x][y].distance = 255;
+            map[x][y].north = nullptr;
+            map[x][y].east = nullptr;
+            map[x][y].south = nullptr;
+            map[x][y].west = nullptr;
+        }
+    }
+
     for (int x = 0; x < CELLS_X; x++) {
         for (int y = 0; y < CELLS_Y; y++) {
             auto& cell = map[x][y];
@@ -136,7 +152,7 @@ std::vector<Direction> Maze::directions_to_goal() {
 
         // If position is equal to any of the desired goals
         goal_reached = std::any_of(std::begin(GOAL_POSITIONS), std::end(GOAL_POSITIONS),
-                            [&](const Point& goal) { return goal == pos; });
+                                   [&](const Point& goal) { return goal == pos; });
     }
 
     return target_directions;

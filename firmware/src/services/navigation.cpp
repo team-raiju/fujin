@@ -432,7 +432,7 @@ bool Navigation::step() {
             } else {
                 if (control_angular_speed_abs > angular_end_speed) {
                     control_angular_speed_abs -= angular_acceleration / CONTROL_FREQUENCY_HZ;
-                    control_angular_speed_abs = std::max(control_angular_speed_abs, 0.100f);
+                    control_angular_speed_abs = std::max(control_angular_speed_abs, 0.200f);
                 }
             }
 

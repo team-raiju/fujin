@@ -43,6 +43,8 @@ public:
     
     void read_maze_from_memory();
 
+    void reset();
+
 private:
     Maze();
 };
