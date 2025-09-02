@@ -68,7 +68,7 @@ private:
     bool is_finished = false;
 
     uint32_t reference_time;
-    float traveled_dist_cm = 0;
+    float traveled_dist_cm = 0; 
     int32_t encoder_right_counter;
     int32_t encoder_left_counter;
     Point current_position;
@@ -81,6 +81,9 @@ private:
     uint32_t wall_right_counter_off = 0;
     uint32_t wall_left_counter_off = 0;
     bool wall_break_already_detected = false;
+
+    int mini_fsm_state = 0;
+
 
     enum class PathState {
         Start,

@@ -69,18 +69,18 @@ struct ForwardParams {
 };
 
 static std::map<Movement, TurnParams> turn_params_search = {
-    {Movement::TURN_AROUND, {HALF_CELL_SIZE_CM, HALF_CELL_SIZE_CM, 0.0, 69.8132, 5.236, 60, 540, 0, 0, -1}},
-    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0, 0, 0.25, 87.267, 4.363, 50, 310, 0.109, 1.462, -1}},
-    {Movement::TURN_LEFT_90_SEARCH_MODE, {0, 0, 0.25, 87.267, 4.363, 50, 310, 0.109, 1.462, 1}},
+    {Movement::TURN_AROUND, {0, 0, 0.0, 52.36, 3.49, 67, 833, 0.116, 3.025, -1}},
+    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0, 0, 0.25, 43.633, 4.014, 92, 299, 0.185, 1.386, -1}},
+    {Movement::TURN_LEFT_90_SEARCH_MODE, {0, 0, 0.25, 43.633, 4.014, 92, 299, 0.185, 1.386, 1}},
 };
 
 static std::map<Movement, ForwardParams> forward_params_search = {
     {Movement::START, {0.25, 0.65, 0.65, HALF_CELL_SIZE_CM + ROBOT_DIST_FROM_CENTER_START_CM}},
     {Movement::FORWARD, {0.25, 0.65, 0.65, CELL_SIZE_CM}},
     {Movement::STOP, {0.25, 0.65, 0.65, (HALF_CELL_SIZE_CM)}},
-    {Movement::TURN_AROUND, {0.25, 0.5, 0.5, HALF_CELL_SIZE_CM}},
-    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.25, 0.65, 0.65, 3.4}},
-    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.25, 0.65, 0.65, 3.4}},
+    {Movement::TURN_AROUND, {0.25, 0.5, 0.5, (HALF_CELL_SIZE_CM)}},
+    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.25, 0.65, 0.65, 2.0}},
+    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.25, 0.65, 0.65, 2.0}},
 };
 
 static std::map<Movement, TurnParams> turn_params_slow = {

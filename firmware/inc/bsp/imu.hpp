@@ -18,6 +18,7 @@ ImuResult update();
 
 // All angles are related to the Z axis
 float get_angle();
+float get_incremental_angle();
 void reset_angle();
 float get_rad_per_s();
 

@@ -39,8 +39,11 @@ static float last_ω;
 // Angular acceleration in rad/s²
 static float α;
 
-// Angular Displacement in rad
+// Angular Displacement in rad [-pi to pi]
 static float φ;
+
+// Incremental angular Displacement in rad [-inf to inf]
+static float incremental_φ;
 
 // Vertical acceleration in m/s²
 static float a_z;
@@ -205,6 +208,7 @@ ImuResult update() {
     last_ω = ω;
 
     φ += ω * δt;
+    incremental_φ += ω * δt;
 
     // Return to first revolution
     while (φ > M_TWOPI) {
@@ -227,9 +231,15 @@ float get_angle() {
     return φ;
 }
 
+float get_incremental_angle() {
+    return incremental_φ;
+}
+
+
 void reset_angle() {
     last_time_imu = 0;
     φ = 0;
+    incremental_φ = 0;
 }
 
 float get_rad_per_s() {

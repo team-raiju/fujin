@@ -45,6 +45,7 @@ void Navigation::init() {
 
 void Navigation::reset(bool search_mode) {
     bsp::imu::reset_angle();
+    mini_fsm_state = 0;
 
     traveled_dist_cm = 0;
     encoder_left_counter = 0;
@@ -175,9 +176,9 @@ bool Navigation::step() {
         }
 
         float max_speed = forward_params[current_movement].max_speed;
-        float control_linear_speed = control->get_target_linear_speed();
         float acceleration = forward_params[current_movement].acceleration;
         float deceleration = forward_params[current_movement].deceleration;
+        float control_linear_speed = control->get_target_linear_speed();
 
         if (control_linear_speed < 1.0) {
             acceleration = std::min(acceleration, 5.0f);
@@ -236,7 +237,7 @@ bool Navigation::step() {
         }
 
         if (std::abs(traveled_dist_cm) >= target_travel_cm || front_emergency) {
-            bsp::leds::stripe_set(Color::Red);
+            // bsp::leds::stripe_set(Color::Red);
             is_finished = true;
         }
 
@@ -266,130 +267,53 @@ bool Navigation::step() {
         }
 
         // Start turn parameters
+        float angular_max_speed = current_turn_params.max_angular_speed;
         float angular_acceleration = current_turn_params.angular_accel;
-        float angular_speed = current_turn_params.max_angular_speed;
+        float angular_deceleration = current_turn_params.angular_accel;
+        float control_angular_speed_abs = std::abs(control->get_target_angular_speed());
 
         float angle_until_acceleration = std::abs(current_turn_params.angle_accel_rad);
         float angle_untill_start_deceleration = std::abs(current_turn_params.angle_max_ang_speed_rad);
-
         float deceleration_angle = angle_until_acceleration;
         float final_angle_rad = angle_untill_start_deceleration + deceleration_angle;
-
         int turn_sign = current_turn_params.sign;
 
-        // TODO: take care of 180 degrees case
-        if (std::abs(bsp::imu::get_angle()) < angle_until_acceleration) {
-            float ideal_rad_s =
-                std::abs(control->get_target_angular_speed()) + (angular_acceleration / CONTROL_FREQUENCY_HZ);
-            ideal_rad_s = std::min(ideal_rad_s, angular_speed);
-            control->set_target_angular_speed(ideal_rad_s * turn_sign);
-        } else if (std::abs(bsp::imu::get_angle()) < angle_untill_start_deceleration) {
-            float ideal_rad_s = angular_speed;
-            control->set_target_angular_speed(ideal_rad_s * turn_sign);
-        } else if (std::abs(bsp::imu::get_angle()) < final_angle_rad) {
-            float ideal_rad_s =
-                std::abs(control->get_target_angular_speed()) - (angular_acceleration / CONTROL_FREQUENCY_HZ);
-            ideal_rad_s = std::max(ideal_rad_s, 0.0f);
-            control->set_target_angular_speed(ideal_rad_s * turn_sign);
+        float angular_end_speed = 0.0;
+        float break_angle_margin = 0.0875;
+
+        if (std::abs(bsp::imu::get_incremental_angle()) <
+            ((final_angle_rad - break_angle_margin) -
+             (get_torricelli_distance(angular_end_speed, control_angular_speed_abs, -angular_deceleration)))) {
+            if (control_angular_speed_abs < angular_max_speed) {
+                control_angular_speed_abs += angular_acceleration / CONTROL_FREQUENCY_HZ;
+                control_angular_speed_abs = std::min(control_angular_speed_abs, angular_max_speed);
+            }
         } else {
+            if (control_angular_speed_abs > angular_end_speed) {
+                control_angular_speed_abs -= angular_acceleration / CONTROL_FREQUENCY_HZ;
+                control_angular_speed_abs = std::max(control_angular_speed_abs, 0.0175f);
+            }
+        }
+
+        control->set_target_angular_speed(control_angular_speed_abs * turn_sign);
+        control->set_wall_pid_enabled(false);
+        control->set_diagonal_pid_enabled(false);
+
+        if (std::abs(bsp::imu::get_incremental_angle()) >= final_angle_rad) {
             control->set_target_angular_speed(0);
             is_finished = true;
         }
 
-        control->set_wall_pid_enabled(false);
-        control->set_diagonal_pid_enabled(false);
-
         break;
     }
 
+    case Movement::TURN_RIGHT_90_SEARCH_MODE:
+    case Movement::TURN_LEFT_90_SEARCH_MODE:
     case Movement::TURN_AROUND: {
-        float angular_acceleration = turn_params[current_movement].angular_accel;
-        float angular_speed = turn_params[current_movement].max_angular_speed;
-        uint16_t elapsed_t_start = 2000; // arbitrary large value
-        uint16_t elapsed_t_accel = elapsed_t_start + turn_params[current_movement].t_accel;
-        uint16_t elapsed_t_max_ang_vel = elapsed_t_accel + turn_params[current_movement].t_max_ang_vel;
-        uint16_t elapsed_t_decel = elapsed_t_max_ang_vel + turn_params[current_movement].t_accel;
-        uint16_t elapsed_t_end = elapsed_t_decel;
-        int turn_sign = turn_params[current_movement].sign;
-
-        uint32_t elapsed_time = bsp::get_tick_ms() - reference_time;
-
-        if (elapsed_time <= elapsed_t_start || elapsed_time >= elapsed_t_end) {
-            bool front_emergency =
-                ir_reading(SensingDirection::FRONT_LEFT) > 2850 && ir_reading(SensingDirection::FRONT_RIGHT) > 2850 &&
-                ir_reading(SensingDirection::LEFT) > 2470 && ir_reading(SensingDirection::RIGHT) > 2850;
-
-            // Final speed is first 0 to stop and turn around, then max speed to exit the movement with speed
-            float final_speed;
-            if (elapsed_time >= elapsed_t_end) {
-                final_speed = forward_params[current_movement].max_speed;
-            } else {
-                final_speed = 0;
-            }
-
-            float max_speed = forward_params[current_movement].max_speed;
-            float acceleration = forward_params[current_movement].acceleration;
-            float deceleration = forward_params[current_movement].deceleration;
-            float control_linear_speed = control->get_target_linear_speed();
-
-            if (std::abs(traveled_dist_cm) <
-                (target_travel_cm -
-                 (100 * get_torricelli_distance(final_speed, control_linear_speed, -deceleration)))) {
-                if (control_linear_speed < max_speed) {
-                    control_linear_speed += acceleration / CONTROL_FREQUENCY_HZ;
-                    control_linear_speed = std::min(control_linear_speed, max_speed);
-                }
-            } else {
-                if (control_linear_speed > final_speed) {
-                    control_linear_speed -= deceleration / CONTROL_FREQUENCY_HZ;
-                    control_linear_speed = std::max(control_linear_speed, Config::min_move_speed);
-                }
-            }
-
-            if (std::abs(traveled_dist_cm) >= target_travel_cm || front_emergency) {
-                control_linear_speed = final_speed;
-
-                if (elapsed_time >= elapsed_t_end) {
-                    is_finished = true;
-                } else {
-                    // We want to start the turn around, so we change ref time
-                    reference_time = bsp::get_tick_ms() - elapsed_t_start;
-                }
-            }
-
-            control->set_target_linear_speed(control_linear_speed);
-            control->set_target_angular_speed(0);
-            control->set_diagonal_pid_enabled(false);
-        } else if (elapsed_time <= elapsed_t_accel) {
-            control->set_target_linear_speed(0);
-            float ideal_rad_s =
-                std::abs(control->get_target_angular_speed()) + (angular_acceleration / CONTROL_FREQUENCY_HZ);
-            ideal_rad_s = std::min(ideal_rad_s, angular_speed);
-            control->set_target_angular_speed(ideal_rad_s * turn_sign);
-        } else if (elapsed_time <= elapsed_t_max_ang_vel) {
-            float ideal_rad_s = angular_speed;
-            control->set_target_angular_speed(ideal_rad_s * turn_sign);
-        } else if (elapsed_time <= elapsed_t_decel) {
-            float ideal_rad_s =
-                std::abs(control->get_target_angular_speed()) - (angular_acceleration / CONTROL_FREQUENCY_HZ);
-            ideal_rad_s = std::max(ideal_rad_s, 0.0f);
-            control->set_target_angular_speed(ideal_rad_s * turn_sign);
-            traveled_dist_cm = 0;
-        }
-
-        control->set_wall_pid_enabled(false);
-        control->set_diagonal_pid_enabled(false);
-
-        break;
-    }
-
-    case TURN_RIGHT_90_SEARCH_MODE:
-    case TURN_LEFT_90_SEARCH_MODE: {
         // Mini FSM
         // 0. Move forward
-        // 1. Turn 90 degrees
+        // 1. Turn Desired degrees
         // 2. Move forward
-        static int mini_fsm_state = 0;
 
         if (mini_fsm_state == 0 || mini_fsm_state == 2) { // Move Forward
 
@@ -398,10 +322,18 @@ bool Navigation::step() {
                 ir_reading(SensingDirection::LEFT) > 2470 && ir_reading(SensingDirection::RIGHT) > 2850;
 
             float max_speed = forward_params[current_movement].max_speed;
-            float control_linear_speed = control->get_target_linear_speed();
             float acceleration = forward_params[current_movement].acceleration;
             float deceleration = forward_params[current_movement].deceleration;
+
             float final_speed = forward_params[current_movement].max_speed;
+            if (current_movement == Movement::TURN_AROUND && mini_fsm_state == 0) {
+                final_speed = 0.0f;
+                target_travel_cm = 9.0 + 1.2;
+            } else if(current_movement == Movement::TURN_AROUND){
+                target_travel_cm = 9.0;
+            }
+
+            float control_linear_speed = control->get_target_linear_speed();
 
             if (std::abs(traveled_dist_cm) <
                 (target_travel_cm -
@@ -421,11 +353,25 @@ bool Navigation::step() {
             control->set_target_angular_speed(0);
 
             if (std::abs(traveled_dist_cm) >= target_travel_cm || front_emergency) {
+
                 if (mini_fsm_state == 0) {
-                    mini_fsm_state = 1;
-                    traveled_dist_cm = 0;
-                    reference_time = bsp::get_tick_ms();
-                    bsp::imu::reset_angle();
+                    if (current_movement == Movement::TURN_AROUND) {
+                        static int counter = 0;
+                        control->set_target_linear_speed(0.0);
+                        if (counter++ > 200) {
+                            counter = 0;
+                            mini_fsm_state = 1;
+                            traveled_dist_cm = 0;
+                            reference_time = bsp::get_tick_ms();
+                            bsp::imu::reset_angle();
+                            control->reset();
+                        }
+                    } else {
+                        mini_fsm_state = 1;
+                        traveled_dist_cm = 0;
+                        reference_time = bsp::get_tick_ms();
+                        bsp::imu::reset_angle();
+                    }
                 } else {
                     is_finished = true;
                     mini_fsm_state = 0;
@@ -433,42 +379,62 @@ bool Navigation::step() {
             }
         } else if (mini_fsm_state == 1) { // Turn Left or Right
             auto current_turn_params = turn_params[current_movement];
+            float angular_max_speed = current_turn_params.max_angular_speed;
             float angular_acceleration = current_turn_params.angular_accel;
-            float angular_speed = current_turn_params.max_angular_speed;
+            float angular_deceleration = current_turn_params.angular_accel;
+            float control_angular_speed_abs = std::abs(control->get_target_angular_speed());
 
             float angle_until_acceleration = std::abs(current_turn_params.angle_accel_rad);
             float angle_untill_start_deceleration = std::abs(current_turn_params.angle_max_ang_speed_rad);
-
             float deceleration_angle = angle_until_acceleration;
             float final_angle_rad = angle_untill_start_deceleration + deceleration_angle;
-
             int turn_sign = current_turn_params.sign;
 
-            if (std::abs(bsp::imu::get_angle()) < angle_until_acceleration) {
-                float ideal_rad_s =
-                    std::abs(control->get_target_angular_speed()) + (angular_acceleration / CONTROL_FREQUENCY_HZ);
-                ideal_rad_s = std::min(ideal_rad_s, angular_speed);
-                control->set_target_angular_speed(ideal_rad_s * turn_sign);
-            } else if (std::abs(bsp::imu::get_angle()) < angle_untill_start_deceleration) {
-                float ideal_rad_s = angular_speed;
-                control->set_target_angular_speed(ideal_rad_s * turn_sign);
-            } else if (std::abs(bsp::imu::get_angle()) < final_angle_rad) {
-                float ideal_rad_s =
-                    std::abs(control->get_target_angular_speed()) - (angular_acceleration / CONTROL_FREQUENCY_HZ);
-                ideal_rad_s = std::max(ideal_rad_s, 0.0f);
-                control->set_target_angular_speed(ideal_rad_s * turn_sign);
+            float angular_end_speed = 0.0;
+            float break_angle_margin = 0.00f;
+
+            if (std::abs(bsp::imu::get_incremental_angle()) <
+                ((final_angle_rad - break_angle_margin) -
+                 (get_torricelli_distance(angular_end_speed, control_angular_speed_abs, -angular_deceleration)))) {
+                if (control_angular_speed_abs < angular_max_speed) {
+                    control_angular_speed_abs += angular_acceleration / CONTROL_FREQUENCY_HZ;
+                    control_angular_speed_abs = std::min(control_angular_speed_abs, angular_max_speed);
+                }
             } else {
-                control->set_target_angular_speed(0);
-                mini_fsm_state = 2;
-                traveled_dist_cm = 0;
+                if (control_angular_speed_abs > angular_end_speed) {
+                    control_angular_speed_abs -= angular_acceleration / CONTROL_FREQUENCY_HZ;
+                    control_angular_speed_abs = std::max(control_angular_speed_abs, 0.0525f);
+                }
             }
 
-        } else { // Should not be here
+            control->set_target_angular_speed(control_angular_speed_abs * turn_sign);
+
+            if (std::abs(bsp::imu::get_incremental_angle()) >= (final_angle_rad - break_angle_margin)) {
+                if (current_movement == Movement::TURN_AROUND) {
+                    static int counter = 0;
+                    control->reset();
+                    control->set_target_angular_speed(0.0);
+                    if (counter++ > 500) {
+                        counter = 0;
+                        mini_fsm_state = 2;
+                        traveled_dist_cm = 0;
+                        control->reset();
+                    }
+                } else {
+                    control->set_target_angular_speed(0);
+                    mini_fsm_state = 2;
+                    traveled_dist_cm = 0;
+                }
+            }
+
+        } else { // Should not reach here
             is_finished = true;
             mini_fsm_state = 0;
         }
+        
         control->set_wall_pid_enabled(false);
         control->set_diagonal_pid_enabled(false);
+        break;
     }
     }
 
@@ -491,6 +457,7 @@ Direction Navigation::get_robot_direction(void) {
 
 void Navigation::set_movement(Direction dir) {
     bsp::imu::reset_angle();
+    mini_fsm_state = 0;
 
     target_direction = dir;
     current_movement = get_movement(dir, current_direction, true);
@@ -502,7 +469,7 @@ void Navigation::set_movement(Direction dir) {
 
     target_travel_cm = forward_params[current_movement].target_travel_cm;
 
-    if (current_movement == Movement::STOP || current_movement == Movement::TURN_AROUND) {
+    if (current_movement == Movement::STOP) {
         forward_end_speed = 0;
     } else {
         forward_end_speed = forward_params[Movement::FORWARD].max_speed;
@@ -547,6 +514,7 @@ void Navigation::update_position() {
 
 void Navigation::set_movement(Movement movement, Movement prev_movement, Movement next_movement, uint8_t count) {
     bsp::imu::reset_angle();
+    mini_fsm_state = 0;
 
     current_movement = movement;
 
@@ -560,10 +528,12 @@ void Navigation::set_movement(Movement movement, Movement prev_movement, Movemen
     target_travel_cm = complete_prev_move_travel + (forward_params[movement].target_travel_cm * count) +
                        turn_params[next_movement].start;
 
-    if (current_movement == Movement::STOP || current_movement == Movement::TURN_AROUND) {
+    if (current_movement == Movement::STOP) {
         forward_end_speed = 0;
         bsp::leds::stripe_set(Color::Blue);
     } else if (next_movement == Movement::FORWARD || next_movement == Movement::DIAGONAL) {
+        forward_end_speed = forward_params[next_movement].max_speed;
+    } else if (next_movement == Movement::STOP) {
         forward_end_speed = forward_params[next_movement].max_speed;
     } else {
         forward_end_speed = turn_params[next_movement].turn_linear_speed;
