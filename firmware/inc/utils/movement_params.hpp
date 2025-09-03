@@ -72,7 +72,7 @@ static std::map<Movement, ForwardParams> forward_params_search = {
     {Movement::START, {0.25, 0.65, 0.65, HALF_CELL_SIZE_CM + ROBOT_DIST_FROM_CENTER_START_CM}},
     {Movement::FORWARD, {0.25, 0.65, 0.65, CELL_SIZE_CM}},
     {Movement::STOP, {0.25, 0.65, 0.65, (HALF_CELL_SIZE_CM)}},
-    {Movement::TURN_AROUND, {0.25, 0.5, 0.5, (HALF_CELL_SIZE_CM)}},
+    {Movement::TURN_AROUND, {0.25, 0.5, 0.5, 10.6}},
     {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.25, 0.65, 0.65, 2.2}},
     {Movement::TURN_LEFT_90_SEARCH_MODE, {0.25, 0.65, 0.65, 2.2}},
 };

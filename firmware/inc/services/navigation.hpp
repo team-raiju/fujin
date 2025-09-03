@@ -1,8 +1,8 @@
 #pragma once
 
 #include <cstdint>
-#include <vector>
 #include <string>
+#include <vector>
 
 #include "algorithms/pid.hpp"
 #include "services/control.hpp"
@@ -24,8 +24,8 @@ public:
     Position get_robot_position_mm();
     Direction get_robot_direction();
 
-    /// @brief Configure and reset movement variables based on a target direction. Update method will execute the movement
-    /// Used on search mode, to set the next movement
+    /// @brief Configure and reset movement variables based on a target direction. Update method will execute the
+    /// movement Used on search mode, to set the next movement
     /// @param dir The direction to set
     void set_movement(Direction dir);
 
@@ -47,6 +47,28 @@ public:
     void print_movement_sequence(std::vector<std::pair<Movement, uint8_t>> movements, std::string name);
 
 private:
+    enum class PathState {
+        Start,
+        Ortho_F,  // Moving straight
+        Ortho_R,  // Made a single Right 90 turn
+        Ortho_L,  // Made a single Left 90 turn
+        Ortho_RR, // Made two Right 90 turns (180)
+        Ortho_LL, // Made two Left 90 turns (180)
+        Diag_LR,  // On a diagonal path, last turn was Right
+        Diag_RL,  // On a diagonal path, last turn was Left
+        Diag_RR,  // In a diagonal turn sequence (R-R)
+        Diag_LL,  // In a diagonal turn sequence (L-L)
+        Stop,
+    };
+
+    enum class MiniFSMStates {
+        FORWARD_1,
+        TURN,
+        FORWARD_2,
+        STABILIZE_1,
+        STABILIZE_2,
+    };
+
     Navigation() {}
     void update_cell_position_and_dir();
 
@@ -70,7 +92,7 @@ private:
     bool is_finished = false;
 
     uint32_t reference_time;
-    float traveled_dist_cm = 0; 
+    float traveled_dist_cm = 0;
     int32_t encoder_right_counter;
     int32_t encoder_left_counter;
     Point current_cell;
@@ -86,22 +108,7 @@ private:
     uint32_t wall_left_counter_off = 0;
     bool wall_break_already_detected = false;
 
-    int mini_fsm_state = 0;
-
-
-    enum class PathState {
-        Start,
-        Ortho_F,      // Moving straight
-        Ortho_R,      // Made a single Right 90 turn
-        Ortho_L,      // Made a single Left 90 turn
-        Ortho_RR,     // Made two Right 90 turns (180)
-        Ortho_LL,     // Made two Left 90 turns (180)
-        Diag_LR,      // On a diagonal path, last turn was Right
-        Diag_RL,      // On a diagonal path, last turn was Left
-        Diag_RR,      // In a diagonal turn sequence (R-R)
-        Diag_LL,      // In a diagonal turn sequence (L-L)
-        Stop,
-    };
+    MiniFSMStates mini_fsm_state = MiniFSMStates::FORWARD_1;
 };
 
 }
