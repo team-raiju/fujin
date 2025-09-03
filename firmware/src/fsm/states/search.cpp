@@ -160,7 +160,7 @@ State* Search::react(Timeout const&) {
         bsp::leds::stripe_set(Color::Black);
         bsp::leds::stripe_set(Color::Green);
 
-        auto robot_pos = navigation->get_robot_cell_position();
+        auto robot_cell_pos = navigation->get_robot_cell_position();
         auto robot_dir = navigation->get_robot_direction();
 
         uint8_t walls =
@@ -169,7 +169,7 @@ State* Search::react(Timeout const&) {
 
         bool goal_reached =
             std::any_of(std::begin(services::Maze::GOAL_POSITIONS), std::end(services::Maze::GOAL_POSITIONS),
-                        [&](const Point& goal) { return goal == robot_pos; });
+                        [&](const Point& goal) { return goal == robot_cell_pos; });
 
         if (goal_reached && !returning) {
             bsp::buzzer::start();
@@ -177,11 +177,11 @@ State* Search::react(Timeout const&) {
             returning = true;
         }
 
-        if (robot_pos == services::Maze::ORIGIN && returning) {
-            navigation->set_movement(Movement::STOP, Movement::STOP, Movement::STOP, 1);
+        if (robot_cell_pos == services::Maze::ORIGIN && returning) {
+            navigation->set_movement(Direction::NORTH);
             stop_next_move = true;
         } else {
-            auto dir = maze->next_step(robot_pos, walls, returning, true);
+            auto dir = maze->next_step(robot_cell_pos, walls, returning, true);
             navigation->set_movement(dir);
         }
     }

@@ -21,7 +21,7 @@ public:
     bool step();
 
     Point get_robot_cell_position();
-    Position get_robot_position();
+    Position get_robot_position_mm();
     Direction get_robot_direction();
 
     /// @brief Configure and reset movement variables based on a target direction. Update method will execute the movement
@@ -48,9 +48,9 @@ public:
 
 private:
     Navigation() {}
-    void update_position();
+    void update_cell_position_and_dir();
 
-    /// @brief Get the movement type to go to a target direction direction, based on the current direction and search mode
+    /// @brief Get the movement type to go to a target direction, based on the current direction and search mode
     /// @param target_dir The target direction
     /// @param current_dir The current direction
     /// @param search_mode Whether the search mode is active
@@ -59,6 +59,7 @@ private:
     float get_torricelli_distance(float final_speed, float initial_speed, float acceleration);
     bool wall_break_detected();
     void reset_wall_break();
+    void reset_movement_variables();
 
     services::Control* control;
 

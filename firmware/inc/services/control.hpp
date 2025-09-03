@@ -24,6 +24,7 @@ class Control {
         void set_target_angular_speed(float speed) { target_angular_speed_rad_s = speed; }
         void set_wall_pid_enabled(bool enabled) { wall_pid_enabled = enabled; }
         void set_diagonal_pid_enabled(bool enabled) { diagonal_pid_enabled = enabled; }
+        void set_motor_control_disabled(bool disabled) {motor_control_disabled = disabled;}
 
         float get_target_linear_speed() { return target_linear_speed_m_s; }
         float get_target_angular_speed() { return target_angular_speed_rad_s; }
@@ -49,6 +50,7 @@ class Control {
         bool diagonal_pid_enabled;
         int16_t pwm_duty_l;
         int16_t pwm_duty_r;
+        bool motor_control_disabled = false;
 
 };
 

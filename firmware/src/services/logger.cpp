@@ -66,10 +66,10 @@ void Logger::update() {
     float param_target_rad_s = control->get_target_angular_speed() + std::abs(paramInfoArray[3].min_param_value);
     param_target_rad_s *= paramInfoArray[3].scale;
 
-    float param_position_x = nav->get_robot_position().x + std::abs(paramInfoArray[4].min_param_value);
+    float param_position_x = nav->get_robot_position_mm().x + std::abs(paramInfoArray[4].min_param_value);
     param_position_x *= paramInfoArray[4].scale;
 
-    float param_position_y = nav->get_robot_position().y + std::abs(paramInfoArray[5].min_param_value);
+    float param_position_y = nav->get_robot_position_mm().y + std::abs(paramInfoArray[5].min_param_value);
     param_position_y *= paramInfoArray[5].scale;
 
     float param_angle = (bsp::imu::get_angle() * (180.0 / M_PI)) + std::abs(paramInfoArray[6].min_param_value);

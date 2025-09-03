@@ -142,8 +142,8 @@ void Run::enter() {
 
     target_movements.push_back({Movement::START, 1});
     target_movements.push_back({Movement::FORWARD, 1});
-    target_movements.push_back({Movement::TURN_RIGHT_90_SEARCH_MODE, 1});
-    target_movements.push_back({Movement::TURN_LEFT_90_SEARCH_MODE, 1});
+    target_movements.push_back({Movement::TURN_AROUND, 1});
+    target_movements.push_back({Movement::FORWARD, 1});
     target_movements.push_back({Movement::STOP, 1});
 
     move_count = 0;

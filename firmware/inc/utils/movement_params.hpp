@@ -19,8 +19,7 @@ static constexpr float ROBOT_DIST_FROM_CENTER_START_CM = 2.0;
  * @param turn_linear_speed The linear speed during the turn in [m/s]
  * @param angular_accel The angular acceleration during the turn in [rad/s^2]
  * @param max_angular_speed The maximum angular speed during the turn in [rad/s]
- * @param t_accel The time duration for acceleration and deceleration in [ms]
- * @param t_max_ang_vel The time duration that the robot will be in maximum angular speed in [ms]
+ * @param angle_to_turn The angle to turn in [rad]
  * @param sign The direction sign of the turn (positive or negative).
  *
  */
@@ -30,20 +29,15 @@ struct TurnParams {
     float turn_linear_speed;
     float angular_accel;
     float max_angular_speed;
-    uint16_t t_accel;
-    uint16_t t_max_ang_vel;
-    float angle_accel_rad;
-    float angle_max_ang_speed_rad;
+    float angle_to_turn;
     int sign;
 
     constexpr TurnParams()
-        : start(0), end(0), turn_linear_speed(0), angular_accel(0), max_angular_speed(0), t_accel(0), t_max_ang_vel(0),
-          angle_accel_rad(0), angle_max_ang_speed_rad(0), sign(0) {}
+        : start(0), end(0), turn_linear_speed(0), angular_accel(0), max_angular_speed(0), angle_to_turn(0), sign(0) {}
 
-    constexpr TurnParams(float s, float e, float ls, float aa, float mas, int ta, int tm, float aar, float amr,
-                         int sg) noexcept
-        : start(s), end(e), turn_linear_speed(ls), angular_accel(aa), max_angular_speed(mas), t_accel(ta),
-          t_max_ang_vel(tm), angle_accel_rad(aar), angle_max_ang_speed_rad(amr), sign(sg) {}
+    constexpr TurnParams(float s, float e, float ls, float aa, float mas, float att, int sg) noexcept
+        : start(s), end(e), turn_linear_speed(ls), angular_accel(aa), max_angular_speed(mas), angle_to_turn(att),
+          sign(sg) {}
 };
 
 /**
@@ -69,9 +63,9 @@ struct ForwardParams {
 };
 
 static std::map<Movement, TurnParams> turn_params_search = {
-    {Movement::TURN_AROUND, {0, 0, 0.0, 52.36, 3.49, 67, 833, 0.116, 3.025, -1}},
-    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0, 0, 0.25, 43.633, 4.014, 92, 299, 0.185, 1.37, -1}},
-    {Movement::TURN_LEFT_90_SEARCH_MODE, {0, 0, 0.25, 43.633, 4.014, 92, 299, 0.185, 1.37, 1}},
+    {Movement::TURN_AROUND, {0.0, 0.0, 0.25, 52.36, 3.49, 3.1067, -1}},
+    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.0, 0.0, 0.25, 43.633, 4.014, 1.553, -1}},
+    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.0, 0.0, 0.25, 43.633, 4.014, 1.553, 1}},
 };
 
 static std::map<Movement, ForwardParams> forward_params_search = {
@@ -79,28 +73,28 @@ static std::map<Movement, ForwardParams> forward_params_search = {
     {Movement::FORWARD, {0.25, 0.65, 0.65, CELL_SIZE_CM}},
     {Movement::STOP, {0.25, 0.65, 0.65, (HALF_CELL_SIZE_CM)}},
     {Movement::TURN_AROUND, {0.25, 0.5, 0.5, (HALF_CELL_SIZE_CM)}},
-    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.25, 0.65, 0.65, 2.0}},
-    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.25, 0.65, 0.65, 2.0}},
+    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.25, 0.65, 0.65, 2.2}},
+    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.25, 0.65, 0.65, 2.2}},
 };
 
 static std::map<Movement, TurnParams> turn_params_slow = {
-    {Movement::TURN_RIGHT_45, {-6.1, -7.8, 0.5, 100.00, 7.854, 79, 21, 0, 0, -1}},
-    {Movement::TURN_LEFT_45, {-6.1, -7.8, 0.5, 100.00, 7.854, 79, 21, 0, 0, 1}},
-    {Movement::TURN_RIGHT_90, {1.0, -1.6, 0.5, 100.00, 8.7266, 87, 93, 0.381, 1.190, -1}},
-    {Movement::TURN_LEFT_90, {1.0, -1.6, 0.5, 100.00, 8.7266, 87, 93, 0.381, 1.190, 1}},
+    {Movement::TURN_RIGHT_45, {-6.1, -7.8, 0.5, 100.00, 7.854, 0.7679, -1}},
+    {Movement::TURN_LEFT_45, {-6.1, -7.8, 0.5, 100.00, 7.854, 0.7679, 1}},
+    {Movement::TURN_RIGHT_90, {1.0, -1.6, 0.5, 100.00, 8.7266, 1.553, -1}},
+    {Movement::TURN_LEFT_90, {1.0, -1.6, 0.5, 100.00, 8.7266, 1.553, 1}},
 
     // Below parameters not tested
-    {Movement::TURN_RIGHT_135, {0, -7.4, 0.5, 100.00, 7.5049, 75, 239, 0, 0, -1}},
-    {Movement::TURN_LEFT_135, {0, -7.4, 0.5, 100.00, 7.5049, 75, 239, 0, 0, 1}},
-    {Movement::TURN_RIGHT_180, {0, 0, 0.5, 100.00, 5.5850, 56, 507, 0, 0, -1}},
-    {Movement::TURN_LEFT_180, {0, 0, 0.5, 100.00, 5.5850, 56, 507, 0, 0, 1}},
-    {Movement::TURN_RIGHT_45_FROM_45, {9.5, 4.6, 0.5, 100.0, 7.8539, 79, 21, 0, 0, -1}},
-    {Movement::TURN_LEFT_45_FROM_45, {9.5, 4.6, 0.5, 100.0, 7.8539, 79, 21, 0, 0, 1}},
-    {Movement::TURN_RIGHT_90_FROM_45, {5.0, -5.0, 0.5, 100.0, 10.472, 105, 45, 0, 0, -1}},
-    {Movement::TURN_LEFT_90_FROM_45, {5.0, -5.0, 0.5, 100.0, 10.472, 105, 45, 0, 0, 1}},
-    {Movement::TURN_RIGHT_135_FROM_45, {7.0, 0, 0.5, 100.0, 7.8539, 79, 230, 0, 0, -1}},
-    {Movement::TURN_LEFT_135_FROM_45, {7.0, 0, 0.5, 100.0, 7.8539, 79, 230, 0, 0, 1}},
-    {Movement::TURN_AROUND, {HALF_CELL_SIZE_CM, HALF_CELL_SIZE_CM, 0.0, 100.00, 6.981, 70, 380, 0, 0, -1}},
+    {Movement::TURN_RIGHT_135, {0, -7.4, 0.5, 100.00, 7.5049, 2.3387, -1}},
+    {Movement::TURN_LEFT_135, {0, -7.4, 0.5, 100.00, 7.5049, 2.3387, 1}},
+    {Movement::TURN_RIGHT_180, {0, 0, 0.5, 100.00, 5.5850, 3.1241, -1}},
+    {Movement::TURN_LEFT_180, {0, 0, 0.5, 100.00, 5.5850, 3.1241, 1}},
+    {Movement::TURN_RIGHT_45_FROM_45, {9.5, 4.6, 0.5, 100.0, 7.8539, 0.7679, -1}},
+    {Movement::TURN_LEFT_45_FROM_45, {9.5, 4.6, 0.5, 100.0, 7.8539, 0.7679, 1}},
+    {Movement::TURN_RIGHT_90_FROM_45, {5.0, -5.0, 0.5, 100.0, 10.472, 1.553, -1}},
+    {Movement::TURN_LEFT_90_FROM_45, {5.0, -5.0, 0.5, 100.0, 10.472, 1.553, 1}},
+    {Movement::TURN_RIGHT_135_FROM_45, {7.0, 0, 0.5, 100.0, 7.8539, 2.3387, -1}},
+    {Movement::TURN_LEFT_135_FROM_45, {7.0, 0, 0.5, 100.0, 7.8539, 2.3387, 1}},
+    {Movement::TURN_AROUND, {HALF_CELL_SIZE_CM, HALF_CELL_SIZE_CM, 0.0, 100.00, 6.981, 3.1241, -1}},
 };
 
 static std::map<Movement, ForwardParams> forward_params_slow = {
@@ -113,21 +107,21 @@ static std::map<Movement, ForwardParams> forward_params_slow = {
 
 static std::map<Movement, TurnParams> turn_params_medium = {
     // Below parameters not tested
-    {Movement::TURN_RIGHT_45, {-6.1, -7.1, 1.0, 279.253, 13.963, 50, 6, 0, 0, -1}},
-    {Movement::TURN_LEFT_45, {-6.1, -7.1, 1.0, 279.253, 13.963, 50, 6, 0, 0, 1}},
-    {Movement::TURN_RIGHT_90, {0, 0, 1.0, 279.253, 18.5, 66, 19, 0, 0, -1}},
-    {Movement::TURN_LEFT_90, {0, 0, 1.0, 279.253, 18.5, 66, 19, 0, 0, 1}},
-    {Movement::TURN_RIGHT_135, {0, -7.5, 1.0, 279.253, 16.581, 59, 85, 0, 0, -1}},
-    {Movement::TURN_LEFT_135, {0, -7.5, 1.0, 279.253, 16.581, 59, 85, 0, 0, 1}},
-    {Movement::TURN_RIGHT_180, {0, 0, 1.0, 279.253, 11.118, 40, 243, 0, 0, -1}},
-    {Movement::TURN_LEFT_180, {0, 0, 1.0, 279.253, 11.118, 40, 243, 0, 0, 1}},
-    {Movement::TURN_RIGHT_45_FROM_45, {7.3, 5.5, 1.0, 279.253, 13.963, 50, 6, 0, 0, -1}},
-    {Movement::TURN_LEFT_45_FROM_45, {7.3, 5.5, 1.0, 279.253, 13.963, 50, 6, 0, 0, 1}},
-    {Movement::TURN_RIGHT_90_FROM_45, {4.0, -3.8, 1.0, 279.253, 119.199, 69, 13, 0, 0, -1}},
-    {Movement::TURN_LEFT_90_FROM_45, {4.0, -3.8, 1.0, 279.253, 19.199, 69, 13, 0, 0, 1}},
-    {Movement::TURN_RIGHT_135_FROM_45, {8.0, 0, 1.0, 279.253, 15.708, 56, 94, 0, 0, -1}},
-    {Movement::TURN_LEFT_135_FROM_45, {8.0, 0, 1.0, 279.253, 15.708, 56, 94, 0, 0, 1}},
-    {Movement::TURN_AROUND, {HALF_CELL_SIZE_CM, HALF_CELL_SIZE_CM, 0.0, 100.00, 6.981, 70, 380, 0, 0, -1}},
+    {Movement::TURN_RIGHT_45, {-6.1, -7.1, 1.0, 279.253, 13.963, 0.7679, -1}},
+    {Movement::TURN_LEFT_45, {-6.1, -7.1, 1.0, 279.253, 13.963, 0.7679, 1}},
+    {Movement::TURN_RIGHT_90, {0, 0, 1.0, 279.253, 18.5, 1.553, -1}},
+    {Movement::TURN_LEFT_90, {0, 0, 1.0, 279.253, 18.5, 1.553, 1}},
+    {Movement::TURN_RIGHT_135, {0, -7.5, 1.0, 279.253, 16.581, 2.3387, -1}},
+    {Movement::TURN_LEFT_135, {0, -7.5, 1.0, 279.253, 16.581, 2.3387, 1}},
+    {Movement::TURN_RIGHT_180, {0, 0, 1.0, 279.253, 11.118, 3.1241, -1}},
+    {Movement::TURN_LEFT_180, {0, 0, 1.0, 279.253, 11.118, 3.1241, 1}},
+    {Movement::TURN_RIGHT_45_FROM_45, {7.3, 5.5, 1.0, 279.253, 13.963, 0.7679, -1}},
+    {Movement::TURN_LEFT_45_FROM_45, {7.3, 5.5, 1.0, 279.253, 13.963, 0.7679, 1}},
+    {Movement::TURN_RIGHT_90_FROM_45, {4.0, -3.8, 1.0, 279.253, 119.199, 1.553, -1}},
+    {Movement::TURN_LEFT_90_FROM_45, {4.0, -3.8, 1.0, 279.253, 19.199, 1.553, 1}},
+    {Movement::TURN_RIGHT_135_FROM_45, {8.0, 0, 1.0, 279.253, 15.708, 2.3387, -1}},
+    {Movement::TURN_LEFT_135_FROM_45, {8.0, 0, 1.0, 279.253, 15.708, 2.3387, 1}},
+    {Movement::TURN_AROUND, {HALF_CELL_SIZE_CM, HALF_CELL_SIZE_CM, 0.0, 100.00, 6.981, 3.1241, -1}},
 };
 
 static std::map<Movement, ForwardParams> forward_params_medium = {
@@ -139,28 +133,28 @@ static std::map<Movement, ForwardParams> forward_params_medium = {
 };
 
 static std::map<Movement, TurnParams> turn_params_fast = {
-    {Movement::TURN_RIGHT_45, {-2.0, -8.2, 1.5, 785.39, 22.69, 28, 5, 0, 0, -1}},
-    {Movement::TURN_LEFT_45, {-2.0, -8.2, 1.5, 785.39, 22.69, 28, 5, 0, 0, 1}},
+    {Movement::TURN_RIGHT_45, {-2.0, -8.2, 1.5, 785.39, 22.69, 0.7679, -1}},
+    {Movement::TURN_LEFT_45, {-2.0, -8.2, 1.5, 785.39, 22.69, 0.7679, 1}},
 
-    {Movement::TURN_RIGHT_90, {0.0, -1.3, 1.5, 785.39, 24.96, 32, 28, 0, 0, -1}},
-    {Movement::TURN_LEFT_90, {0.0, -1.3, 1.5, 785.39, 24.96, 32, 28, 0, 0, 1}},
-    {Movement::TURN_RIGHT_135, {-2.9, -9.1, 1.5, 610.865, 20.94, 34, 78, 0, 0, -1}},
-    {Movement::TURN_LEFT_135, {-2.9, -9.1, 1.5, 610.865, 20.94, 34, 78, 0, 0, 1}},
-    {Movement::TURN_RIGHT_180, {-2.9, 0.2, 1.5, 610.865, 16.05, 26, 169, 0, 0, -1}},
-    {Movement::TURN_LEFT_180, {-2.9, 0.2, 1.5, 610.865, 16.05, 26, 169, 0, 0, 1}},
+    {Movement::TURN_RIGHT_90, {0.0, -1.3, 1.5, 785.39, 24.96, 1.553, -1}},
+    {Movement::TURN_LEFT_90, {0.0, -1.3, 1.5, 785.39, 24.96, 1.553, 1}},
+    {Movement::TURN_RIGHT_135, {-2.9, -9.1, 1.5, 610.865, 20.94, 2.3387, -1}},
+    {Movement::TURN_LEFT_135, {-2.9, -9.1, 1.5, 610.865, 20.94, 2.3387, 1}},
+    {Movement::TURN_RIGHT_180, {-2.9, 0.2, 1.5, 610.865, 16.05, 3.1241, -1}},
+    {Movement::TURN_LEFT_180, {-2.9, 0.2, 1.5, 610.865, 16.05, 3.1241, 1}},
 
     // Below parameters not tested
-    {Movement::TURN_RIGHT_45_FROM_45, {7.7, 5.4, 1.5, 785.39, 22.69, 29, 6, 0, 0, -1}},
+    {Movement::TURN_RIGHT_45_FROM_45, {7.7, 5.4, 1.5, 785.39, 22.69, 0.7679, -1}},
 
-    {Movement::TURN_LEFT_45_FROM_45, {7.7, 5.4, 1.5, 785.39, 22.69, 29, 6, 0, 0, 1}},
+    {Movement::TURN_LEFT_45_FROM_45, {7.7, 5.4, 1.5, 785.39, 22.69, 0.7679, 1}},
 
-    {Movement::TURN_RIGHT_90_FROM_45, {4.0, -3.8, 1.5, 785.39, 24.96, 32, 31, 0, 0, -1}},
-    {Movement::TURN_LEFT_90_FROM_45, {4.0, -3.8, 1.5, 785.39, 24.96, 32, 31, 0, 0, 1}},
+    {Movement::TURN_RIGHT_90_FROM_45, {4.0, -3.8, 1.5, 785.39, 24.96, 1.553, -1}},
+    {Movement::TURN_LEFT_90_FROM_45, {4.0, -3.8, 1.5, 785.39, 24.96, 1.553, 1}},
 
-    {Movement::TURN_RIGHT_135_FROM_45, {7.0, 1.0, 1.5, 610.865, 20.94, 34, 78, 0, 0, -1}},
-    {Movement::TURN_LEFT_135_FROM_45, {70, 1.0, 1.5, 610.865, 20.94, 34, 78, 0, 0, 1}},
+    {Movement::TURN_RIGHT_135_FROM_45, {7.0, 1.0, 1.5, 610.865, 20.94, 2.3387, -1}},
+    {Movement::TURN_LEFT_135_FROM_45, {7.0, 1.0, 1.5, 610.865, 20.94, 2.3387, 1}},
 
-    {Movement::TURN_AROUND, {HALF_CELL_SIZE_CM, HALF_CELL_SIZE_CM, 0.0, 100.00, 6.981, 70, 380, 0, 0, -1}},
+    {Movement::TURN_AROUND, {HALF_CELL_SIZE_CM, HALF_CELL_SIZE_CM, 0.0, 100.00, 6.981, 3.1241, -1}},
 };
 
 static std::map<Movement, ForwardParams> forward_params_fast = {
