@@ -19,8 +19,8 @@ def plot_velocities(file_path):
     angular_velocity1 = []
     angular_velocity2 = []
     acceleration = []
-    pwm_left = []
-    pwm_right = []
+    # pwm_left = []
+    # pwm_right = []
     with open(file_path, 'r') as file:
         for line in file:
             fields = line.strip().split(';')
@@ -29,8 +29,8 @@ def plot_velocities(file_path):
             linear_velocity2.append(float(fields[2]))
             angular_velocity1.append(float(fields[3]))
             angular_velocity2.append(float(fields[4]))
-            pwm_left.append(float(fields[5]))
-            pwm_right.append(float(fields[6]))
+            # pwm_left.append(float(fields[5]))
+            # pwm_right.append(float(fields[6]))
 
     fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(12, 12))
 
@@ -66,13 +66,13 @@ def plot_velocities(file_path):
 
 
     # Plot pwms
-    ax3.plot(time, pwm_left, label='PWM_Left')
-    ax3.plot(time, pwm_right, label='PWM_Right')
-    ax3.set_xlabel('Time (ms)')
-    ax3.set_ylabel('0-1000')
-    ax3.set_title('PWMS')
-    ax3.legend()
-    ax3.grid(True)
+    # ax3.plot(time, pwm_left, label='PWM_Left')
+    # ax3.plot(time, pwm_right, label='PWM_Right')
+    # ax3.set_xlabel('Time (ms)')
+    # ax3.set_ylabel('0-1000')
+    # ax3.set_title('PWMS')
+    # ax3.legend()
+    # ax3.grid(True)
 
 
     plt.tight_layout()

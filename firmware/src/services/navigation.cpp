@@ -348,8 +348,12 @@ bool Navigation::step() {
             // TODO: add first target travel based on sensors for turn around
             if (current_movement == Movement::TURN_AROUND && mini_fsm_state == MiniFSMStates::FORWARD_1) {
                 final_speed = 0.0f;
-            } else if (mini_fsm_state == MiniFSMStates::FORWARD_1) { // When mini fsm is not FORWARD_1 , target travel is based on sensors
+                control->set_wall_pid_enabled(false);
+            } else if (mini_fsm_state == MiniFSMStates::FORWARD_1) {
                 target_travel_cm = forward_params[current_movement].target_travel_cm;
+                control->set_wall_pid_enabled(false);
+            } else if (mini_fsm_state == MiniFSMStates::FORWARD_2) {
+                control->set_wall_pid_enabled(true);
             }
 
             float control_linear_speed = control->get_target_linear_speed();
@@ -383,7 +387,7 @@ bool Navigation::step() {
                         reference_time = bsp::get_tick_ms();
                         mini_fsm_state = MiniFSMStates::STABILIZE_1;
                     }
-                } else { //TURN_LEFT or TURN_RIGHT
+                } else { // TURN_LEFT or TURN_RIGHT
                     if (mini_fsm_state == MiniFSMStates::FORWARD_1) {
                         traveled_dist_cm = 0;
                         reference_time = bsp::get_tick_ms();
@@ -422,23 +426,24 @@ bool Navigation::step() {
             }
 
             control->set_target_angular_speed(control_angular_speed_abs * turn_sign);
-
+            control->set_wall_pid_enabled(false);
 
             if (std::abs(bsp::imu::get_incremental_angle()) >= final_angle_rad) {
                 if (current_movement == Movement::TURN_AROUND) {
                     control->set_target_angular_speed(0.0);
                     control->set_motor_control_disabled(true);
                     reference_time = bsp::get_tick_ms();
-                    mini_fsm_state =  MiniFSMStates::STABILIZE_2;
+                    mini_fsm_state = MiniFSMStates::STABILIZE_2;
                 } else {
                     control->set_target_angular_speed(0);
                     target_travel_cm = HALF_CELL_SIZE_CM - (std::abs(current_position_mm.y) / 10.0f);
                     reference_time = bsp::get_tick_ms();
                     traveled_dist_cm = 0;
-                    mini_fsm_state =  MiniFSMStates::FORWARD_2;
+                    mini_fsm_state = MiniFSMStates::FORWARD_2;
                 }
             }
-        } else if (mini_fsm_state ==  MiniFSMStates::STABILIZE_1) { // Stop and stabilize
+        } else if (mini_fsm_state == MiniFSMStates::STABILIZE_1) { // Stop and stabilize
+            control->set_wall_pid_enabled(false);
             uint32_t elapsed_time = bsp::get_tick_ms() - reference_time;
             if (elapsed_time > 200) {
                 reference_time = bsp::get_tick_ms();
@@ -449,6 +454,7 @@ bool Navigation::step() {
             }
         } else if (mini_fsm_state == MiniFSMStates::STABILIZE_2) { // Stop and stabilize
             uint32_t elapsed_time = bsp::get_tick_ms() - reference_time;
+            control->set_wall_pid_enabled(false);
             if (elapsed_time > 400) {
                 reference_time = bsp::get_tick_ms();
                 control->reset();
@@ -464,7 +470,6 @@ bool Navigation::step() {
             mini_fsm_state = MiniFSMStates::FORWARD_1;
         }
 
-        control->set_wall_pid_enabled(false);
         control->set_diagonal_pid_enabled(false);
         break;
     }
