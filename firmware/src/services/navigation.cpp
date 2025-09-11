@@ -88,6 +88,48 @@ float Navigation::get_torricelli_distance(float final_speed, float initial_speed
     return (final_speed * final_speed - initial_speed * initial_speed) / (2.0f * acceleration);
 }
 
+float Navigation::last_movement_offset_cm(Movement prev_movement) {
+    float offset = 0;
+    switch (prev_movement) {
+    case Movement::TURN_RIGHT_45:
+    case Movement::TURN_LEFT_45:
+        offset = ((std::abs(current_position_mm.y) / 10.0f) - HALF_CELL_SIZE_CM) / (std::sin(M_PI_4));
+        break;
+
+    case Movement::TURN_RIGHT_90:
+    case Movement::TURN_LEFT_90:
+        offset = (std::abs(current_position_mm.y) / 10.0f) - HALF_CELL_SIZE_CM;
+        break;
+
+    case Movement::TURN_RIGHT_135:
+    case Movement::TURN_LEFT_135:
+        offset = ((std::abs(current_position_mm.y) / 10.0f) - CELL_SIZE_CM) / (std::sin(M_PI_4));
+        //offset = turn_params[prev_movement].end;
+        break;
+
+    case Movement::TURN_RIGHT_180:
+    case Movement::TURN_LEFT_180: {
+        float start = turn_params[prev_movement].start;
+        offset = -start - (current_position_mm.x / 10.0f);
+        break;
+    }
+
+    case TURN_RIGHT_45_FROM_45:
+    case TURN_LEFT_45_FROM_45:
+    case TURN_RIGHT_90_FROM_45:
+    case TURN_LEFT_90_FROM_45:
+    case TURN_RIGHT_135_FROM_45:
+    case TURN_LEFT_135_FROM_45:
+        offset = turn_params[prev_movement].end;
+        break;
+
+    default:
+        break;
+    }
+
+    return offset;
+}
+
 void Navigation::reset_wall_break() {
     wall_right_counter_on = 0;
     wall_left_counter_on = 0;
@@ -549,10 +591,10 @@ void Navigation::update_cell_position_and_dir() {
 
 void Navigation::set_movement(Movement movement, Movement prev_movement, Movement next_movement, uint8_t count) {
 
+    float complete_prev_move_travel = -1 * last_movement_offset_cm(prev_movement);
+
     current_movement = movement;
     reset_movement_variables();
-
-    float complete_prev_move_travel = -turn_params[prev_movement].end;
 
     target_travel_cm = complete_prev_move_travel + (forward_params[movement].target_travel_cm * count) +
                        turn_params[next_movement].start;

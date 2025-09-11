@@ -78,10 +78,18 @@ private:
     /// @param search_mode Whether the search mode is active
     /// @return The movement type
     Movement get_movement(Direction target_dir, Direction current_dir, bool search_mode);
+
+    /// @brief Retrieves last movement offset in relation to the cell begin.
+    /// Negative if previous movement finished before the cell and positive if finished after the cell.
+    /// @param prev_movement  The previous movement
+    /// @return offset in centimeters
+    float last_movement_offset_cm(Movement prev_movement);
+
     float get_torricelli_distance(float final_speed, float initial_speed, float acceleration);
     bool wall_break_detected();
     void reset_wall_break();
     void reset_movement_variables();
+
 
     services::Control* control;
 
