@@ -116,17 +116,23 @@ float Navigation::last_movement_offset_cm(Movement prev_movement) {
 
     case TURN_RIGHT_90_FROM_45:
     case TURN_LEFT_90_FROM_45: {
-        // offset = (std::abs(current_position_mm.y) / 10.0f) - (CELL_SIZE_CM * std::sin(M_PI_4));
+        // offset = (std::abs(current_position_mm.y) / 10.0f) - (CELL_DIAGONAL_SIZE_CM);
         offset = turn_params[prev_movement].end;
         break;
     }
 
     case TURN_RIGHT_45_FROM_45:
-    case TURN_LEFT_45_FROM_45:
-    case TURN_RIGHT_135_FROM_45:
-    case TURN_LEFT_135_FROM_45:
+    case TURN_LEFT_45_FROM_45: {
         offset = turn_params[prev_movement].end;
         break;
+    }
+
+    case TURN_RIGHT_135_FROM_45:
+    case TURN_LEFT_135_FROM_45: {
+        // offset = (CELL_DIAGONAL_SIZE_CM - (std::abs(current_position_mm.y) / 10.0f)) / (std::cos(M_PI_4))
+        offset = turn_params[prev_movement].end;
+        break;
+    }
 
     default:
         break;
@@ -408,6 +414,16 @@ bool Navigation::step() {
                 control->set_wall_pid_enabled(false);
             } else if (mini_fsm_state == MiniFSMStates::FORWARD_2) {
                 control->set_wall_pid_enabled(true);
+            }
+
+            if ((current_movement == Movement::TURN_RIGHT_90_FROM_45 ||
+                 current_movement == Movement::TURN_LEFT_90_FROM_45) &&
+                mini_fsm_state == MiniFSMStates::FORWARD_1) {
+                if (std::abs(traveled_dist_cm) < 5.0) { //Only fix diagonal on the very begin of the movement
+                    control->set_diagonal_pid_enabled(true);
+                } else {
+                    control->set_diagonal_pid_enabled(false);
+                }
             }
 
             float control_linear_speed = control->get_target_linear_speed();
