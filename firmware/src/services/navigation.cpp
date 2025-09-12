@@ -104,7 +104,7 @@ float Navigation::last_movement_offset_cm(Movement prev_movement) {
     case Movement::TURN_RIGHT_135:
     case Movement::TURN_LEFT_135:
         offset = ((std::abs(current_position_mm.y) / 10.0f) - CELL_SIZE_CM) / (std::sin(M_PI_4));
-        //offset = turn_params[prev_movement].end;
+        // offset = turn_params[prev_movement].end;
         break;
 
     case Movement::TURN_RIGHT_180:
@@ -114,10 +114,15 @@ float Navigation::last_movement_offset_cm(Movement prev_movement) {
         break;
     }
 
+    case TURN_RIGHT_90_FROM_45:
+    case TURN_LEFT_90_FROM_45: {
+        // offset = (std::abs(current_position_mm.y) / 10.0f) - (CELL_SIZE_CM * std::sin(M_PI_4));
+        offset = turn_params[prev_movement].end;
+        break;
+    }
+
     case TURN_RIGHT_45_FROM_45:
     case TURN_LEFT_45_FROM_45:
-    case TURN_RIGHT_90_FROM_45:
-    case TURN_LEFT_90_FROM_45:
     case TURN_RIGHT_135_FROM_45:
     case TURN_LEFT_135_FROM_45:
         offset = turn_params[prev_movement].end;
@@ -266,8 +271,10 @@ bool Navigation::step() {
             }
         }
 
+        float break_margin = 2.0;
+
         if (std::abs(traveled_dist_cm) <
-            (target_travel_cm -
+            ((target_travel_cm - break_margin) -
              (100.0f * get_torricelli_distance(forward_end_speed, control_linear_speed, -deceleration)))) {
             if (control_linear_speed < max_speed) {
                 control_linear_speed += acceleration / CONTROL_FREQUENCY_HZ;
@@ -285,7 +292,12 @@ bool Navigation::step() {
 
         if (current_movement == Movement::DIAGONAL) {
             control->set_wall_pid_enabled(false);
-            control->set_diagonal_pid_enabled(true);
+            // It is safer to disable diagonal pid when reaching diagonal end
+            if (std::abs(traveled_dist_cm) < (target_travel_cm - (CELL_DIAGONAL_SIZE_CM / 2.0))) {
+                control->set_diagonal_pid_enabled(true);
+            } else {
+                control->set_diagonal_pid_enabled(false);
+            }
             front_emergency = false;
         } else if (current_movement == Movement::STOP) {
             control->set_wall_pid_enabled(false);
@@ -314,13 +326,7 @@ bool Navigation::step() {
     case Movement::TURN_LEFT_135:
     case Movement::TURN_RIGHT_135:
     case Movement::TURN_RIGHT_180:
-    case Movement::TURN_LEFT_180:
-    case Movement::TURN_RIGHT_45_FROM_45:
-    case Movement::TURN_LEFT_45_FROM_45:
-    case Movement::TURN_RIGHT_90_FROM_45:
-    case Movement::TURN_LEFT_90_FROM_45:
-    case Movement::TURN_RIGHT_135_FROM_45:
-    case Movement::TURN_LEFT_135_FROM_45: {
+    case Movement::TURN_LEFT_180: {
 
         // If the robot is moving too slow, we use the medium turn params.
         // This can happen if the robot is turning right afer the start movement. TODO: generalize this function
@@ -366,8 +372,15 @@ bool Navigation::step() {
         break;
     }
 
+    // Complex movements that have foward and turn on same movement
     case Movement::TURN_RIGHT_90_SEARCH_MODE:
     case Movement::TURN_LEFT_90_SEARCH_MODE:
+    case Movement::TURN_RIGHT_45_FROM_45:
+    case Movement::TURN_LEFT_45_FROM_45:
+    case Movement::TURN_RIGHT_90_FROM_45:
+    case Movement::TURN_LEFT_90_FROM_45:
+    case Movement::TURN_RIGHT_135_FROM_45:
+    case Movement::TURN_LEFT_135_FROM_45:
     case Movement::TURN_AROUND: {
         // Mini FSM
         // 0. Move forward
@@ -392,7 +405,6 @@ bool Navigation::step() {
                 final_speed = 0.0f;
                 control->set_wall_pid_enabled(false);
             } else if (mini_fsm_state == MiniFSMStates::FORWARD_1) {
-                target_travel_cm = forward_params[current_movement].target_travel_cm;
                 control->set_wall_pid_enabled(false);
             } else if (mini_fsm_state == MiniFSMStates::FORWARD_2) {
                 control->set_wall_pid_enabled(true);
@@ -429,11 +441,12 @@ bool Navigation::step() {
                         reference_time = bsp::get_tick_ms();
                         mini_fsm_state = MiniFSMStates::STABILIZE_1;
                     }
-                } else { // TURN_LEFT or TURN_RIGHT
+                } else { // TURN_LEFT or TURN_RIGHT (45, 90, 135)
                     if (mini_fsm_state == MiniFSMStates::FORWARD_1) {
                         traveled_dist_cm = 0;
                         reference_time = bsp::get_tick_ms();
                         mini_fsm_state = MiniFSMStates::TURN;
+                        bsp::leds::stripe_set(Color::Blue);
                     } else {
                         is_finished = true;
                         mini_fsm_state = MiniFSMStates::FORWARD_1;
@@ -441,7 +454,7 @@ bool Navigation::step() {
                 }
             }
 
-        } else if (mini_fsm_state == MiniFSMStates::TURN) { // Turn Left or Right
+        } else if (mini_fsm_state == MiniFSMStates::TURN) {
             auto current_turn_params = turn_params[current_movement];
             float angular_max_speed = current_turn_params.max_angular_speed;
             float angular_acceleration = current_turn_params.angular_accel;
@@ -476,12 +489,17 @@ bool Navigation::step() {
                     control->set_motor_control_disabled(true);
                     reference_time = bsp::get_tick_ms();
                     mini_fsm_state = MiniFSMStates::STABILIZE_2;
-                } else {
+                } else if (current_movement == Movement::TURN_RIGHT_90_SEARCH_MODE ||
+                           current_movement == Movement::TURN_LEFT_90_SEARCH_MODE) {
                     control->set_target_angular_speed(0);
+                    // target_travel_cm for FORWARD_2 is based on the calculated position
                     target_travel_cm = HALF_CELL_SIZE_CM - (std::abs(current_position_mm.y) / 10.0f);
                     reference_time = bsp::get_tick_ms();
                     traveled_dist_cm = 0;
                     mini_fsm_state = MiniFSMStates::FORWARD_2;
+                } else { // TURN LEFT or RIGHT (45, 90, 135 from 45)
+                    is_finished = true;
+                    mini_fsm_state = MiniFSMStates::FORWARD_1;
                 }
             }
         } else if (mini_fsm_state == MiniFSMStates::STABILIZE_1) { // Stop and stabilize
@@ -502,6 +520,7 @@ bool Navigation::step() {
                 control->reset();
                 control->set_motor_control_disabled(false);
                 traveled_dist_cm = 0;
+                // target_travel_cm for FORWARD_2 is based on the calculated position
                 target_travel_cm = (std::abs(current_position_mm.x) / 10.0f);
                 mini_fsm_state = MiniFSMStates::FORWARD_2;
             }
@@ -592,14 +611,17 @@ void Navigation::update_cell_position_and_dir() {
 void Navigation::set_movement(Movement movement, Movement prev_movement, Movement next_movement, uint8_t count) {
 
     float complete_prev_move_travel = -1 * last_movement_offset_cm(prev_movement);
-
     current_movement = movement;
     reset_movement_variables();
 
-    target_travel_cm = complete_prev_move_travel + (forward_params[movement].target_travel_cm * count) +
-                       turn_params[next_movement].start;
+    if (movement == Movement::FORWARD || movement == Movement::DIAGONAL) {
+        target_travel_cm = complete_prev_move_travel + (forward_params[movement].target_travel_cm * count) +
+                           turn_params[next_movement].start;
+    } else {
+        target_travel_cm = complete_prev_move_travel + forward_params[movement].target_travel_cm;
+    }
 
-    if (current_movement == Movement::STOP) {
+    if (movement == Movement::STOP) {
         forward_end_speed = 0;
         bsp::leds::stripe_set(Color::Blue);
     } else if (next_movement == Movement::FORWARD || next_movement == Movement::DIAGONAL) {

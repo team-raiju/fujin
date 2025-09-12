@@ -105,7 +105,7 @@ void Run::enter() {
                                                                                                
     soft_timer::start(1, soft_timer::CONTINUOUS);
 
-    navigation->reset(true);
+    navigation->reset(false);
 
     logger->init();
 
