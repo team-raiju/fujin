@@ -29,9 +29,9 @@ ADDR_WALL_KD: 0.0025000
 ADDR_LINEAR_VEL_KP: 5.00000
 ADDR_LINEAR_VEL_KI: 0.06000
 ADDR_LINEAR_VEL_KD: 0.000000
-ADDR_DIAGONAL_WALLS_KP: 0.005000
+ADDR_DIAGONAL_WALLS_KP: 0.004000
 ADDR_DIAGONAL_WALLS_KI: 0.000000
-ADDR_DIAGONAL_WALLS_KD: 0.005000
+ADDR_DIAGONAL_WALLS_KD: 0.004000
 ADDR_FAN_SPEED: 0
 
 ########################
@@ -92,3 +92,34 @@ angular_speed = 30
 run_speed = 100
 linear_acceleration = 0.05
 angular_acceleration = 0.05
+
+
+##########################
+## Calibration Test Map ##
+##########################
+ir_wall_dist_ref_right = 1340
+ir_wall_dist_ref_front_left = 150 
+ir_wall_dist_ref_front_right = 150
+ir_wall_dist_ref_left = 770
+
+ir_wall_control_th_right = 1100
+ir_wall_control_th_front_left = 200 
+ir_wall_control_th_front_right = 200
+ir_wall_control_th_left = 650
+
+ir_wall_detect_th_right = 1200
+ir_wall_detect_th_front_left = 500 
+ir_wall_detect_th_front_right =  800
+ir_wall_detect_th_left =  600
+
+constexpr std::array<SensingPattern, 8> ir_wall_patterns = {{
+    {900, 800, 1300, 1415}, // F-L-R
+    {903, 820, 1207, 800},  // F-L
+    {500, 685, 1247, 1367}, // F-R
+    {500, 710, 1200, 600},  // F
+    {805, 67, 246, 1336},   // L-R
+    {741, 28, 37, 640},     // L
+    {349, 35, 261, 1326},   // R
+    {357, 66, 238, 643}     // None
+}};
+

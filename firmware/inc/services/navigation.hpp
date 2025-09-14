@@ -23,6 +23,7 @@ public:
     Point get_robot_cell_position();
     Position get_robot_position_mm();
     Direction get_robot_direction();
+    float get_robot_travelled_dist_cm();
 
     /// @brief Configure and reset movement variables based on a target direction. Update method will execute the
     /// movement Used on search mode, to set the next movement
@@ -69,6 +70,12 @@ private:
         STABILIZE_2,
     };
 
+    enum class WallBreak {
+        LEFT,
+        RIGHT,
+        NONE
+    };
+
     Navigation() {}
     void update_cell_position_and_dir();
 
@@ -86,7 +93,7 @@ private:
     float last_movement_offset_cm(Movement prev_movement);
 
     float get_torricelli_distance(float final_speed, float initial_speed, float acceleration);
-    bool wall_break_detected();
+    WallBreak process_wall_break();
     void reset_wall_break();
     void reset_movement_variables();
 
@@ -109,6 +116,7 @@ private:
     Direction current_direction;
     Movement current_movement;
     Direction target_direction;
+    float complete_prev_move_travel;
 
     uint32_t wall_right_counter_on = 0;
     uint32_t wall_left_counter_on = 0;

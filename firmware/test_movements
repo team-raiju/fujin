@@ -1,0 +1,130 @@
+target_movements.push_back({Movement::START, 1});
+target_movements.push_back({Movement::FORWARD, 5});
+
+target_movements.push_back({Movement::TURN_LEFT_135, 1});
+target_movements.push_back({Movement::DIAGONAL, 1});
+target_movements.push_back({Movement::TURN_LEFT_90_FROM_45, 1});
+target_movements.push_back({Movement::DIAGONAL, 1});
+target_movements.push_back({Movement::TURN_LEFT_135_FROM_45, 1});
+target_movements.push_back({Movement::FORWARD, 2});
+
+target_movements.push_back({Movement::TURN_LEFT_135, 1});
+target_movements.push_back({Movement::DIAGONAL, 1});
+target_movements.push_back({Movement::TURN_LEFT_90_FROM_45, 1});
+target_movements.push_back({Movement::DIAGONAL, 1});
+target_movements.push_back({Movement::TURN_LEFT_135_FROM_45, 1});
+target_movements.push_back({Movement::FORWARD, 2});
+
+target_movements.push_back({Movement::TURN_LEFT_135, 1});
+target_movements.push_back({Movement::DIAGONAL, 1});
+target_movements.push_back({Movement::TURN_LEFT_90_FROM_45, 1});
+target_movements.push_back({Movement::DIAGONAL, 1});
+target_movements.push_back({Movement::TURN_LEFT_135_FROM_45, 1});
+target_movements.push_back({Movement::FORWARD, 2});
+
+target_movements.push_back({Movement::STOP, 1});
+
+
+-------------------------------------------------
+
+
+target_movements.push_back({Movement::START, 1});
+target_movements.push_back({Movement::FORWARD, 2});
+target_movements.push_back({Movement::TURN_LEFT_45, 1});
+target_movements.push_back({Movement::DIAGONAL, 2});
+
+target_movements.push_back({Movement::TURN_RIGHT_90_FROM_45, 1});
+target_movements.push_back({Movement::DIAGONAL, 1});
+target_movements.push_back({Movement::TURN_RIGHT_135_FROM_45, 1});
+target_movements.push_back({Movement::FORWARD, 2});
+
+target_movements.push_back({Movement::TURN_RIGHT_135, 1});
+target_movements.push_back({Movement::DIAGONAL, 1});
+target_movements.push_back({Movement::TURN_RIGHT_90_FROM_45, 1});
+target_movements.push_back({Movement::DIAGONAL, 1});
+target_movements.push_back({Movement::TURN_RIGHT_135_FROM_45, 1});
+target_movements.push_back({Movement::FORWARD, 2});
+
+target_movements.push_back({Movement::TURN_RIGHT_135, 1});
+target_movements.push_back({Movement::DIAGONAL, 1});
+target_movements.push_back({Movement::TURN_RIGHT_90_FROM_45, 1});
+target_movements.push_back({Movement::DIAGONAL, 1});
+target_movements.push_back({Movement::TURN_RIGHT_135_FROM_45, 1});
+target_movements.push_back({Movement::FORWARD, 2});
+target_movements.push_back({Movement::STOP, 1});
+
+-------------------------------------------------
+
+target_movements.push_back({Movement::START, 1});
+target_movements.push_back({Movement::FORWARD, 1});
+target_movements.push_back({Movement::TURN_RIGHT_45, 1});
+target_movements.push_back({Movement::TURN_LEFT_90_FROM_45, 1});
+target_movements.push_back({Movement::TURN_RIGHT_90_FROM_45, 1});
+target_movements.push_back({Movement::TURN_LEFT_90_FROM_45, 1});
+target_movements.push_back({Movement::TURN_RIGHT_135_FROM_45, 1});
+target_movements.push_back({Movement::STOP, 1});
+
+-------------------------------------------------
+
+
+target_movements.push_back({Movement::START, 1});
+target_movements.push_back({Movement::TURN_LEFT_135, 1});
+target_movements.push_back({Movement::TURN_RIGHT_90_FROM_45, 1});
+target_movements.push_back({Movement::TURN_LEFT_90_FROM_45, 1});
+target_movements.push_back({Movement::TURN_RIGHT_90_FROM_45, 1});
+
+target_movements.push_back({Movement::TURN_LEFT_90_FROM_45, 1});
+target_movements.push_back({Movement::DIAGONAL, 1});
+target_movements.push_back({Movement::TURN_LEFT_45_FROM_45, 1});
+target_movements.push_back({Movement::FORWARD, 1});
+target_movements.push_back({Movement::STOP, 1});
+    
+-------------------------------------------------
+
+
+target_movements.push_back({Movement::START, 1});
+target_movements.push_back({Movement::TURN_LEFT_135, 1});
+target_movements.push_back({Movement::TURN_RIGHT_90_FROM_45, 1});
+target_movements.push_back({Movement::TURN_LEFT_90_FROM_45, 1});
+target_movements.push_back({Movement::TURN_RIGHT_90_FROM_45, 1});
+
+target_movements.push_back({Movement::TURN_LEFT_90_FROM_45, 1});
+target_movements.push_back({Movement::DIAGONAL, 1});
+target_movements.push_back({Movement::TURN_LEFT_45_FROM_45, 1});
+target_movements.push_back({Movement::FORWARD, 1});
+target_movements.push_back({Movement::TURN_LEFT_90, 1});
+
+target_movements.push_back({Movement::FORWARD, 2});
+target_movements.push_back({Movement::TURN_LEFT_45, 1});
+target_movements.push_back({Movement::DIAGONAL, 1});
+target_movements.push_back({Movement::TURN_LEFT_45_FROM_45, 1});
+target_movements.push_back({Movement::FORWARD, 1});
+
+target_movements.push_back({Movement::TURN_LEFT_135, 1});
+target_movements.push_back({Movement::TURN_RIGHT_90_FROM_45, 1});
+
+target_movements.push_back({Movement::TURN_LEFT_90_FROM_45, 1});
+target_movements.push_back({Movement::DIAGONAL, 1});
+target_movements.push_back({Movement::TURN_LEFT_45_FROM_45, 1});
+target_movements.push_back({Movement::FORWARD, 1});
+
+target_movements.push_back({Movement::STOP, 1});
+
+-------------------------------------------------
+
+target_movements.push_back({Movement::START, 1});
+target_movements.push_back({Movement::FORWARD, 1});
+target_movements.push_back({Movement::TURN_RIGHT_180, 1});
+target_movements.push_back({Movement::FORWARD, 1});
+target_movements.push_back({Movement::TURN_LEFT_90, 1});
+target_movements.push_back({Movement::FORWARD, 1});
+target_movements.push_back({Movement::TURN_LEFT_90, 1});
+target_movements.push_back({Movement::FORWARD, 5});
+target_movements.push_back({Movement::TURN_LEFT_180, 1});
+target_movements.push_back({Movement::FORWARD, 1});
+target_movements.push_back({Movement::TURN_RIGHT_180, 1});
+target_movements.push_back({Movement::FORWARD, 1});
+target_movements.push_back({Movement::STOP, 1});
+
+
+-------------------------------------------------

@@ -126,25 +126,10 @@ void Run::enter() {
     //     target_movements = navigation->get_smooth_movements(default_target_movements);
     // }
 
-    // Path 2
+
+
     // target_movements.push_back({Movement::START, 1});
-    // target_movements.push_back({Movement::FORWARD, 1});
-    // target_movements.push_back({Movement::TURN_RIGHT_90_SEARCH_MODE, 1});
-    // target_movements.push_back({Movement::TURN_RIGHT_90_SEARCH_MODE, 1});
-    // target_movements.push_back({Movement::FORWARD, 1});
-
-    // target_movements.push_back({Movement::TURN_LEFT_90_SEARCH_MODE, 1});
-    // target_movements.push_back({Movement::TURN_LEFT_90_SEARCH_MODE, 1});
-    // target_movements.push_back({Movement::TURN_LEFT_90_SEARCH_MODE, 1});
-    // target_movements.push_back({Movement::TURN_RIGHT_90_SEARCH_MODE, 1});
-    // target_movements.push_back({Movement::TURN_LEFT_90_SEARCH_MODE, 1});
-    // target_movements.push_back({Movement::TURN_RIGHT_90_SEARCH_MODE, 1});
-
-    target_movements.push_back({Movement::START, 1});
-    target_movements.push_back({Movement::FORWARD, 1});
-    target_movements.push_back({Movement::TURN_AROUND, 1});
-    target_movements.push_back({Movement::FORWARD, 1});
-    target_movements.push_back({Movement::STOP, 1});
+    // target_movements.push_back({Movement::STOP, 1});
 
     move_count = 0;
     emergency = false;
@@ -240,6 +225,7 @@ void Run::exit() {
     bsp::leds::ir_emitter_all_off();
     bsp::leds::indication_off();
     logger->save_size();
+    bsp::buzzer::stop();
 }
 
 }

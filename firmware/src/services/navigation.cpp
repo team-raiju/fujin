@@ -17,8 +17,9 @@
 /// @section Constants
 
 static constexpr float CONTROL_FREQUENCY_HZ = 1000.0;
-static constexpr bool fix_position_enabled = false;
-static constexpr float dist_start_seeing_wall_break_cm = 5.5;
+static constexpr bool fix_position_enabled = true;
+static constexpr float left_start_wall_break_cm = 6.45;
+static constexpr float right_start_wall_break_cm = 6.9;
 
 static std::map<Movement, TurnParams> turn_params;
 static std::map<Movement, ForwardParams> forward_params;
@@ -49,6 +50,7 @@ void Navigation::reset(bool search_mode) {
     encoder_left_counter = 0;
     encoder_right_counter = 0;
     current_cell = {0, 0};
+    complete_prev_move_travel = 0;
 
     current_direction = Direction::NORTH;
     control->reset();
@@ -93,7 +95,8 @@ float Navigation::last_movement_offset_cm(Movement prev_movement) {
     switch (prev_movement) {
     case Movement::TURN_RIGHT_45:
     case Movement::TURN_LEFT_45:
-        offset = ((std::abs(current_position_mm.y) / 10.0f) - HALF_CELL_SIZE_CM) / (std::sin(M_PI_4));
+        // offset = ((std::abs(current_position_mm.y) / 10.0f) - HALF_CELL_SIZE_CM) / (std::sin(M_PI_4));
+        offset = turn_params[prev_movement].end;
         break;
 
     case Movement::TURN_RIGHT_90:
@@ -103,8 +106,8 @@ float Navigation::last_movement_offset_cm(Movement prev_movement) {
 
     case Movement::TURN_RIGHT_135:
     case Movement::TURN_LEFT_135:
-        offset = ((std::abs(current_position_mm.y) / 10.0f) - CELL_SIZE_CM) / (std::sin(M_PI_4));
-        // offset = turn_params[prev_movement].end;
+        // offset = ((std::abs(current_position_mm.y) / 10.0f) - CELL_SIZE_CM) / (std::sin(M_PI_4));
+        offset = turn_params[prev_movement].end;
         break;
 
     case Movement::TURN_RIGHT_180:
@@ -151,10 +154,10 @@ void Navigation::reset_wall_break() {
     wall_break_already_detected = false;
 }
 
-bool Navigation::wall_break_detected() {
+Navigation::WallBreak Navigation::process_wall_break() {
     // We only return one wall break. This only resets when reset_wall_break is called
     if (wall_break_already_detected) {
-        return false;
+        return WallBreak::NONE;
     }
 
     bool right_seeing = bsp::analog_sensors::ir_reading_wall(bsp::analog_sensors::SensingDirection::RIGHT);
@@ -162,22 +165,16 @@ bool Navigation::wall_break_detected() {
 
     if (right_seeing) {
         wall_right_counter_on += 1;
+        wall_right_counter_off = 0;
     } else {
         wall_right_counter_off += 1;
     }
 
     if (left_seeing) {
         wall_left_counter_on += 1;
+        wall_left_counter_off = 0;
     } else {
         wall_left_counter_off += 1;
-    }
-
-    if (right_seeing) {
-        wall_right_counter_off = 0;
-    }
-
-    if (left_seeing) {
-        wall_right_counter_off = 0;
     }
 
     // If more than 10 consecutive wall "off" are read, and we already measured sufficient
@@ -185,17 +182,17 @@ bool Navigation::wall_break_detected() {
 
     // TODO: change this counter depending on the speed of the robot
     // When the robot is slow, this value should be larger
-    if (wall_right_counter_on > 100 && wall_right_counter_off > 10) {
+    if (wall_right_counter_on > 50 && wall_right_counter_off > 5) {
         wall_break_already_detected = true;
-        return true;
+        return WallBreak::RIGHT;
     }
 
-    if (wall_left_counter_on > 100 && wall_left_counter_off > 10) {
+    if (wall_left_counter_on > 50 && wall_left_counter_off > 5) {
         wall_break_already_detected = true;
-        return true;
+        return WallBreak::LEFT;
     }
 
-    return false;
+    return WallBreak::NONE;
 }
 
 void Navigation::update(void) {
@@ -266,14 +263,26 @@ bool Navigation::step() {
             acceleration *= 0.65;
         }
 
-        if (fix_position_enabled && wall_break_detected()) {
-            int cells_traveled = (traveled_dist_cm / CELL_SIZE_CM);
-            float corrected_distance_cm = (cells_traveled * CELL_SIZE_CM) + dist_start_seeing_wall_break_cm;
-            float distance_error_cm = traveled_dist_cm - corrected_distance_cm;
-            if (std::abs(distance_error_cm) < 2.0) {
-                traveled_dist_cm = corrected_distance_cm;
-                // bsp::buzzer::start();
-                // bsp::leds::stripe_set(Color::Blue);
+        if (fix_position_enabled) {
+            WallBreak wall_break = process_wall_break();
+            float current_movement_traveled = traveled_dist_cm - complete_prev_move_travel;
+            if (current_movement_traveled > CELL_SIZE_CM && wall_break != WallBreak::NONE) {
+
+                int cells_traveled = (current_movement_traveled / CELL_SIZE_CM);
+
+                float corrected_distance_cm = 0;
+                if (wall_break == WallBreak::LEFT) {
+                    corrected_distance_cm = (cells_traveled * CELL_SIZE_CM) + left_start_wall_break_cm;
+                } else {
+                    corrected_distance_cm = (cells_traveled * CELL_SIZE_CM) + right_start_wall_break_cm;
+                }
+
+                float distance_error_cm = current_movement_traveled - corrected_distance_cm;
+                if (std::abs(distance_error_cm) < 5.0) {
+                    traveled_dist_cm = corrected_distance_cm + complete_prev_move_travel;
+                    // bsp::buzzer::start();
+                    bsp::leds::stripe_set(Color::Red);
+                }
             }
         }
 
@@ -419,7 +428,7 @@ bool Navigation::step() {
             if ((current_movement == Movement::TURN_RIGHT_90_FROM_45 ||
                  current_movement == Movement::TURN_LEFT_90_FROM_45) &&
                 mini_fsm_state == MiniFSMStates::FORWARD_1) {
-                if (std::abs(traveled_dist_cm) < 5.0) { //Only fix diagonal on the very begin of the movement
+                if (std::abs(traveled_dist_cm) < 5.0) { // Only fix diagonal on the very begin of the movement
                     control->set_diagonal_pid_enabled(true);
                 } else {
                     control->set_diagonal_pid_enabled(false);
@@ -573,6 +582,10 @@ Direction Navigation::get_robot_direction(void) {
     return current_direction;
 }
 
+float Navigation::get_robot_travelled_dist_cm() {
+    return traveled_dist_cm;
+}
+
 void Navigation::set_movement(Direction dir) {
 
     target_direction = dir;
@@ -626,7 +639,7 @@ void Navigation::update_cell_position_and_dir() {
 
 void Navigation::set_movement(Movement movement, Movement prev_movement, Movement next_movement, uint8_t count) {
 
-    float complete_prev_move_travel = -1 * last_movement_offset_cm(prev_movement);
+    complete_prev_move_travel = -1 * last_movement_offset_cm(prev_movement);
     current_movement = movement;
     reset_movement_variables();
 

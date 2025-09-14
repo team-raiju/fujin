@@ -17,7 +17,7 @@ void Idle::enter() {
     using bsp::leds::Color;
 
     bsp::debug::print("state:Idle");
-
+    bsp::buzzer::stop();
     if (bsp::analog_sensors::battery_low()) {
         bsp::leds::stripe_set(Color::Red);
     } else {
