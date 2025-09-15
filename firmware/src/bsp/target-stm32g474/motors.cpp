@@ -7,9 +7,6 @@ namespace bsp::motors {
 
 /// @section Constants
 
-#define COUNTER_PERIOD_MAX (1000)
-#define MAX_SPEED (COUNTER_PERIOD_MAX - 1)
-
 #define LEFT_PWM_CH TIM_CHANNEL_4
 #define LEFT_DIR_PIN GPIO_PIN_2
 #define RIGHT_PWM_CH TIM_CHANNEL_2

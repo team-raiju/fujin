@@ -6,10 +6,10 @@
 
 #include "algorithms/pid.hpp"
 #include "fsm/event.hpp"
+#include "services/logger.hpp"
 #include "services/maze.hpp"
 #include "services/navigation.hpp"
 #include "services/notification.hpp"
-#include "services/logger.hpp"
 
 namespace fsm {
 
@@ -135,6 +135,7 @@ private:
     enum calibration_mode_t {
         IR_CALIBRATION,
         IMU_CALIBRATION,
+        FAN_CALIBRATION
     };
 
     calibration_mode_t calibration_mode;
@@ -168,5 +169,17 @@ private:
     int loop_counter;
 };
 
+class CalibrationFan : public State {
+public:
+    CalibrationFan();
 
+    void enter() override;
+    void exit() override;
+
+    State* react(ButtonPressed const&) override;
+    State* react(Timeout const&) override;
+
+private:
+    int loop_counter;
+};
 }

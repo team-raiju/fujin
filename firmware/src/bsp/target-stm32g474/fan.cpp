@@ -30,7 +30,7 @@ void set(uint16_t speed) {
 }
 
 float get_max_fan_voltage(void) {
-    return 11.0f;
+    return 10.0f;
 }
 
 } // namespace

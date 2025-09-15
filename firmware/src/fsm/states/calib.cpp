@@ -2,13 +2,14 @@
 #include "bsp/ble.hpp"
 #include "bsp/buzzer.hpp"
 #include "bsp/debug.hpp"
+#include "bsp/imu.hpp"
 #include "bsp/leds.hpp"
 #include "bsp/motors.hpp"
 #include "bsp/timers.hpp"
+#include "bsp/fan.hpp"
 #include "fsm/state.hpp"
-#include "utils/soft_timer.hpp"
-#include "bsp/imu.hpp"
 #include "services/config.hpp"
+#include "utils/soft_timer.hpp"
 
 namespace fsm {
 
@@ -56,6 +57,9 @@ State* CalibrationModeSelect::react(ButtonPressed const& event) {
         if (calibration_mode == IR_CALIBRATION) {
             bsp::leds::stripe_set(bsp::leds::Color::Blue, bsp::leds::Color::Blue);
             calibration_mode = IMU_CALIBRATION;
+        } else if (calibration_mode == IMU_CALIBRATION) {
+            bsp::leds::stripe_set(bsp::leds::Color::Orange, bsp::leds::Color::Black);
+            calibration_mode = FAN_CALIBRATION;
         } else {
             bsp::leds::stripe_set(bsp::leds::Color::Blue, bsp::leds::Color::Black);
             calibration_mode = IR_CALIBRATION;
@@ -65,6 +69,9 @@ State* CalibrationModeSelect::react(ButtonPressed const& event) {
 
     if (event.button == ButtonPressed::SHORT1) {
         if (calibration_mode == IR_CALIBRATION) {
+            bsp::leds::stripe_set(bsp::leds::Color::Orange, bsp::leds::Color::Black);
+            calibration_mode = FAN_CALIBRATION;
+        } else if (calibration_mode == FAN_CALIBRATION) {
             bsp::leds::stripe_set(bsp::leds::Color::Blue, bsp::leds::Color::Blue);
             calibration_mode = IMU_CALIBRATION;
         } else {
@@ -76,8 +83,10 @@ State* CalibrationModeSelect::react(ButtonPressed const& event) {
     if (event.button == ButtonPressed::LONG1) {
         if (calibration_mode == IR_CALIBRATION) {
             return &State::get<CalibrationIRSensors>();
-        } else {
+        } else if (calibration_mode == IMU_CALIBRATION) {
             return &State::get<CalibrationIMU>();
+        } else {
+            return &State::get<CalibrationFan>();
         }
     }
 
@@ -174,6 +183,58 @@ void CalibrationIMU::exit() {
     std::printf("saving z_imu_bias: %f\r\n", services::Config::z_imu_bias);
     services::Config::save_z_bias();
     bsp::imu::enable_motion_gc_filter(false);
+}
+
+CalibrationFan::CalibrationFan() {}
+
+void CalibrationFan::enter() {
+    bsp::leds::stripe_set(bsp::leds::Color::Red, bsp::leds::Color::Red);
+    bsp::buzzer::start();
+    bsp::delay_ms(2000);
+    bsp::buzzer::stop();
+
+    services::Control::instance()->start_fan();
+    bsp::motors::set(0, 0);
+
+    soft_timer::start(1, soft_timer::CONTINUOUS);
+    loop_counter = 0;
+}
+
+State* CalibrationFan::react(ButtonPressed const& event) {
+    if (event.button == ButtonPressed::SHORT1) {
+        return &State::get<PreCalib>();
+    }
+
+    if (event.button == ButtonPressed::SHORT2) {
+        return &State::get<PreCalib>();
+    }
+
+    if (event.button == ButtonPressed::LONG1) {
+        return &State::get<PreCalib>();
+    }
+
+    if (event.button == ButtonPressed::LONG2) {
+        return &State::get<PreCalib>();
+    }
+
+    return nullptr;
+}
+
+State* CalibrationFan::react(Timeout const&) {
+    if (loop_counter++ > 3000) {
+        soft_timer::stop();
+        return &State::get<PreCalib>();
+    }
+
+    return nullptr;
+}
+
+void CalibrationFan::exit() {
+    soft_timer::stop();
+    bsp::motors::set(0, 0);
+
+    services::Control::instance()->stop_fan();
+    bsp::fan::set(0);
 }
 
 }

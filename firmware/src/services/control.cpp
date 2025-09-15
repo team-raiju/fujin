@@ -84,16 +84,29 @@ void Control::update() {
         pwm_duty_l = ((l_current * mot_ra + left_ang_vel * mot_kt) / bat_volts) * 1000;
         pwm_duty_r = ((r_current * mot_ra + right_ang_vel * mot_kt) / bat_volts) * 1000;
 
-        // TODO: fix limits
-        if (pwm_duty_l > 1000 || pwm_duty_r > 1000) {
+        /* Limit PWM */
+        if (pwm_duty_l > bsp::motors::COUNTER_PERIOD_MAX || pwm_duty_r > bsp::motors::COUNTER_PERIOD_MAX) {
+            uint32_t abs_diff = std::abs(pwm_duty_l - pwm_duty_r);
+            abs_diff = std::min(abs_diff, static_cast<uint32_t>(2 * bsp::motors::COUNTER_PERIOD_MAX));
             if (pwm_duty_l > pwm_duty_r) {
-                int16_t diff = pwm_duty_l - pwm_duty_r;
-                pwm_duty_r = 1000 - diff;
-                pwm_duty_l = 1000;
+                pwm_duty_l = bsp::motors::COUNTER_PERIOD_MAX;
+                pwm_duty_r = bsp::motors::COUNTER_PERIOD_MAX - abs_diff;
             } else {
-                int32_t diff = pwm_duty_r - pwm_duty_l;
-                pwm_duty_l = 1000 - diff;
-                pwm_duty_r = 1000;
+                pwm_duty_l = bsp::motors::COUNTER_PERIOD_MAX - abs_diff;
+                pwm_duty_r = bsp::motors::COUNTER_PERIOD_MAX;
+            }
+        }
+
+        if (pwm_duty_l < -bsp::motors::COUNTER_PERIOD_MAX || pwm_duty_r < -bsp::motors::COUNTER_PERIOD_MAX) {
+            uint32_t abs_diff = std::abs(pwm_duty_l - pwm_duty_r);
+            abs_diff = std::min(abs_diff, static_cast<uint32_t>(2 * bsp::motors::COUNTER_PERIOD_MAX));
+
+            if (pwm_duty_l < pwm_duty_r) {
+                pwm_duty_l = -bsp::motors::COUNTER_PERIOD_MAX;
+                pwm_duty_r = -bsp::motors::COUNTER_PERIOD_MAX + abs_diff;
+            } else {
+                pwm_duty_l = -bsp::motors::COUNTER_PERIOD_MAX + abs_diff;
+                pwm_duty_r = -bsp::motors::COUNTER_PERIOD_MAX;
             }
         }
 
@@ -113,8 +126,8 @@ void Control::update() {
 }
 
 void Control::start_fan() {
-    float target_fan_speed = std::min(services::Config::fan_speed, 1000.0f);
-    float desired_fan_voltage = (target_fan_speed / 1000.0) * bsp::fan::get_max_fan_voltage();
+    float target_fan_speed = std::min(services::Config::fan_speed, static_cast<float>(bsp::fan::MAX_SPEED));
+    float desired_fan_voltage = (target_fan_speed / static_cast<float>(bsp::fan::MAX_SPEED)) * bsp::fan::get_max_fan_voltage();
 
     for (float volts = 0; volts < desired_fan_voltage; volts += 0.1) {
         float bat_volts = bsp::analog_sensors::battery_latest_reading_mv() / 1000.0;
@@ -122,7 +135,7 @@ void Control::start_fan() {
             bsp::fan::set(0);
             break;
         }
-        uint16_t fan_pwm = (volts / bat_volts) * 1000;
+        uint16_t fan_pwm = (volts / bat_volts) * bsp::fan::MAX_SPEED;
         std::printf("volts: %f, bat: %f, pwm: %d\r\n", volts, bat_volts, fan_pwm);
         bsp::fan::set(fan_pwm);
         bsp::delay_ms(20);
@@ -130,15 +143,15 @@ void Control::start_fan() {
 }
 
 void Control::stop_fan() {
-    float target_fan_speed = std::min(services::Config::fan_speed, 1000.0f);
-    float desired_fan_voltage = (target_fan_speed / 1000.0) * bsp::fan::get_max_fan_voltage();
+    float target_fan_speed = std::min(services::Config::fan_speed, static_cast<float>(bsp::fan::MAX_SPEED));
+    float desired_fan_voltage = (target_fan_speed / static_cast<float>(bsp::fan::MAX_SPEED)) * bsp::fan::get_max_fan_voltage();
     for (float volts = desired_fan_voltage; volts > 0; volts -= 0.1) {
         float bat_volts = bsp::analog_sensors::battery_latest_reading_mv() / 1000.0;
         if (bat_volts < 5.0) {
             bsp::fan::set(0);
             break;
         }
-        uint16_t fan_pwm = (volts / bat_volts) * 1000;
+        uint16_t fan_pwm = (volts / bat_volts) * bsp::fan::MAX_SPEED;
         bsp::fan::set(fan_pwm);
         bsp::delay_ms(20);
     }
