@@ -18,8 +18,8 @@
 
 static constexpr float CONTROL_FREQUENCY_HZ = 1000.0;
 static constexpr bool fix_position_enabled = true;
-static constexpr float left_start_wall_break_cm = 6.45;
-static constexpr float right_start_wall_break_cm = 6.9;
+static constexpr float left_start_wall_break_cm = 6.10;
+static constexpr float right_start_wall_break_cm = 7.1;
 
 static std::map<Movement, TurnParams> turn_params;
 static std::map<Movement, ForwardParams> forward_params;
@@ -263,7 +263,7 @@ bool Navigation::step() {
             acceleration *= 0.65;
         }
 
-        if (fix_position_enabled) {
+        if (fix_position_enabled && current_movement == Movement::FORWARD) {
             WallBreak wall_break = process_wall_break();
             float current_movement_traveled = traveled_dist_cm - complete_prev_move_travel;
             if (current_movement_traveled > CELL_SIZE_CM && wall_break != WallBreak::NONE) {
@@ -396,6 +396,7 @@ bool Navigation::step() {
     case Movement::TURN_LEFT_90_FROM_45:
     case Movement::TURN_RIGHT_135_FROM_45:
     case Movement::TURN_LEFT_135_FROM_45:
+    case Movement::TURN_AROUND_INPLACE:
     case Movement::TURN_AROUND: {
         // Mini FSM
         // 0. Move forward
@@ -416,7 +417,7 @@ bool Navigation::step() {
             float final_speed = forward_params[current_movement].max_speed;
 
             // TODO: add first target travel based on sensors for turn around
-            if (current_movement == Movement::TURN_AROUND && mini_fsm_state == MiniFSMStates::FORWARD_1) {
+            if ((current_movement == Movement::TURN_AROUND || current_movement == Movement::TURN_AROUND_INPLACE) && mini_fsm_state == MiniFSMStates::FORWARD_1) {
                 final_speed = 0.0f;
                 control->set_wall_pid_enabled(false);
             } else if (mini_fsm_state == MiniFSMStates::FORWARD_1) {
@@ -456,7 +457,7 @@ bool Navigation::step() {
 
             /* Stop condition */
             if (std::abs(traveled_dist_cm) >= target_travel_cm || front_emergency) {
-                if (current_movement == Movement::TURN_AROUND) {
+                if (current_movement == Movement::TURN_AROUND || current_movement == Movement::TURN_AROUND_INPLACE) {
                     if (mini_fsm_state == MiniFSMStates::FORWARD_2) {
                         is_finished = true;
                         mini_fsm_state = MiniFSMStates::FORWARD_1;
@@ -509,7 +510,7 @@ bool Navigation::step() {
             control->set_wall_pid_enabled(false);
 
             if (std::abs(bsp::imu::get_incremental_angle()) >= final_angle_rad) {
-                if (current_movement == Movement::TURN_AROUND) {
+                if (current_movement == Movement::TURN_AROUND || current_movement == Movement::TURN_AROUND_INPLACE) {
                     control->set_target_angular_speed(0.0);
                     control->set_motor_control_disabled(true);
                     reference_time = bsp::get_tick_ms();
@@ -545,9 +546,15 @@ bool Navigation::step() {
                 control->reset();
                 control->set_motor_control_disabled(false);
                 traveled_dist_cm = 0;
-                // target_travel_cm for FORWARD_2 is based on the calculated position
-                target_travel_cm = (std::abs(current_position_mm.x) / 10.0f);
-                mini_fsm_state = MiniFSMStates::FORWARD_2;
+
+                if (current_movement == Movement::TURN_AROUND_INPLACE) {
+                    is_finished = true;
+                    mini_fsm_state = MiniFSMStates::FORWARD_1;
+                } else {
+                    // target_travel_cm for FORWARD_2 is based on the calculated position
+                    target_travel_cm = (std::abs(current_position_mm.x) / 10.0f);
+                    mini_fsm_state = MiniFSMStates::FORWARD_2;
+                }
             }
         }
 
@@ -922,8 +929,6 @@ Navigation::get_diagonal_movements(std::vector<std::pair<Movement, uint8_t>> def
         case PathState::Stop:
             break;
         }
-
-        break;
     }
 
     output_movements.push_back({Movement::STOP, 1});

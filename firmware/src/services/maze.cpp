@@ -175,6 +175,7 @@ void Maze::save_maze_to_memory() {
 }
 
 void Maze::read_maze_from_memory() {
+    this->reset();
     uint8_t data[4];
     for (int x = 0; x < CELLS_X; x++) {
         for (int y = 0; y < CELLS_Y; y++) {

@@ -7,7 +7,7 @@
             "servertype": "stlink",
             "cwd": "${workspaceRoot}",
             "gdbPath": "arm-none-eabi-gdb",
-            "executable": "${workspaceFolder}/build/STM32G474/fujin.elf",
+            "executable": "${workspaceFolder}/build/STM32G474-Debug/fujin.elf",
             "name": "Cortex Debug (ST-Link)",
             "device": "STM32G474RC",
             "v1": false,

@@ -47,6 +47,7 @@ enum Movement {
     TURN_AROUND,
     TURN_RIGHT_90_SEARCH_MODE,
     TURN_LEFT_90_SEARCH_MODE,
+    TURN_AROUND_INPLACE,
     STOP,
 };
 

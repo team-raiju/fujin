@@ -109,26 +109,28 @@ void Run::enter() {
 
     logger->init();
 
-/*     maze->read_maze_from_memory();
+    maze->read_maze_from_memory();
     maze->print(maze->ORIGIN);
     target_directions = maze->directions_to_goal();
     maze->print(maze->ORIGIN);
 
     std::vector<std::pair<Movement, uint8_t>> default_target_movements =
-        navigation->get_default_target_movements(target_directions); */
+        navigation->get_default_target_movements(target_directions);
 
     target_movements.clear();
-    // bool use_diagonal = true;
+    bool use_diagonal = true;
 
-    // if (use_diagonal) {
-    //     target_movements = navigation->get_diagonal_movements(default_target_movements);
-    // } else {
-    //     target_movements = navigation->get_smooth_movements(default_target_movements);
-    // }
-
+    if (use_diagonal) {
+        target_movements = navigation->get_diagonal_movements(default_target_movements);
+    } else {
+        target_movements = navigation->get_smooth_movements(default_target_movements);
+    }
 
 
     // target_movements.push_back({Movement::START, 1});
+    // target_movements.push_back({Movement::FORWARD, 1});
+    // target_movements.push_back({Movement::TURN_RIGHT_90, 1});
+
     // target_movements.push_back({Movement::STOP, 1});
 
     move_count = 0;

@@ -56,6 +56,29 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -include 'utils/types.hpp' ")
 
+
+if(CMAKE_BUILD_TYPE MATCHES Debug)
+    target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE
+        -O0
+        -g3
+    )
+endif()
+    if(CMAKE_BUILD_TYPE MATCHES Release)
+    target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE
+        -Ofast
+        -g0
+    )
+endif()
+
+get_target_property(TARGET_OPTS ${CMAKE_PROJECT_NAME} COMPILE_OPTIONS)
+message(STATUS "Compile options for ${CMAKE_PROJECT_NAME}: ${TARGET_OPTS}")
+message(STATUS "CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
+
+add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E echo "Built with: $<JOIN:$<TARGET_PROPERTY:COMPILE_OPTIONS>, >"
+    COMMENT "Displaying compile flags"
+)
+
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
     $<$<CONFIG:Debug>:DEBUG>
     TARGET=${TARGET}
