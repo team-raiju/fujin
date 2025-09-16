@@ -1,15 +1,15 @@
 #include "bsp/analog_sensors.hpp"
+#include "bsp/ble.hpp"
+#include "bsp/buzzer.hpp"
 #include "bsp/debug.hpp"
+#include "bsp/fan.hpp"
 #include "bsp/leds.hpp"
 #include "bsp/motors.hpp"
-#include "fsm/state.hpp"
-#include "utils/soft_timer.hpp"
-#include "bsp/buzzer.hpp"
 #include "bsp/timers.hpp"
-#include "bsp/ble.hpp"
-#include "services/logger.hpp"
-#include "bsp/fan.hpp"
+#include "fsm/state.hpp"
 #include "services/config.hpp"
+#include "services/logger.hpp"
+#include "utils/soft_timer.hpp"
 
 namespace fsm {
 
@@ -52,6 +52,10 @@ State* Idle::react(ButtonPressed const& event) {
 
     if (event.button == ButtonPressed::LONG2) {
         services::Config::send_parameters();
+        auto maze = services::Maze::instance();
+        maze->read_maze_from_memory();
+        maze->print(maze->ORIGIN);
+        services::Notification::instance()->send_maze();
     }
 
     return nullptr;

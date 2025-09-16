@@ -11,6 +11,7 @@ public:
     void init();
     void reset();
     void update(bool ignore_maze = false);
+    void send_maze();
 
     Notification(const Notification&) = delete;
 

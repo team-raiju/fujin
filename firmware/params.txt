@@ -1,5 +1,5 @@
 ########################
-## Params Search ##
+## Params Search Slow ##
 ########################
 MOTOR: Coreless 1022
 ADDR_ANGULAR_KP: 0.035000
@@ -10,6 +10,24 @@ ADDR_WALL_KI: 0.000000
 ADDR_WALL_KD: 0.0020000
 ADDR_LINEAR_VEL_KP: 3.00000
 ADDR_LINEAR_VEL_KI: 0.03600
+ADDR_LINEAR_VEL_KD: 0.000000
+ADDR_DIAGONAL_WALLS_KP: 0.000000
+ADDR_DIAGONAL_WALLS_KI: 0.000000
+ADDR_DIAGONAL_WALLS_KD: 0.000000
+ADDR_FAN_SPEED: 0
+
+#########################
+## Params Search Medium #
+#########################
+MOTOR: Coreless 1022
+ADDR_ANGULAR_KP: 0.050000
+ADDR_ANGULAR_KI: 0.005000
+ADDR_ANGULAR_KD: 0.000000
+ADDR_WALL_KP: 0.001500
+ADDR_WALL_KI: 0.000000
+ADDR_WALL_KD: 0.0025000
+ADDR_LINEAR_VEL_KP: 5.00000
+ADDR_LINEAR_VEL_KI: 0.06000
 ADDR_LINEAR_VEL_KD: 0.000000
 ADDR_DIAGONAL_WALLS_KP: 0.000000
 ADDR_DIAGONAL_WALLS_KI: 0.000000
@@ -97,10 +115,10 @@ angular_acceleration = 0.05
 ##########################
 ## Calibration Test Map ##
 ##########################
-ir_wall_dist_ref_right = 1340
+ir_wall_dist_ref_right = 1391
 ir_wall_dist_ref_front_left = 150 
 ir_wall_dist_ref_front_right = 150
-ir_wall_dist_ref_left = 770
+ir_wall_dist_ref_left = 800
 
 ir_wall_control_th_right = 1100
 ir_wall_control_th_front_left = 200 

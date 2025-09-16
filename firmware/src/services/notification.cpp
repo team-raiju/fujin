@@ -34,6 +34,35 @@ void Notification::reset() {
     state = SEND_MAZE;
 }
 
+void Notification::send_maze() {
+    auto maze = services::Maze::instance();
+
+    for (int y = (services::Maze::CELLS_Y - 1); y >= 0; y--) {
+        for (int x = 0; x < services::Maze::CELLS_X; x++) {
+            uint8_t data[] = {
+                bsp::ble::header,
+                bsp::ble::BlePacketType::MazeData,
+                (uint8_t)((x << 4) | y),
+                maze->map[x][y].walls,
+                maze->map[x][y].visited,
+                maze->map[x][y].distance,
+                0,
+                0,
+                0,
+                0,
+            };
+
+            data[6] = (uint8_t)((x << 4) | y);
+            data[7] = maze->map[x][y].walls;
+            data[8] = maze->map[x][y].visited;
+            data[9] = maze->map[x][y].distance;
+
+            bsp::ble::transmit(data, sizeof(data));
+            bsp::delay_ms(5);
+        }
+    }
+}
+
 void Notification::update(bool ignore_maze) {
     if (bsp::get_tick_ms() - last_sent < min_interval_ms) {
         return;
