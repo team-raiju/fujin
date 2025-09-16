@@ -286,9 +286,9 @@ void enable_motion_gc_filter(bool enable) {
 
 bool is_imu_emergency() {
     bool emergency_z_linear_accel = (bsp::imu::get_z_acceleration() > 5.5 || bsp::imu::get_z_acceleration() < -5.5);
-    bool emergency_z_angular_accel = α > 5500.0f;
+    bool emergency_z_angular_accel = std::abs(α) > 5000.0f;
 
-    return emergency_z_linear_accel || emergency_z_angular_accel;
+    return emergency_z_linear_accel || emergency_z_angular_accel || std::abs(ω) > 22.0;
 }
 
 } // namespace
