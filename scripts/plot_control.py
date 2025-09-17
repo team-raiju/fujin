@@ -19,8 +19,6 @@ def plot_velocities(file_path):
     angular_velocity1 = []
     angular_velocity2 = []
     acceleration = []
-    # pwm_left = []
-    # pwm_right = []
     with open(file_path, 'r') as file:
         for line in file:
             fields = line.strip().split(';')
@@ -29,10 +27,8 @@ def plot_velocities(file_path):
             linear_velocity2.append(float(fields[2]))
             angular_velocity1.append(float(fields[3]))
             angular_velocity2.append(float(fields[4]))
-            # pwm_left.append(float(fields[5]))
-            # pwm_right.append(float(fields[6]))
 
-    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(12, 12))
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 12))
 
     linear_error = calculate_average_error(linear_velocity1, linear_velocity2)
     angular_error = calculate_average_error(angular_velocity1, angular_velocity2)
@@ -63,16 +59,6 @@ def plot_velocities(file_path):
         acceleration.append((linear_velocity1[i+50] - linear_velocity1[i]) / 0.05)
 
         print(f"t({i} - {i+50}): {linear_velocity1[i]:.2f} -> {linear_velocity1[i+50]:.2f} = {acceleration[-1]:.2f}m/s²")
-
-
-    # Plot pwms
-    # ax3.plot(time, pwm_left, label='PWM_Left')
-    # ax3.plot(time, pwm_right, label='PWM_Right')
-    # ax3.set_xlabel('Time (ms)')
-    # ax3.set_ylabel('0-1000')
-    # ax3.set_title('PWMS')
-    # ax3.legend()
-    # ax3.grid(True)
 
 
     plt.tight_layout()
@@ -114,45 +100,33 @@ def plot_pwm_and_bat(file_path):
     plt.tight_layout()
     plt.show()
 
-def plot_integral(file_path):
+def plot_distance(file_path):
     time = []
-    integral_vel = []
-    integral_angular = []
+    distance = []
     
     with open(file_path, 'r') as file:
         for line in file:
             fields = line.strip().split(';')
             time.append(float(fields[0]))
-            integral_vel.append(float(fields[8]))
-            integral_angular.append(float(fields[9]))
+            distance.append(float(fields[11]))
 
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 12))
+    fig, (ax1) = plt.subplots(1, 1, figsize=(12, 12))
 
-    # Plot integral velocities
-    ax1.plot(time, integral_vel, label='integral_vel')
+    # Plot distance velocities
+    ax1.plot(time, distance, label='distance')
     ax1.set_xlabel('Time (ms)')
-    ax1.set_ylabel('-0-100')
-    ax1.set_title('integral_vel')
+    ax1.set_ylabel('-180-180')
+    ax1.set_title('distance')
     ax1.legend()
     ax1.grid(True)
 
-    # Plot integral angle
-    ax2.plot(time, integral_angular, label='integral_angular')
-    ax2.set_xlabel('Time (ms)')
-    ax2.set_ylabel('-1000-1000')
-    ax2.set_title('integral_angular')
-    ax2.legend()
-    ax2.grid(True)
-
     plt.tight_layout()
     plt.show()
-
-
 
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.abspath(__file__))
     file_name = filter + '/kp_' + kp + '_ki_' + ki + '.txt'
     file_path = os.path.join(script_dir, file_name)
     plot_velocities(file_path)
-    # plot_integral(file_path)
+    # plot_distance(file_path)
     # plot_pwm_and_bat(file_path)

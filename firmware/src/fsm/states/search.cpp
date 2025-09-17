@@ -154,6 +154,9 @@ State* Search::react(Timeout const&) {
     if (done) {
         if (stop_next_move) {
             return &State::get<Idle>();
+            // stop_next_move = false;
+            // returning = false;
+            // maze->reset();
         }
 
         SensingStatus sensingStatus = bsp::analog_sensors::ir_get_sensing_status();
@@ -182,6 +185,7 @@ State* Search::react(Timeout const&) {
 
         if (robot_cell_pos == services::Maze::ORIGIN && returning) {
             navigation->set_movement(Movement::TURN_AROUND_INPLACE, Movement::FORWARD, Movement::STOP, 1);
+            // navigation->set_movement(Direction::NORTH);
             stop_next_move = true;
         } else {
             auto dir = maze->next_step(robot_cell_pos, walls, returning, true);
