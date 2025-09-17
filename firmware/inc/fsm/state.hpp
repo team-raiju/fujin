@@ -109,6 +109,7 @@ private:
     bool returning;
     bool save_maze;
     bool stop_next_move;
+    bool emergency = false;
 };
 
 ///

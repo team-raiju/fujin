@@ -13,6 +13,7 @@
 #include "bsp/timers.hpp"
 #include "fsm/state.hpp"
 #include "services/config.hpp"
+#include "services/control.hpp"
 #include "services/logger.hpp"
 #include "services/maze.hpp"
 #include "services/navigation.hpp"
@@ -102,36 +103,39 @@ void Run::enter() {
 
     services::Control::instance()->start_fan();
     bsp::delay_ms(250);
-                                                                                               
+
     soft_timer::start(1, soft_timer::CONTINUOUS);
 
-    navigation->reset(false);
+    navigation->reset(true);
 
     logger->init();
 
-    maze->read_maze_from_memory();
-    maze->print(maze->ORIGIN);
-    target_directions = maze->directions_to_goal();
-    maze->print(maze->ORIGIN);
+    // maze->read_maze_from_memory();
+    // maze->print(maze->ORIGIN);
+    // target_directions = maze->directions_to_goal();
+    // maze->print(maze->ORIGIN);
 
-    std::vector<std::pair<Movement, uint8_t>> default_target_movements =
-        navigation->get_default_target_movements(target_directions);
+    // std::vector<std::pair<Movement, uint8_t>> default_target_movements =
+    //     navigation->get_default_target_movements(target_directions);
+
+    // target_movements.clear();
+    // bool use_diagonal = true;
+
+    // if (use_diagonal) {
+    //     target_movements = navigation->get_diagonal_movements(default_target_movements);
+    // } else {
+    //     target_movements = navigation->get_smooth_movements(default_target_movements);
+    // }
 
     target_movements.clear();
-    bool use_diagonal = true;
-
-    if (use_diagonal) {
-        target_movements = navigation->get_diagonal_movements(default_target_movements);
-    } else {
-        target_movements = navigation->get_smooth_movements(default_target_movements);
-    }
-
-
-    // target_movements.push_back({Movement::START, 1});
-    // target_movements.push_back({Movement::FORWARD, 1});
-    // target_movements.push_back({Movement::TURN_RIGHT_90, 1});
-
-    // target_movements.push_back({Movement::STOP, 1});
+    target_movements.push_back({Movement::START, 1});
+    target_movements.push_back({Movement::FORWARD, 1});
+    target_movements.push_back({Movement::TURN_RIGHT_90_SEARCH_MODE, 1});
+    target_movements.push_back({Movement::TURN_LEFT_90_SEARCH_MODE, 1});
+    target_movements.push_back({Movement::TURN_LEFT_90_SEARCH_MODE, 1});
+    target_movements.push_back({Movement::TURN_RIGHT_90_SEARCH_MODE, 1});
+    target_movements.push_back({Movement::TURN_AROUND, 1});
+    target_movements.push_back({Movement::STOP, 1});
 
     move_count = 0;
     emergency = false;
@@ -188,19 +192,17 @@ State* Run::react(Timeout const&) {
 
         auto movement = target_movements[move_count].first;
 
-        auto prev_movement =
-            ((move_count) >= 1) ? target_movements[move_count - 1].first : Movement::STOP;
+        auto prev_movement = ((move_count) >= 1) ? target_movements[move_count - 1].first : Movement::STOP;
 
         auto next_movement =
             ((move_count + 1) < target_movements.size()) ? target_movements[move_count + 1].first : Movement::STOP;
-        
 
         auto cells = target_movements[move_count].second;
 
         navigation->set_movement(movement, prev_movement, next_movement, cells);
     }
 
-    if (bsp::imu::is_imu_emergency() && move_count > 1) {
+    if ((bsp::imu::is_imu_emergency() || services::Control::instance()->is_emergency()) && move_count > 1) {
         emergency = true;
         soft_timer::stop();
         bsp::motors::set(0, 0);
@@ -218,8 +220,8 @@ State* Run::react(Timeout const&) {
 void Run::exit() {
     soft_timer::stop();
     bsp::motors::set(0, 0);
-    if(!emergency) {
-    services::Control::instance()->stop_fan();
+    if (!emergency) {
+        services::Control::instance()->stop_fan();
     }
     bsp::fan::set(0);
     bsp::leds::stripe_set(Color::Black);

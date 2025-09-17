@@ -6,11 +6,13 @@
 #include "bsp/buzzer.hpp"
 #include "bsp/core.hpp"
 #include "bsp/debug.hpp"
+#include "bsp/fan.hpp"
 #include "bsp/imu.hpp"
 #include "bsp/leds.hpp"
 #include "bsp/motors.hpp"
 #include "bsp/timers.hpp"
 #include "fsm/state.hpp"
+#include "services/control.hpp"
 #include "services/maze.hpp"
 #include "services/navigation.hpp"
 #include "services/notification.hpp"
@@ -104,6 +106,7 @@ void Search::enter() {
     returning = false;
     save_maze = false;
     stop_next_move = false;
+    emergency = false;
 }
 
 State* Search::react(BleCommand const&) {
@@ -186,11 +189,26 @@ State* Search::react(Timeout const&) {
         }
     }
 
+    if ((bsp::imu::is_imu_emergency() || services::Control::instance()->is_emergency())) {
+        emergency = true;
+        soft_timer::stop();
+        bsp::motors::set(0, 0);
+        bsp::fan::set(0);
+        bsp::leds::stripe_set(Color::Orange);
+        bsp::buzzer::start();
+        bsp::delay_ms(500);
+        bsp::buzzer::stop();
+        return &State::get<Idle>();
+    }
+
     return nullptr;
 }
 
 void Search::exit() {
     bsp::motors::set(0, 0);
+    if (!emergency) {
+        services::Control::instance()->stop_fan();
+    }
     bsp::analog_sensors::enable_modulation(false);
     bsp::leds::ir_emitter_all_off();
     bsp::leds::indication_off();

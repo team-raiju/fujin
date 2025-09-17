@@ -158,4 +158,15 @@ void Control::stop_fan() {
     bsp::fan::set(0);
 }
 
+bool Control::is_emergency(){
+    auto linear_speed_error = std::abs(target_linear_speed_m_s - bsp::encoders::get_filtered_velocity_m_s());
+    auto angular_speed_error = std::abs(target_angular_speed_rad_s - bsp::imu::get_rad_per_s());
+
+    if (linear_speed_error > 0.6 || angular_speed_error > 6.0){
+        return true;
+    }
+    
+    return false;
+}
+
 }

@@ -19,6 +19,7 @@ class Control {
 
         void start_fan();
         void stop_fan();
+        bool is_emergency();
 
         void set_target_linear_speed(float speed) { target_linear_speed_m_s = speed; }
         void set_target_angular_speed(float speed) { target_angular_speed_rad_s = speed; }
