@@ -287,7 +287,7 @@ void enable_motion_gc_filter(bool enable) {
 bool is_imu_emergency() {
     bool emergency_z_angular_accel = std::abs(α) > 6000.0f;
 
-    return emergency_z_angular_accel || (std::abs(ω) > 23.0);
+    return emergency_z_angular_accel || (std::abs(ω) > 35.0);
 }
 
 } // namespace

@@ -61,10 +61,10 @@ void Navigation::reset(bool search_mode) {
         turn_params = turn_params_search;
         forward_params = forward_params_search;
     } else {
-        turn_params = turn_params_slow;
-        forward_params = forward_params_slow;
-        // turn_params = turn_params_medium;
-        // forward_params = forward_params_medium;
+        // turn_params = turn_params_slow;
+        // forward_params = forward_params_slow;
+        turn_params = turn_params_medium;
+        forward_params = forward_params_medium;
         // turn_params = turn_params_fast;
         // forward_params = forward_params_fast;
     }
@@ -292,8 +292,10 @@ bool Navigation::step() {
             ((target_travel_cm - break_margin) -
              (100.0f * get_torricelli_distance(forward_end_speed, control_linear_speed, -deceleration)))) {
             if (control_linear_speed < max_speed) {
-                control_linear_speed += acceleration / CONTROL_FREQUENCY_HZ;
-                control_linear_speed = std::min(control_linear_speed, max_speed);
+                if (control_linear_speed < 1.0 || std::abs(traveled_dist_cm) > 2.0) { // Safe margin of 2cm before starting to accelerate for stability
+                    control_linear_speed += acceleration / CONTROL_FREQUENCY_HZ;
+                    control_linear_speed = std::min(control_linear_speed, max_speed);
+                }
             }
         } else {
             if (control_linear_speed > forward_end_speed) {
@@ -360,18 +362,41 @@ bool Navigation::step() {
         int turn_sign = current_turn_params.sign;
 
         float angular_end_speed = 0.0;
+        float imu_incremental_angle = std::abs(bsp::imu::get_incremental_angle());
 
-        if (std::abs(bsp::imu::get_incremental_angle()) <
+        bool acceleration_condition =
+            imu_incremental_angle <
             (final_angle_rad -
-             (get_torricelli_distance(angular_end_speed, control_angular_speed_abs, -angular_deceleration)))) {
+             get_torricelli_distance(angular_end_speed, control_angular_speed_abs, -angular_deceleration));
+
+        // Smoothen acceleration when going to high speeds
+        // And manually define acceleration_condition
+        if (angular_max_speed > 15.0) {
+            if (control_angular_speed_abs < 3.0) {
+                angular_deceleration *= 0.25;
+            }
+
+            if (control_angular_speed_abs < 7.0) {
+                angular_deceleration *= 0.50;
+            }
+            // if (control_angular_speed_abs > 20) {
+            //     angular_acceleration *= 0.75;
+            // }
+            acceleration_condition = (imu_incremental_angle < current_turn_params.angle_start_deceleration);
+            angular_end_speed = 0.85f;
+        } else {
+            angular_end_speed = 0.4f;
+        }
+
+        if (acceleration_condition) {
             if (control_angular_speed_abs < angular_max_speed) {
                 control_angular_speed_abs += angular_acceleration / CONTROL_FREQUENCY_HZ;
                 control_angular_speed_abs = std::min(control_angular_speed_abs, angular_max_speed);
             }
         } else {
             if (control_angular_speed_abs > angular_end_speed) {
-                control_angular_speed_abs -= angular_acceleration / CONTROL_FREQUENCY_HZ;
-                control_angular_speed_abs = std::max(control_angular_speed_abs, 0.400f);
+                control_angular_speed_abs -= angular_deceleration / CONTROL_FREQUENCY_HZ;
+                control_angular_speed_abs = std::max(control_angular_speed_abs, angular_end_speed);
             }
         }
 
@@ -379,7 +404,7 @@ bool Navigation::step() {
         control->set_wall_pid_enabled(false);
         control->set_diagonal_pid_enabled(false);
 
-        if (std::abs(bsp::imu::get_incremental_angle()) >= final_angle_rad) {
+        if (imu_incremental_angle >= (final_angle_rad)) {
             control->set_target_angular_speed(0);
             is_finished = true;
         }
@@ -417,7 +442,8 @@ bool Navigation::step() {
             float final_speed = forward_params[current_movement].max_speed;
 
             // TODO: add first target travel based on sensors for turn around
-            if ((current_movement == Movement::TURN_AROUND || current_movement == Movement::TURN_AROUND_INPLACE) && mini_fsm_state == MiniFSMStates::FORWARD_1) {
+            if ((current_movement == Movement::TURN_AROUND || current_movement == Movement::TURN_AROUND_INPLACE) &&
+                mini_fsm_state == MiniFSMStates::FORWARD_1) {
                 final_speed = 0.0f;
                 control->set_wall_pid_enabled(false);
             } else if (mini_fsm_state == MiniFSMStates::FORWARD_1) {

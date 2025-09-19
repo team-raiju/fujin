@@ -53,6 +53,7 @@ void Control::reset(void) {
     target_linear_speed_m_s = 0;
 
     motor_control_disabled = false;
+    emergency = false;
 }
 
 void Control::update() {
@@ -74,6 +75,10 @@ void Control::update() {
 
         float linear_ratio = linear_vel_pid.calculate(target_linear_speed_m_s, mean_velocity_m_s);
         float rotation_ratio = -angular_vel_pid.calculate(target_angular_speed_rad_s, bsp::imu::get_rad_per_s());
+
+        auto linear_speed_error = std::abs(target_linear_speed_m_s - mean_velocity_m_s);
+        auto angular_speed_error = std::abs(target_angular_speed_rad_s - bsp::imu::get_rad_per_s());
+        emergency = ((linear_speed_error > 0.6) | (angular_speed_error > 8.0));
 
         float l_current = linear_ratio + rotation_ratio;
         float r_current = linear_ratio - rotation_ratio;
@@ -156,17 +161,6 @@ void Control::stop_fan() {
         bsp::delay_ms(20);
     }
     bsp::fan::set(0);
-}
-
-bool Control::is_emergency(){
-    auto linear_speed_error = std::abs(target_linear_speed_m_s - bsp::encoders::get_filtered_velocity_m_s());
-    auto angular_speed_error = std::abs(target_angular_speed_rad_s - bsp::imu::get_rad_per_s());
-
-    if (linear_speed_error > 0.6 || angular_speed_error > 6.0){
-        return true;
-    }
-    
-    return false;
 }
 
 }

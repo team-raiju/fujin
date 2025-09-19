@@ -19,23 +19,23 @@ class Control {
 
         void start_fan();
         void stop_fan();
-        bool is_emergency();
-
+        
         void set_target_linear_speed(float speed) { target_linear_speed_m_s = speed; }
         void set_target_angular_speed(float speed) { target_angular_speed_rad_s = speed; }
         void set_wall_pid_enabled(bool enabled) { wall_pid_enabled = enabled; }
         void set_diagonal_pid_enabled(bool enabled) { diagonal_pid_enabled = enabled; }
         void set_motor_control_disabled(bool disabled) {motor_control_disabled = disabled;}
-
+        
         float get_target_linear_speed() { return target_linear_speed_m_s; }
         float get_target_angular_speed() { return target_angular_speed_rad_s; }
         bool get_wall_pid_enabled() { return wall_pid_enabled; }
         bool get_diagonal_pid_enabled() { return diagonal_pid_enabled; }
         int16_t get_pwm_duty_l() { return pwm_duty_l; }
         int16_t get_pwm_duty_r() { return pwm_duty_r; }
-
+        
         float get_integral_vel() { return linear_vel_pid.get_integral(); }
         float get_integral_angular() { return angular_vel_pid.get_integral(); }
+        bool is_emergency() {return emergency; }
 
     private:
         Control() {}
@@ -52,6 +52,7 @@ class Control {
         int16_t pwm_duty_l;
         int16_t pwm_duty_r;
         bool motor_control_disabled = false;
+        bool emergency = false;
 
 };
 
