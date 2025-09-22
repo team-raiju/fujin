@@ -18,8 +18,17 @@
 
 static constexpr float CONTROL_FREQUENCY_HZ = 1000.0;
 static constexpr bool fix_position_enabled = true;
-static constexpr float left_start_wall_break_cm = 6.10;
-static constexpr float right_start_wall_break_cm = 7.1;
+
+// TODO: add a table to match every velocity
+static constexpr float left_start_wall_break_cm = 9.8; // 3.5 m/s
+// static constexpr float left_start_wall_break_cm = 9.2; // 3.0m/s
+// static constexpr float left_start_wall_break_cm = 7.7; // 2.0m/s
+// static constexpr float left_start_wall_break_cm = 6.70; //0.7m/s
+
+static constexpr float right_start_wall_break_cm = 11.0; // 3.5m/s
+// static constexpr float right_start_wall_break_cm = 10.0; //3.0m/s
+// static constexpr float right_start_wall_break_cm = 9.0; //2.0m/s
+// static constexpr float right_start_wall_break_cm = 7.1; //0.7m/s
 
 static std::map<Movement, TurnParams> turn_params;
 static std::map<Movement, ForwardParams> forward_params;
@@ -90,60 +99,6 @@ float Navigation::get_torricelli_distance(float final_speed, float initial_speed
     return (final_speed * final_speed - initial_speed * initial_speed) / (2.0f * acceleration);
 }
 
-float Navigation::last_movement_offset_cm(Movement prev_movement) {
-    float offset = 0;
-    switch (prev_movement) {
-    case Movement::TURN_RIGHT_45:
-    case Movement::TURN_LEFT_45:
-        // offset = ((std::abs(current_position_mm.y) / 10.0f) - HALF_CELL_SIZE_CM) / (std::sin(M_PI_4));
-        offset = turn_params[prev_movement].end;
-        break;
-
-    case Movement::TURN_RIGHT_90:
-    case Movement::TURN_LEFT_90:
-        offset = (std::abs(current_position_mm.y) / 10.0f) - HALF_CELL_SIZE_CM;
-        break;
-
-    case Movement::TURN_RIGHT_135:
-    case Movement::TURN_LEFT_135:
-        // offset = ((std::abs(current_position_mm.y) / 10.0f) - CELL_SIZE_CM) / (std::sin(M_PI_4));
-        offset = turn_params[prev_movement].end;
-        break;
-
-    case Movement::TURN_RIGHT_180:
-    case Movement::TURN_LEFT_180: {
-        float start = turn_params[prev_movement].start;
-        offset = -start - (current_position_mm.x / 10.0f);
-        break;
-    }
-
-    case TURN_RIGHT_90_FROM_45:
-    case TURN_LEFT_90_FROM_45: {
-        // offset = (std::abs(current_position_mm.y) / 10.0f) - (CELL_DIAGONAL_SIZE_CM);
-        offset = turn_params[prev_movement].end;
-        break;
-    }
-
-    case TURN_RIGHT_45_FROM_45:
-    case TURN_LEFT_45_FROM_45: {
-        offset = turn_params[prev_movement].end;
-        break;
-    }
-
-    case TURN_RIGHT_135_FROM_45:
-    case TURN_LEFT_135_FROM_45: {
-        // offset = (CELL_DIAGONAL_SIZE_CM - (std::abs(current_position_mm.y) / 10.0f)) / (std::cos(M_PI_4))
-        offset = turn_params[prev_movement].end;
-        break;
-    }
-
-    default:
-        break;
-    }
-
-    return offset;
-}
-
 void Navigation::reset_wall_break() {
     wall_right_counter_on = 0;
     wall_left_counter_on = 0;
@@ -156,6 +111,7 @@ void Navigation::reset_wall_break() {
 
 Navigation::WallBreak Navigation::process_wall_break() {
     // We only return one wall break. This only resets when reset_wall_break is called
+    //TODO enable more than one fix per straight move
     if (wall_break_already_detected) {
         return WallBreak::NONE;
     }
@@ -263,7 +219,9 @@ bool Navigation::step() {
             acceleration *= 0.65;
         }
 
-        if (fix_position_enabled && current_movement == Movement::FORWARD) {
+        if (fix_position_enabled && current_movement == Movement::FORWARD &&
+            std::abs(bsp::encoders::get_filtered_velocity_m_s() - max_speed) < 0.5) {
+
             WallBreak wall_break = process_wall_break();
             float current_movement_traveled = traveled_dist_cm - complete_prev_move_travel;
             if (current_movement_traveled > CELL_SIZE_CM && wall_break != WallBreak::NONE) {
@@ -272,14 +230,16 @@ bool Navigation::step() {
 
                 float corrected_distance_cm = 0;
                 if (wall_break == WallBreak::LEFT) {
-                    corrected_distance_cm = (cells_traveled * CELL_SIZE_CM) + left_start_wall_break_cm;
+                    corrected_distance_cm =
+                        (cells_traveled * CELL_SIZE_CM) + left_start_wall_break_cm + complete_prev_move_travel;
                 } else {
-                    corrected_distance_cm = (cells_traveled * CELL_SIZE_CM) + right_start_wall_break_cm;
+                    corrected_distance_cm =
+                        (cells_traveled * CELL_SIZE_CM) + right_start_wall_break_cm + complete_prev_move_travel;
                 }
 
                 float distance_error_cm = current_movement_traveled - corrected_distance_cm;
                 if (std::abs(distance_error_cm) < 5.0) {
-                    traveled_dist_cm = corrected_distance_cm + complete_prev_move_travel;
+                    traveled_dist_cm = corrected_distance_cm;
                     // bsp::buzzer::start();
                     bsp::leds::stripe_set(Color::Red);
                 }
@@ -292,7 +252,9 @@ bool Navigation::step() {
             ((target_travel_cm - break_margin) -
              (100.0f * get_torricelli_distance(forward_end_speed, control_linear_speed, -deceleration)))) {
             if (control_linear_speed < max_speed) {
-                if (control_linear_speed < 1.0 || std::abs(traveled_dist_cm) > 2.0) { // Safe margin of 2cm before starting to accelerate for stability
+                if (control_linear_speed < 1.0 ||
+                    std::abs(traveled_dist_cm) >
+                        2.0) { // Safe margin of 2cm before starting to accelerate for stability
                     control_linear_speed += acceleration / CONTROL_FREQUENCY_HZ;
                     control_linear_speed = std::min(control_linear_speed, max_speed);
                 }
@@ -363,14 +325,18 @@ bool Navigation::step() {
 
         float angular_end_speed = 0.0;
         float imu_incremental_angle = std::abs(bsp::imu::get_incremental_angle());
+        uint32_t elapsed_time = bsp::get_tick_ms() - reference_time;
 
         bool acceleration_condition =
             imu_incremental_angle <
             (final_angle_rad -
              get_torricelli_distance(angular_end_speed, control_angular_speed_abs, -angular_deceleration));
 
+        bool stop_condition = (imu_incremental_angle >= (final_angle_rad));
+
         // Smoothen acceleration when going to high speeds
         // And manually define acceleration_condition
+        // Also stop condition is based on time, as angles becomes unriliable
         if (angular_max_speed > 15.0) {
             if (control_angular_speed_abs < 3.0) {
                 angular_deceleration *= 0.25;
@@ -382,7 +348,8 @@ bool Navigation::step() {
             // if (control_angular_speed_abs > 20) {
             //     angular_acceleration *= 0.75;
             // }
-            acceleration_condition = (imu_incremental_angle < current_turn_params.angle_start_deceleration);
+            acceleration_condition = (elapsed_time < current_turn_params.t_start_deccel);
+            stop_condition = (elapsed_time > current_turn_params.t_stop);
             angular_end_speed = 0.85f;
         } else {
             angular_end_speed = 0.4f;
@@ -404,7 +371,7 @@ bool Navigation::step() {
         control->set_wall_pid_enabled(false);
         control->set_diagonal_pid_enabled(false);
 
-        if (imu_incremental_angle >= (final_angle_rad)) {
+        if (stop_condition) {
             control->set_target_angular_speed(0);
             is_finished = true;
         }
@@ -672,7 +639,7 @@ void Navigation::update_cell_position_and_dir() {
 
 void Navigation::set_movement(Movement movement, Movement prev_movement, Movement next_movement, uint8_t count) {
 
-    complete_prev_move_travel = -1 * last_movement_offset_cm(prev_movement);
+    complete_prev_move_travel = -1 * turn_params[prev_movement].end;
     current_movement = movement;
     reset_movement_variables();
 

@@ -5,6 +5,7 @@
 static constexpr float CELL_SIZE_CM = 18.0;
 static constexpr float HALF_CELL_SIZE_CM = 9.0;
 static constexpr float CELL_DIAGONAL_SIZE_CM = 12.727922;
+static constexpr float ROBOT_DIST_FROM_CENTER_START_CM_FAST = 2.50; // To account for slippery when fast mode
 static constexpr float ROBOT_DIST_FROM_CENTER_START_CM = 1.55;
 
 /**
@@ -172,8 +173,8 @@ static std::map<Movement, ForwardParams> forward_params_slow = {
 
 static std::map<Movement, TurnParams> turn_params_medium = {
 
-    {Movement::TURN_RIGHT_90, {-0.7, 0.2, 1.5, 785.40, 26.18, 1.5708, 58, 112, -1}},
-    {Movement::TURN_LEFT_90, {-0.7, 0.2, 1.5, 785.40, 26.18, 1.5708, 58, 112, 1}},
+    {Movement::TURN_RIGHT_90, {0.0, -0.2, 1.5, 785.40, 26.18, 1.5708, 58, 112, -1}},
+    {Movement::TURN_LEFT_90, {-0.5, 0.0, 1.5, 785.40, 26.18, 1.5708, 58, 112, 1}},
 
     {Movement::TURN_RIGHT_45, {-5.0, -8.6, 1.5, 100.00, 7.854, 0.7854, 0, 0, -1}},
     {Movement::TURN_LEFT_45, {-5.0, -8.6, 1.5, 100.00, 7.854, 0.7854, 0, 0, 1}},
@@ -191,10 +192,10 @@ static std::map<Movement, TurnParams> turn_params_medium = {
 };
 
 static std::map<Movement, ForwardParams> forward_params_medium = {
-    {Movement::START, {1.5, 12.0, 20.0, HALF_CELL_SIZE_CM + ROBOT_DIST_FROM_CENTER_START_CM}},
-    {Movement::FORWARD, {1.7, 12.0, 20.0, CELL_SIZE_CM}},
+    {Movement::START, {1.5, 12.0, 20.0, HALF_CELL_SIZE_CM + ROBOT_DIST_FROM_CENTER_START_CM_FAST}},
+    {Movement::FORWARD, {3.5, 15.0, 20.0, CELL_SIZE_CM}},
     {Movement::DIAGONAL, {1.7, 12.0, 20.0, CELL_DIAGONAL_SIZE_CM}},
-    {Movement::STOP, {1.0, 12.0, 20.0, (HALF_CELL_SIZE_CM - 1.0)}},
+    {Movement::STOP, {1.0, 2.0, 30.0, (HALF_CELL_SIZE_CM - 1.0)}},
     {Movement::TURN_AROUND, {1.5, 12.0, 20.0, 8.0}},
 
     {Movement::TURN_RIGHT_45_FROM_45, {1.5, 12.0, 20.0, 7.4}},
@@ -234,7 +235,7 @@ static std::map<Movement, ForwardParams> forward_params_fast = {
     {Movement::START,
      {1.0, 5.0, 20.0,
       HALF_CELL_SIZE_CM +
-          ROBOT_DIST_FROM_CENTER_START_CM}}, // Speed reached in the start end is = 1.0m/s (sqrt(2*5*0.11))
+          ROBOT_DIST_FROM_CENTER_START_CM_FAST}}, // Speed reached in the start end is = 1.0m/s (sqrt(2*5*0.11))
 
     {Movement::FORWARD, {3.5, 15.0, 30.0, CELL_SIZE_CM}},
 

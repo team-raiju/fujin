@@ -78,7 +78,7 @@ void Control::update() {
 
         auto linear_speed_error = std::abs(target_linear_speed_m_s - mean_velocity_m_s);
         auto angular_speed_error = std::abs(target_angular_speed_rad_s - bsp::imu::get_rad_per_s());
-        emergency = ((linear_speed_error > 0.6) | (angular_speed_error > 8.0));
+        emergency = ((linear_speed_error > 0.75) | (angular_speed_error > 10.0));
 
         float l_current = linear_ratio + rotation_ratio;
         float r_current = linear_ratio - rotation_ratio;
