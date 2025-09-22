@@ -20,15 +20,13 @@ static constexpr float CONTROL_FREQUENCY_HZ = 1000.0;
 static constexpr bool fix_position_enabled = true;
 
 // TODO: add a table to match every velocity
-static constexpr float left_start_wall_break_cm = 9.8; // 3.5 m/s
-// static constexpr float left_start_wall_break_cm = 9.2; // 3.0m/s
-// static constexpr float left_start_wall_break_cm = 7.7; // 2.0m/s
-// static constexpr float left_start_wall_break_cm = 6.70; //0.7m/s
+static constexpr float left_start_wall_break_cm = 6.5; // 3.0m/s
+// static constexpr float left_start_wall_break_cm = 6.1; // 2.0 m/s
+// static constexpr float left_start_wall_break_cm = 6.1; // 1.5 m/s
 
-static constexpr float right_start_wall_break_cm = 11.0; // 3.5m/s
-// static constexpr float right_start_wall_break_cm = 10.0; //3.0m/s
-// static constexpr float right_start_wall_break_cm = 9.0; //2.0m/s
-// static constexpr float right_start_wall_break_cm = 7.1; //0.7m/s
+
+static constexpr float right_start_wall_break_cm = 8.0; // 3.0m/s
+// static constexpr float right_start_wall_break_cm = 7.5; //1.5m/s
 
 static std::map<Movement, TurnParams> turn_params;
 static std::map<Movement, ForwardParams> forward_params;
@@ -106,14 +104,15 @@ void Navigation::reset_wall_break() {
     wall_right_counter_off = 0;
     wall_left_counter_off = 0;
 
-    wall_break_already_detected = false;
+    wall_break_last_dist = 0;
 }
 
 Navigation::WallBreak Navigation::process_wall_break() {
-    // We only return one wall break. This only resets when reset_wall_break is called
-    //TODO enable more than one fix per straight move
-    if (wall_break_already_detected) {
+    // We only return one wall break. per 18cm
+    if ((traveled_dist_cm -  wall_break_last_dist) < 18) {
         return WallBreak::NONE;
+    } else if ((traveled_dist_cm -  wall_break_last_dist) >= 18 && (traveled_dist_cm -  wall_break_last_dist) < 18.75){
+        bsp::leds::stripe_set(Color::Black);
     }
 
     bool right_seeing = bsp::analog_sensors::ir_reading_wall(bsp::analog_sensors::SensingDirection::RIGHT);
@@ -133,18 +132,14 @@ Navigation::WallBreak Navigation::process_wall_break() {
         wall_left_counter_off += 1;
     }
 
-    // If more than 10 consecutive wall "off" are read, and we already measured sufficient
-    // wall "on" states, we consider we are on a wall break state
 
-    // TODO: change this counter depending on the speed of the robot
-    // When the robot is slow, this value should be larger
-    if (wall_right_counter_on > 50 && wall_right_counter_off > 5) {
-        wall_break_already_detected = true;
+    if (wall_right_counter_on > 25 && wall_right_counter_off > 0) {
+        wall_break_last_dist = traveled_dist_cm;
         return WallBreak::RIGHT;
     }
 
-    if (wall_left_counter_on > 50 && wall_left_counter_off > 5) {
-        wall_break_already_detected = true;
+    if (wall_left_counter_on > 25 && wall_left_counter_off > 0) {
+        wall_break_last_dist = traveled_dist_cm;
         return WallBreak::LEFT;
     }
 
@@ -219,8 +214,7 @@ bool Navigation::step() {
             acceleration *= 0.65;
         }
 
-        if (fix_position_enabled && current_movement == Movement::FORWARD &&
-            std::abs(bsp::encoders::get_filtered_velocity_m_s() - max_speed) < 0.5) {
+        if (fix_position_enabled && current_movement == Movement::FORWARD) {
 
             WallBreak wall_break = process_wall_break();
             float current_movement_traveled = traveled_dist_cm - complete_prev_move_travel;
@@ -337,7 +331,7 @@ bool Navigation::step() {
         // Smoothen acceleration when going to high speeds
         // And manually define acceleration_condition
         // Also stop condition is based on time, as angles becomes unriliable
-        if (angular_max_speed > 15.0) {
+        if (angular_max_speed > 19.0) {
             if (control_angular_speed_abs < 3.0) {
                 angular_deceleration *= 0.25;
             }
@@ -348,6 +342,9 @@ bool Navigation::step() {
             // if (control_angular_speed_abs > 20) {
             //     angular_acceleration *= 0.75;
             // }
+        }
+
+        if (angular_max_speed > 13.0) {
             acceleration_condition = (elapsed_time < current_turn_params.t_start_deccel);
             stop_condition = (elapsed_time > current_turn_params.t_stop);
             angular_end_speed = 0.85f;

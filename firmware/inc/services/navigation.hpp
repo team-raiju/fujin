@@ -116,7 +116,7 @@ private:
     uint32_t wall_left_counter_on = 0;
     uint32_t wall_right_counter_off = 0;
     uint32_t wall_left_counter_off = 0;
-    bool wall_break_already_detected = false;
+    uint32_t wall_break_last_dist = 0;
 
     MiniFSMStates mini_fsm_state = MiniFSMStates::FORWARD_1;
 };
