@@ -24,7 +24,6 @@ static constexpr float left_start_wall_break_cm = 6.5; // 3.0m/s
 // static constexpr float left_start_wall_break_cm = 6.1; // 2.0 m/s
 // static constexpr float left_start_wall_break_cm = 6.1; // 1.5 m/s
 
-
 static constexpr float right_start_wall_break_cm = 8.0; // 3.0m/s
 // static constexpr float right_start_wall_break_cm = 7.5; //1.5m/s
 
@@ -109,9 +108,9 @@ void Navigation::reset_wall_break() {
 
 Navigation::WallBreak Navigation::process_wall_break() {
     // We only return one wall break. per 18cm
-    if ((traveled_dist_cm -  wall_break_last_dist) < 18) {
+    if ((traveled_dist_cm - wall_break_last_dist) < 18) {
         return WallBreak::NONE;
-    } else if ((traveled_dist_cm -  wall_break_last_dist) >= 18 && (traveled_dist_cm -  wall_break_last_dist) < 18.75){
+    } else if ((traveled_dist_cm - wall_break_last_dist) >= 18 && (traveled_dist_cm - wall_break_last_dist) < 18.75) {
         bsp::leds::stripe_set(Color::Black);
     }
 
@@ -131,7 +130,6 @@ Navigation::WallBreak Navigation::process_wall_break() {
     } else {
         wall_left_counter_off += 1;
     }
-
 
     if (wall_right_counter_on > 25 && wall_right_counter_off > 0) {
         wall_break_last_dist = traveled_dist_cm;
@@ -331,17 +329,10 @@ bool Navigation::step() {
         // Smoothen acceleration when going to high speeds
         // And manually define acceleration_condition
         // Also stop condition is based on time, as angles becomes unriliable
-        if (angular_max_speed > 19.0) {
-            if (control_angular_speed_abs < 3.0) {
-                angular_deceleration *= 0.25;
+        if (angular_max_speed > 17.0) {
+            if (control_angular_speed_abs < 4.0) {
+                angular_deceleration *= 0.35;
             }
-
-            if (control_angular_speed_abs < 7.0) {
-                angular_deceleration *= 0.50;
-            }
-            // if (control_angular_speed_abs > 20) {
-            //     angular_acceleration *= 0.75;
-            // }
         }
 
         if (angular_max_speed > 13.0) {
@@ -481,25 +472,46 @@ bool Navigation::step() {
             int turn_sign = current_turn_params.sign;
 
             float angular_end_speed = 0.0;
+            float imu_incremental_angle = std::abs(bsp::imu::get_incremental_angle());
+            uint32_t elapsed_time = bsp::get_tick_ms() - reference_time;
 
-            if (std::abs(bsp::imu::get_incremental_angle()) <
+            bool acceleration_condition =
+                imu_incremental_angle <
                 (final_angle_rad -
-                 (get_torricelli_distance(angular_end_speed, control_angular_speed_abs, -angular_deceleration)))) {
+                 get_torricelli_distance(angular_end_speed, control_angular_speed_abs, -angular_deceleration));
+
+            bool stop_condition = (imu_incremental_angle >= (final_angle_rad));
+
+            if (angular_max_speed > 17.0) {
+                if (control_angular_speed_abs < 4.0) {
+                    angular_deceleration *= 0.35;
+                }
+            }
+
+            if (angular_max_speed > 13.0) {
+                acceleration_condition = (elapsed_time < current_turn_params.t_start_deccel);
+                stop_condition = (elapsed_time > current_turn_params.t_stop);
+                angular_end_speed = 0.85f;
+            } else {
+                angular_end_speed = 0.4f;
+            }
+
+            if (acceleration_condition) {
                 if (control_angular_speed_abs < angular_max_speed) {
                     control_angular_speed_abs += angular_acceleration / CONTROL_FREQUENCY_HZ;
                     control_angular_speed_abs = std::min(control_angular_speed_abs, angular_max_speed);
                 }
             } else {
                 if (control_angular_speed_abs > angular_end_speed) {
-                    control_angular_speed_abs -= angular_acceleration / CONTROL_FREQUENCY_HZ;
-                    control_angular_speed_abs = std::max(control_angular_speed_abs, 0.400f);
+                    control_angular_speed_abs -= angular_deceleration / CONTROL_FREQUENCY_HZ;
+                    control_angular_speed_abs = std::max(control_angular_speed_abs, angular_end_speed);
                 }
             }
 
             control->set_target_angular_speed(control_angular_speed_abs * turn_sign);
             control->set_wall_pid_enabled(false);
 
-            if (std::abs(bsp::imu::get_incremental_angle()) >= final_angle_rad) {
+            if (stop_condition) {
                 if (current_movement == Movement::TURN_AROUND || current_movement == Movement::TURN_AROUND_INPLACE) {
                     control->set_target_angular_speed(0.0);
                     control->set_motor_control_disabled(true);
