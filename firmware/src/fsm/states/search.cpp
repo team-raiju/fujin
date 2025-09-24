@@ -101,7 +101,7 @@ void Search::enter() {
 
     soft_timer::start(1, soft_timer::CONTINUOUS);
 
-    navigation->reset(true);
+    navigation->reset(services::Navigation::SEARCH);
 
     returning = false;
     save_maze = false;

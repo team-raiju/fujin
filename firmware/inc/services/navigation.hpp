@@ -11,12 +11,27 @@ namespace services {
 
 class Navigation {
 public:
+    enum navigation_mode_t {
+        SEARCH,
+        CUSTOM,
+        SLOW,
+        MEDIUM,
+        FAST,
+    };
+
+    enum target_movement_mode_t {
+        NORMAL,
+        SMOOTH,
+        DIAGONALS,
+        HARD_CODDED,
+    };
+
     static Navigation* instance();
 
     Navigation(const Navigation&) = delete;
 
     void init();
-    void reset(bool search_mode);
+    void reset(navigation_mode_t mode);
     void update();
     bool step();
 
@@ -37,15 +52,8 @@ public:
     /// @param count The number of steps to take on the current movement
     void set_movement(Movement movement, Movement prev_movement, Movement next_movement, uint8_t count);
 
-    std::vector<std::pair<Movement, uint8_t>> get_default_target_movements(std::vector<Direction> target_directions);
-
-    std::vector<std::pair<Movement, uint8_t>>
-    get_smooth_movements(std::vector<std::pair<Movement, uint8_t>> default_target_movements);
-
-    std::vector<std::pair<Movement, uint8_t>>
-    get_diagonal_movements(std::vector<std::pair<Movement, uint8_t>> default_target_movements);
-
-    void print_movement_sequence(std::vector<std::pair<Movement, uint8_t>> movements, std::string name);
+    std::vector<std::pair<Movement, uint8_t>> get_movements_to_goal(std::vector<Direction> target_directions,
+                                                                    target_movement_mode_t mode);
 
 private:
     enum class PathState {
@@ -70,11 +78,7 @@ private:
         STABILIZE_2,
     };
 
-    enum class WallBreak {
-        LEFT,
-        RIGHT,
-        NONE
-    };
+    enum class WallBreak { LEFT, RIGHT, NONE };
 
     Navigation() {}
     void update_cell_position_and_dir();
@@ -91,6 +95,17 @@ private:
     void reset_wall_break();
     void reset_movement_variables();
 
+    std::vector<std::pair<Movement, uint8_t>> get_default_target_movements(std::vector<Direction> target_directions);
+
+    std::vector<std::pair<Movement, uint8_t>>
+    get_smooth_movements(std::vector<std::pair<Movement, uint8_t>> default_target_movements);
+
+    std::vector<std::pair<Movement, uint8_t>>
+    get_diagonal_movements(std::vector<std::pair<Movement, uint8_t>> default_target_movements);
+
+    std::vector<std::pair<Movement, uint8_t>> get_hardcodded_movements();
+
+    void print_movement_sequence(std::vector<std::pair<Movement, uint8_t>> movements, std::string name);
 
     services::Control* control;
 

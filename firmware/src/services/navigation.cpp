@@ -43,14 +43,14 @@ Navigation* Navigation::instance() {
 
 void Navigation::init() {
     control = Control::instance();
-    reset(true);
+    reset(SEARCH);
 
     if (!is_initialized) {
         is_initialized = true;
     }
 }
 
-void Navigation::reset(bool search_mode) {
+void Navigation::reset(navigation_mode_t mode) {
 
     reset_movement_variables();
     encoder_left_counter = 0;
@@ -63,16 +63,27 @@ void Navigation::reset(bool search_mode) {
 
     bsp::encoders::reset();
 
-    if (search_mode) {
+    switch (mode) {
+    case SEARCH:
         turn_params = turn_params_search;
         forward_params = forward_params_search;
-    } else {
-        // turn_params = turn_params_slow;
-        // forward_params = forward_params_slow;
+        break;
+    case CUSTOM:
+        turn_params = turn_params_slow;
+        forward_params = forward_params_slow;
+        break;
+    case SLOW:
+        turn_params = turn_params_slow;
+        forward_params = forward_params_slow;
+        break;
+    case MEDIUM:
         turn_params = turn_params_medium;
         forward_params = forward_params_medium;
-        // turn_params = turn_params_fast;
-        // forward_params = forward_params_fast;
+        break;
+    case FAST:
+        turn_params = turn_params_fast;
+        forward_params = forward_params_fast;
+        break;
     }
 
     current_movement = Movement::START;
@@ -671,6 +682,30 @@ void Navigation::set_movement(Movement movement, Movement prev_movement, Movemen
     }
 }
 
+std::vector<std::pair<Movement, uint8_t>> Navigation::get_movements_to_goal(std::vector<Direction> target_directions,
+                                                                    target_movement_mode_t mode){
+
+    std::vector<std::pair<Movement, uint8_t>> movements;
+
+    switch (mode) {
+    case target_movement_mode_t::NORMAL:
+        movements = get_default_target_movements(target_directions);
+        break;
+    case target_movement_mode_t::SMOOTH:
+        movements = get_smooth_movements(get_default_target_movements(target_directions));
+        break;
+    case target_movement_mode_t::DIAGONALS:
+        movements = get_diagonal_movements(get_default_target_movements(target_directions));
+        break;
+    case target_movement_mode_t::HARD_CODDED:
+        movements = get_hardcodded_movements();
+        print_movement_sequence(movements, "Hard Coded");
+        break;
+    }
+
+    return movements;
+}
+
 std::vector<std::pair<Movement, uint8_t>>
 Navigation::get_default_target_movements(std::vector<Direction> target_directions) {
 
@@ -937,6 +972,15 @@ Navigation::get_diagonal_movements(std::vector<std::pair<Movement, uint8_t>> def
     print_movement_sequence(output_movements, "Diagonal");
 
     return output_movements;
+}
+
+std::vector<std::pair<Movement, uint8_t>> Navigation::get_hardcodded_movements() {
+    return {
+        {Movement::START, 1},
+        {Movement::FORWARD, 1},
+        {Movement::TURN_RIGHT_90, 1},
+        {Movement::STOP, 1},
+    };
 }
 
 void Navigation::print_movement_sequence(std::vector<std::pair<Movement, uint8_t>> movements, std::string name) {

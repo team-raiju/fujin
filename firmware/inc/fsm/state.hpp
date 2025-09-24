@@ -89,6 +89,39 @@ private:
     bool emergency = false;
 };
 
+class RunParamSelect : public State {
+public:
+    RunParamSelect();
+
+    void enter() override;
+
+    State* react(ButtonPressed const&) override;
+
+private:
+    enum param_type_t {
+        PARAM_CUSTOM,
+        PARAM_SLOW,
+        PARAM_MEDIUM ,
+        PARAM_FAST,
+    };
+
+    param_type_t param_type;
+    services::Navigation* navigation;
+
+};
+
+class RunMoveModeSelect : public State {
+public:
+    RunMoveModeSelect();
+
+    void enter() override;
+
+    State* react(ButtonPressed const&) override;
+
+private:
+
+};
+
 /// @section Search States
 
 class Search : public State {

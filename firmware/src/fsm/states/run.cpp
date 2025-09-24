@@ -26,6 +26,7 @@ namespace fsm {
 
 static bool indicate_read = false;
 static uint32_t last_indication = 0;
+static services::Navigation::target_movement_mode_t move_mode = services::Navigation::SMOOTH;
 
 void PreRun::enter() {
 
@@ -84,6 +85,126 @@ State* PreRun::react(ButtonPressed const& event) {
     return nullptr;
 }
 
+RunParamSelect::RunParamSelect() {
+    navigation = services::Navigation::instance();
+    param_type = PARAM_CUSTOM;
+}
+
+void RunParamSelect::enter() {
+    bsp::leds::stripe_set(bsp::leds::Color::Blue, bsp::leds::Color::Black);
+    param_type = PARAM_CUSTOM;
+}
+
+State* RunParamSelect::react(ButtonPressed const& event) {
+    if (event.button == ButtonPressed::SHORT2) {
+        if (param_type == PARAM_CUSTOM) {
+            param_type = PARAM_SLOW;
+            bsp::leds::stripe_set(bsp::leds::Color::Blue, bsp::leds::Color::Blue);
+        } else if (param_type == PARAM_SLOW) {
+            param_type = PARAM_MEDIUM;
+            bsp::leds::stripe_set(bsp::leds::Color::Orange, bsp::leds::Color::Black);
+        } else if (param_type == PARAM_MEDIUM) {
+            param_type = PARAM_FAST;
+            bsp::leds::stripe_set(bsp::leds::Color::Orange, bsp::leds::Color::Orange);
+        } else { // param_type == PARAM_FAST
+            param_type = PARAM_CUSTOM;
+            bsp::leds::stripe_set(bsp::leds::Color::Blue, bsp::leds::Color::Black);
+        }
+        return nullptr;
+    }
+
+    if (event.button == ButtonPressed::SHORT1) {
+        if (param_type == PARAM_CUSTOM) {
+            param_type = PARAM_FAST;
+            bsp::leds::stripe_set(bsp::leds::Color::Orange, bsp::leds::Color::Orange);
+        } else if (param_type == PARAM_FAST) {
+            param_type = PARAM_MEDIUM;
+            bsp::leds::stripe_set(bsp::leds::Color::Orange, bsp::leds::Color::Black);
+        } else if (param_type == PARAM_MEDIUM) {
+            param_type = PARAM_SLOW;
+            bsp::leds::stripe_set(bsp::leds::Color::Blue, bsp::leds::Color::Blue);
+        } else { // param_type == PARAM_SLOW
+            param_type = PARAM_CUSTOM;
+            bsp::leds::stripe_set(bsp::leds::Color::Blue, bsp::leds::Color::Black);
+        }
+        return nullptr;
+    }
+
+    if (event.button == ButtonPressed::LONG1) {
+        switch (param_type) {
+        case PARAM_CUSTOM:
+            navigation->reset(services::Navigation::CUSTOM);
+            break;
+        case PARAM_SLOW:
+            navigation->reset(services::Navigation::SLOW);
+            break;
+        case PARAM_MEDIUM:
+            navigation->reset(services::Navigation::MEDIUM);
+            break;
+        case PARAM_FAST:
+            navigation->reset(services::Navigation::FAST);
+            break;
+        }
+        return &State::get<Run>();
+    }
+
+    if (event.button == ButtonPressed::LONG2) {
+        return &State::get<PreRun>();
+    }
+    return nullptr;
+}
+
+RunMoveModeSelect::RunMoveModeSelect() {
+    move_mode = services::Navigation::SMOOTH;
+}
+
+void RunMoveModeSelect::enter() {
+    // When entering the state, set the LED for the default selection: SMOOTH (Green, Black)
+    bsp::leds::stripe_set(bsp::leds::Color::Red, bsp::leds::Color::Black);
+    move_mode = services::Navigation::SMOOTH;
+}
+
+State* RunMoveModeSelect::react(ButtonPressed const& event) {
+
+    if (event.button == ButtonPressed::SHORT2) {
+        if (move_mode == services::Navigation::SMOOTH) {
+            move_mode = services::Navigation::DIAGONALS;
+            bsp::leds::stripe_set(bsp::leds::Color::Red, bsp::leds::Color::Red);
+        } else if (move_mode == services::Navigation::DIAGONALS) {
+            move_mode = services::Navigation::HARD_CODDED;
+            bsp::leds::stripe_set(bsp::leds::Color::Green, bsp::leds::Color::Black);
+        } else { // move_mode == services::Navigation::HARD_CODDED
+            move_mode = services::Navigation::SMOOTH;
+            bsp::leds::stripe_set(bsp::leds::Color::Red, bsp::leds::Color::Black);
+        }
+        return nullptr;
+    }
+
+    if (event.button == ButtonPressed::SHORT1) {
+        if (move_mode == services::Navigation::SMOOTH) {
+            move_mode = services::Navigation::HARD_CODDED;
+            bsp::leds::stripe_set(bsp::leds::Color::Green, bsp::leds::Color::Black);
+        } else if (move_mode == services::Navigation::HARD_CODDED) {
+            move_mode = services::Navigation::DIAGONALS;
+            bsp::leds::stripe_set(bsp::leds::Color::Red, bsp::leds::Color::Red);
+        } else { // move_mode == services::Navigation::DIAGONALS
+            move_mode = services::Navigation::SMOOTH;
+            bsp::leds::stripe_set(bsp::leds::Color::Red, bsp::leds::Color::Black);
+        }
+        return nullptr;
+    }
+
+    if (event.button == ButtonPressed::LONG1) {
+        return &State::get<Run>();
+    }
+
+    if (event.button == ButtonPressed::LONG2) {
+        return &State::get<RunParamSelect>();
+    }
+
+    return nullptr;
+}
+
 Run::Run() {
     navigation = services::Navigation::instance();
     maze = services::Maze::instance();
@@ -106,33 +227,16 @@ void Run::enter() {
 
     soft_timer::start(1, soft_timer::CONTINUOUS);
 
-    navigation->reset(false);
-
     logger->init();
 
-    // maze->read_maze_from_memory();
-    // maze->print(maze->ORIGIN);
-    // target_directions = maze->directions_to_goal();
-    // maze->print(maze->ORIGIN);
-
-    // std::vector<std::pair<Movement, uint8_t>> default_target_movements =
-    //     navigation->get_default_target_movements(target_directions);
-
-    // target_movements.clear();
-    // bool use_diagonal = true;
-
-    // if (use_diagonal) {
-    //     target_movements = navigation->get_diagonal_movements(default_target_movements);
-    // } else {
-    //     target_movements = navigation->get_smooth_movements(default_target_movements);
-    // }
+    maze->read_maze_from_memory();
+    maze->print(maze->ORIGIN);
+    target_directions = maze->directions_to_goal();
+    maze->print(maze->ORIGIN);
 
     target_movements.clear();
-    target_movements.push_back({Movement::START, 1});
-    target_movements.push_back({Movement::FORWARD, 1});
-    target_movements.push_back({Movement::TURN_RIGHT_90, 1});
-    target_movements.push_back({Movement::FORWARD, 1});
-    target_movements.push_back({Movement::STOP, 1});
+
+    target_movements = navigation->get_movements_to_goal(target_directions, move_mode);
 
     move_count = 0;
     emergency = false;
