@@ -62,6 +62,10 @@ State* Idle::react(ButtonPressed const& event) {
         services::Config::send_movement_parameters();
     }
 
+    if (event.button == ButtonPressed::LONG4){
+        services::Logger::instance()->send_log_ble();
+    }
+
     return nullptr;
 }
 

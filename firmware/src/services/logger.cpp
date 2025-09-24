@@ -4,6 +4,7 @@
 #include <cstring>
 
 #include "bsp/analog_sensors.hpp"
+#include "bsp/ble.hpp"
 #include "bsp/eeprom.hpp"
 #include "bsp/encoders.hpp"
 #include "bsp/imu.hpp"
@@ -29,7 +30,7 @@ const Logger::ParamInfo paramInfoArray[] = {
     {65535, -250, 250, 131.0f}, // position_mm_x
     {65535, -250, 250, 131.0f}, // position_mm_y
     {65535, -180, 180, 182.0f}, // angle
-    {65535, -50, 1260, 50.0f},  // distance_mm
+    {65535, -50, 1260, 50.0f},  // distance_cm
 };
 
 // This prevents bugs if a new parameter is added to one but not the other.
@@ -134,10 +135,29 @@ void Logger::print_log() {
             decode_value(read_logdata.fields.position_mm_x, paramInfoArray[static_cast<size_t>(ParamIndex::PositionX)]),
             decode_value(read_logdata.fields.position_mm_y, paramInfoArray[static_cast<size_t>(ParamIndex::PositionY)]),
             decode_value(read_logdata.fields.angle, paramInfoArray[static_cast<size_t>(ParamIndex::Angle)]),
-            decode_value(read_logdata.fields.distance, paramInfoArray[static_cast<size_t>(ParamIndex::Distance)])
-        );
+            decode_value(read_logdata.fields.distance, paramInfoArray[static_cast<size_t>(ParamIndex::Distance)]));
 
         bsp::delay_ms(3);
     }
+}
+
+void Logger::send_log_ble() {
+    uint32_t saved_size = addr_offset;
+    uint8_t packet[19] = {0};
+    packet[0] = bsp::ble::header;
+    packet[1] = bsp::ble::BlePacketType::RequestLogData;
+
+    for (uint16_t i = 0; i < saved_size; i += sizeof(LogData)) {
+        LogData read_logdata;
+        if (i + sizeof(read_logdata.data) > sizeof(ram_logger)) {
+            break;
+        }
+
+        memcpy(packet + 2, ram_logger + i, sizeof(read_logdata.data));
+
+        bsp::ble::transmit(packet, sizeof(packet));
+        bsp::delay_ms(5);
+    }
+
 }
 }

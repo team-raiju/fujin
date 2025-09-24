@@ -58,6 +58,7 @@ public:
     void update();
     void save_size();
     void print_log();
+    void send_log_ble();
 
     Logger(const Logger&) = delete;
     Logger& operator=(const Logger&) = delete;

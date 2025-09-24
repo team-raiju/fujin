@@ -57,6 +57,7 @@ void FSM::start() {
                 {bsp::ble::BleCommands::Button1Long, ButtonPressed::LONG1},
                 {bsp::ble::BleCommands::Button2Long, ButtonPressed::LONG2},
                 {bsp::ble::BleCommands::ButtonMovementParameters, ButtonPressed::LONG3},
+                {bsp::ble::BleCommands::ButtonLogDump, ButtonPressed::LONG4},
             };
 
             dispatch(ButtonPressed{.button = b[packet[2]]});   
