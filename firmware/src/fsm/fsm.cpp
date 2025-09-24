@@ -43,6 +43,12 @@ void FSM::start() {
             dispatch(BleCommand());
         }
 
+
+        if (packet[1] == bsp::ble::BlePacketType::UpdateMovementParameters && !bsp::ble::is_config_locked()) {
+            services::Config::parse_movement_packet(packet);
+            dispatch(BleCommand());
+        }
+
         if (packet[1] == bsp::ble::BlePacketType::Command) {
             static std::map<uint8_t, ButtonPressed::Type> b{
                 {bsp::ble::BleCommands::Stop, ButtonPressed::LONG2},
@@ -50,6 +56,7 @@ void FSM::start() {
                 {bsp::ble::BleCommands::Button2Short, ButtonPressed::SHORT2},
                 {bsp::ble::BleCommands::Button1Long, ButtonPressed::LONG1},
                 {bsp::ble::BleCommands::Button2Long, ButtonPressed::LONG2},
+                {bsp::ble::BleCommands::ButtonMovementParameters, ButtonPressed::LONG3},
             };
 
             dispatch(ButtonPressed{.button = b[packet[2]]});   

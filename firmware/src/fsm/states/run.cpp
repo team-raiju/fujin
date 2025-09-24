@@ -79,7 +79,7 @@ State* PreRun::react(ButtonPressed const& event) {
     }
 
     if (event.button == ButtonPressed::LONG1) {
-        return &State::get<Run>();
+        return &State::get<RunParamSelect>();
     }
 
     return nullptr;
@@ -145,7 +145,7 @@ State* RunParamSelect::react(ButtonPressed const& event) {
             navigation->reset(services::Navigation::FAST);
             break;
         }
-        return &State::get<Run>();
+        return &State::get<RunMoveModeSelect>();
     }
 
     if (event.button == ButtonPressed::LONG2) {
@@ -160,7 +160,7 @@ RunMoveModeSelect::RunMoveModeSelect() {
 
 void RunMoveModeSelect::enter() {
     // When entering the state, set the LED for the default selection: SMOOTH (Green, Black)
-    bsp::leds::stripe_set(bsp::leds::Color::Red, bsp::leds::Color::Black);
+    bsp::leds::stripe_set(bsp::leds::Color::Pink, bsp::leds::Color::Black);
     move_mode = services::Navigation::SMOOTH;
 }
 
@@ -169,13 +169,13 @@ State* RunMoveModeSelect::react(ButtonPressed const& event) {
     if (event.button == ButtonPressed::SHORT2) {
         if (move_mode == services::Navigation::SMOOTH) {
             move_mode = services::Navigation::DIAGONALS;
-            bsp::leds::stripe_set(bsp::leds::Color::Red, bsp::leds::Color::Red);
+            bsp::leds::stripe_set(bsp::leds::Color::Pink, bsp::leds::Color::Pink);
         } else if (move_mode == services::Navigation::DIAGONALS) {
             move_mode = services::Navigation::HARD_CODDED;
             bsp::leds::stripe_set(bsp::leds::Color::Green, bsp::leds::Color::Black);
         } else { // move_mode == services::Navigation::HARD_CODDED
             move_mode = services::Navigation::SMOOTH;
-            bsp::leds::stripe_set(bsp::leds::Color::Red, bsp::leds::Color::Black);
+            bsp::leds::stripe_set(bsp::leds::Color::Pink, bsp::leds::Color::Black);
         }
         return nullptr;
     }
@@ -186,10 +186,10 @@ State* RunMoveModeSelect::react(ButtonPressed const& event) {
             bsp::leds::stripe_set(bsp::leds::Color::Green, bsp::leds::Color::Black);
         } else if (move_mode == services::Navigation::HARD_CODDED) {
             move_mode = services::Navigation::DIAGONALS;
-            bsp::leds::stripe_set(bsp::leds::Color::Red, bsp::leds::Color::Red);
+            bsp::leds::stripe_set(bsp::leds::Color::Pink, bsp::leds::Color::Pink);
         } else { // move_mode == services::Navigation::DIAGONALS
             move_mode = services::Navigation::SMOOTH;
-            bsp::leds::stripe_set(bsp::leds::Color::Red, bsp::leds::Color::Black);
+            bsp::leds::stripe_set(bsp::leds::Color::Pink, bsp::leds::Color::Black);
         }
         return nullptr;
     }

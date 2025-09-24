@@ -58,6 +58,10 @@ State* Idle::react(ButtonPressed const& event) {
         services::Notification::instance()->send_maze();
     }
 
+    if (event.button == ButtonPressed::LONG3) {
+        services::Config::send_movement_parameters();
+    }
+
     return nullptr;
 }
 

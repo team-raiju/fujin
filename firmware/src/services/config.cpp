@@ -5,6 +5,7 @@
 #include "bsp/timers.hpp"
 #include "services/config.hpp"
 #include "utils/math.hpp"
+#include "utils/movement_params.hpp"
 
 namespace services {
 
@@ -77,6 +78,42 @@ static std::pair<float*, bsp::eeprom::param_addresses_t> params[] = {
     {&Config::ir_wall_detect_th_left, bsp::eeprom::ADDR_IR_WALL_DETECT_TH_LEFT},
     {&Config::z_imu_bias, bsp::eeprom::ADDR_Z_IMU_BIAS}};
 
+static const std::map<Movement, uint16_t> turn_address_map = {
+    {Movement::TURN_RIGHT_45, bsp::eeprom::ADDR_TURN_PARAMS_RIGHT_45},
+    {Movement::TURN_LEFT_45, bsp::eeprom::ADDR_TURN_PARAMS_LEFT_45},
+    {Movement::TURN_RIGHT_90, bsp::eeprom::ADDR_TURN_PARAMS_RIGHT_90},
+    {Movement::TURN_LEFT_90, bsp::eeprom::ADDR_TURN_PARAMS_LEFT_90},
+    {Movement::TURN_RIGHT_135, bsp::eeprom::ADDR_TURN_PARAMS_RIGHT_135},
+    {Movement::TURN_LEFT_135, bsp::eeprom::ADDR_TURN_PARAMS_LEFT_135},
+    {Movement::TURN_RIGHT_180, bsp::eeprom::ADDR_TURN_PARAMS_RIGHT_180},
+    {Movement::TURN_LEFT_180, bsp::eeprom::ADDR_TURN_PARAMS_LEFT_180},
+    {Movement::TURN_RIGHT_45_FROM_45, bsp::eeprom::ADDR_TURN_PARAMS_RIGHT_45_FROM_45},
+    {Movement::TURN_LEFT_45_FROM_45, bsp::eeprom::ADDR_TURN_PARAMS_LEFT_45_FROM_45},
+    {Movement::TURN_RIGHT_90_FROM_45, bsp::eeprom::ADDR_TURN_PARAMS_RIGHT_90_FROM_45},
+    {Movement::TURN_LEFT_90_FROM_45, bsp::eeprom::ADDR_TURN_PARAMS_LEFT_90_FROM_45},
+    {Movement::TURN_RIGHT_135_FROM_45, bsp::eeprom::ADDR_TURN_PARAMS_RIGHT_135_FROM_45},
+    {Movement::TURN_LEFT_135_FROM_45, bsp::eeprom::ADDR_TURN_PARAMS_LEFT_135_FROM_45},
+    {Movement::TURN_AROUND, bsp::eeprom::ADDR_TURN_PARAMS_TURN_AROUND},
+    {Movement::TURN_RIGHT_90_SEARCH_MODE, bsp::eeprom::ADDR_TURN_PARAMS_RIGHT_90_SEARCH_MODE},
+    {Movement::TURN_LEFT_90_SEARCH_MODE, bsp::eeprom::ADDR_TURN_PARAMS_LEFT_90_SEARCH_MODE},
+    {Movement::TURN_AROUND_INPLACE, bsp::eeprom::ADDR_TURN_PARAMS_TURN_AROUND_INPLACE},
+};
+
+static const std::map<Movement, uint16_t> forward_address_map = {
+    {Movement::START, bsp::eeprom::ADDR_FORWARD_PARAMS_START},
+    {Movement::FORWARD, bsp::eeprom::ADDR_FORWARD_PARAMS_FOWARD},
+    {Movement::DIAGONAL, bsp::eeprom::ADDR_FORWARD_PARAMS_DIAGONAL},
+    {Movement::STOP, bsp::eeprom::ADDR_FORWARD_PARAMS_STOP},
+    {Movement::TURN_AROUND, bsp::eeprom::ADDR_FORWARD_PARAMS_TURN_AROUND},
+    {Movement::TURN_RIGHT_45_FROM_45, bsp::eeprom::ADDR_FORWARD_PARAMS_RIGHT_45_FROM_45},
+    {Movement::TURN_LEFT_45_FROM_45, bsp::eeprom::ADDR_FORWARD_PARAMS_LEFT_45_FROM_45},
+    {Movement::TURN_RIGHT_90_FROM_45, bsp::eeprom::ADDR_FORWARD_PARAMS_RIGHT_90_FROM_45},
+    {Movement::TURN_LEFT_90_FROM_45, bsp::eeprom::ADDR_FORWARD_PARAMS_LEFT_90_FROM_45},
+    {Movement::TURN_RIGHT_135_FROM_45, bsp::eeprom::ADDR_FORWARD_PARAMS_RIGHT_135_FROM_45},
+    {Movement::TURN_LEFT_135_FROM_45, bsp::eeprom::ADDR_FORWARD_PARAMS_LEFT_135_FROM_45},
+    {Movement::TURN_AROUND_INPLACE, bsp::eeprom::ADDR_FORWARD_PARAMS_TURN_AROUND_INPLACE},
+};
+
 union _float {
     float value;
     uint8_t raw[sizeof(float)];
@@ -86,6 +123,7 @@ union _float {
 void Config::init() {
     if (write_default) {
         write_default_params();
+        write_all_move_params_to_eeprom();
     }
 
     for (auto& param : params) {
@@ -101,6 +139,8 @@ void Config::init() {
             bsp::delay_ms(2);
         }
     }
+
+    load_custom_movements_from_eeprom();
 }
 
 int Config::parse_packet(uint8_t packet[bsp::ble::max_packet_size]) {
@@ -163,12 +203,216 @@ void Config::send_parameters() {
     }
 }
 
+int Config::parse_movement_packet(uint8_t packet[bsp::ble::max_packet_size]) {
+    if (packet[0] != bsp::ble::header) {
+        return -1;
+    }
+
+    if (packet[1] != bsp::ble::BlePacketType::UpdateMovementParameters) {
+        return -1;
+    }
+
+    uint8_t param_type = packet[2];
+    Movement movement_id = static_cast<Movement>(packet[3]);
+    uint8_t param_id = packet[4];
+
+    _float f;
+    for (size_t i = 0; i < sizeof(float); i++) {
+        f.raw[i] = packet[5 + i];
+    }
+    float value = f.value;
+
+    // Param type 0: ForwardParams
+    if (param_type == 0) {
+        if (forward_params_custom.find(movement_id) == forward_params_custom.end()) {
+            return -1;
+        }
+
+        switch (static_cast<bsp::ble::ForwardParamID>(param_id)) {
+        case bsp::ble::ForwardParamID::MAX_SPEED:
+            forward_params_custom[movement_id].max_speed = value;
+            break;
+        case bsp::ble::ForwardParamID::ACCELERATION:
+            forward_params_custom[movement_id].acceleration = value;
+            break;
+        case bsp::ble::ForwardParamID::DECELERATION:
+            forward_params_custom[movement_id].deceleration = value;
+            break;
+        case bsp::ble::ForwardParamID::TARGET_TRAVEL_CM:
+            forward_params_custom[movement_id].target_travel_cm = value;
+            break;
+        default:
+            return -1;
+        }
+        write_forward_param_to_eeprom(movement_id);
+        return 0;
+    }
+
+    // Param type 1: TurnParams
+    if (param_type == 1) {
+        if (turn_params_custom.find(movement_id) == turn_params_custom.end()) {
+            return -1;
+        }
+
+        switch (static_cast<bsp::ble::TurnParamID>(param_id)) {
+        case bsp::ble::TurnParamID::START:
+            turn_params_custom[movement_id].start = value;
+            break;
+        case bsp::ble::TurnParamID::END:
+            turn_params_custom[movement_id].end = value;
+            break;
+        case bsp::ble::TurnParamID::TURN_LINEAR_SPEED:
+            turn_params_custom[movement_id].turn_linear_speed = value;
+            break;
+        case bsp::ble::TurnParamID::ANGULAR_ACCEL:
+            turn_params_custom[movement_id].angular_accel = value;
+            break;
+        case bsp::ble::TurnParamID::MAX_ANGULAR_SPEED:
+            turn_params_custom[movement_id].max_angular_speed = value;
+            break;
+        case bsp::ble::TurnParamID::ANGLE_TO_TURN:
+            turn_params_custom[movement_id].angle_to_turn = value;
+            break;
+        case bsp::ble::TurnParamID::T_START_DECCEL:
+            turn_params_custom[movement_id].t_start_deccel = static_cast<uint16_t>(value);
+            break;
+        case bsp::ble::TurnParamID::T_STOP:
+            turn_params_custom[movement_id].t_stop = static_cast<uint16_t>(value);
+            break;
+        case bsp::ble::TurnParamID::SIGN:
+            turn_params_custom[movement_id].sign = static_cast<int>(value);
+            break;
+        default:
+            return -1;
+        }
+        write_turn_param_to_eeprom(movement_id);
+        return 0;
+    }
+
+    return -1;
+}
+
+void Config::send_movement_parameters() {
+    uint8_t packet[9] = {0};
+    packet[0] = bsp::ble::header;
+    packet[1] = bsp::ble::BlePacketType::RequestMovementParameters;
+
+    auto send_param = [&](uint8_t param_type, Movement move_id, uint8_t param_id, float value) {
+        packet[2] = param_type;
+        packet[3] = static_cast<uint8_t>(move_id);
+        packet[4] = param_id;
+
+        _float f;
+        f.value = value;
+        for (size_t j = 0; j < sizeof(float); j++) {
+            packet[5 + j] = f.raw[j];
+        }
+
+        bsp::ble::transmit(packet, sizeof(packet));
+        bsp::delay_ms(20);
+    };
+
+    for (const auto& pair : forward_params_custom) {
+        const auto& movement_id = pair.first;
+        const auto& params = pair.second;
+        send_param(0, movement_id, static_cast<uint8_t>(bsp::ble::ForwardParamID::MAX_SPEED), params.max_speed);
+        send_param(0, movement_id, static_cast<uint8_t>(bsp::ble::ForwardParamID::ACCELERATION), params.acceleration);
+        send_param(0, movement_id, static_cast<uint8_t>(bsp::ble::ForwardParamID::DECELERATION), params.deceleration);
+        send_param(0, movement_id, static_cast<uint8_t>(bsp::ble::ForwardParamID::TARGET_TRAVEL_CM),
+                   params.target_travel_cm);
+    }
+
+    for (const auto& pair : turn_params_custom) {
+        const auto& movement_id = pair.first;
+        const auto& params = pair.second;
+        send_param(1, movement_id, static_cast<uint8_t>(bsp::ble::TurnParamID::START), params.start);
+        send_param(1, movement_id, static_cast<uint8_t>(bsp::ble::TurnParamID::END), params.end);
+        send_param(1, movement_id, static_cast<uint8_t>(bsp::ble::TurnParamID::TURN_LINEAR_SPEED),
+                   params.turn_linear_speed);
+        send_param(1, movement_id, static_cast<uint8_t>(bsp::ble::TurnParamID::ANGULAR_ACCEL), params.angular_accel);
+        send_param(1, movement_id, static_cast<uint8_t>(bsp::ble::TurnParamID::MAX_ANGULAR_SPEED),
+                   params.max_angular_speed);
+        send_param(1, movement_id, static_cast<uint8_t>(bsp::ble::TurnParamID::ANGLE_TO_TURN), params.angle_to_turn);
+        send_param(1, movement_id, static_cast<uint8_t>(bsp::ble::TurnParamID::T_START_DECCEL),
+                   static_cast<float>(params.t_start_deccel));
+        send_param(1, movement_id, static_cast<uint8_t>(bsp::ble::TurnParamID::T_STOP),
+                   static_cast<float>(params.t_stop));
+        send_param(1, movement_id, static_cast<uint8_t>(bsp::ble::TurnParamID::SIGN), static_cast<float>(params.sign));
+    }
+}
+
 int Config::save_z_bias() {
     _float f;
     f.value = Config::z_imu_bias;
 
     if (bsp::eeprom::write_u32(bsp::eeprom::ADDR_Z_IMU_BIAS, f.u32) != bsp::eeprom::OK) {
         return -1;
+    }
+
+    return 0;
+}
+
+void Config::load_custom_movements_from_eeprom() {
+    for (const auto& pair : turn_address_map) {
+        Movement movement_id = pair.first;
+        uint16_t address = pair.second;
+
+        TurnParams params;
+        bsp::eeprom::read_array(address, reinterpret_cast<uint8_t*>(&params), sizeof(TurnParams));
+
+        turn_params_custom[movement_id] = params;
+        bsp::delay_ms(10);
+    }
+
+    for (const auto& pair : forward_address_map) {
+        Movement movement_id = pair.first;
+        uint16_t address = pair.second;
+
+        ForwardParams params;
+        bsp::eeprom::read_array(address, reinterpret_cast<uint8_t*>(&params), sizeof(ForwardParams));
+        forward_params_custom[movement_id] = params;
+        bsp::delay_ms(10);
+    }
+}
+
+int Config::write_turn_param_to_eeprom(Movement movement_id) {
+    if (turn_address_map.find(movement_id) == turn_address_map.end()) {
+        return -1;
+    }
+
+    TurnParams params = turn_params_custom[movement_id];
+    uint16_t address = turn_address_map.at(movement_id);
+
+    bsp::eeprom::write_array(address, reinterpret_cast<uint8_t*>(&params), sizeof(TurnParams));
+
+    return 0;
+
+}
+
+int Config::write_forward_param_to_eeprom(Movement movement_id) {
+    if (forward_address_map.find(movement_id) == forward_address_map.end()) {
+        return -1;
+    }
+
+    ForwardParams params = forward_params_custom[movement_id];
+    uint16_t address = forward_address_map.at(movement_id);
+
+    bsp::eeprom::write_array(address, reinterpret_cast<uint8_t*>(&params), sizeof(ForwardParams));
+
+    return 0;
+}
+
+int Config::write_all_move_params_to_eeprom() {
+
+    for (const auto& pair : turn_address_map) {
+        write_turn_param_to_eeprom(pair.first);
+        bsp::delay_ms(20);
+    }
+
+    for (const auto& pair : forward_address_map) {
+        Movement movement_id = pair.first;
+        write_forward_param_to_eeprom(movement_id);
+        bsp::delay_ms(20);
     }
 
     return 0;

@@ -20,6 +20,8 @@ enum BlePacketType : uint8_t {
     SensorData = 0x03,
     BatteryData = 0x04,
     MazeData = 0x05,
+    RequestMovementParameters = 0x06,
+    UpdateMovementParameters = 0x07,
 };
 
 enum BleCommands : uint8_t {
@@ -28,6 +30,26 @@ enum BleCommands : uint8_t {
     Button2Short = 0x02,
     Button1Long = 0x03,
     Button2Long = 0x04,
+    ButtonMovementParameters = 0x05,
+};
+
+enum ForwardParamID : uint8_t {
+    MAX_SPEED = 0x00,
+    ACCELERATION = 0x01,
+    DECELERATION = 0x02,
+    TARGET_TRAVEL_CM = 0x03,
+};
+
+enum TurnParamID : uint8_t {
+    START = 0x00,
+    END = 0x01,
+    TURN_LINEAR_SPEED = 0x02,
+    ANGULAR_ACCEL = 0x03,
+    MAX_ANGULAR_SPEED = 0x04,
+    ANGLE_TO_TURN = 0x05,
+    T_START_DECCEL = 0x06,
+    T_STOP = 0x07,
+    SIGN = 0x08,
 };
 
 /// @brief callback function for BLE received data
