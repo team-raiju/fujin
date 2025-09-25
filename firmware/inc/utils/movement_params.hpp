@@ -1,3 +1,4 @@
+#pragma once
 #include "types.hpp"
 #include <cstdint>
 #include <map>
@@ -69,54 +70,73 @@ struct ForwardParams {
         : max_speed(ms), acceleration(a), deceleration(d), target_travel_cm(t) {}
 };
 
-// static std::map<Movement, TurnParams> turn_params_search = {
-//     {Movement::TURN_AROUND, {0.0, 0.0, 0.25, 52.36, 3.49, 3.1067, 0, 0, -1}},
-//     {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.0, 0.0, 0.25, 43.633, 4.014, 1.553, 0, 0, -1}},
-//     {Movement::TURN_LEFT_90_SEARCH_MODE, {0.0, 0.0, 0.25, 43.633, 4.014, 1.553, 0, 0, 1}},
-// };
+struct GeneralParams {
+    float fan_speed;
 
-// static std::map<Movement, ForwardParams> forward_params_search = {
-//     {Movement::START, {0.25, 0.65, 0.65, HALF_CELL_SIZE_CM + ROBOT_DIST_FROM_CENTER_START_CM}},
-//     {Movement::FORWARD, {0.25, 0.65, 0.65, CELL_SIZE_CM}},
-//     {Movement::STOP, {0.25, 0.65, 0.65, (HALF_CELL_SIZE_CM)}},
-//     {Movement::TURN_AROUND, {0.25, 0.5, 0.5, 8.0}},
-//     {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.25, 0.65, 0.65, 2.2}},
-//     {Movement::TURN_LEFT_90_SEARCH_MODE, {0.25, 0.65, 0.65, 2.2}},
-// };
+    float angular_kp;
+    float angular_ki;
+    float angular_kd;
 
-// static std::map<Movement, TurnParams> turn_params_search = {
-//     {Movement::TURN_AROUND, {0.0, 0.0, 0.5, 52.36, 3.49, 3.1067, 0, 0, -1}},
-//     {Movement::TURN_AROUND_INPLACE, {0.0, 0.0, 0.5, 52.36, 3.49, 3.1067, 0, 0, -1}},
-//     {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.0, 0.0, 0.5, 104.72, 10.47, 1.553, 0, 0, -1}},
-//     {Movement::TURN_LEFT_90_SEARCH_MODE, {0.0, 0.0, 0.5, 104.72, 10.47, 1.553, 0, 0, 1}},
-// };
+    float wall_kp;
+    float wall_ki;
+    float wall_kd;
 
-// static std::map<Movement, ForwardParams> forward_params_search = {
-//     {Movement::START, {0.5, 1.0, 1.0, HALF_CELL_SIZE_CM + ROBOT_DIST_FROM_CENTER_START_CM}},
-//     {Movement::FORWARD, {0.5, 2.0, 2.0, CELL_SIZE_CM}},
-//     {Movement::STOP, {0.5, 2.0, 2.0, (HALF_CELL_SIZE_CM)}},
-//     {Movement::TURN_AROUND, {0.5, 2.0, 2.0, 8.0}},
-//     {Movement::TURN_AROUND_INPLACE, {0.5, 2.0, 2.0, 8.0}},
-//     {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.5, 2.0, 2.0, 1.5}},
-//     {Movement::TURN_LEFT_90_SEARCH_MODE, {0.5, 2.0, 2.0, 1.5}},
-// };
+    float linear_vel_kp;
+    float linear_vel_ki;
+    float linear_vel_kd;
 
-// static std::map<Movement, TurnParams> turn_params_search = {
-//     {Movement::TURN_AROUND, {0.0, 0.0, 0.5, 52.36, 3.49, 3.1067, 0, 0, -1}},
-//     {Movement::TURN_AROUND_INPLACE, {0.0, 0.0, 0.5, 52.36, 3.49, 3.1067, 0, 0, -1}},
-//     {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.0, 0.0, 0.5, 104.72, 10.47, 1.553, 0, 0, -1}},
-//     {Movement::TURN_LEFT_90_SEARCH_MODE, {0.0, 0.0, 0.5, 104.72, 10.47, 1.553, 0, 0, 1}},
-// };
+    float diagonal_walls_kp;
+    float diagonal_walls_ki;
+    float diagonal_walls_kd;
 
-// static std::map<Movement, ForwardParams> forward_params_search = {
-//     {Movement::START, {0.5, 1.0, 1.0, HALF_CELL_SIZE_CM + ROBOT_DIST_FROM_CENTER_START_CM}},
-//     {Movement::FORWARD, {0.5, 2.0, 2.0, CELL_SIZE_CM}},
-//     {Movement::STOP, {0.5, 2.0, 2.0, (HALF_CELL_SIZE_CM)}},
-//     {Movement::TURN_AROUND, {0.5, 2.0, 2.0, 8.0}},
-//     {Movement::TURN_AROUND_INPLACE, {0.5, 2.0, 2.0, 8.0}},
-//     {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.5, 2.0, 2.0, 1.5}},
-//     {Movement::TURN_LEFT_90_SEARCH_MODE, {0.5, 2.0, 2.0, 1.5}},
-// };
+    float start_wall_break_cm_left;
+    float start_wall_break_cm_right;
+    float enable_wall_breack_correction;
+
+    GeneralParams() : fan_speed(0), angular_kp(0), angular_ki(0), angular_kd(0), wall_kp(0), wall_ki(0), wall_kd(0),
+                      linear_vel_kp(0), linear_vel_ki(0), linear_vel_kd(0), diagonal_walls_kp(0), diagonal_walls_ki(0),
+                      diagonal_walls_kd(0), start_wall_break_cm_left(0), start_wall_break_cm_right(0),
+                      enable_wall_breack_correction(0) {}
+
+    GeneralParams(float fan, float akp, float aki, float akd, float wkp, float wki, float wkd, float lvkp, float lvki,
+                  float lvkd, float dwkp, float dwki, float dwkd, float swbcl, float swbcr, float ewbc)
+        : fan_speed(fan), angular_kp(akp), angular_ki(aki), angular_kd(akd), wall_kp(wkp), wall_ki(wki), wall_kd(wkd),
+          linear_vel_kp(lvkp), linear_vel_ki(lvki), linear_vel_kd(lvkd), diagonal_walls_kp(dwkp),
+          diagonal_walls_ki(dwki), diagonal_walls_kd(dwkd), start_wall_break_cm_left(swbcl),
+          start_wall_break_cm_right(swbcr), enable_wall_breack_correction(ewbc) {}
+};
+
+static std::map<Movement, TurnParams> turn_params_search_slow = {
+    {Movement::TURN_AROUND, {0.0, 0.0, 0.25, 52.36, 3.49, 3.1067, 0, 0, -1}},
+    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.0, 0.0, 0.25, 43.633, 4.014, 1.553, 0, 0, -1}},
+    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.0, 0.0, 0.25, 43.633, 4.014, 1.553, 0, 0, 1}},
+};
+
+static std::map<Movement, ForwardParams> forward_params_search_slow = {
+    {Movement::START, {0.25, 0.65, 0.65, HALF_CELL_SIZE_CM + ROBOT_DIST_FROM_CENTER_START_CM}},
+    {Movement::FORWARD, {0.25, 0.65, 0.65, CELL_SIZE_CM}},
+    {Movement::STOP, {0.25, 0.65, 0.65, (HALF_CELL_SIZE_CM)}},
+    {Movement::TURN_AROUND, {0.25, 0.5, 0.5, 8.0}},
+    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.25, 0.65, 0.65, 2.2}},
+    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.25, 0.65, 0.65, 2.2}},
+};
+
+static std::map<Movement, TurnParams> turn_params_search_medium = {
+    {Movement::TURN_AROUND, {0.0, 0.0, 0.5, 52.36, 3.49, 3.1067, 0, 0, -1}},
+    {Movement::TURN_AROUND_INPLACE, {0.0, 0.0, 0.5, 52.36, 3.49, 3.1067, 0, 0, -1}},
+    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.0, 0.0, 0.5, 104.72, 10.47, 1.553, 0, 0, -1}},
+    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.0, 0.0, 0.5, 104.72, 10.47, 1.553, 0, 0, 1}},
+};
+
+static std::map<Movement, ForwardParams> forward_params_search_medium = {
+    {Movement::START, {0.5, 1.0, 1.0, HALF_CELL_SIZE_CM + ROBOT_DIST_FROM_CENTER_START_CM}},
+    {Movement::FORWARD, {0.5, 2.0, 2.0, CELL_SIZE_CM}},
+    {Movement::STOP, {0.5, 2.0, 2.0, (HALF_CELL_SIZE_CM)}},
+    {Movement::TURN_AROUND, {0.5, 2.0, 2.0, 8.0}},
+    {Movement::TURN_AROUND_INPLACE, {0.5, 2.0, 2.0, 8.0}},
+    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.5, 2.0, 2.0, 1.5}},
+    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.5, 2.0, 2.0, 1.5}},
+};
 
 static std::map<Movement, TurnParams> turn_params_search = {
     {Movement::TURN_AROUND, {0.0, 0.0, 0.7, 104.72, 10.47, 3.1416, 0, 0, -1}},
@@ -280,4 +300,70 @@ static std::map<Movement, ForwardParams> forward_params_custom = {
     {Movement::TURN_LEFT_90_FROM_45, {1.5, 12.0, 20.0, 3.5}},
     {Movement::TURN_RIGHT_135_FROM_45, {1.5, 12.0, 20.0, 2.8}},
     {Movement::TURN_LEFT_135_FROM_45, {1.5, 12.0, 20.0, 3.1}},
+};
+
+static GeneralParams general_params_search_slow = {
+    0.0,                    // Fan speed
+    0.0350, 0.0020, 0.0000, // Angular P,I,D
+    0.0012, 0.0000, 0.0020, // Wall P,I,D
+    3.0000, 0.0360, 0.0000, // Linear velocity P,I,D
+    0.8000, 0.0000, 0.0000, // Diagonal walls P,I,D
+    0.0,                    // Start wall break cm left
+    0.0,                    // Start wall break cm right
+    0.0                     // Enable wall break correction
+};
+
+static GeneralParams general_params_search_medium = {
+    0.0,                    // Fan speed
+    0.0500, 0.0050, 0.0000, // Angular P,I,D
+    0.0015, 0.0000, 0.0025, // Wall P,I,D
+    5.0000, 0.0600, 0.0000, // Linear velocity P,I,D
+    0.0000, 0.0000, 0.0000, // Diagonal walls P,I,D
+    0.0,                    // Start wall break cm left
+    0.0,                    // Start wall break cm right
+    0.0                     // Enable wall break correction
+};
+
+static GeneralParams general_params_search_fast = {
+    200.0,                  // Fan speed
+    0.0850, 0.0110, 0.0000, // Angular P,I,D
+    0.0020, 0.0000, 0.0040, // Wall P,I,D
+    8.0000, 0.1100, 0.0000, // Linear velocity P,I,D
+    0.0000, 0.0000, 0.0000, // Diagonal walls P,I,D
+    0.0,                    // Start wall break cm left
+    0.0,                    // Start wall break cm right
+    0.0                     // Enable wall break correction
+};
+
+static GeneralParams general_params_slow = {
+    0.0,                    // Fan speed
+    0.0500, 0.0050, 0.0000, // Angular P,I,D
+    0.0015, 0.0000, 0.0025, // Wall P,I,D
+    5.0000, 0.0600, 0.0000, // Linear velocity P,I,D
+    0.0045, 0.0000, 0.0045, // Diagonal walls P,I,D
+    6.1,                    // Start wall break cm left
+    7.5,                    // Start wall break cm right
+    1.0                     // Enable wall break correction
+};
+
+static GeneralParams general_params_medium = {
+    600.0,                  // Fan speed
+    0.1050, 0.0100, 0.0075, // Angular P,I,D
+    0.0025, 0.0000, 0.0050, // Wall P,I,D
+    8.0000, 0.1000, 0.0000, // Linear velocity P,I,D
+    0.0045, 0.0000, 0.0045, // Diagonal walls P,I,D
+    6.5,                    // Start wall break cm left
+    8.0,                    // Start wall break cm right
+    1.0                     // Enable wall break correction
+};
+
+static GeneralParams general_params_fast = {
+    600.0,                  // Fan speed
+    0.1050, 0.0100, 0.0075, // Angular P,I,D
+    0.0025, 0.0000, 0.0050, // Wall P,I,D
+    8.0000, 0.1000, 0.0000, // Linear velocity P,I,D
+    0.0045, 0.0000, 0.0045, // Diagonal walls P,I,D
+    6.5,                    // Start wall break cm left
+    8.0,                    // Start wall break cm right
+    1.0                     // Enable wall break correction
 };

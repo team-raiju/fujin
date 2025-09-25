@@ -49,6 +49,14 @@ float Config::ir_wall_detect_th_left = 650;
 
 float Config::z_imu_bias = 0.0;
 
+// float Config::start_wall_break_cm_left = 6.1; // 2.0m/s
+// float Config::start_wall_break_cm_left = 6.1; // 1.5m/s
+// float Config::start_wall_break_cm_right = 7.5;// 1.5m/s
+
+float Config::start_wall_break_cm_left = 6.5; // 3.0m/s
+float Config::start_wall_break_cm_right = 8.0;// 3.0m/s
+float Config::enable_wall_breack_correction = 1.0;
+
 // All params
 static std::pair<float*, bsp::eeprom::param_addresses_t> params[] = {
     {&Config::fan_speed, bsp::eeprom::ADDR_FAN_SPEED},
@@ -77,7 +85,11 @@ static std::pair<float*, bsp::eeprom::param_addresses_t> params[] = {
     {&Config::ir_wall_detect_th_front_left, bsp::eeprom::ADDR_IR_WALL_DETECT_TH_FRONT_LEFT},
     {&Config::ir_wall_detect_th_front_right, bsp::eeprom::ADDR_IR_WALL_DETECT_TH_FRONT_RIGHT},
     {&Config::ir_wall_detect_th_left, bsp::eeprom::ADDR_IR_WALL_DETECT_TH_LEFT},
-    {&Config::z_imu_bias, bsp::eeprom::ADDR_Z_IMU_BIAS}};
+    {&Config::z_imu_bias, bsp::eeprom::ADDR_Z_IMU_BIAS},
+    {&Config::start_wall_break_cm_left, bsp::eeprom::ADDR_START_WALL_BREAK_CM_LEFT},
+    {&Config::start_wall_break_cm_right, bsp::eeprom::ADDR_START_WALL_BREAK_CM_RIGHT},
+    {&Config::enable_wall_breack_correction, bsp::eeprom::ADDR_ENABLE_WALL_BREAK_CORRECTION},
+};
 
 static const std::map<Movement, uint16_t> turn_address_map = {
     {Movement::TURN_RIGHT_45, bsp::eeprom::ADDR_TURN_PARAMS_RIGHT_45},

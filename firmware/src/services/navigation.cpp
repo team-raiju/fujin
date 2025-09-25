@@ -17,18 +17,10 @@
 /// @section Constants
 
 static constexpr float CONTROL_FREQUENCY_HZ = 1000.0;
-static constexpr bool fix_position_enabled = true;
-
-// TODO: add a table to match every velocity
-static constexpr float left_start_wall_break_cm = 6.5; // 3.0m/s
-// static constexpr float left_start_wall_break_cm = 6.1; // 2.0 m/s
-// static constexpr float left_start_wall_break_cm = 6.1; // 1.5 m/s
-
-static constexpr float right_start_wall_break_cm = 8.0; // 3.0m/s
-// static constexpr float right_start_wall_break_cm = 7.5; //1.5m/s
 
 static std::map<Movement, TurnParams> turn_params;
 static std::map<Movement, ForwardParams> forward_params;
+static GeneralParams general_params;
 
 using bsp::leds::Color;
 
@@ -59,7 +51,6 @@ void Navigation::reset(navigation_mode_t mode) {
     complete_prev_move_travel = 0;
 
     current_direction = Direction::NORTH;
-    control->reset();
 
     bsp::encoders::reset();
 
@@ -67,24 +58,48 @@ void Navigation::reset(navigation_mode_t mode) {
     case SEARCH:
         turn_params = turn_params_search;
         forward_params = forward_params_search;
+        general_params = general_params_search_fast;
         break;
     case CUSTOM:
-        turn_params = turn_params_slow;
-        forward_params = forward_params_slow;
+        turn_params = turn_params_custom;
+        forward_params = forward_params_custom;
+        general_params = {
+            services::Config::fan_speed,
+            services::Config::angular_kp,
+            services::Config::angular_ki,
+            services::Config::angular_kd,
+            services::Config::wall_kp,
+            services::Config::wall_ki,
+            services::Config::wall_kd,
+            services::Config::linear_vel_kp,
+            services::Config::linear_vel_ki,
+            services::Config::linear_vel_kd,
+            services::Config::diagonal_walls_kp,
+            services::Config::diagonal_walls_ki,
+            services::Config::diagonal_walls_kd,
+            services::Config::start_wall_break_cm_left,
+            services::Config::start_wall_break_cm_right,
+            services::Config::enable_wall_breack_correction,
+        };
         break;
     case SLOW:
         turn_params = turn_params_slow;
         forward_params = forward_params_slow;
+        general_params = general_params_slow;
         break;
     case MEDIUM:
         turn_params = turn_params_medium;
         forward_params = forward_params_medium;
+        general_params = general_params_medium;
         break;
     case FAST:
         turn_params = turn_params_fast;
         forward_params = forward_params_fast;
+        general_params = general_params_fast;
         break;
     }
+
+    control->reset(general_params);
 
     current_movement = Movement::START;
     target_travel_cm = forward_params[Movement::START].target_travel_cm;
@@ -223,7 +238,7 @@ bool Navigation::step() {
             acceleration *= 0.65;
         }
 
-        if (fix_position_enabled && current_movement == Movement::FORWARD) {
+        if (services::Config::enable_wall_breack_correction && current_movement == Movement::FORWARD) {
 
             WallBreak wall_break = process_wall_break();
             float current_movement_traveled = traveled_dist_cm - complete_prev_move_travel;
@@ -233,11 +248,11 @@ bool Navigation::step() {
 
                 float corrected_distance_cm = 0;
                 if (wall_break == WallBreak::LEFT) {
-                    corrected_distance_cm =
-                        (cells_traveled * CELL_SIZE_CM) + left_start_wall_break_cm + complete_prev_move_travel;
+                    corrected_distance_cm = (cells_traveled * CELL_SIZE_CM) +
+                                            services::Config::start_wall_break_cm_left + complete_prev_move_travel;
                 } else {
-                    corrected_distance_cm =
-                        (cells_traveled * CELL_SIZE_CM) + right_start_wall_break_cm + complete_prev_move_travel;
+                    corrected_distance_cm = (cells_traveled * CELL_SIZE_CM) +
+                                            services::Config::start_wall_break_cm_right + complete_prev_move_travel;
                 }
 
                 float distance_error_cm = current_movement_traveled - corrected_distance_cm;
@@ -546,7 +561,7 @@ bool Navigation::step() {
             uint32_t elapsed_time = bsp::get_tick_ms() - reference_time;
             if (elapsed_time > 200) {
                 reference_time = bsp::get_tick_ms();
-                control->reset();
+                control->reset(general_params);
                 control->set_motor_control_disabled(false);
                 traveled_dist_cm = 0;
                 mini_fsm_state = MiniFSMStates::TURN;
@@ -556,7 +571,7 @@ bool Navigation::step() {
             control->set_wall_pid_enabled(false);
             if (elapsed_time > 400) {
                 reference_time = bsp::get_tick_ms();
-                control->reset();
+                control->reset(general_params);
                 control->set_motor_control_disabled(false);
                 traveled_dist_cm = 0;
 
@@ -683,7 +698,7 @@ void Navigation::set_movement(Movement movement, Movement prev_movement, Movemen
 }
 
 std::vector<std::pair<Movement, uint8_t>> Navigation::get_movements_to_goal(std::vector<Direction> target_directions,
-                                                                    target_movement_mode_t mode){
+                                                                            target_movement_mode_t mode) {
 
     std::vector<std::pair<Movement, uint8_t>> movements;
 

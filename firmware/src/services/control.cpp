@@ -21,32 +21,52 @@ Control* Control::instance() {
 }
 
 void Control::init(void) {
-    reset();
+    GeneralParams general_params = {
+        services::Config::fan_speed,
+        services::Config::angular_kp,
+        services::Config::angular_ki,
+        services::Config::angular_kd,
+        services::Config::wall_kp,
+        services::Config::wall_ki,
+        services::Config::wall_kd,
+        services::Config::linear_vel_kp,
+        services::Config::linear_vel_ki,
+        services::Config::linear_vel_kd,
+        services::Config::diagonal_walls_kp,
+        services::Config::diagonal_walls_ki,
+        services::Config::diagonal_walls_kd,
+        services::Config::start_wall_break_cm_left,
+        services::Config::start_wall_break_cm_right,
+        services::Config::enable_wall_breack_correction,
+    };
+    reset(general_params);
 }
 
-void Control::reset(void) {
+void Control::reset(GeneralParams general_params) {
+    params = general_params;
+
     linear_vel_pid.reset();
-    linear_vel_pid.kp = Config::linear_vel_kp;
-    linear_vel_pid.ki = Config::linear_vel_ki;
-    linear_vel_pid.kd = Config::linear_vel_kd;
+    linear_vel_pid.kp = params.linear_vel_kp;
+    linear_vel_pid.ki = params.linear_vel_ki;
+    linear_vel_pid.kd = params.linear_vel_kd;
     linear_vel_pid.integral_limit = 100;
 
     angular_vel_pid.reset();
-    angular_vel_pid.kp = Config::angular_kp;
-    angular_vel_pid.ki = Config::angular_ki;
-    angular_vel_pid.kd = Config::angular_kd;
+    angular_vel_pid.kp = params.angular_kp;
+    angular_vel_pid.ki = params.angular_ki;
+    angular_vel_pid.kd = params.angular_kd;
     angular_vel_pid.integral_limit = 500; // approximately (max_bat_voltage / Config::angular_ki)
 
     walls_pid.reset();
-    walls_pid.kp = Config::wall_kp;
-    walls_pid.ki = Config::wall_ki;
-    walls_pid.kd = Config::wall_kd;
+    walls_pid.kp = params.wall_kp;
+    walls_pid.ki = params.wall_ki;
+    walls_pid.kd = params.wall_kd;
     walls_pid.integral_limit = 0;
 
     diagonal_walls_pid.reset();
-    diagonal_walls_pid.kp = Config::diagonal_walls_kp;
-    diagonal_walls_pid.ki = Config::diagonal_walls_ki;
-    diagonal_walls_pid.kd = Config::diagonal_walls_kd;
+    diagonal_walls_pid.kp = params.diagonal_walls_kp;
+    diagonal_walls_pid.ki = params.diagonal_walls_ki;
+    diagonal_walls_pid.kd = params.diagonal_walls_kd;
     diagonal_walls_pid.integral_limit = 0;
 
     target_angular_speed_rad_s = 0;
@@ -119,7 +139,7 @@ void Control::update() {
     }
 
     /* Fan control */
-    float target_fan_speed = std::min(services::Config::fan_speed, 1000.0f);
+    float target_fan_speed = std::min(params.fan_speed, 1000.0f);
     float desired_fan_voltage = (target_fan_speed / 1000.0f) * bsp::fan::get_max_fan_voltage();
 
     if (bat_volts > 5.0) { // To avoid turning on fan when batery measurement is not reliable
@@ -131,8 +151,9 @@ void Control::update() {
 }
 
 void Control::start_fan() {
-    float target_fan_speed = std::min(services::Config::fan_speed, static_cast<float>(bsp::fan::MAX_SPEED));
-    float desired_fan_voltage = (target_fan_speed / static_cast<float>(bsp::fan::MAX_SPEED)) * bsp::fan::get_max_fan_voltage();
+    float target_fan_speed = std::min(params.fan_speed, static_cast<float>(bsp::fan::MAX_SPEED));
+    float desired_fan_voltage =
+        (target_fan_speed / static_cast<float>(bsp::fan::MAX_SPEED)) * bsp::fan::get_max_fan_voltage();
 
     for (float volts = 0; volts < desired_fan_voltage; volts += 0.1) {
         float bat_volts = bsp::analog_sensors::battery_latest_reading_mv() / 1000.0;
@@ -148,8 +169,9 @@ void Control::start_fan() {
 }
 
 void Control::stop_fan() {
-    float target_fan_speed = std::min(services::Config::fan_speed, static_cast<float>(bsp::fan::MAX_SPEED));
-    float desired_fan_voltage = (target_fan_speed / static_cast<float>(bsp::fan::MAX_SPEED)) * bsp::fan::get_max_fan_voltage();
+    float target_fan_speed = std::min(params.fan_speed, static_cast<float>(bsp::fan::MAX_SPEED));
+    float desired_fan_voltage =
+        (target_fan_speed / static_cast<float>(bsp::fan::MAX_SPEED)) * bsp::fan::get_max_fan_voltage();
     for (float volts = desired_fan_voltage; volts > 0; volts -= 0.1) {
         float bat_volts = bsp::analog_sensors::battery_latest_reading_mv() / 1000.0;
         if (bat_volts < 5.0) {

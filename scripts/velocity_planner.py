@@ -97,16 +97,16 @@ def plot_angular_speeds(ideal_speeds, real_speeds):
 def main():
 
     #### Inputs ####
-    linear_speed_m_s = 1.4
+    linear_speed_m_s = 1.5
     turn_angle_deg = 90
     turn_radius_mm = 30
 
-    angular_acceleration_deg_s2 = 51566
-    angular_desacceleration_deg_s2 = 51566
-    maximum_angular_speed_deg_s = 1890
+    angular_acceleration_deg_s2 = 40000
+    angular_desacceleration_deg_s2 = 40000
+    maximum_angular_speed_deg_s = 1000
 
-    mm_before_turn = 12
-    mm_after_turn = 10
+    mm_before_turn = 0
+    mm_after_turn = 0
     initial_theta_deg = 0
 
 
@@ -126,7 +126,7 @@ def main():
     angle_area_rad = ideal_angular_speed_rad_s * (total_ideal_time_ms / 1000) # = turn_angle_rad
 
     print("Total ideal time (ms): {:.2f}".format(total_ideal_time_ms))
-    print("Ideal angular speed (deg/s): {:.2f}".format(ideal_angular_speed_deg_s))
+    print("Ideal angular speed (deg/s): {:.2f} (={:.2f} rad/s)".format(ideal_angular_speed_deg_s, ideal_angular_speed_rad_s))
     print("")
 
 

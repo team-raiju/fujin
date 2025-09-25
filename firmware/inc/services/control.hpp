@@ -3,6 +3,7 @@
 #include <cstdint>
 
 #include "algorithms/pid.hpp"
+#include "utils/movement_params.hpp"
 
 
 namespace services {
@@ -14,7 +15,7 @@ class Control {
         Control(const Control&) = delete;
 
         void init();
-        void reset();
+        void reset(GeneralParams general_params);
         void update();
 
         void start_fan();
@@ -53,6 +54,8 @@ class Control {
         int16_t pwm_duty_r;
         bool motor_control_disabled = false;
         bool emergency = false;
+
+        GeneralParams params;
 
 };
 
