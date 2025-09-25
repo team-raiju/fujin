@@ -23,7 +23,7 @@ public:
         NORMAL,
         SMOOTH,
         DIAGONALS,
-        HARD_CODDED,
+        HARD_CODED,
     };
 
     static Navigation* instance();
@@ -54,6 +54,9 @@ public:
 
     std::vector<std::pair<Movement, uint8_t>> get_movements_to_goal(std::vector<Direction> target_directions,
                                                                     target_movement_mode_t mode);
+
+    std::vector<std::pair<Movement, uint8_t>> get_hardcoded_movements();
+    void set_hardcoded_movements(std::vector<std::pair<Movement, uint8_t>> moves);
 
 private:
     enum class PathState {
@@ -103,8 +106,6 @@ private:
     std::vector<std::pair<Movement, uint8_t>>
     get_diagonal_movements(std::vector<std::pair<Movement, uint8_t>> default_target_movements);
 
-    std::vector<std::pair<Movement, uint8_t>> get_hardcodded_movements();
-
     void print_movement_sequence(std::vector<std::pair<Movement, uint8_t>> movements, std::string name);
 
     services::Control* control;
@@ -134,6 +135,8 @@ private:
     uint32_t wall_break_last_dist = 0;
 
     MiniFSMStates mini_fsm_state = MiniFSMStates::FORWARD_1;
+
+    std::vector<std::pair<Movement, uint8_t>> hardcoded_movements;
 };
 
 }

@@ -8,7 +8,7 @@ struct BleCommand {};
 struct UsbCommand {};
 
 struct ButtonPressed {
-    enum Type { SHORT1, SHORT2, LONG1, LONG2, LONG3, LONG4 } button;
+    enum Type { SHORT1, SHORT2, LONG1, LONG2, LONG3, LONG4, LONG5 } button;
 };
 
 struct Timeout {};

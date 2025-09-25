@@ -47,14 +47,17 @@ public:
     static void init();
     static int parse_packet(uint8_t packet[bsp::ble::max_packet_size]);
     static int parse_movement_packet(uint8_t packet[bsp::ble::max_packet_size]);
+    static int parse_move_sequence_packet(uint8_t packet[bsp::ble::max_packet_size]);
     static int write_default_params();
     static int write_all_move_params_to_eeprom();
     static int write_turn_param_to_eeprom(Movement movement_id);
     static int write_forward_param_to_eeprom(Movement movement_id);
     static void send_parameters();
     static void send_movement_parameters();
+    static void send_move_sequence();
     static int save_z_bias();
     static void load_custom_movements_from_eeprom();
+    static void load_movement_sequence_from_eeprom();
 };
 
 }

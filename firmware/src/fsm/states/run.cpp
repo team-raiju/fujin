@@ -171,9 +171,9 @@ State* RunMoveModeSelect::react(ButtonPressed const& event) {
             move_mode = services::Navigation::DIAGONALS;
             bsp::leds::stripe_set(bsp::leds::Color::Pink, bsp::leds::Color::Pink);
         } else if (move_mode == services::Navigation::DIAGONALS) {
-            move_mode = services::Navigation::HARD_CODDED;
+            move_mode = services::Navigation::HARD_CODED;
             bsp::leds::stripe_set(bsp::leds::Color::Green, bsp::leds::Color::Black);
-        } else { // move_mode == services::Navigation::HARD_CODDED
+        } else { // move_mode == services::Navigation::HARD_CODED
             move_mode = services::Navigation::SMOOTH;
             bsp::leds::stripe_set(bsp::leds::Color::Pink, bsp::leds::Color::Black);
         }
@@ -182,9 +182,9 @@ State* RunMoveModeSelect::react(ButtonPressed const& event) {
 
     if (event.button == ButtonPressed::SHORT1) {
         if (move_mode == services::Navigation::SMOOTH) {
-            move_mode = services::Navigation::HARD_CODDED;
+            move_mode = services::Navigation::HARD_CODED;
             bsp::leds::stripe_set(bsp::leds::Color::Green, bsp::leds::Color::Black);
-        } else if (move_mode == services::Navigation::HARD_CODDED) {
+        } else if (move_mode == services::Navigation::HARD_CODED) {
             move_mode = services::Navigation::DIAGONALS;
             bsp::leds::stripe_set(bsp::leds::Color::Pink, bsp::leds::Color::Pink);
         } else { // move_mode == services::Navigation::DIAGONALS
@@ -235,6 +235,9 @@ void Run::enter() {
     maze->print(maze->ORIGIN);
 
     target_movements.clear();
+
+    // services::Navigation::instance()->set_hardcoded_movements(
+    //     {{Movement::START, 1}, {Movement::FORWARD, 1}, {Movement::STOP, 1}});
 
     target_movements = navigation->get_movements_to_goal(target_directions, move_mode);
 

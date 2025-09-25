@@ -4,6 +4,7 @@
 #include "bsp/eeprom.hpp"
 #include "bsp/timers.hpp"
 #include "services/config.hpp"
+#include "services/navigation.hpp"
 #include "utils/math.hpp"
 #include "utils/movement_params.hpp"
 
@@ -141,6 +142,8 @@ void Config::init() {
     }
 
     load_custom_movements_from_eeprom();
+    bsp::delay_ms(5);
+    load_movement_sequence_from_eeprom();
 }
 
 int Config::parse_packet(uint8_t packet[bsp::ble::max_packet_size]) {
@@ -386,7 +389,6 @@ int Config::write_turn_param_to_eeprom(Movement movement_id) {
     bsp::eeprom::write_array(address, reinterpret_cast<uint8_t*>(&params), sizeof(TurnParams));
 
     return 0;
-
 }
 
 int Config::write_forward_param_to_eeprom(Movement movement_id) {
@@ -416,6 +418,119 @@ int Config::write_all_move_params_to_eeprom() {
     }
 
     return 0;
+}
+
+int Config::parse_move_sequence_packet(uint8_t packet[bsp::ble::max_packet_size]) {
+    if (packet[0] != bsp::ble::header) {
+        return -1;
+    }
+
+    if (packet[1] != bsp::ble::BlePacketType::UpdateMoveSequence) {
+        return -1;
+    }
+
+    auto navigation_service = services::Navigation::instance();
+    if (!navigation_service) {
+        return -1;
+    }
+
+    std::vector<std::pair<Movement, uint8_t>> moves;
+    uint8_t valid_moves = 0;
+
+    for (int i = 2; i < bsp::ble::max_packet_size; ++i) {
+        uint8_t byte = packet[i];
+
+        // Extract the 5-bit movement type and 3-bit count
+        auto type = static_cast<Movement>(byte >> 3);
+        uint8_t count = byte & 0x07;
+
+        if (count == 0 || type == Movement::STOP) {
+            if (type == Movement::STOP) {
+                valid_moves++;
+                moves.push_back({Movement::STOP, 1});
+            }
+            break;
+        }
+        valid_moves++;
+        moves.push_back({type, count});
+    }
+
+    // Ensure the sequence ends with a STOP command
+    if (moves.empty() || moves.back().first != Movement::STOP) {
+        valid_moves++;
+        moves.push_back({Movement::STOP, 1});
+    }
+
+    navigation_service->set_hardcoded_movements(moves);
+    bsp::eeprom::write_array(bsp::eeprom::ADDR_MOVE_SEQUENCE_1, &packet[2], valid_moves);
+
+    return 0;
+}
+
+void Config::send_move_sequence() {
+    auto navigation = services::Navigation::instance();
+    if (!navigation) {
+        return;
+    }
+
+    const auto& moves = navigation->get_hardcoded_movements();
+
+    uint8_t packet[bsp::ble::max_packet_size] = {0};
+    packet[0] = bsp::ble::header;
+    packet[1] = bsp::ble::BlePacketType::RequestMoveSequence;
+
+    int i = 2;
+    for (const auto& move_pair : moves) {
+        if (i >= bsp::ble::max_packet_size) {
+            break;
+        }
+        uint8_t type = static_cast<uint8_t>(move_pair.first);
+        uint8_t count = move_pair.second;
+        packet[i++] = (type << 3) | (count & 0x07);
+    }
+
+    // Fill the rest of the packet with STOP commands if there's space
+    while (i < bsp::ble::max_packet_size) {
+        packet[i++] = (static_cast<uint8_t>(Movement::STOP) << 3) | (1 & 0x07);
+    }
+
+    bsp::ble::transmit(packet, sizeof(packet));
+}
+
+void Config::load_movement_sequence_from_eeprom() {
+    std::vector<std::pair<Movement, uint8_t>> moves;
+
+    for (int i = 0; i < 18; ++i) {
+        uint8_t byte;
+        if (bsp::eeprom::read_u8(bsp::eeprom::ADDR_MOVE_SEQUENCE_1 + i, &byte) != bsp::eeprom::OK) {
+            return;
+        }
+
+        if (byte == 0xFF) {
+            break;
+        }
+
+        uint8_t move_id = byte >> 3;
+        if (move_id > static_cast<uint8_t>(Movement::STOP)) {
+            break;
+        }
+
+        auto type = static_cast<Movement>(move_id);
+        uint8_t count = byte & 0x07;
+
+        if (count == 0 || type == Movement::STOP) {
+            if (type == Movement::STOP) {
+                moves.push_back({Movement::STOP, 1});
+            }
+            break;
+        }
+        moves.push_back({type, count});
+
+        bsp::delay_ms(10);
+    }
+
+    auto navigation_service = services::Navigation::instance();
+    navigation_service->set_hardcoded_movements(moves);
 }
 
 }

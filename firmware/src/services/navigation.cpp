@@ -697,8 +697,8 @@ std::vector<std::pair<Movement, uint8_t>> Navigation::get_movements_to_goal(std:
     case target_movement_mode_t::DIAGONALS:
         movements = get_diagonal_movements(get_default_target_movements(target_directions));
         break;
-    case target_movement_mode_t::HARD_CODDED:
-        movements = get_hardcodded_movements();
+    case target_movement_mode_t::HARD_CODED:
+        movements = get_hardcoded_movements();
         print_movement_sequence(movements, "Hard Coded");
         break;
     }
@@ -974,13 +974,12 @@ Navigation::get_diagonal_movements(std::vector<std::pair<Movement, uint8_t>> def
     return output_movements;
 }
 
-std::vector<std::pair<Movement, uint8_t>> Navigation::get_hardcodded_movements() {
-    return {
-        {Movement::START, 1},
-        {Movement::FORWARD, 1},
-        {Movement::TURN_RIGHT_90, 1},
-        {Movement::STOP, 1},
-    };
+std::vector<std::pair<Movement, uint8_t>> Navigation::get_hardcoded_movements() {
+    return hardcoded_movements;
+}
+
+void Navigation::set_hardcoded_movements(std::vector<std::pair<Movement, uint8_t>> moves) {
+    hardcoded_movements = moves;
 }
 
 void Navigation::print_movement_sequence(std::vector<std::pair<Movement, uint8_t>> movements, std::string name) {

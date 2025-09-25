@@ -1,5 +1,5 @@
-#include <variant>
 #include <map>
+#include <variant>
 
 #include "bsp/ble.hpp"
 #include "bsp/buttons.hpp"
@@ -43,9 +43,13 @@ void FSM::start() {
             dispatch(BleCommand());
         }
 
-
         if (packet[1] == bsp::ble::BlePacketType::UpdateMovementParameters && !bsp::ble::is_config_locked()) {
             services::Config::parse_movement_packet(packet);
+            dispatch(BleCommand());
+        }
+
+        if (packet[1] == bsp::ble::BlePacketType::UpdateMoveSequence && !bsp::ble::is_config_locked()) {
+            services::Config::parse_move_sequence_packet(packet);
             dispatch(BleCommand());
         }
 
@@ -58,11 +62,11 @@ void FSM::start() {
                 {bsp::ble::BleCommands::Button2Long, ButtonPressed::LONG2},
                 {bsp::ble::BleCommands::ButtonMovementParameters, ButtonPressed::LONG3},
                 {bsp::ble::BleCommands::ButtonLogDump, ButtonPressed::LONG4},
+                {bsp::ble::BleCommands::ButtonRequestMoveSequence, ButtonPressed::LONG5},
             };
 
-            dispatch(ButtonPressed{.button = b[packet[2]]});   
+            dispatch(ButtonPressed{.button = b[packet[2]]});
         }
-
     });
 
     soft_timer::register_callback([this]() { dispatch(Timeout()); });
