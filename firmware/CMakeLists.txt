@@ -39,6 +39,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     src/algorithms/pid.cpp
 
     src/utils/soft_timer.cpp
+    src/utils/movement_params.cpp
 
     src/services/navigation.cpp
     src/services/control.cpp

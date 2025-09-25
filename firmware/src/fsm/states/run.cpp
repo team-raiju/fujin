@@ -93,6 +93,7 @@ RunParamSelect::RunParamSelect() {
 void RunParamSelect::enter() {
     bsp::leds::stripe_set(bsp::leds::Color::Blue, bsp::leds::Color::Black);
     param_type = PARAM_CUSTOM;
+    bsp::debug::print("state:RunParamSelect");
 }
 
 State* RunParamSelect::react(ButtonPressed const& event) {
@@ -134,15 +135,19 @@ State* RunParamSelect::react(ButtonPressed const& event) {
         switch (param_type) {
         case PARAM_CUSTOM:
             navigation->reset(services::Navigation::CUSTOM);
+            std::printf("Custom params\r\n");
             break;
         case PARAM_SLOW:
             navigation->reset(services::Navigation::SLOW);
+            std::printf("Slow params\r\n");
             break;
         case PARAM_MEDIUM:
             navigation->reset(services::Navigation::MEDIUM);
+            std::printf("Medium params\r\n");
             break;
         case PARAM_FAST:
             navigation->reset(services::Navigation::FAST);
+            std::printf("Fast params\r\n");
             break;
         }
         return &State::get<RunMoveModeSelect>();
@@ -162,6 +167,7 @@ void RunMoveModeSelect::enter() {
     // When entering the state, set the LED for the default selection: SMOOTH (Green, Black)
     bsp::leds::stripe_set(bsp::leds::Color::Pink, bsp::leds::Color::Black);
     move_mode = services::Navigation::SMOOTH;
+    std::printf("state:RunMoveModeSelect\r\n");
 }
 
 State* RunMoveModeSelect::react(ButtonPressed const& event) {
@@ -195,6 +201,20 @@ State* RunMoveModeSelect::react(ButtonPressed const& event) {
     }
 
     if (event.button == ButtonPressed::LONG1) {
+        std::printf("Selected move mode: ");
+        switch (move_mode) {
+        case services::Navigation::SMOOTH:
+            std::printf("SMOOTH\r\n");
+            break;
+        case services::Navigation::DIAGONALS:
+            std::printf("DIAGONALS\r\n");
+            break;
+        case services::Navigation::HARD_CODED:
+            std::printf("HARD_CODED\r\n");
+            break;
+        default:
+            break;
+        }
         return &State::get<Run>();
     }
 

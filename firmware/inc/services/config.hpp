@@ -46,7 +46,7 @@ public:
 
     static float start_wall_break_cm_left;
     static float start_wall_break_cm_right;
-    static float enable_wall_breack_correction;
+    static float enable_wall_break_correction;
 
     static void init();
     static int parse_packet(uint8_t packet[bsp::ble::max_packet_size]);

@@ -79,7 +79,7 @@ void Navigation::reset(navigation_mode_t mode) {
             services::Config::diagonal_walls_kd,
             services::Config::start_wall_break_cm_left,
             services::Config::start_wall_break_cm_right,
-            services::Config::enable_wall_breack_correction,
+            services::Config::enable_wall_break_correction,
         };
         break;
     case SLOW:
@@ -238,7 +238,7 @@ bool Navigation::step() {
             acceleration *= 0.65;
         }
 
-        if (services::Config::enable_wall_breack_correction && current_movement == Movement::FORWARD) {
+        if (general_params.enable_wall_break_correction && current_movement == Movement::FORWARD) {
 
             WallBreak wall_break = process_wall_break();
             float current_movement_traveled = traveled_dist_cm - complete_prev_move_travel;
@@ -249,10 +249,10 @@ bool Navigation::step() {
                 float corrected_distance_cm = 0;
                 if (wall_break == WallBreak::LEFT) {
                     corrected_distance_cm = (cells_traveled * CELL_SIZE_CM) +
-                                            services::Config::start_wall_break_cm_left + complete_prev_move_travel;
+                                            general_params.start_wall_break_cm_left + complete_prev_move_travel;
                 } else {
                     corrected_distance_cm = (cells_traveled * CELL_SIZE_CM) +
-                                            services::Config::start_wall_break_cm_right + complete_prev_move_travel;
+                                            general_params.start_wall_break_cm_right + complete_prev_move_travel;
                 }
 
                 float distance_error_cm = current_movement_traveled - corrected_distance_cm;

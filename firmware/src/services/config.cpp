@@ -14,40 +14,40 @@ static bool write_default = false;
 
 float Config::fan_speed = 0.0; //[0-1000]
 
-float Config::angular_kp = 0.10;
+float Config::angular_kp = 0.105;
 float Config::angular_ki = 0.010;
-float Config::angular_kd = 0.0;
+float Config::angular_kd = 0.0075;
 
 float Config::wall_kp = 0.0025;
 float Config::wall_ki = 0.0;
 float Config::wall_kd = 0.0050;
 
 float Config::linear_vel_kp = 8.0;
-float Config::linear_vel_ki = 0.11;
+float Config::linear_vel_ki = 0.10;
 float Config::linear_vel_kd = 0.0;
 
-float Config::diagonal_walls_kp = 0.005;
+float Config::diagonal_walls_kp = 0.025;
 float Config::diagonal_walls_ki = 0;
 float Config::diagonal_walls_kd = 0.005;
 
-float Config::min_move_speed = 0.05; // [m/s]
+float Config::min_move_speed = 0.2; // [m/s]
 
-float Config::ir_wall_dist_ref_right = 1360;
+float Config::ir_wall_dist_ref_right = 1391;
 float Config::ir_wall_dist_ref_front_left = 150;
 float Config::ir_wall_dist_ref_front_right = 150;
-float Config::ir_wall_dist_ref_left = 774;
+float Config::ir_wall_dist_ref_left = 850;
 
-float Config::ir_wall_control_th_right = 1000;
-float Config::ir_wall_control_th_front_left = 250;
-float Config::ir_wall_control_th_front_right = 250;
-float Config::ir_wall_control_th_left = 750;
+float Config::ir_wall_control_th_right = 1100;
+float Config::ir_wall_control_th_front_left = 200;
+float Config::ir_wall_control_th_front_right = 200;
+float Config::ir_wall_control_th_left = 650;
 
 float Config::ir_wall_detect_th_right = 1200;
-float Config::ir_wall_detect_th_front_left = 600;
+float Config::ir_wall_detect_th_front_left = 500;
 float Config::ir_wall_detect_th_front_right = 800;
-float Config::ir_wall_detect_th_left = 650;
+float Config::ir_wall_detect_th_left = 600;
 
-float Config::z_imu_bias = 0.0;
+float Config::z_imu_bias = -0.4905;
 
 // float Config::start_wall_break_cm_left = 6.1; // 2.0m/s
 // float Config::start_wall_break_cm_left = 6.1; // 1.5m/s
@@ -55,7 +55,7 @@ float Config::z_imu_bias = 0.0;
 
 float Config::start_wall_break_cm_left = 6.5; // 3.0m/s
 float Config::start_wall_break_cm_right = 8.0;// 3.0m/s
-float Config::enable_wall_breack_correction = 1.0;
+float Config::enable_wall_break_correction = 1.0;
 
 // All params
 static std::pair<float*, bsp::eeprom::param_addresses_t> params[] = {
@@ -88,7 +88,7 @@ static std::pair<float*, bsp::eeprom::param_addresses_t> params[] = {
     {&Config::z_imu_bias, bsp::eeprom::ADDR_Z_IMU_BIAS},
     {&Config::start_wall_break_cm_left, bsp::eeprom::ADDR_START_WALL_BREAK_CM_LEFT},
     {&Config::start_wall_break_cm_right, bsp::eeprom::ADDR_START_WALL_BREAK_CM_RIGHT},
-    {&Config::enable_wall_breack_correction, bsp::eeprom::ADDR_ENABLE_WALL_BREAK_CORRECTION},
+    {&Config::enable_wall_break_correction, bsp::eeprom::ADDR_ENABLE_WALL_BREAK_CORRECTION},
 };
 
 static const std::map<Movement, uint16_t> turn_address_map = {
