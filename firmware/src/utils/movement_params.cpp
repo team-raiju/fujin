@@ -33,7 +33,7 @@ std::map<Movement, ForwardParams> forward_params_search_medium = {
     {Movement::TURN_LEFT_90_SEARCH_MODE, {0.5, 2.0, 2.0, 1.5}},
 };
 
-std::map<Movement, TurnParams> turn_params_search = {
+std::map<Movement, TurnParams> turn_params_search_fast = {
     {Movement::TURN_AROUND, {0.0, 0.0, 0.7, 104.72, 10.47, 3.1416, 0, 0, -1}},
     {Movement::TURN_AROUND_INPLACE, {0.0, 0.0, 0.7, 104.72, 10.47, 3.1416, 0, 0, -1}},
     {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.0, 0.0, 0.7, 244.346, 17.453, 1.5708, 0, 0, -1}}, // -3.0
@@ -42,7 +42,7 @@ std::map<Movement, TurnParams> turn_params_search = {
     {Movement::TURN_LEFT_90, {0.0, -2.2, 0.7, 244.346, 15.708, 1.5708, 0, 0, 1}},
 };
 
-std::map<Movement, ForwardParams> forward_params_search = {
+std::map<Movement, ForwardParams> forward_params_search_fast = {
     {Movement::START, {0.7, 2.0, 2.0, HALF_CELL_SIZE_CM + ROBOT_DIST_FROM_CENTER_START_CM}},
     {Movement::FORWARD, {0.7, 4.0, 4.0, CELL_SIZE_CM}},
     {Movement::STOP, {0.7, 4.0, 6.0, (HALF_CELL_SIZE_CM)}},

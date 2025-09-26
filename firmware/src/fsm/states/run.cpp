@@ -36,33 +36,6 @@ void PreRun::enter() {
 
     bsp::motors::set(0, 0);
     bsp::fan::set(0);
-
-    /* Only start IR if powered by the battery */
-    if (bsp::analog_sensors::battery_latest_reading_mv() > 7000) {
-        soft_timer::start(100, soft_timer::SINGLE);
-    }
-}
-
-State* PreRun::react(Timeout const&) {
-    using bsp::analog_sensors::ir_reading_wall;
-    using bsp::analog_sensors::SensingDirection;
-
-    bsp::leds::ir_emitter_on(bsp::leds::LEFT_FRONT);
-    bsp::leds::ir_emitter_on(bsp::leds::RIGHT_FRONT);
-    bsp::analog_sensors::enable_modulation();
-    bsp::delay_ms(5);
-
-    for (int i = 0; i < 400; i++) {
-        if (!ir_reading_wall(SensingDirection::FRONT_LEFT) || !ir_reading_wall(SensingDirection::FRONT_RIGHT)) {
-            soft_timer::start(100, soft_timer::SINGLE);
-            bsp::leds::ir_emitter_all_off();
-            bsp::analog_sensors::enable_modulation(false);
-            return &State::get<PreRun>();
-        }
-        bsp::delay_ms(1);
-    }
-
-    return &State::get<Run>();
 }
 
 State* PreRun::react(BleCommand const&) {
@@ -215,11 +188,65 @@ State* RunMoveModeSelect::react(ButtonPressed const& event) {
         default:
             break;
         }
-        return &State::get<Run>();
+        return &State::get<RunWaitStart>();
     }
 
     if (event.button == ButtonPressed::LONG2) {
         return &State::get<RunParamSelect>();
+    }
+
+    return nullptr;
+}
+
+void RunWaitStart::enter() {
+
+    bsp::debug::print("state:RunWaitStart");
+
+    bsp::leds::stripe_set(Color::Green);
+
+    bsp::motors::set(0, 0);
+    bsp::fan::set(0);
+
+    /* Only start IR if powered by the battery */
+    if (bsp::analog_sensors::battery_latest_reading_mv() > 7000) {
+        soft_timer::start(100, soft_timer::SINGLE);
+    }
+}
+
+State* RunWaitStart::react(Timeout const&) {
+    using bsp::analog_sensors::ir_reading_wall;
+    using bsp::analog_sensors::SensingDirection;
+
+    bsp::leds::ir_emitter_on(bsp::leds::LEFT_FRONT);
+    bsp::leds::ir_emitter_on(bsp::leds::RIGHT_FRONT);
+    bsp::analog_sensors::enable_modulation();
+    bsp::delay_ms(5);
+
+    for (int i = 0; i < 400; i++) {
+        if (!ir_reading_wall(SensingDirection::FRONT_LEFT) || !ir_reading_wall(SensingDirection::FRONT_RIGHT)) {
+            soft_timer::start(100, soft_timer::SINGLE);
+            bsp::leds::ir_emitter_all_off();
+            bsp::analog_sensors::enable_modulation(false);
+            return &State::get<RunWaitStart>();
+        }
+        bsp::delay_ms(1);
+    }
+
+    return &State::get<Run>();
+}
+
+State* RunWaitStart::react(BleCommand const&) {
+    return nullptr;
+}
+
+State* RunWaitStart::react(ButtonPressed const& event) {
+
+    if (event.button == ButtonPressed::LONG1) {
+        return &State::get<Run>();
+    }
+
+    if (event.button == ButtonPressed::LONG2) {
+        return &State::get<RunMoveModeSelect>();
     }
 
     return nullptr;

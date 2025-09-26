@@ -48,16 +48,16 @@ public:
     State* react(Timeout const&) override;
 };
 
+/// @section Search States
 class PreSearch : public State {
 public:
     void enter() override;
 
     State* react(BleCommand const&) override;
     State* react(ButtonPressed const&) override;
-    State* react(Timeout const&) override;
 };
 
-class PreRun : public State {
+class SearchWaitStart : public State {
 public:
     void enter() override;
 
@@ -66,7 +66,45 @@ public:
     State* react(Timeout const&) override;
 };
 
+class SearchParamSelect : public State {
+public:
+    SearchParamSelect();
+
+    void enter() override;
+
+    State* react(ButtonPressed const&) override;
+
+private:
+    enum param_type_t {
+        PARAM_CUSTOM,
+        PARAM_SLOW,
+        PARAM_MEDIUM ,
+        PARAM_FAST,
+    };
+
+    param_type_t param_type;
+    services::Navigation* navigation;
+
+};
+
 /// @section Run States
+class PreRun : public State {
+public:
+    void enter() override;
+
+    State* react(BleCommand const&) override;
+    State* react(ButtonPressed const&) override;
+};
+
+class RunWaitStart : public State {
+public:
+    void enter() override;
+
+    State* react(BleCommand const&) override;
+    State* react(ButtonPressed const&) override;
+    State* react(Timeout const&) override;
+};
+
 
 class Run : public State {
 public:

@@ -33,33 +33,6 @@ void PreSearch::enter() {
     bsp::leds::stripe_send();
 
     bsp::motors::set(0, 0);
-
-    /* Only start IR if powered by the battery */
-    if (bsp::analog_sensors::battery_latest_reading_mv() > 7000) {
-        soft_timer::start(100, soft_timer::SINGLE);
-    }
-}
-
-State* PreSearch::react(Timeout const&) {
-    using bsp::analog_sensors::ir_reading_wall;
-    using bsp::analog_sensors::SensingDirection;
-
-    bsp::leds::ir_emitter_on(bsp::leds::LEFT_FRONT);
-    bsp::leds::ir_emitter_on(bsp::leds::RIGHT_FRONT);
-    bsp::analog_sensors::enable_modulation();
-    bsp::delay_ms(5);
-
-    for (int i = 0; i < 400; i++) {
-        if (!ir_reading_wall(SensingDirection::FRONT_LEFT) || !ir_reading_wall(SensingDirection::FRONT_RIGHT)) {
-            soft_timer::start(100, soft_timer::SINGLE);
-            bsp::leds::ir_emitter_all_off();
-            bsp::analog_sensors::enable_modulation(false);
-            return &State::get<PreSearch>();
-        }
-        bsp::delay_ms(1);
-    }
-
-    return &State::get<Search>();
 }
 
 State* PreSearch::react(BleCommand const&) {
@@ -76,7 +49,134 @@ State* PreSearch::react(ButtonPressed const& event) {
     }
 
     if (event.button == ButtonPressed::LONG1) {
+        return &State::get<SearchParamSelect>();
+    }
+
+    return nullptr;
+}
+
+SearchParamSelect::SearchParamSelect() {
+    navigation = services::Navigation::instance();
+    param_type = PARAM_CUSTOM;
+}
+
+void SearchParamSelect::enter() {
+    bsp::leds::stripe_set(bsp::leds::Color::Blue, bsp::leds::Color::Black);
+    param_type = PARAM_CUSTOM;
+    bsp::debug::print("state:SearchParamSelect");
+}
+
+State* SearchParamSelect::react(ButtonPressed const& event) {
+    if (event.button == ButtonPressed::SHORT2) {
+        if (param_type == PARAM_CUSTOM) {
+            param_type = PARAM_SLOW;
+            bsp::leds::stripe_set(bsp::leds::Color::Blue, bsp::leds::Color::Blue);
+        } else if (param_type == PARAM_SLOW) {
+            param_type = PARAM_MEDIUM;
+            bsp::leds::stripe_set(bsp::leds::Color::Orange, bsp::leds::Color::Black);
+        } else if (param_type == PARAM_MEDIUM) {
+            param_type = PARAM_FAST;
+            bsp::leds::stripe_set(bsp::leds::Color::Orange, bsp::leds::Color::Orange);
+        } else { // param_type == PARAM_FAST
+            param_type = PARAM_CUSTOM;
+            bsp::leds::stripe_set(bsp::leds::Color::Blue, bsp::leds::Color::Black);
+        }
+        return nullptr;
+    }
+
+    if (event.button == ButtonPressed::SHORT1) {
+        if (param_type == PARAM_CUSTOM) {
+            param_type = PARAM_FAST;
+            bsp::leds::stripe_set(bsp::leds::Color::Orange, bsp::leds::Color::Orange);
+        } else if (param_type == PARAM_FAST) {
+            param_type = PARAM_MEDIUM;
+            bsp::leds::stripe_set(bsp::leds::Color::Orange, bsp::leds::Color::Black);
+        } else if (param_type == PARAM_MEDIUM) {
+            param_type = PARAM_SLOW;
+            bsp::leds::stripe_set(bsp::leds::Color::Blue, bsp::leds::Color::Blue);
+        } else { // param_type == PARAM_SLOW
+            param_type = PARAM_CUSTOM;
+            bsp::leds::stripe_set(bsp::leds::Color::Blue, bsp::leds::Color::Black);
+        }
+        return nullptr;
+    }
+
+    if (event.button == ButtonPressed::LONG1) {
+        switch (param_type) {
+        case PARAM_CUSTOM:
+            navigation->reset(services::Navigation::CUSTOM);
+            std::printf("Custom params\r\n");
+            break;
+        case PARAM_SLOW:
+            navigation->reset(services::Navigation::SEARCH_SLOW);
+            std::printf("Slow params\r\n");
+            break;
+        case PARAM_MEDIUM:
+            navigation->reset(services::Navigation::SEARCH_MEDIUM);
+            std::printf("Medium params\r\n");
+            break;
+        case PARAM_FAST:
+            navigation->reset(services::Navigation::SEARCH_FAST);
+            std::printf("Fast params\r\n");
+            break;
+        }
+        return &State::get<SearchWaitStart>();
+    }
+
+    if (event.button == ButtonPressed::LONG2) {
+        return &State::get<PreSearch>();
+    }
+    return nullptr;
+}
+
+void SearchWaitStart::enter() {
+
+    bsp::debug::print("state:SearchWaitStart");
+
+    bsp::leds::stripe_set(Color::White);
+
+    bsp::motors::set(0, 0);
+    bsp::fan::set(0);
+
+    /* Only start IR if powered by the battery */
+    if (bsp::analog_sensors::battery_latest_reading_mv() > 7000) {
+        soft_timer::start(100, soft_timer::SINGLE);
+    }
+}
+
+State* SearchWaitStart::react(Timeout const&) {
+    using bsp::analog_sensors::ir_reading_wall;
+    using bsp::analog_sensors::SensingDirection;
+
+    bsp::leds::ir_emitter_on(bsp::leds::LEFT_FRONT);
+    bsp::leds::ir_emitter_on(bsp::leds::RIGHT_FRONT);
+    bsp::analog_sensors::enable_modulation();
+    bsp::delay_ms(5);
+
+    for (int i = 0; i < 400; i++) {
+        if (!ir_reading_wall(SensingDirection::FRONT_LEFT) || !ir_reading_wall(SensingDirection::FRONT_RIGHT)) {
+            soft_timer::start(100, soft_timer::SINGLE);
+            bsp::leds::ir_emitter_all_off();
+            bsp::analog_sensors::enable_modulation(false);
+            return &State::get<SearchWaitStart>();
+        }
+        bsp::delay_ms(1);
+    }
+
+    return &State::get<Search>();
+}
+
+State* SearchWaitStart::react(BleCommand const&) {
+    return nullptr;
+}
+
+State* SearchWaitStart::react(ButtonPressed const& event) {
+    if (event.button == ButtonPressed::LONG1) {
         return &State::get<Search>();
+    }
+
+    if (event.button == ButtonPressed::LONG2) {
+        return &State::get<PreSearch>();
     }
 
     return nullptr;
@@ -100,8 +200,6 @@ void Search::enter() {
     bsp::buzzer::stop();
 
     soft_timer::start(1, soft_timer::CONTINUOUS);
-
-    navigation->reset(services::Navigation::SEARCH);
 
     returning = false;
     save_maze = false;

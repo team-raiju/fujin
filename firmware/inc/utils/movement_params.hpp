@@ -93,10 +93,11 @@ struct GeneralParams {
     float start_wall_break_cm_right;
     float enable_wall_break_correction;
 
-    GeneralParams() : fan_speed(0), angular_kp(0), angular_ki(0), angular_kd(0), wall_kp(0), wall_ki(0), wall_kd(0),
-                      linear_vel_kp(0), linear_vel_ki(0), linear_vel_kd(0), diagonal_walls_kp(0), diagonal_walls_ki(0),
-                      diagonal_walls_kd(0), start_wall_break_cm_left(0), start_wall_break_cm_right(0),
-                      enable_wall_break_correction(0) {}
+    GeneralParams()
+        : fan_speed(0), angular_kp(0), angular_ki(0), angular_kd(0), wall_kp(0), wall_ki(0), wall_kd(0),
+          linear_vel_kp(0), linear_vel_ki(0), linear_vel_kd(0), diagonal_walls_kp(0), diagonal_walls_ki(0),
+          diagonal_walls_kd(0), start_wall_break_cm_left(0), start_wall_break_cm_right(0),
+          enable_wall_break_correction(0) {}
 
     GeneralParams(float fan, float akp, float aki, float akd, float wkp, float wki, float wkd, float lvkp, float lvki,
                   float lvkd, float dwkp, float dwki, float dwkd, float swbcl, float swbcr, float ewbc)
@@ -106,23 +107,23 @@ struct GeneralParams {
           start_wall_break_cm_right(swbcr), enable_wall_break_correction(ewbc) {}
 };
 
-extern std::map<Movement, TurnParams> turn_params_search_slow ;
-extern std::map<Movement, ForwardParams> forward_params_search_slow ;
-extern std::map<Movement, TurnParams> turn_params_search_medium ;
-extern std::map<Movement, ForwardParams> forward_params_search_medium ;
-extern std::map<Movement, TurnParams> turn_params_search ;
-extern std::map<Movement, ForwardParams> forward_params_search ;
-extern std::map<Movement, TurnParams> turn_params_slow ;
-extern std::map<Movement, ForwardParams> forward_params_slow ;
-extern std::map<Movement, TurnParams> turn_params_medium ;
-extern std::map<Movement, ForwardParams> forward_params_medium ;
-extern std::map<Movement, TurnParams> turn_params_fast ;
-extern std::map<Movement, ForwardParams> forward_params_fast ;
-extern std::map<Movement, TurnParams> turn_params_custom ;
-extern std::map<Movement, ForwardParams> forward_params_custom ;
-extern GeneralParams general_params_search_slow ;
-extern GeneralParams general_params_search_medium ;
-extern GeneralParams general_params_search_fast ;
-extern GeneralParams general_params_slow ;
-extern GeneralParams general_params_medium ;
-extern GeneralParams general_params_fast ;
+extern std::map<Movement, TurnParams> turn_params_search_slow;
+extern std::map<Movement, ForwardParams> forward_params_search_slow;
+extern std::map<Movement, TurnParams> turn_params_search_medium;
+extern std::map<Movement, ForwardParams> forward_params_search_medium;
+extern std::map<Movement, TurnParams> turn_params_search_fast;
+extern std::map<Movement, ForwardParams> forward_params_search_fast;
+extern std::map<Movement, TurnParams> turn_params_slow;
+extern std::map<Movement, ForwardParams> forward_params_slow;
+extern std::map<Movement, TurnParams> turn_params_medium;
+extern std::map<Movement, ForwardParams> forward_params_medium;
+extern std::map<Movement, TurnParams> turn_params_fast;
+extern std::map<Movement, ForwardParams> forward_params_fast;
+extern std::map<Movement, TurnParams> turn_params_custom;
+extern std::map<Movement, ForwardParams> forward_params_custom;
+extern GeneralParams general_params_search_slow;
+extern GeneralParams general_params_search_medium;
+extern GeneralParams general_params_search_fast;
+extern GeneralParams general_params_slow;
+extern GeneralParams general_params_medium;
+extern GeneralParams general_params_fast;

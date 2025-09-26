@@ -12,7 +12,9 @@ namespace services {
 class Navigation {
 public:
     enum navigation_mode_t {
-        SEARCH,
+        SEARCH_SLOW,
+        SEARCH_MEDIUM,
+        SEARCH_FAST,
         CUSTOM,
         SLOW,
         MEDIUM,

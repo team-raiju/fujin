@@ -35,7 +35,7 @@ Navigation* Navigation::instance() {
 
 void Navigation::init() {
     control = Control::instance();
-    reset(SEARCH);
+    reset(SEARCH_SLOW);
 
     if (!is_initialized) {
         is_initialized = true;
@@ -55,9 +55,19 @@ void Navigation::reset(navigation_mode_t mode) {
     bsp::encoders::reset();
 
     switch (mode) {
-    case SEARCH:
-        turn_params = turn_params_search;
-        forward_params = forward_params_search;
+    case SEARCH_SLOW:
+        turn_params = turn_params_search_slow;
+        forward_params = forward_params_search_slow;
+        general_params = general_params_search_slow;
+        break;
+    case SEARCH_MEDIUM:
+        turn_params = turn_params_search_medium;
+        forward_params = forward_params_search_medium;
+        general_params = general_params_search_medium;
+        break;
+    case SEARCH_FAST:
+        turn_params = turn_params_search_fast;
+        forward_params = forward_params_search_fast;
         general_params = general_params_search_fast;
         break;
     case CUSTOM:
@@ -248,11 +258,11 @@ bool Navigation::step() {
 
                 float corrected_distance_cm = 0;
                 if (wall_break == WallBreak::LEFT) {
-                    corrected_distance_cm = (cells_traveled * CELL_SIZE_CM) +
-                                            general_params.start_wall_break_cm_left + complete_prev_move_travel;
+                    corrected_distance_cm = (cells_traveled * CELL_SIZE_CM) + general_params.start_wall_break_cm_left +
+                                            complete_prev_move_travel;
                 } else {
-                    corrected_distance_cm = (cells_traveled * CELL_SIZE_CM) +
-                                            general_params.start_wall_break_cm_right + complete_prev_move_travel;
+                    corrected_distance_cm = (cells_traveled * CELL_SIZE_CM) + general_params.start_wall_break_cm_right +
+                                            complete_prev_move_travel;
                 }
 
                 float distance_error_cm = current_movement_traveled - corrected_distance_cm;
