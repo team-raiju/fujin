@@ -461,6 +461,10 @@ bool Navigation::step() {
                 if (control_angular_speed_abs < 4.0) {
                     angular_deceleration *= 0.35;
                 }
+            } else if (angular_max_speed > 23.0) {
+                if (control_angular_speed_abs < 8.0) {
+                    angular_deceleration *= 0.22;
+                }
             }
 
             if (angular_max_speed > 13.0) {
@@ -636,7 +640,7 @@ void Navigation::set_movement(Movement movement, Movement prev_movement, Movemen
     }
 
     // When target travel is 0, we directly go to turn state
-    if (target_travel_cm == 0) {
+    if (target_travel_cm <= 0) {
         mini_fsm_state = MiniFSMStates::TURN;
     }
 
