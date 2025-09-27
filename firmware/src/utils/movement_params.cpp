@@ -102,7 +102,7 @@ std::map<Movement, TurnParams> turn_params_medium = {
     {Movement::TURN_RIGHT_45_FROM_45, {0.0, 5.7, 1.5, 785.40, 20.07, 0.7854, 38, 73, -1}},
     {Movement::TURN_LEFT_45_FROM_45, {0.0, 4.6, 1.5, 785.40, 20.07, 0.7854, 38, 73, 1}},
     {Movement::TURN_RIGHT_90_FROM_45, {0.0, -3.2, 1.5, 785.40, 26.18, 1.5708, 60, 114, -1}},
-    {Movement::TURN_LEFT_90_FROM_45, {0.0, -2.8, 1.5, 785.40, 26.18, 1.5708, 60, 114, 1}},
+    {Movement::TURN_LEFT_90_FROM_45, {0.0, -3.5, 1.5, 785.40, 26.18, 1.5708, 60, 114, 1}},
     {Movement::TURN_RIGHT_135_FROM_45, {0.0, 2.5, 1.5, 436.33, 20.07, 2.3562, 116, 167, -1}},
     {Movement::TURN_LEFT_135_FROM_45, {0.0, 2.1, 1.5, 436.33, 20.07, 2.3562, 116, 167, 1}},
 
@@ -124,7 +124,7 @@ std::map<Movement, ForwardParams> forward_params_medium = {
     {Movement::TURN_RIGHT_45_FROM_45, {1.5, 12.0, 20.0, 6.9}},
     {Movement::TURN_LEFT_45_FROM_45, {1.5, 12.0, 20.0, 6.4}},
     {Movement::TURN_RIGHT_90_FROM_45, {1.5, 12.0, 20.0, 3.5}},
-    {Movement::TURN_LEFT_90_FROM_45, {1.5, 12.0, 20.0, 3.5}},
+    {Movement::TURN_LEFT_90_FROM_45, {1.5, 12.0, 20.0, 3.1}},
     {Movement::TURN_RIGHT_135_FROM_45, {1.5, 12.0, 20.0, 2.8}},
     {Movement::TURN_LEFT_135_FROM_45, {1.5, 12.0, 20.0, 3.1}},
 };
