@@ -333,77 +333,7 @@ bool Navigation::step() {
     case Movement::TURN_LEFT_135:
     case Movement::TURN_RIGHT_135:
     case Movement::TURN_RIGHT_180:
-    case Movement::TURN_LEFT_180: {
-
-        // If the robot is moving too slow, we use the medium turn params.
-        // This can happen if the robot is turning right afer the start movement. TODO: generalize this function
-        auto current_turn_params = turn_params[current_movement];
-        if (bsp::encoders::get_linear_velocity_m_s() < current_turn_params.turn_linear_speed - 0.25) {
-            current_turn_params = turn_params_medium[current_movement];
-        }
-
-        // Start turn parameters
-        float angular_max_speed = current_turn_params.max_angular_speed;
-        float angular_acceleration = current_turn_params.angular_accel;
-        float angular_deceleration = current_turn_params.angular_accel;
-        float control_angular_speed_abs = std::abs(control->get_target_angular_speed());
-
-        float final_angle_rad = current_turn_params.angle_to_turn;
-        int turn_sign = current_turn_params.sign;
-
-        float angular_end_speed = 0.0;
-        float imu_incremental_angle = std::abs(bsp::imu::get_incremental_angle());
-        uint32_t elapsed_time = bsp::get_tick_ms() - reference_time;
-
-        bool acceleration_condition =
-            imu_incremental_angle <
-            (final_angle_rad -
-             get_torricelli_distance(angular_end_speed, control_angular_speed_abs, -angular_deceleration));
-
-        bool stop_condition = (imu_incremental_angle >= (final_angle_rad));
-
-        // Smoothen acceleration when going to high speeds
-        // And manually define acceleration_condition
-        // Also stop condition is based on time, as angles becomes unriliable
-        if (angular_max_speed > 17.0) {
-            if (control_angular_speed_abs < 4.0) {
-                angular_deceleration *= 0.35;
-            }
-        }
-
-        if (angular_max_speed > 13.0) {
-            acceleration_condition = (elapsed_time < current_turn_params.t_start_deccel);
-            stop_condition = (elapsed_time > current_turn_params.t_stop);
-            angular_end_speed = 0.85f;
-        } else {
-            angular_end_speed = 0.4f;
-        }
-
-        if (acceleration_condition) {
-            if (control_angular_speed_abs < angular_max_speed) {
-                control_angular_speed_abs += angular_acceleration / CONTROL_FREQUENCY_HZ;
-                control_angular_speed_abs = std::min(control_angular_speed_abs, angular_max_speed);
-            }
-        } else {
-            if (control_angular_speed_abs > angular_end_speed) {
-                control_angular_speed_abs -= angular_deceleration / CONTROL_FREQUENCY_HZ;
-                control_angular_speed_abs = std::max(control_angular_speed_abs, angular_end_speed);
-            }
-        }
-
-        control->set_target_angular_speed(control_angular_speed_abs * turn_sign);
-        control->set_wall_pid_enabled(false);
-        control->set_diagonal_pid_enabled(false);
-
-        if (stop_condition) {
-            control->set_target_angular_speed(0);
-            is_finished = true;
-        }
-
-        break;
-    }
-
-    // Complex movements that have foward and turn on same movement
+    case Movement::TURN_LEFT_180:
     case Movement::TURN_RIGHT_90_SEARCH_MODE:
     case Movement::TURN_LEFT_90_SEARCH_MODE:
     case Movement::TURN_RIGHT_45_FROM_45:
@@ -498,7 +428,13 @@ bool Navigation::step() {
             }
 
         } else if (mini_fsm_state == MiniFSMStates::TURN) {
+            // If the robot is moving too slow, we use the medium turn params.
+            // This can happen if the robot is turning right afer the start movement. TODO: generalize this function
             auto current_turn_params = turn_params[current_movement];
+            // if (bsp::encoders::get_linear_velocity_m_s() < current_turn_params.turn_linear_speed - 0.25) {
+            //     current_turn_params = turn_params_medium[current_movement];
+            // }
+
             float angular_max_speed = current_turn_params.max_angular_speed;
             float angular_acceleration = current_turn_params.angular_accel;
             float angular_deceleration = current_turn_params.angular_accel;
@@ -518,6 +454,9 @@ bool Navigation::step() {
 
             bool stop_condition = (imu_incremental_angle >= (final_angle_rad));
 
+            // Smoothen acceleration when going to high speeds
+            // And manually define acceleration_condition
+            // Also stop condition is based on time, as angles becomes unreliable
             if (angular_max_speed > 17.0) {
                 if (control_angular_speed_abs < 4.0) {
                     angular_deceleration *= 0.35;
@@ -546,6 +485,7 @@ bool Navigation::step() {
 
             control->set_target_angular_speed(control_angular_speed_abs * turn_sign);
             control->set_wall_pid_enabled(false);
+            control->set_diagonal_pid_enabled(false);
 
             if (stop_condition) {
                 if (current_movement == Movement::TURN_AROUND || current_movement == Movement::TURN_AROUND_INPLACE) {
@@ -568,6 +508,8 @@ bool Navigation::step() {
             }
         } else if (mini_fsm_state == MiniFSMStates::STABILIZE_1) { // Stop and stabilize
             control->set_wall_pid_enabled(false);
+            control->set_diagonal_pid_enabled(false);
+
             uint32_t elapsed_time = bsp::get_tick_ms() - reference_time;
             if (elapsed_time > 200) {
                 reference_time = bsp::get_tick_ms();
@@ -579,6 +521,7 @@ bool Navigation::step() {
         } else if (mini_fsm_state == MiniFSMStates::STABILIZE_2) { // Stop and stabilize
             uint32_t elapsed_time = bsp::get_tick_ms() - reference_time;
             control->set_wall_pid_enabled(false);
+            control->set_diagonal_pid_enabled(false);
             if (elapsed_time > 400) {
                 reference_time = bsp::get_tick_ms();
                 control->reset(general_params);
@@ -594,14 +537,11 @@ bool Navigation::step() {
                     mini_fsm_state = MiniFSMStates::FORWARD_2;
                 }
             }
-        }
-
-        else { // Should not reach here
+        } else { // Should not reach here
             is_finished = true;
             mini_fsm_state = MiniFSMStates::FORWARD_1;
         }
 
-        control->set_diagonal_pid_enabled(false);
         break;
     }
     }
@@ -693,6 +633,11 @@ void Navigation::set_movement(Movement movement, Movement prev_movement, Movemen
                            turn_params[next_movement].start;
     } else {
         target_travel_cm = complete_prev_move_travel + forward_params[movement].target_travel_cm;
+    }
+
+    // When target travel is 0, we directly go to turn state
+    if (target_travel_cm == 0) {
+        mini_fsm_state = MiniFSMStates::TURN;
     }
 
     if (movement == Movement::STOP) {

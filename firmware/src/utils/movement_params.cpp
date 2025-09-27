@@ -1,6 +1,5 @@
 #include "utils/movement_params.hpp"
 
-
 std::map<Movement, TurnParams> turn_params_search_slow = {
     {Movement::TURN_AROUND, {0.0, 0.0, 0.25, 52.36, 3.49, 3.1067, 0, 0, -1}},
     {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.0, 0.0, 0.25, 43.633, 4.014, 1.553, 0, 0, -1}},
@@ -55,10 +54,10 @@ std::map<Movement, ForwardParams> forward_params_search_fast = {
 std::map<Movement, TurnParams> turn_params_slow = {
     {Movement::TURN_RIGHT_45, {-5.0, -8.6, 0.5, 100.00, 7.854, 0.7854, 0, 0, -1}},
     {Movement::TURN_LEFT_45, {-5.0, -8.6, 0.5, 100.00, 7.854, 0.7854, 0, 0, 1}},
-    {Movement::TURN_RIGHT_90, {1.5, -2.2, 0.5, 104.72, 10.47, 1.553, 0, 0, -1}},
-    {Movement::TURN_LEFT_90, {1.5, -2.2, 0.5, 104.72, 10.47, 1.553, 0, 0, 1}},
-    {Movement::TURN_RIGHT_180, {-1.5, 1.5, 0.5, 100.00, 5.5850, 3.1241, 0, 0, -1}},
-    {Movement::TURN_LEFT_180, {-1.5, 1.5, 0.5, 100.00, 5.5850, 3.1241, 0, 0, 1}},
+    {Movement::TURN_RIGHT_90, {0.0, -4.1, 0.5, 104.72, 10.47, 1.553, 0, 0, -1}},
+    {Movement::TURN_LEFT_90, {0.0, -4.1, 0.5, 104.72, 10.47, 1.553, 0, 0, 1}},
+    {Movement::TURN_RIGHT_180, {0.0, 0.0, 0.5, 122.17, 5.65, 3.1241, 0, 0, -1}},
+    {Movement::TURN_LEFT_180, {0.0, 0.0, 0.5, 122.17, 5.45, 3.1241, 0, 0, 1}},
     {Movement::TURN_RIGHT_135, {-1.5, -7.6, 0.5, 100.00, 7.5049, 2.3387, 0, 0, -1}},
     {Movement::TURN_LEFT_135, {0.0, -8.6, 0.5, 100.00, 7.5049, 2.3387, 0, 0, 1}},
 
@@ -77,6 +76,9 @@ std::map<Movement, ForwardParams> forward_params_slow = {
     {Movement::DIAGONAL, {0.7, 2.0, 2.0, CELL_DIAGONAL_SIZE_CM}},
     {Movement::STOP, {0.5, 2.0, 2.0, (HALF_CELL_SIZE_CM - 1.0)}},
     {Movement::TURN_AROUND, {0.5, 2.0, 2.0, 8.0}},
+
+    {Movement::TURN_RIGHT_90, {0.5, 2.0, 2.0, 1.6}},
+    {Movement::TURN_LEFT_90, {0.5, 2.0, 2.0, 1.8}},
 
     {Movement::TURN_RIGHT_45_FROM_45, {0.5, 2.0, 2.0, 7.4}},
     {Movement::TURN_LEFT_45_FROM_45, {0.5, 2.0, 2.0, 7.4}},
@@ -236,7 +238,7 @@ GeneralParams general_params_slow = {
     0.0015, 0.0000, 0.0025, // Wall P,I,D
     5.0000, 0.0600, 0.0000, // Linear velocity P,I,D
     0.0045, 0.0000, 0.0045, // Diagonal walls P,I,D
-    6.1,                    // Start wall break cm left
+    5.3,                    // Start wall break cm left
     7.5,                    // Start wall break cm right
     1.0                     // Enable wall break correction
 };

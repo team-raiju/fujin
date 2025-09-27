@@ -151,7 +151,7 @@ State* RunMoveModeSelect::react(ButtonPressed const& event) {
             bsp::leds::stripe_set(bsp::leds::Color::Pink, bsp::leds::Color::Pink);
         } else if (move_mode == services::Navigation::DIAGONALS) {
             move_mode = services::Navigation::HARD_CODED;
-            bsp::leds::stripe_set(bsp::leds::Color::Green, bsp::leds::Color::Black);
+            bsp::leds::stripe_set(bsp::leds::Color::Red, bsp::leds::Color::Black);
         } else { // move_mode == services::Navigation::HARD_CODED
             move_mode = services::Navigation::SMOOTH;
             bsp::leds::stripe_set(bsp::leds::Color::Pink, bsp::leds::Color::Black);
@@ -162,7 +162,7 @@ State* RunMoveModeSelect::react(ButtonPressed const& event) {
     if (event.button == ButtonPressed::SHORT1) {
         if (move_mode == services::Navigation::SMOOTH) {
             move_mode = services::Navigation::HARD_CODED;
-            bsp::leds::stripe_set(bsp::leds::Color::Green, bsp::leds::Color::Black);
+            bsp::leds::stripe_set(bsp::leds::Color::Red, bsp::leds::Color::Black);
         } else if (move_mode == services::Navigation::HARD_CODED) {
             move_mode = services::Navigation::DIAGONALS;
             bsp::leds::stripe_set(bsp::leds::Color::Pink, bsp::leds::Color::Pink);

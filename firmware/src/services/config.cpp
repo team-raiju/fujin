@@ -26,9 +26,9 @@ float Config::linear_vel_kp = 8.0;
 float Config::linear_vel_ki = 0.10;
 float Config::linear_vel_kd = 0.0;
 
-float Config::diagonal_walls_kp = 0.025;
+float Config::diagonal_walls_kp = 0.0025;
 float Config::diagonal_walls_ki = 0;
-float Config::diagonal_walls_kd = 0.005;
+float Config::diagonal_walls_kd = 0.0050;
 
 float Config::min_move_speed = 0.2; // [m/s]
 
@@ -53,8 +53,8 @@ float Config::z_imu_bias = -0.4905;
 // float Config::start_wall_break_cm_left = 6.1; // 1.5m/s
 // float Config::start_wall_break_cm_right = 7.5;// 1.5m/s
 
-float Config::start_wall_break_cm_left = 6.5; // 3.0m/s
-float Config::start_wall_break_cm_right = 8.0;// 3.0m/s
+float Config::start_wall_break_cm_left = 6.5;  // 3.0m/s
+float Config::start_wall_break_cm_right = 8.0; // 3.0m/s
 float Config::enable_wall_break_correction = 1.0;
 
 // All params
@@ -124,6 +124,16 @@ static const std::map<Movement, uint16_t> forward_address_map = {
     {Movement::TURN_LEFT_90_FROM_45, bsp::eeprom::ADDR_FORWARD_PARAMS_LEFT_90_FROM_45},
     {Movement::TURN_RIGHT_135_FROM_45, bsp::eeprom::ADDR_FORWARD_PARAMS_RIGHT_135_FROM_45},
     {Movement::TURN_LEFT_135_FROM_45, bsp::eeprom::ADDR_FORWARD_PARAMS_LEFT_135_FROM_45},
+    {Movement::TURN_RIGHT_90_SEARCH_MODE, bsp::eeprom::ADDR_FORWARD_PARAMS_RIGHT_90_SEARCH},
+    {Movement::TURN_LEFT_90_SEARCH_MODE, bsp::eeprom::ADDR_FORWARD_PARAMS_LEFT_90_SEARCH},
+    {Movement::TURN_RIGHT_45, bsp::eeprom::ADDR_FORWARD_PARAMS_RIGHT_45},
+    {Movement::TURN_LEFT_45, bsp::eeprom::ADDR_FORWARD_PARAMS_LEFT_45},
+    {Movement::TURN_RIGHT_90, bsp::eeprom::ADDR_FORWARD_PARAMS_RIGHT_90},
+    {Movement::TURN_LEFT_90, bsp::eeprom::ADDR_FORWARD_PARAMS_LEFT_90},
+    {Movement::TURN_RIGHT_135, bsp::eeprom::ADDR_FORWARD_PARAMS_RIGHT_135},
+    {Movement::TURN_LEFT_135, bsp::eeprom::ADDR_FORWARD_PARAMS_LEFT_135},
+    {Movement::TURN_RIGHT_180, bsp::eeprom::ADDR_FORWARD_PARAMS_RIGHT_180},
+    {Movement::TURN_LEFT_180, bsp::eeprom::ADDR_FORWARD_PARAMS_LEFT_180},
     {Movement::TURN_AROUND_INPLACE, bsp::eeprom::ADDR_FORWARD_PARAMS_TURN_AROUND_INPLACE},
 };
 
