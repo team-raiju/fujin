@@ -90,6 +90,46 @@ std::map<Movement, ForwardParams> forward_params_slow = {
 
 std::map<Movement, TurnParams> turn_params_medium = {
 
+    {Movement::TURN_RIGHT_45, {-6.3, -8.4, 1.0, 785.40, 20.07, 0.7854, 38, 73, -1}},
+    {Movement::TURN_LEFT_45, {-6.3, -8.4, 1.0, 785.40, 20.07, 0.7854, 38, 73, 1}},
+    {Movement::TURN_RIGHT_90, {0.0, -1.0, 1.0, 785.40, 26.18, 1.5708, 60, 108, -1}},
+    {Movement::TURN_LEFT_90, {0.0, -1.4, 1.0, 785.40, 26.18, 1.5708, 60, 108, 1}},
+    {Movement::TURN_RIGHT_135, {-4.5, -5.4, 1.0, 436.33, 20.07, 2.3562, 116, 167, -1}},
+    {Movement::TURN_LEFT_135, {-4.5, -5.8, 1.0, 436.33, 20.07, 2.3562, 116, 167, 1}},
+    {Movement::TURN_RIGHT_180, {-0.7, -1.25, 1.0, 523.6, 14.25, 3.1416, 217, 242, -1}},
+    {Movement::TURN_LEFT_180, {-0.7, -1.25, 1.0, 523.6, 14.25, 3.1416, 217, 242, 1}},
+
+    {Movement::TURN_RIGHT_45_FROM_45, {0.0, 5.7, 1.0, 785.40, 20.07, 0.7854, 38, 73, -1}},
+    {Movement::TURN_LEFT_45_FROM_45, {0.0, 4.6, 1.0, 785.40, 20.07, 0.7854, 38, 73, 1}},
+    {Movement::TURN_RIGHT_90_FROM_45, {0.0, -3.2, 1.0, 785.40, 26.18, 1.5708, 60, 114, -1}},
+    {Movement::TURN_LEFT_90_FROM_45, {0.0, -3.5, 1.0, 785.40, 26.18, 1.5708, 60, 114, 1}},
+    {Movement::TURN_RIGHT_135_FROM_45, {0.0, 2.5, 1.0, 436.33, 20.07, 2.3562, 116, 167, -1}},
+    {Movement::TURN_LEFT_135_FROM_45, {0.0, 2.1, 1.0, 436.33, 20.07, 2.3562, 116, 167, 1}},
+
+    {Movement::TURN_AROUND, {0.0, 0.0, 1.0, 52.36, 3.49, 3.1416, 0, 0, -1}},
+};
+
+std::map<Movement, ForwardParams> forward_params_medium = {
+    {Movement::START, {1.0, 12.0, 20.0, HALF_CELL_SIZE_CM + ROBOT_DIST_FROM_CENTER_START_CM_FAST}},
+    {Movement::FORWARD, {3.0, 12.0, 20.0, CELL_SIZE_CM}},
+    {Movement::DIAGONAL, {2.5, 12.0, 20.0, CELL_DIAGONAL_SIZE_CM}},
+    {Movement::STOP, {1.0, 2.0, 30.0, (HALF_CELL_SIZE_CM - 1.0)}},
+    {Movement::TURN_AROUND, {1.0, 12.0, 20.0, 8.0}},
+
+    {Movement::TURN_RIGHT_90, {1.0, 12.0, 20.0, 0.7}},
+    {Movement::TURN_LEFT_90, {1.0, 12.0, 20.0, 0.7}},
+    {Movement::TURN_RIGHT_180, {1.0, 12.0, 20.0, -0.7}},
+    {Movement::TURN_LEFT_180, {1.0, 12.0, 20.0, -0.7}},
+
+    {Movement::TURN_RIGHT_45_FROM_45, {1.0, 12.0, 20.0, 6.9}},
+    {Movement::TURN_LEFT_45_FROM_45, {1.0, 12.0, 20.0, 6.4}},
+    {Movement::TURN_RIGHT_90_FROM_45, {1.0, 12.0, 20.0, 3.5}},
+    {Movement::TURN_LEFT_90_FROM_45, {1.0, 12.0, 20.0, 3.1}},
+    {Movement::TURN_RIGHT_135_FROM_45, {1.0, 12.0, 20.0, 2.8}},
+    {Movement::TURN_LEFT_135_FROM_45, {1.0, 12.0, 20.0, 3.1}},
+};
+
+std::map<Movement, TurnParams> turn_params_fast = {
     {Movement::TURN_RIGHT_45, {-6.3, -8.4, 1.5, 785.40, 20.07, 0.7854, 38, 73, -1}},
     {Movement::TURN_LEFT_45, {-6.3, -8.4, 1.5, 785.40, 20.07, 0.7854, 38, 73, 1}},
     {Movement::TURN_RIGHT_90, {0.0, -1.0, 1.3, 785.40, 26.18, 1.5708, 60, 108, -1}},
@@ -109,10 +149,10 @@ std::map<Movement, TurnParams> turn_params_medium = {
     {Movement::TURN_AROUND, {0.0, 0.0, 1.5, 52.36, 3.49, 3.1416, 0, 0, -1}},
 };
 
-std::map<Movement, ForwardParams> forward_params_medium = {
+std::map<Movement, ForwardParams> forward_params_fast = {
     {Movement::START, {1.5, 12.0, 20.0, HALF_CELL_SIZE_CM + ROBOT_DIST_FROM_CENTER_START_CM_FAST}},
     {Movement::FORWARD, {3.5, 15.0, 20.0, CELL_SIZE_CM}},
-    {Movement::DIAGONAL, {1.7, 12.0, 20.0, CELL_DIAGONAL_SIZE_CM}},
+    {Movement::DIAGONAL, {3.0, 15.0, 20.0, CELL_DIAGONAL_SIZE_CM}},
     {Movement::STOP, {1.0, 2.0, 30.0, (HALF_CELL_SIZE_CM - 1.0)}},
     {Movement::TURN_AROUND, {1.5, 12.0, 20.0, 8.0}},
 
@@ -127,46 +167,6 @@ std::map<Movement, ForwardParams> forward_params_medium = {
     {Movement::TURN_LEFT_90_FROM_45, {1.5, 12.0, 20.0, 3.1}},
     {Movement::TURN_RIGHT_135_FROM_45, {1.5, 12.0, 20.0, 2.8}},
     {Movement::TURN_LEFT_135_FROM_45, {1.5, 12.0, 20.0, 3.1}},
-};
-
-std::map<Movement, TurnParams> turn_params_fast = {
-    {Movement::TURN_RIGHT_45, {-2.0, -8.2, 1.5, 785.39, 22.69, 0.7679, 0, 0, -1}},
-    {Movement::TURN_LEFT_45, {-2.0, -8.2, 1.5, 785.39, 22.69, 0.7679, 0, 0, 1}},
-
-    {Movement::TURN_RIGHT_90, {0.0, -1.3, 1.5, 785.39, 24.96, 1.553, 0, 0, -1}},
-    {Movement::TURN_LEFT_90, {0.0, -1.3, 1.5, 785.39, 24.96, 1.553, 0, 0, 1}},
-    {Movement::TURN_RIGHT_135, {-2.9, -9.1, 1.5, 610.865, 20.94, 2.3387, 0, 0, -1}},
-    {Movement::TURN_LEFT_135, {-2.9, -9.1, 1.5, 610.865, 20.94, 2.3387, 0, 0, 1}},
-    {Movement::TURN_RIGHT_180, {-2.9, 0.2, 1.5, 610.865, 16.05, 3.1241, 0, 0, -1}},
-    {Movement::TURN_LEFT_180, {-2.9, 0.2, 1.5, 610.865, 16.05, 3.1241, 0, 0, 1}},
-
-    // Below parameters not tested
-    {Movement::TURN_RIGHT_45_FROM_45, {7.7, 5.4, 1.5, 785.39, 22.69, 0.7679, 0, 0, -1}},
-
-    {Movement::TURN_LEFT_45_FROM_45, {7.7, 5.4, 1.5, 785.39, 22.69, 0.7679, 0, 0, 1}},
-
-    {Movement::TURN_RIGHT_90_FROM_45, {4.0, -3.8, 1.5, 785.39, 24.96, 1.553, 0, 0, -1}},
-    {Movement::TURN_LEFT_90_FROM_45, {4.0, -3.8, 1.5, 785.39, 24.96, 1.553, 0, 0, 1}},
-
-    {Movement::TURN_RIGHT_135_FROM_45, {7.0, 1.0, 1.5, 610.865, 20.94, 2.3387, 0, 0, -1}},
-    {Movement::TURN_LEFT_135_FROM_45, {7.0, 1.0, 1.5, 610.865, 20.94, 2.3387, 0, 0, 1}},
-
-    {Movement::TURN_AROUND, {HALF_CELL_SIZE_CM, HALF_CELL_SIZE_CM, 0.0, 100.00, 6.981, 3.1241, 0, 0, -1}},
-};
-
-std::map<Movement, ForwardParams> forward_params_fast = {
-    {Movement::START,
-     {1.0, 5.0, 20.0,
-      HALF_CELL_SIZE_CM +
-          ROBOT_DIST_FROM_CENTER_START_CM_FAST}}, // Speed reached in the start end is = 1.0m/s (sqrt(2*5*0.11))
-
-    {Movement::FORWARD, {3.5, 15.0, 30.0, CELL_SIZE_CM}},
-
-    {Movement::DIAGONAL, {2.5, 15.0, 35.0, CELL_DIAGONAL_SIZE_CM}},
-
-    {Movement::STOP, {0.75, 2.0, 35.0, (HALF_CELL_SIZE_CM)}},
-
-    {Movement::TURN_AROUND, {0.5, 2.0, 2.0, HALF_CELL_SIZE_CM}},
 };
 
 std::map<Movement, TurnParams> turn_params_custom = {
@@ -257,8 +257,8 @@ GeneralParams general_params_medium = {
     0.0025, 0.0000, 0.0050, // Wall P,I,D
     8.0000, 0.1000, 0.0000, // Linear velocity P,I,D
     0.0045, 0.0000, 0.0045, // Diagonal walls P,I,D
-    6.5,                    // Start wall break cm left
-    8.0,                    // Start wall break cm right
+    7.0,                    // Start wall break cm left
+    7.7,                    // Start wall break cm right
     1.0                     // Enable wall break correction
 };
 
@@ -268,7 +268,7 @@ GeneralParams general_params_fast = {
     0.0025, 0.0000, 0.0050, // Wall P,I,D
     8.0000, 0.1000, 0.0000, // Linear velocity P,I,D
     0.0045, 0.0000, 0.0045, // Diagonal walls P,I,D
-    6.5,                    // Start wall break cm left
-    8.0,                    // Start wall break cm right
+    7.0,                    // Start wall break cm left
+    7.7,                    // Start wall break cm right
     1.0                     // Enable wall break correction
 };

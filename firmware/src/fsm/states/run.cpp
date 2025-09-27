@@ -290,6 +290,12 @@ void Run::enter() {
 
     move_count = 0;
     emergency = false;
+
+    auto movement = target_movements[0].first;
+    auto prev_movement = target_movements[0].first;
+    auto next_movement = target_movements[1].first;
+
+    navigation->set_movement(movement, prev_movement, next_movement, 1);
 }
 
 State* Run::react(ButtonPressed const& event) {

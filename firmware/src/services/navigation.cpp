@@ -236,9 +236,9 @@ bool Navigation::step() {
         float deceleration = forward_params[current_movement].deceleration;
         float control_linear_speed = control->get_target_linear_speed();
 
-        if (control_linear_speed < 1.0) {
-            acceleration = std::min(acceleration, 5.0f);
-        }
+        // if (control_linear_speed < 1.0) {
+        //     acceleration = std::min(acceleration, 5.0f);
+        // }
 
         if (control_linear_speed > 3.8) {
             acceleration *= 0.75;
@@ -635,6 +635,8 @@ void Navigation::set_movement(Movement movement, Movement prev_movement, Movemen
     if (movement == Movement::FORWARD || movement == Movement::DIAGONAL) {
         target_travel_cm = complete_prev_move_travel + (forward_params[movement].target_travel_cm * count) +
                            turn_params[next_movement].start;
+    } else if (movement == Movement::START) {
+        target_travel_cm = forward_params[movement].target_travel_cm + turn_params[next_movement].start;
     } else {
         target_travel_cm = complete_prev_move_travel + forward_params[movement].target_travel_cm;
     }
