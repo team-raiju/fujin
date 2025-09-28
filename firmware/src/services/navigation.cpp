@@ -468,7 +468,7 @@ bool Navigation::step() {
                 }
             }
 
-            if (angular_max_speed > 13.0) {
+            if (angular_max_speed > 10.5) {
                 acceleration_condition = (elapsed_time < current_turn_params.t_start_deccel);
                 stop_condition = (elapsed_time > current_turn_params.t_stop);
                 angular_end_speed = 0.85f;
