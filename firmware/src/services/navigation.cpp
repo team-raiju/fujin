@@ -49,11 +49,12 @@ void Navigation::reset(navigation_mode_t mode) {
     encoder_right_counter = 0;
     current_cell = {0, 0};
     complete_prev_move_travel = 0;
+    waiting_for_fast_param = false;
 
     current_direction = Direction::NORTH;
 
     bsp::encoders::reset();
-
+    selected_mode = mode;
     switch (mode) {
     case SEARCH_SLOW:
         turn_params = turn_params_search_slow;
@@ -633,9 +634,24 @@ void Navigation::set_movement(Movement movement, Movement prev_movement, Movemen
     reset_movement_variables();
 
     if (movement == Movement::FORWARD || movement == Movement::DIAGONAL) {
+        if (waiting_for_fast_param) {
+            waiting_for_fast_param = false;
+            turn_params = turn_params_fast;
+            forward_params = forward_params_fast;
+            general_params = general_params_fast;
+        }
         target_travel_cm = complete_prev_move_travel + (forward_params[movement].target_travel_cm * count) +
                            turn_params[next_movement].start;
     } else if (movement == Movement::START) {
+        if (next_movement == Movement::TURN_LEFT_135 || next_movement == Movement::TURN_RIGHT_135 ||
+            next_movement == Movement::TURN_LEFT_45 || next_movement == Movement::TURN_RIGHT_45) {
+            if (selected_mode == FAST) {
+                waiting_for_fast_param = true;
+                turn_params = turn_params_medium;
+                forward_params = forward_params_medium;
+                general_params = general_params_medium;
+            }
+        }
         target_travel_cm = forward_params[movement].target_travel_cm + turn_params[next_movement].start;
     } else {
         target_travel_cm = complete_prev_move_travel + forward_params[movement].target_travel_cm;

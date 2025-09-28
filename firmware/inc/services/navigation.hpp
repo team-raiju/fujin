@@ -139,6 +139,9 @@ private:
     MiniFSMStates mini_fsm_state = MiniFSMStates::FORWARD_1;
 
     std::vector<std::pair<Movement, uint8_t>> hardcoded_movements;
+
+    bool waiting_for_fast_param = false;
+    navigation_mode_t selected_mode;
 };
 
 }
