@@ -456,8 +456,6 @@ bool Navigation::step() {
             bool stop_condition = (imu_incremental_angle >= (final_angle_rad));
 
             // Smoothen acceleration when going to high speeds
-            // And manually define acceleration_condition
-            // Also stop condition is based on time, as angles becomes unreliable
             if (angular_max_speed > 17.0) {
                 if (control_angular_speed_abs < 4.0) {
                     angular_deceleration *= 0.35;
@@ -468,12 +466,13 @@ bool Navigation::step() {
                 }
             }
 
-            if (angular_max_speed > 10.5) {
+            // Stop condition is based on time on high speeds, as angles becomes unreliable
+            if ((selected_mode == SEARCH_SLOW) || (selected_mode == SEARCH_MEDIUM)|| (selected_mode == SLOW)) {
+                angular_end_speed = 0.4f;
+            } else {
                 acceleration_condition = (elapsed_time < current_turn_params.t_start_deccel);
                 stop_condition = (elapsed_time > current_turn_params.t_stop);
                 angular_end_speed = 0.85f;
-            } else {
-                angular_end_speed = 0.4f;
             }
 
             if (acceleration_condition) {
