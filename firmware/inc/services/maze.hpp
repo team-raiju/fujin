@@ -37,11 +37,15 @@ public:
 
     algorithm::Grid<CELLS_X, CELLS_Y> map;
 
+    algorithm::Grid<CELLS_X, CELLS_Y> map_backup;
+
     std::vector<Direction> directions_to_goal();
 
-    void save_maze_to_memory();
+    void save_maze_to_memory(bool backup);
     
-    void read_maze_from_memory();
+    void read_maze_from_memory(bool backup);
+
+    void create_maze_backup();
 
     void reset();
 

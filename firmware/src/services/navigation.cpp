@@ -420,7 +420,9 @@ bool Navigation::step() {
                         traveled_dist_cm = 0;
                         reference_time = bsp::get_tick_ms();
                         mini_fsm_state = MiniFSMStates::TURN;
-                        bsp::leds::stripe_set(Color::Blue);
+                        if (selected_mode != SEARCH_FAST){
+                            bsp::leds::stripe_set(Color::Blue);
+                        }
                     } else {
                         is_finished = true;
                         mini_fsm_state = MiniFSMStates::FORWARD_1;
@@ -456,18 +458,18 @@ bool Navigation::step() {
             bool stop_condition = (imu_incremental_angle >= (final_angle_rad));
 
             // Smoothen acceleration when going to high speeds
-            if (angular_max_speed > 17.0) {
+            if (angular_max_speed > 17.0 && (selected_mode != SEARCH_FAST)) {
                 if (control_angular_speed_abs < 4.0) {
                     angular_deceleration *= 0.35;
                 }
-            } else if (angular_max_speed > 23.0) {
+            } else if (angular_max_speed > 23.0 && (selected_mode != SEARCH_FAST)) {
                 if (control_angular_speed_abs < 8.0) {
                     angular_deceleration *= 0.22;
                 }
             }
 
             // Stop condition is based on time on high speeds, as angles becomes unreliable
-            if ((selected_mode == SEARCH_SLOW) || (selected_mode == SEARCH_MEDIUM)|| (selected_mode == SLOW)) {
+            if ((selected_mode == SEARCH_SLOW) || (selected_mode == SEARCH_MEDIUM)|| (selected_mode == SLOW) || (selected_mode == SEARCH_FAST)) {
                 angular_end_speed = 0.4f;
             } else {
                 acceleration_condition = (elapsed_time < current_turn_params.t_start_deccel);
@@ -501,7 +503,7 @@ bool Navigation::step() {
                            current_movement == Movement::TURN_LEFT_90_SEARCH_MODE) {
                     control->set_target_angular_speed(0);
                     // target_travel_cm for FORWARD_2 is based on the calculated position
-                    target_travel_cm = HALF_CELL_SIZE_CM - (std::abs(current_position_mm.y) / 10.0f);
+                    target_travel_cm = (HALF_CELL_SIZE_CM - (std::abs(current_position_mm.y) / 10.0f)) + 0.4;
                     reference_time = bsp::get_tick_ms();
                     traveled_dist_cm = 0;
                     mini_fsm_state = MiniFSMStates::FORWARD_2;

@@ -9,7 +9,7 @@ namespace bsp::encoders {
 // Min measured vel is ENCODER_DIST_MM_PULSE / 10 = 0.00776 m/s
 static constexpr uint32_t MAX_TIME_WITHOUT_ENCODER_US = 10000;
 
-static constexpr float WHEEL_RADIUS_CM = (1.275);
+static constexpr float WHEEL_RADIUS_CM = (1.255);
 static constexpr float WHEEL_RADIUS_M = (WHEEL_RADIUS_CM / 100.0);
 static constexpr float WHEEL_PERIMETER_CM = (M_TWOPI * WHEEL_RADIUS_CM);
 

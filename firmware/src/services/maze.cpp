@@ -1,5 +1,6 @@
 #include <cstdint>
 #include <cstdio>
+#include <cstring>
 #include <functional>
 #include <queue>
 #include <utility>
@@ -31,26 +32,39 @@ void Maze::reset() {
             map[x][y].east = nullptr;
             map[x][y].south = nullptr;
             map[x][y].west = nullptr;
+
+            map_backup[x][y].walls = 0;
+            map_backup[x][y].visited = false;
+            map_backup[x][y].distance = 255;
+            map_backup[x][y].north = nullptr;
+            map_backup[x][y].east = nullptr;
+            map_backup[x][y].south = nullptr;
+            map_backup[x][y].west = nullptr;
         }
     }
 
     for (int x = 0; x < CELLS_X; x++) {
         for (int y = 0; y < CELLS_Y; y++) {
             auto& cell = map[x][y];
+            auto& cell_backup = map_backup[x][y];
             if (x > 0) {
                 cell.west = &map[x - 1][y];
+                cell_backup.west = &map_backup[x - 1][y];
             }
 
             if (x < CELLS_X - 1) {
                 cell.east = &map[x + 1][y];
+                cell_backup.east = &map_backup[x + 1][y];
             }
 
             if (y > 0) {
                 cell.south = &map[x][y - 1];
+                cell_backup.south = &map_backup[x][y - 1];
             }
 
             if (y < CELLS_Y - 1) {
                 cell.north = &map[x][y + 1];
+                cell_backup.north = &map_backup[x][y + 1];
             }
         }
     }
@@ -158,28 +172,35 @@ std::vector<Direction> Maze::directions_to_goal() {
     return target_directions;
 }
 
-void Maze::save_maze_to_memory() {
+void Maze::save_maze_to_memory(bool backup) {
     uint8_t data[4];
     for (int x = 0; x < CELLS_X; x++) {
         for (int y = 0; y < CELLS_Y; y++) {
-            auto& cell = map[x][y];
+            auto& cell = backup ? map_backup[x][y] : map[x][y];
             data[0] = cell.walls;
             data[1] = cell.visited;
             data[2] = cell.distance;
             data[3] = 0;
-            bsp::eeprom::write_u32(bsp::eeprom::param_addresses_t::ADDR_MAZE_START + 4 * (x * CELLS_Y + y),
-                                   *(uint32_t*)data);
+            auto base_addr = backup ? bsp::eeprom::param_addresses_t::ADDR_MAZE_BACKUP_START
+                                    : bsp::eeprom::param_addresses_t::ADDR_MAZE_START;
+            bsp::eeprom::write_u32(base_addr + 4 * (x * CELLS_Y + y), *(uint32_t*)data);
             bsp::delay_ms(5);
         }
     }
 }
 
-void Maze::read_maze_from_memory() {
+void Maze::create_maze_backup() {
+    std::memcpy(map_backup, map, sizeof(map));
+}
+
+void Maze::read_maze_from_memory(bool backup) {
     this->reset();
     uint8_t data[4];
+    auto base_addr = backup ? bsp::eeprom::param_addresses_t::ADDR_MAZE_BACKUP_START
+                            : bsp::eeprom::param_addresses_t::ADDR_MAZE_START;
     for (int x = 0; x < CELLS_X; x++) {
         for (int y = 0; y < CELLS_Y; y++) {
-            bsp::eeprom::read_u32(bsp::eeprom::param_addresses_t::ADDR_MAZE_START + 4 * (x * CELLS_Y + y),
+            bsp::eeprom::read_u32(base_addr + 4 * (x * CELLS_Y + y),
                                   (uint32_t*)data);
             map[x][y].walls = data[0];
             map[x][y].visited = data[1];

@@ -44,7 +44,7 @@ ADDR_WALL_KP: 0.0020000
 ADDR_WALL_KI: 0.000000
 ADDR_WALL_KD: 0.0040000
 ADDR_LINEAR_VEL_KP: 8.000000
-ADDR_LINEAR_VEL_KI: 0.11000
+ADDR_LINEAR_VEL_KI: 0.10000
 ADDR_LINEAR_VEL_KD: 0.000000
 ADDR_DIAGONAL_WALLS_KP: 0.000000
 ADDR_DIAGONAL_WALLS_KI: 0.000000
@@ -159,4 +159,7 @@ constexpr std::array<SensingPattern, 8> ir_wall_patterns = {{
     {349, 35, 261, 1326},   // R
     {357, 66, 238, 643}     // None
 }};
+
+min_move_speed = 0.2
+z_imu_bias = -0.4905
 

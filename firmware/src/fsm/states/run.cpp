@@ -276,7 +276,7 @@ void Run::enter() {
 
     logger->init();
 
-    maze->read_maze_from_memory();
+    maze->read_maze_from_memory(false);
     maze->print(maze->ORIGIN);
     target_directions = maze->directions_to_goal();
     maze->print(maze->ORIGIN);

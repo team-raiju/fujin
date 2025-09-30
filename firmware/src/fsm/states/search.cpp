@@ -199,6 +199,9 @@ void Search::enter() {
     bsp::delay_ms(2000);
     bsp::buzzer::stop();
 
+    services::Control::instance()->start_fan();
+    bsp::delay_ms(500);
+
     soft_timer::start(1, soft_timer::CONTINUOUS);
 
     returning = false;
@@ -279,6 +282,7 @@ State* Search::react(Timeout const&) {
             bsp::buzzer::start();
             save_maze = true;
             returning = true;
+            maze->create_maze_backup();
         }
 
         if (robot_cell_pos == services::Maze::ORIGIN && returning) {
@@ -317,7 +321,8 @@ void Search::exit() {
     soft_timer::stop();
     if (save_maze) {
         bsp::buzzer::start();
-        maze->save_maze_to_memory();
+        maze->save_maze_to_memory(true);
+        maze->save_maze_to_memory(false);
         bsp::delay_ms(500);
         bsp::buzzer::stop();
     }

@@ -53,8 +53,16 @@ State* Idle::react(ButtonPressed const& event) {
     if (event.button == ButtonPressed::LONG2) {
         services::Config::send_parameters();
         auto maze = services::Maze::instance();
-        maze->read_maze_from_memory();
+        std::printf("Maze backup: \r\n");
+        bsp::delay_ms(5);
+        maze->read_maze_from_memory(true);
         maze->print(maze->ORIGIN);
+        
+        std::printf("Maze: \r\n");
+        bsp::delay_ms(5);
+        maze->read_maze_from_memory(false);
+        maze->print(maze->ORIGIN);
+
         services::Notification::instance()->send_maze();
     }
 
