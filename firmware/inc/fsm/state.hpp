@@ -141,6 +141,7 @@ private:
         PARAM_SLOW,
         PARAM_MEDIUM ,
         PARAM_FAST,
+        PARAM_SUPER,
     };
 
     param_type_t param_type;

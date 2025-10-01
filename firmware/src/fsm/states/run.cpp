@@ -80,7 +80,10 @@ State* RunParamSelect::react(ButtonPressed const& event) {
         } else if (param_type == PARAM_MEDIUM) {
             param_type = PARAM_FAST;
             bsp::leds::stripe_set(bsp::leds::Color::Orange, bsp::leds::Color::Orange);
-        } else { // param_type == PARAM_FAST
+        } else if (param_type == PARAM_FAST) {
+            param_type = PARAM_SUPER;
+            bsp::leds::stripe_set(bsp::leds::Color::White, bsp::leds::Color::White);
+        } else { // param_type == PARAM_SUPER
             param_type = PARAM_CUSTOM;
             bsp::leds::stripe_set(bsp::leds::Color::Blue, bsp::leds::Color::Black);
         }
@@ -89,6 +92,9 @@ State* RunParamSelect::react(ButtonPressed const& event) {
 
     if (event.button == ButtonPressed::SHORT1) {
         if (param_type == PARAM_CUSTOM) {
+            param_type = PARAM_SUPER;
+            bsp::leds::stripe_set(bsp::leds::Color::White, bsp::leds::Color::White);
+        } else if (param_type == PARAM_SUPER) {
             param_type = PARAM_FAST;
             bsp::leds::stripe_set(bsp::leds::Color::Orange, bsp::leds::Color::Orange);
         } else if (param_type == PARAM_FAST) {
@@ -121,6 +127,10 @@ State* RunParamSelect::react(ButtonPressed const& event) {
         case PARAM_FAST:
             navigation->reset(services::Navigation::FAST);
             std::printf("Fast params\r\n");
+            break;
+        case PARAM_SUPER:
+            navigation->reset(services::Navigation::SUPER);
+            std::printf("Super params\r\n");
             break;
         }
         return &State::get<RunMoveModeSelect>();

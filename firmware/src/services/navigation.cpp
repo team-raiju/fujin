@@ -108,6 +108,11 @@ void Navigation::reset(navigation_mode_t mode) {
         forward_params = forward_params_fast;
         general_params = general_params_fast;
         break;
+    case SUPER:
+        turn_params = turn_params_super;
+        forward_params = forward_params_super;
+        general_params = general_params_super;
+        break;
     }
 
     control->reset(general_params);
@@ -664,16 +669,22 @@ void Navigation::set_movement(Movement movement, Movement prev_movement, Movemen
     if (movement == Movement::FORWARD || movement == Movement::DIAGONAL) {
         if (waiting_for_fast_param) {
             waiting_for_fast_param = false;
-            turn_params = turn_params_fast;
-            forward_params = forward_params_fast;
-            general_params = general_params_fast;
+            if (selected_mode == FAST) {
+                turn_params = turn_params_fast;
+                forward_params = forward_params_fast;
+                general_params = general_params_fast;
+            } else if (selected_mode == SUPER) {
+                turn_params = turn_params_super;
+                forward_params = forward_params_super;
+                general_params = general_params_super;
+            }
         }
         target_travel_cm = complete_prev_move_travel + (forward_params[movement].target_travel_cm * count) +
                            turn_params[next_movement].start;
     } else if (movement == Movement::START) {
         if (next_movement == Movement::TURN_LEFT_135 || next_movement == Movement::TURN_RIGHT_135 ||
             next_movement == Movement::TURN_LEFT_45 || next_movement == Movement::TURN_RIGHT_45) {
-            if (selected_mode == FAST) {
+            if ((selected_mode == FAST) || (selected_mode == SUPER)) {
                 waiting_for_fast_param = true;
                 turn_params = turn_params_medium;
                 forward_params = forward_params_medium;

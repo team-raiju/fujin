@@ -19,6 +19,7 @@ public:
         SLOW,
         MEDIUM,
         FAST,
+        SUPER
     };
 
     enum target_movement_mode_t {
