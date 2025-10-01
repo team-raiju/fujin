@@ -197,6 +197,17 @@ public:
 private:
 };
 
+class RunMapSelect : public State {
+public:
+    RunMapSelect();
+
+    void enter() override;
+
+    State* react(ButtonPressed const&) override;
+
+private:
+};
+
 /// @section Calib States
 class PreCalib : public State {
 public:

@@ -27,6 +27,7 @@ namespace fsm {
 static bool indicate_read = false;
 static uint32_t last_indication = 0;
 static services::Navigation::target_movement_mode_t move_mode = services::Navigation::SMOOTH;
+static bool map_backup = false;
 
 void PreRun::enter() {
 
@@ -198,11 +199,58 @@ State* RunMoveModeSelect::react(ButtonPressed const& event) {
         default:
             break;
         }
-        return &State::get<RunWaitStart>();
+        return &State::get<RunMapSelect>();
     }
 
     if (event.button == ButtonPressed::LONG2) {
         return &State::get<RunParamSelect>();
+    }
+
+    return nullptr;
+}
+
+RunMapSelect::RunMapSelect() {
+    map_backup = false;
+
+}
+
+void RunMapSelect::enter() {
+    // When entering the state, set the LED for the default selection: SMOOTH (Green, Black)
+    bsp::leds::stripe_set(bsp::leds::Color::Yellow, bsp::leds::Color::Black);
+    map_backup = false;
+    std::printf("state:RunMapSelect\r\n");
+}
+
+State* RunMapSelect::react(ButtonPressed const& event) {
+
+    if (event.button == ButtonPressed::SHORT2) {
+        if (!map_backup) {
+            map_backup = true;
+            bsp::leds::stripe_set(bsp::leds::Color::Yellow, bsp::leds::Color::Yellow);
+        } else {
+            map_backup = false;
+            bsp::leds::stripe_set(bsp::leds::Color::Yellow, bsp::leds::Color::Black);
+        }
+        return nullptr;
+    }
+
+    if (event.button == ButtonPressed::SHORT1) {
+        if (!map_backup) {
+            map_backup = true;
+            bsp::leds::stripe_set(bsp::leds::Color::Yellow, bsp::leds::Color::Yellow);
+        } else {
+            map_backup = false;
+            bsp::leds::stripe_set(bsp::leds::Color::Yellow, bsp::leds::Color::Black);
+        }
+        return nullptr;
+    }
+
+    if (event.button == ButtonPressed::LONG1) {
+        return &State::get<RunWaitStart>();
+    }
+
+    if (event.button == ButtonPressed::LONG2) {
+        return &State::get<RunMoveModeSelect>();
     }
 
     return nullptr;
@@ -286,7 +334,7 @@ void Run::enter() {
 
     logger->init();
 
-    maze->read_maze_from_memory(false);
+    maze->read_maze_from_memory(map_backup);
     maze->print(maze->ORIGIN);
     target_directions = maze->directions_to_goal();
     maze->print(maze->ORIGIN);

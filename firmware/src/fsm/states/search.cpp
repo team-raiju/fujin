@@ -27,7 +27,7 @@ namespace fsm {
 
 static bool indicate_read = false;
 static uint32_t last_indication = 0;
-static uint32_t full_explore = false;
+static bool full_explore = false;
 
 void PreSearch::enter() {
 
