@@ -78,13 +78,52 @@ private:
     enum param_type_t {
         PARAM_CUSTOM,
         PARAM_SLOW,
-        PARAM_MEDIUM ,
+        PARAM_MEDIUM,
         PARAM_FAST,
     };
 
     param_type_t param_type;
     services::Navigation* navigation;
+};
 
+class SearchExploreModeSelect : public State {
+public:
+    SearchExploreModeSelect();
+
+    void enter() override;
+
+    State* react(ButtonPressed const&) override;
+
+private:
+    enum explore_type_t {
+        EXPLORE_NORMAL,
+        EXPLORE_FULL
+    };
+
+    explore_type_t explore_type;
+    services::Navigation* navigation;
+};
+
+class Search : public State {
+public:
+    Search();
+
+    void enter() override;
+    void exit() override;
+
+    State* react(BleCommand const&) override;
+    State* react(ButtonPressed const&) override;
+    State* react(Timeout const&) override;
+
+private:
+    services::Navigation* navigation;
+    services::Notification* notification;
+    services::Maze* maze;
+    bool returning;
+    Point target;
+    bool save_maze;
+    bool stop_next_move;
+    bool emergency = false;
 };
 
 /// @section Run States
@@ -104,7 +143,6 @@ public:
     State* react(ButtonPressed const&) override;
     State* react(Timeout const&) override;
 };
-
 
 class Run : public State {
 public:
@@ -139,14 +177,13 @@ private:
     enum param_type_t {
         PARAM_CUSTOM,
         PARAM_SLOW,
-        PARAM_MEDIUM ,
+        PARAM_MEDIUM,
         PARAM_FAST,
         PARAM_SUPER,
     };
 
     param_type_t param_type;
     services::Navigation* navigation;
-
 };
 
 class RunMoveModeSelect : public State {
@@ -158,34 +195,9 @@ public:
     State* react(ButtonPressed const&) override;
 
 private:
-
 };
 
-/// @section Search States
-
-class Search : public State {
-public:
-    Search();
-
-    void enter() override;
-    void exit() override;
-
-    State* react(BleCommand const&) override;
-    State* react(ButtonPressed const&) override;
-    State* react(Timeout const&) override;
-
-private:
-    services::Navigation* navigation;
-    services::Notification* notification;
-    services::Maze* maze;
-    bool returning;
-    bool save_maze;
-    bool stop_next_move;
-    bool emergency = false;
-};
-
-///
-
+/// @section Calib States
 class PreCalib : public State {
 public:
     PreCalib();
@@ -205,11 +217,7 @@ public:
     State* react(ButtonPressed const&) override;
 
 private:
-    enum calibration_mode_t {
-        IR_CALIBRATION,
-        IMU_CALIBRATION,
-        FAN_CALIBRATION
-    };
+    enum calibration_mode_t { IR_CALIBRATION, IMU_CALIBRATION, FAN_CALIBRATION };
 
     calibration_mode_t calibration_mode;
 };

@@ -39,9 +39,9 @@ constexpr std::array<SensingPattern, 8> ir_wall_patterns = {{
     {500, 685, 1247, 1367}, // F-R
     {500, 710, 1200, 600},  // F
     {805, 67, 246, 1336},   // L-R
-    {741, 28, 37, 640},     // L
+    {741, 28, 37, 800},     // L
     {349, 35, 261, 1326},   // R
-    {357, 66, 238, 643}     // None
+    {357, 66, 238, 800}     // None
 }};
 
 typedef void (*bsp_analog_ready_callback_t)(void);

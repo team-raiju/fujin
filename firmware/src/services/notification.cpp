@@ -44,7 +44,7 @@ void Notification::send_maze() {
                 bsp::ble::BlePacketType::MazeData,
                 (uint8_t)((x << 4) | y),
                 maze->map[x][y].walls,
-                maze->map[x][y].visited,
+                maze->map[x][y].visited(),
                 maze->map[x][y].distance,
                 0,
                 0,
@@ -54,7 +54,7 @@ void Notification::send_maze() {
 
             data[6] = (uint8_t)((x << 4) | y);
             data[7] = maze->map[x][y].walls;
-            data[8] = maze->map[x][y].visited;
+            data[8] = maze->map[x][y].visited();
             data[9] = maze->map[x][y].distance;
 
             bsp::ble::transmit(data, sizeof(data));
@@ -83,7 +83,7 @@ void Notification::update(bool ignore_maze) {
             bsp::ble::BlePacketType::MazeData,
             (uint8_t)((last_x << 4) | last_y),
             maze->map[last_x][last_y].walls,
-            maze->map[last_x][last_y].visited,
+            maze->map[last_x][last_y].visited(),
             maze->map[last_x][last_y].distance,
             0,
             0,
@@ -105,7 +105,7 @@ void Notification::update(bool ignore_maze) {
 
         data[6] = (uint8_t)((last_x << 4) | last_y);
         data[7] = maze->map[last_x][last_y].walls;
-        data[8] = maze->map[last_x][last_y].visited;
+        data[8] = maze->map[last_x][last_y].visited();
         data[9] = maze->map[last_x][last_y].distance;
 
         bsp::ble::transmit(data, sizeof(data));

@@ -26,7 +26,7 @@ void Maze::reset() {
     for (int x = 0; x < CELLS_X; x++) {
         for (int y = 0; y < CELLS_Y; y++) {
             map[x][y].walls = 0;
-            map[x][y].visited = false;
+            map[x][y].known_walls = 0;
             map[x][y].distance = 255;
             map[x][y].north = nullptr;
             map[x][y].east = nullptr;
@@ -34,7 +34,7 @@ void Maze::reset() {
             map[x][y].west = nullptr;
 
             map_backup[x][y].walls = 0;
-            map_backup[x][y].visited = false;
+            map_backup[x][y].known_walls = 0;
             map_backup[x][y].distance = 255;
             map_backup[x][y].north = nullptr;
             map_backup[x][y].east = nullptr;
@@ -66,16 +66,56 @@ void Maze::reset() {
                 cell.north = &map[x][y + 1];
                 cell_backup.north = &map_backup[x][y + 1];
             }
+
+            // Populate outer walls
+            if (x == 0) {
+                cell.walls |= Walls::W;
+                cell.known_walls |= Walls::W;
+                cell_backup.walls |= Walls::W;
+                cell_backup.known_walls |= Walls::W;
+            }
+
+            if (x == CELLS_X - 1) {
+                cell.walls |= Walls::E;
+                cell.known_walls |= Walls::E;
+                cell_backup.walls |= Walls::E;
+                cell_backup.known_walls |= Walls::E;
+            }
+
+            if (y == 0) {
+                cell.walls |= Walls::S;
+                cell.known_walls |= Walls::S;
+                cell_backup.walls |= Walls::S;
+                cell_backup.known_walls |= Walls::S;
+            }
+
+            if (y == CELLS_Y - 1) {
+                cell.walls |= Walls::N;
+                cell.known_walls |= Walls::N;
+                cell_backup.walls |= Walls::N;
+                cell_backup.known_walls |= Walls::N;
+            }
         }
     }
 
     // We always start facing north, with walls to our back, left and right
     map[0][0].update_walls(Walls::E | Walls::W | Walls::S);
-    map[0][0].visited = true;
+    map[0][0].known_walls = 0b1111;
 }
 
-Direction Maze::next_step(Point const& current_position, uint8_t walls, bool returning, bool search_mode) {
-    static RingBuffer<Point, 32> to_visit;
+Direction Maze::next_step(Point const& current_position, uint8_t walls, std::span<const Point> const& targets,
+                          bool search_mode) {
+    algorithm::Cell& cell = map[current_position.x][current_position.y];
+
+    bool target_reached = std::any_of(std::begin(targets), std::end(targets),
+                                      [&](const Point& target) { return target == current_position; });
+
+    if (target_reached) {
+        if (search_mode) {
+            cell.update_walls(walls);
+        }
+        return Direction::STOP;
+    }
 
     // The only option in the origin is always north, don't waste time calculating
     if (current_position == ORIGIN) {
@@ -83,18 +123,12 @@ Direction Maze::next_step(Point const& current_position, uint8_t walls, bool ret
     }
 
     // Update our grid
-    algorithm::Cell& cell = map[current_position.x][current_position.y];
     if (search_mode) {
         cell.update_walls(walls);
-        cell.visited = true;
     }
 
     // Recalculate the distances
-    if (returning) {
-        algorithm::flood_fill(map, ORIGIN_ARRAY, search_mode);
-    } else {
-        algorithm::flood_fill(map, GOAL_POSITIONS, search_mode);
-    }
+    algorithm::flood_fill(map, targets, search_mode);
 
     // Check all directions for the best option
     static constexpr Point Δ[4] = {{0, 1}, {-1, 0}, {0, -1}, {1, 0}};
@@ -120,13 +154,13 @@ Direction Maze::next_step(Point const& current_position, uint8_t walls, bool ret
         auto& neighbour = map[position.x][position.y];
 
         // In run mode, we don't visit cells that have not been visited before
-        if (!search_mode && !neighbour.visited) {
+        if (!search_mode && !neighbour.visited()) {
             continue;
         }
 
         // TODO: Prioritize the current direction
         // We prioritize cells with smallest values and then unvisited cells if there's a tie
-        tprio = neighbour.visited ? 1 : 2;
+        tprio = neighbour.visited() ? 1 : 2;
         if (neighbour.distance < smallest) {
             smallest = neighbour.distance;
             next_direction = d;
@@ -140,6 +174,27 @@ Direction Maze::next_step(Point const& current_position, uint8_t walls, bool ret
     return next_direction;
 }
 
+Point Maze::closest_unvisited(Point const& current_position) {
+    algorithm::flood_fill(map, std::span<const Point>{&current_position, 1}, true);
+
+    int closest_dist = 255;
+    auto closest_point = ORIGIN;
+    for (int x = 0; x < CELLS_X; x++) {
+        for (int y = 0; y < CELLS_Y; y++) {
+            if (map[x][y].visited()) {
+                continue;
+            }
+
+            if (map[x][y].distance < closest_dist) {
+                closest_dist = map[x][y].distance;
+                closest_point = {x, y};
+            }
+        }
+    }
+
+    return closest_point;
+}
+
 std::vector<Direction> Maze::directions_to_goal() {
     std::vector<Direction> target_directions = {};
     Point pos = {ORIGIN.x, ORIGIN.y + 1}; // start from the cell (0,1)
@@ -147,7 +202,7 @@ std::vector<Direction> Maze::directions_to_goal() {
     bool goal_reached = false;
 
     while (!goal_reached) {
-        auto dir = next_step(pos, map[pos.x][pos.y].walls, false, false);
+        auto dir = next_step(pos, map[pos.x][pos.y].walls, services::Maze::GOAL_POSITIONS, false);
         target_directions.push_back(dir);
         switch (dir) {
         case Direction::NORTH:
@@ -161,6 +216,8 @@ std::vector<Direction> Maze::directions_to_goal() {
             break;
         case Direction::WEST:
             pos.x -= 1;
+            break;
+        case Direction::STOP:
             break;
         }
 
@@ -178,7 +235,7 @@ void Maze::save_maze_to_memory(bool backup) {
         for (int y = 0; y < CELLS_Y; y++) {
             auto& cell = backup ? map_backup[x][y] : map[x][y];
             data[0] = cell.walls;
-            data[1] = cell.visited;
+            data[1] = cell.known_walls;
             data[2] = cell.distance;
             data[3] = 0;
             auto base_addr = backup ? bsp::eeprom::param_addresses_t::ADDR_MAZE_BACKUP_START
@@ -202,7 +259,7 @@ void Maze::read_maze_from_memory(bool backup) {
         for (int y = 0; y < CELLS_Y; y++) {
             bsp::eeprom::read_u32(base_addr + 4 * (x * CELLS_Y + y), (uint32_t*)data);
             map[x][y].walls = data[0];
-            map[x][y].visited = data[1];
+            map[x][y].known_walls = data[1];
             map[x][y].distance = data[2];
             bsp::delay_ms(5);
         }
@@ -213,7 +270,7 @@ void Maze::print(Point const& curr) {
     for (int y = (CELLS_Y - 1); y >= 0; y--) {
         // Top
         for (int x = 0; x < CELLS_X; x++) {
-            std::printf(map[x][y].visited ? "\033[33m" : "\033[34m");
+            std::printf(map[x][y].visited() ? "\033[33m" : "\033[34m");
             std::printf(map[x][y].walls & N ? "+---+" : "+   +");
         }
 
@@ -222,7 +279,7 @@ void Maze::print(Point const& curr) {
 
         // Left, value, right
         for (int x = 0; x < CELLS_X; x++) {
-            std::printf(map[x][y].visited ? "\033[33m" : "\033[34m");
+            std::printf(map[x][y].visited() ? "\033[33m" : "\033[34m");
             std::printf(map[x][y].walls & W ? "|" : " ");
 
             if (curr == Point{x, y}) {
@@ -231,7 +288,7 @@ void Maze::print(Point const& curr) {
 
             std::printf("%- 3d", map[x][y].distance);
 
-            std::printf(map[x][y].visited ? "\033[33m" : "\033[34m");
+            std::printf(map[x][y].visited() ? "\033[33m" : "\033[34m");
             std::printf(map[x][y].walls & E ? "|" : " ");
         }
 
@@ -240,7 +297,7 @@ void Maze::print(Point const& curr) {
 
         // Print bottom borders
         for (int x = 0; x < CELLS_X; x++) {
-            std::printf(map[x][y].visited ? "\033[33m" : "\033[34m");
+            std::printf(map[x][y].visited() ? "\033[33m" : "\033[34m");
             std::printf(map[x][y].walls & S ? "+---+" : "+   +");
         }
 

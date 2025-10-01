@@ -25,6 +25,10 @@ using services::Navigation;
 
 namespace fsm {
 
+static bool indicate_read = false;
+static uint32_t last_indication = 0;
+static uint32_t full_explore = false;
+
 void PreSearch::enter() {
 
     bsp::debug::print("state:PreSearch");
@@ -120,11 +124,66 @@ State* SearchParamSelect::react(ButtonPressed const& event) {
             std::printf("Fast params\r\n");
             break;
         }
-        return &State::get<SearchWaitStart>();
+        return &State::get<SearchExploreModeSelect>();
     }
 
     if (event.button == ButtonPressed::LONG2) {
         return &State::get<PreSearch>();
+    }
+    return nullptr;
+}
+
+SearchExploreModeSelect::SearchExploreModeSelect() {
+    navigation = services::Navigation::instance();
+    explore_type = EXPLORE_NORMAL;
+    full_explore = false;
+}
+
+void SearchExploreModeSelect::enter() {
+    bsp::leds::stripe_set(bsp::leds::Color::Pink, bsp::leds::Color::Black);
+    explore_type = EXPLORE_NORMAL;
+    bsp::debug::print("state:SearchExploreModeSelect");
+}
+
+State* SearchExploreModeSelect::react(ButtonPressed const& event) {
+    if (event.button == ButtonPressed::SHORT2) {
+        if (explore_type == EXPLORE_NORMAL) {
+            explore_type = EXPLORE_FULL;
+            bsp::leds::stripe_set(bsp::leds::Color::Pink, bsp::leds::Color::Pink);
+        } else {
+            explore_type = EXPLORE_NORMAL;
+            bsp::leds::stripe_set(bsp::leds::Color::Pink, bsp::leds::Color::Black);
+        }
+        return nullptr;
+    }
+
+    if (event.button == ButtonPressed::SHORT1) {
+        if (explore_type == EXPLORE_NORMAL) {
+            explore_type = EXPLORE_FULL;
+            bsp::leds::stripe_set(bsp::leds::Color::Pink, bsp::leds::Color::Pink);
+        } else {
+            explore_type = EXPLORE_NORMAL;
+            bsp::leds::stripe_set(bsp::leds::Color::Pink, bsp::leds::Color::Black);
+        }
+        return nullptr;
+    }
+
+    if (event.button == ButtonPressed::LONG1) {
+        switch (explore_type) {
+        case EXPLORE_NORMAL:
+            std::printf("Explore Normal\r\n");
+            full_explore = false;
+            break;
+        case EXPLORE_FULL:
+            std::printf("Explore Full\r\n");
+            full_explore = true;
+            break;
+        }
+        return &State::get<SearchWaitStart>();
+    }
+
+    if (event.button == ButtonPressed::LONG2) {
+        return &State::get<SearchParamSelect>();
     }
     return nullptr;
 }
@@ -209,6 +268,7 @@ void Search::enter() {
     save_maze = false;
     stop_next_move = false;
     emergency = false;
+    target = services::Maze::GOAL_POSITIONS[0];
 }
 
 State* Search::react(BleCommand const&) {
@@ -234,9 +294,6 @@ State* Search::react(ButtonPressed const& event) {
 
     return nullptr;
 }
-
-static bool indicate_read = false;
-static uint32_t last_indication = 0;
 
 State* Search::react(Timeout const&) {
     using bsp::analog_sensors::ir_reading_wall;
@@ -275,23 +332,44 @@ State* Search::react(Timeout const&) {
             (sensingStatus.front_seeing * N | sensingStatus.right_seeing * E | sensingStatus.left_seeing * W)
             << robot_dir;
 
-        bool goal_reached =
+        std::array<Point, 1> target_arr{target};
+        auto dir = maze->next_step(robot_cell_pos, walls, target_arr, true);
+
+        bool main_goal_reached =
             std::any_of(std::begin(services::Maze::GOAL_POSITIONS), std::end(services::Maze::GOAL_POSITIONS),
                         [&](const Point& goal) { return goal == robot_cell_pos; });
 
-        if (goal_reached && !returning) {
+        if (!returning && main_goal_reached) {
             bsp::buzzer::start();
+            bsp::leds::stripe_set(Color::White);
             save_maze = true;
             returning = true;
             maze->create_maze_backup();
         }
 
-        if (robot_cell_pos == services::Maze::ORIGIN && returning) {
+        if (dir == Direction::STOP && target == services::Maze::ORIGIN) {
             navigation->set_movement(Movement::TURN_AROUND_INPLACE, Movement::FORWARD, Movement::STOP, 1);
             // navigation->set_movement(Direction::NORTH);
             stop_next_move = true;
+        } else if (dir == Direction::STOP) {
+            if (full_explore) {
+                target = maze->closest_unvisited(robot_cell_pos);
+                if (target == services::Maze::ORIGIN) { // Maze fully explored
+                    bsp::buzzer::start();
+                    bsp::leds::stripe_set(Color::White);
+                    navigation->set_movement(Movement::TURN_AROUND_INPLACE, Movement::FORWARD, Movement::STOP, 1);
+                    stop_next_move = true;
+                }
+            } else {
+                target = services::Maze::ORIGIN;
+            }
+
+            if (!stop_next_move) {
+                std::array<Point, 1> target_arr{target};
+                auto dir = maze->next_step(robot_cell_pos, walls, target_arr, true);
+                navigation->set_movement(dir);
+            }
         } else {
-            auto dir = maze->next_step(robot_cell_pos, walls, returning, true);
             navigation->set_movement(dir);
         }
     }

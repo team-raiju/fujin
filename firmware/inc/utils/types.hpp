@@ -11,6 +11,7 @@ enum class Direction : uint8_t {
     WEST,
     SOUTH,
     EAST,
+    STOP
 };
 
 static constexpr Direction Directions[] = {

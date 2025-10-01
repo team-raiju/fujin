@@ -2,6 +2,7 @@
 
 std::map<Movement, TurnParams> turn_params_search_slow = {
     {Movement::TURN_AROUND, {0.0, 0.0, 0.3, 52.36, 3.49, 3.1067, 0, 0, -1}},
+    {Movement::TURN_AROUND_INPLACE, {0.0, 0.0, 0.3, 52.36, 3.49, 3.1067, 0, 0, -1}},
     {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.0, 0.0, 0.3, 43.633, 4.014, 1.553, 0, 0, -1}},
     {Movement::TURN_LEFT_90_SEARCH_MODE, {0.0, 0.0, 0.3, 43.633, 4.014, 1.553, 0, 0, 1}},
 };
@@ -11,6 +12,7 @@ std::map<Movement, ForwardParams> forward_params_search_slow = {
     {Movement::FORWARD, {0.3, 0.85, 0.85, CELL_SIZE_CM}},
     {Movement::STOP, {0.3, 0.85, 0.85, (HALF_CELL_SIZE_CM)}},
     {Movement::TURN_AROUND, {0.3, 0.5, 0.5, 8.0}},
+    {Movement::TURN_AROUND_INPLACE, {0.3, 0.5, 0.5, 8.0}},
     {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.3, 0.85, 0.85, 1.1}},
     {Movement::TURN_LEFT_90_SEARCH_MODE, {0.3, 0.85, 0.85, 1.1}},
 };

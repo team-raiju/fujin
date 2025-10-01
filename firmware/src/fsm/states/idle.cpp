@@ -57,11 +57,17 @@ State* Idle::react(ButtonPressed const& event) {
         bsp::delay_ms(5);
         maze->read_maze_from_memory(true);
         maze->print(maze->ORIGIN);
-        
+
         std::printf("Maze: \r\n");
         bsp::delay_ms(5);
         maze->read_maze_from_memory(false);
         maze->print(maze->ORIGIN);
+
+        auto target_directions = maze->directions_to_goal();
+        auto target_movements = services::Navigation::instance()->get_movements_to_goal(
+            target_directions, services::Navigation::target_movement_mode_t::NORMAL);
+
+        bsp::delay_ms(5);
 
         services::Notification::instance()->send_maze();
     }
