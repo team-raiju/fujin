@@ -1,35 +1,35 @@
 #include "utils/movement_params.hpp"
 
 std::map<Movement, TurnParams> turn_params_search_slow = {
-    {Movement::TURN_AROUND, {0.0, 0.0, 0.25, 52.36, 3.49, 3.1067, 0, 0, -1}},
-    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.0, 0.0, 0.25, 43.633, 4.014, 1.553, 0, 0, -1}},
-    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.0, 0.0, 0.25, 43.633, 4.014, 1.553, 0, 0, 1}},
+    {Movement::TURN_AROUND, {0.0, 0.0, 0.3, 52.36, 3.49, 3.1067, 0, 0, -1}},
+    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.0, 0.0, 0.3, 43.633, 4.014, 1.553, 0, 0, -1}},
+    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.0, 0.0, 0.3, 43.633, 4.014, 1.553, 0, 0, 1}},
 };
 
 std::map<Movement, ForwardParams> forward_params_search_slow = {
-    {Movement::START, {0.25, 0.65, 0.65, HALF_CELL_SIZE_CM + ROBOT_DIST_FROM_CENTER_START_CM}},
-    {Movement::FORWARD, {0.25, 0.65, 0.65, CELL_SIZE_CM}},
-    {Movement::STOP, {0.25, 0.65, 0.65, (HALF_CELL_SIZE_CM)}},
-    {Movement::TURN_AROUND, {0.25, 0.5, 0.5, 8.0}},
-    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.25, 0.65, 0.65, 2.2}},
-    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.25, 0.65, 0.65, 2.2}},
+    {Movement::START, {0.3, 0.85, 0.85, 10.9}},
+    {Movement::FORWARD, {0.3, 0.85, 0.85, CELL_SIZE_CM}},
+    {Movement::STOP, {0.3, 0.85, 0.85, (HALF_CELL_SIZE_CM)}},
+    {Movement::TURN_AROUND, {0.3, 0.5, 0.5, 8.0}},
+    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.3, 0.85, 0.85, 1.1}},
+    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.3, 0.85, 0.85, 1.1}},
 };
 
 std::map<Movement, TurnParams> turn_params_search_medium = {
-    {Movement::TURN_AROUND, {0.0, 0.0, 0.5, 52.36, 3.49, 3.1067, 0, 0, -1}},
-    {Movement::TURN_AROUND_INPLACE, {0.0, 0.0, 0.5, 52.36, 3.49, 3.1067, 0, 0, -1}},
-    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.0, 0.0, 0.5, 104.72, 10.47, 1.553, 0, 0, -1}},
-    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.0, 0.0, 0.5, 104.72, 10.47, 1.553, 0, 0, 1}},
+    {Movement::TURN_AROUND, {0.0, 0.0, 0.5, 104.72, 10.47, 3.1241, 301, 401, -1}},
+    {Movement::TURN_AROUND_INPLACE, {0.0, 0.0, 0.5, 104.72, 10.47, 3.1241, 301, 401, -1}},
+    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.0, 0.0, 0.5, 139.62, 10.47, 1.5708, 150, 225, -1}}, // -3.0
+    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.0, 0.0, 0.5, 139.62, 10.47, 1.5708, 150, 225, 1}},   // -3.0
 };
 
 std::map<Movement, ForwardParams> forward_params_search_medium = {
-    {Movement::START, {0.5, 1.0, 1.0, HALF_CELL_SIZE_CM + ROBOT_DIST_FROM_CENTER_START_CM}},
-    {Movement::FORWARD, {0.5, 2.0, 2.0, CELL_SIZE_CM}},
-    {Movement::STOP, {0.5, 2.0, 2.0, (HALF_CELL_SIZE_CM)}},
-    {Movement::TURN_AROUND, {0.5, 2.0, 2.0, 8.0}},
-    {Movement::TURN_AROUND_INPLACE, {0.5, 2.0, 2.0, 8.0}},
-    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.5, 2.0, 2.0, 1.5}},
-    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.5, 2.0, 2.0, 1.5}},
+    {Movement::START, {0.5, 3.0, 3.0, 10.9}},
+    {Movement::FORWARD, {0.5, 3.0, 3.0, CELL_SIZE_CM}},
+    {Movement::STOP, {0.5, 3.0, 5.0, (HALF_CELL_SIZE_CM)}},
+    {Movement::TURN_AROUND, {0.5, 3.0, 5.0, 8.0}},
+    {Movement::TURN_AROUND_INPLACE, {0.5, 3.0, 5.0, 8.0}},
+    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.5, 3.0, 3.0, 2.4}},
+    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.5, 3.0, 3.0, 2.7}},
 };
 
 std::map<Movement, TurnParams> turn_params_search_fast = {
@@ -42,7 +42,7 @@ std::map<Movement, TurnParams> turn_params_search_fast = {
 };
 
 std::map<Movement, ForwardParams> forward_params_search_fast = {
-    {Movement::START, {0.7, 4.0, 4.0, 11.0}},
+    {Movement::START, {0.7, 4.0, 4.0, 10.9}},
     {Movement::FORWARD, {0.7, 4.0, 4.0, CELL_SIZE_CM}},
     {Movement::STOP, {0.7, 4.0, 6.0, (HALF_CELL_SIZE_CM)}},
     {Movement::TURN_AROUND, {0.7, 4.0, 6.0, 8.0}},
@@ -228,20 +228,20 @@ GeneralParams general_params_search_slow = {
     0.0012, 0.0000, 0.0020, // Wall P,I,D
     3.0000, 0.0360, 0.0000, // Linear velocity P,I,D
     0.8000, 0.0000, 0.0000, // Diagonal walls P,I,D
-    0.0,                    // Start wall break cm left
-    0.0,                    // Start wall break cm right
-    0.0                     // Enable wall break correction
+    5.5,                    // Start wall break cm left
+    6.7,                    // Start wall break cm right
+    1.0                     // Enable wall break correction
 };
 
 GeneralParams general_params_search_medium = {
-    0.0,                    // Fan speed
-    0.0500, 0.0050, 0.0000, // Angular P,I,D
-    0.0015, 0.0000, 0.0025, // Wall P,I,D
-    5.0000, 0.0600, 0.0000, // Linear velocity P,I,D
+    150.0,                  // Fan speed
+    0.0550, 0.0090, 0.0000, // Angular P,I,D
+    0.0020, 0.0000, 0.0040, // Wall P,I,D
+    8.0000, 0.1000, 0.0000, // Linear velocity P,I,D
     0.0000, 0.0000, 0.0000, // Diagonal walls P,I,D
-    0.0,                    // Start wall break cm left
-    0.0,                    // Start wall break cm right
-    0.0                     // Enable wall break correction
+    5.5,                    // Start wall break cm left
+    6.7,                    // Start wall break cm right
+    1.0                     // Enable wall break correction
 };
 
 GeneralParams general_params_search_fast = {

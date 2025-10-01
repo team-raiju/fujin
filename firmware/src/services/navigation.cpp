@@ -442,7 +442,8 @@ bool Navigation::step() {
                         traveled_dist_cm = 0;
                         reference_time = bsp::get_tick_ms();
                         mini_fsm_state = MiniFSMStates::TURN;
-                        if (selected_mode != SEARCH_FAST) {
+                        if ((selected_mode != SEARCH_FAST) && (selected_mode != SEARCH_MEDIUM) &&
+                            (selected_mode != SEARCH_SLOW)) {
                             bsp::leds::stripe_set(Color::Blue);
                         }
                     } else {
