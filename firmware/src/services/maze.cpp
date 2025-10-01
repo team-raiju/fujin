@@ -200,8 +200,7 @@ void Maze::read_maze_from_memory(bool backup) {
                             : bsp::eeprom::param_addresses_t::ADDR_MAZE_START;
     for (int x = 0; x < CELLS_X; x++) {
         for (int y = 0; y < CELLS_Y; y++) {
-            bsp::eeprom::read_u32(base_addr + 4 * (x * CELLS_Y + y),
-                                  (uint32_t*)data);
+            bsp::eeprom::read_u32(base_addr + 4 * (x * CELLS_Y + y), (uint32_t*)data);
             map[x][y].walls = data[0];
             map[x][y].visited = data[1];
             map[x][y].distance = data[2];

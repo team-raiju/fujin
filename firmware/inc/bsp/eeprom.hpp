@@ -115,10 +115,10 @@ typedef enum : uint16_t {
     ADDR_MOVE_SEQUENCE_18 = 0x2011,
 
     // MAZE 0x3000 ~ 0x4000
-    ADDR_MAZE_START = 0x1000,
+    ADDR_MAZE_START = 0x3000,
 
     // MAZE_BACKUP 0x4000 ~ 0x5000
-    ADDR_MAZE_BACKUP_START = 0x1000,
+    ADDR_MAZE_BACKUP_START = 0x4000,
 
     ADDR_MAX = 0xFFFF,
 } param_addresses_t;

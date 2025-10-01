@@ -127,6 +127,7 @@ private:
     float current_angle_rad = 0;
     Direction current_direction;
     Movement current_movement;
+    Movement previous_movement;
     Direction target_direction;
     float complete_prev_move_travel;
 
@@ -135,6 +136,7 @@ private:
     uint32_t wall_right_counter_off = 0;
     uint32_t wall_left_counter_off = 0;
     uint32_t wall_break_last_dist = 0;
+    bool current_wall_break_detected = false;
 
     MiniFSMStates mini_fsm_state = MiniFSMStates::FORWARD_1;
 
@@ -142,6 +144,7 @@ private:
 
     bool waiting_for_fast_param = false;
     navigation_mode_t selected_mode;
+
 };
 
 }

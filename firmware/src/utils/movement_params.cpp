@@ -245,14 +245,14 @@ GeneralParams general_params_search_medium = {
 };
 
 GeneralParams general_params_search_fast = {
-    300.0,                  // Fan speed
+    220.0,                  // Fan speed
     0.0850, 0.0110, 0.0000, // Angular P,I,D
     0.0020, 0.0000, 0.0040, // Wall P,I,D
     8.0000, 0.1000, 0.0000, // Linear velocity P,I,D
     0.0000, 0.0000, 0.0000, // Diagonal walls P,I,D
-    0.0,                    // Start wall break cm left
-    0.0,                    // Start wall break cm right
-    0.0                     // Enable wall break correction
+    5.5,                    // Start wall break cm left
+    6.7,                    // Start wall break cm right
+    1.0                     // Enable wall break correction
 };
 
 GeneralParams general_params_slow = {

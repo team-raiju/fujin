@@ -113,6 +113,7 @@ void Navigation::reset(navigation_mode_t mode) {
     control->reset(general_params);
 
     current_movement = Movement::START;
+    previous_movement = Movement::START;
     target_travel_cm = forward_params[Movement::START].target_travel_cm;
     forward_end_speed = forward_params[Movement::START].max_speed;
 }
@@ -141,14 +142,33 @@ void Navigation::reset_wall_break() {
     wall_left_counter_off = 0;
 
     wall_break_last_dist = 0;
+    current_wall_break_detected = false;
 }
 
 Navigation::WallBreak Navigation::process_wall_break() {
-    // We only return one wall break. per 18cm
-    if ((traveled_dist_cm - wall_break_last_dist) < 18) {
-        return WallBreak::NONE;
-    } else if ((traveled_dist_cm - wall_break_last_dist) >= 18 && (traveled_dist_cm - wall_break_last_dist) < 18.75) {
+
+    if ((traveled_dist_cm - wall_break_last_dist) >= 10 && (traveled_dist_cm - wall_break_last_dist) < 10.75) {
         bsp::leds::stripe_set(Color::Black);
+    }
+
+    if (current_movement != Movement::FORWARD) {
+        return WallBreak::NONE;
+    }
+
+    bool process = false;
+    if ((selected_mode == SEARCH_FAST) || (selected_mode == SEARCH_MEDIUM) || (selected_mode == SEARCH_SLOW)) {
+        bool valid_previous_move =
+            ((previous_movement == FORWARD) || (previous_movement == START) || (previous_movement == TURN_AROUND));
+
+        if (valid_previous_move && ((traveled_dist_cm - wall_break_last_dist) > 4.0) && !current_wall_break_detected) {
+            process = true;
+        }
+    } else if ((traveled_dist_cm - wall_break_last_dist) > CELL_SIZE_CM) {
+        process = true;
+    }
+
+    if (!process) {
+        return WallBreak::NONE;
     }
 
     bool right_seeing = bsp::analog_sensors::ir_reading_wall(bsp::analog_sensors::SensingDirection::RIGHT);
@@ -168,13 +188,15 @@ Navigation::WallBreak Navigation::process_wall_break() {
         wall_left_counter_off += 1;
     }
 
-    if (wall_right_counter_on > 25 && wall_right_counter_off > 0) {
+    if (wall_right_counter_on > 10 && wall_right_counter_off > 0) {
         wall_break_last_dist = traveled_dist_cm;
+        current_wall_break_detected = true;
         return WallBreak::RIGHT;
     }
 
-    if (wall_left_counter_on > 25 && wall_left_counter_off > 0) {
+    if (wall_left_counter_on > 10 && wall_left_counter_off > 0) {
         wall_break_last_dist = traveled_dist_cm;
+        current_wall_break_detected = true;
         return WallBreak::LEFT;
     }
 
@@ -249,12 +271,12 @@ bool Navigation::step() {
             acceleration *= 0.65;
         }
 
-        if (general_params.enable_wall_break_correction && current_movement == Movement::FORWARD) {
+        if (general_params.enable_wall_break_correction) {
 
             WallBreak wall_break = process_wall_break();
-            float current_movement_traveled = traveled_dist_cm - complete_prev_move_travel;
-            if (current_movement_traveled > CELL_SIZE_CM && wall_break != WallBreak::NONE) {
+            if (wall_break != WallBreak::NONE) {
 
+                float current_movement_traveled = traveled_dist_cm - complete_prev_move_travel;
                 int cells_traveled = (current_movement_traveled / CELL_SIZE_CM);
 
                 float corrected_distance_cm = 0;
@@ -420,7 +442,7 @@ bool Navigation::step() {
                         traveled_dist_cm = 0;
                         reference_time = bsp::get_tick_ms();
                         mini_fsm_state = MiniFSMStates::TURN;
-                        if (selected_mode != SEARCH_FAST){
+                        if (selected_mode != SEARCH_FAST) {
                             bsp::leds::stripe_set(Color::Blue);
                         }
                     } else {
@@ -469,7 +491,8 @@ bool Navigation::step() {
             }
 
             // Stop condition is based on time on high speeds, as angles becomes unreliable
-            if ((selected_mode == SEARCH_SLOW) || (selected_mode == SEARCH_MEDIUM)|| (selected_mode == SLOW) || (selected_mode == SEARCH_FAST)) {
+            if ((selected_mode == SEARCH_SLOW) || (selected_mode == SEARCH_MEDIUM) || (selected_mode == SLOW) ||
+                (selected_mode == SEARCH_FAST)) {
                 angular_end_speed = 0.4f;
             } else {
                 acceleration_condition = (elapsed_time < current_turn_params.t_start_deccel);
@@ -579,6 +602,8 @@ float Navigation::get_robot_travelled_dist_cm() {
 
 void Navigation::set_movement(Direction dir) {
 
+    previous_movement = current_movement;
+
     target_direction = dir;
     current_movement = get_movement(dir, current_direction, true);
     reset_movement_variables();
@@ -631,6 +656,7 @@ void Navigation::update_cell_position_and_dir() {
 void Navigation::set_movement(Movement movement, Movement prev_movement, Movement next_movement, uint8_t count) {
 
     complete_prev_move_travel = -1 * turn_params[prev_movement].end;
+    previous_movement = prev_movement;
     current_movement = movement;
     reset_movement_variables();
 
