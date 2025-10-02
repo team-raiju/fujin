@@ -152,7 +152,7 @@ void Navigation::reset_wall_break() {
 
 Navigation::WallBreak Navigation::process_wall_break() {
 
-    if ((traveled_dist_cm - wall_break_last_dist) >= 10 && (traveled_dist_cm - wall_break_last_dist) < 10.75) {
+    if ((traveled_dist_cm - wall_break_last_dist) >= 18 && (traveled_dist_cm - wall_break_last_dist) < 18.75) {
         bsp::leds::stripe_set(Color::Black);
     }
 
@@ -294,10 +294,12 @@ bool Navigation::step() {
                 }
 
                 float distance_error_cm = current_movement_traveled - corrected_distance_cm;
-                if (std::abs(distance_error_cm) < 5.0) {
+                if (std::abs(distance_error_cm) < 6.0) {
                     traveled_dist_cm = corrected_distance_cm;
                     // bsp::buzzer::start();
                     bsp::leds::stripe_set(Color::Red);
+                } else {
+                    bsp::leds::stripe_set(Color::White);
                 }
             }
         }

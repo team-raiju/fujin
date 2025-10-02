@@ -159,6 +159,7 @@ void Control::start_fan() {
     for (float volts = 0; volts < desired_fan_voltage; volts += 0.1) {
         float bat_volts = bsp::analog_sensors::battery_latest_reading_mv() / 1000.0;
         if (bat_volts < 5.0) {
+            std::printf("Low battery: %f V\r\n", bat_volts);
             bsp::fan::set(0);
             break;
         }

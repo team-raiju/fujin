@@ -15,8 +15,10 @@ FSM::FSM() {
 
     navigation_service = services::Navigation::instance();
     maze_service = services::Maze::instance();
+    control_service = services::Control::instance();
 
     navigation_service->init();
+    control_service->init();
 }
 
 void FSM::start() {

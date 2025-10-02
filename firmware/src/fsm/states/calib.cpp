@@ -193,6 +193,7 @@ void CalibrationFan::enter() {
     bsp::delay_ms(2000);
     bsp::buzzer::stop();
 
+    services::Control::instance()->init();
     services::Control::instance()->start_fan();
     bsp::motors::set(0, 0);
 

@@ -4,6 +4,7 @@
 #include "fsm/state.hpp"
 #include "services/maze.hpp"
 #include "services/navigation.hpp"
+#include "services/control.hpp"
 #include "utils/RingBuffer.hpp"
 
 namespace fsm {
@@ -23,6 +24,7 @@ private:
 
     services::Navigation* navigation_service;
     services::Maze* maze_service;
+    services::Control* control_service;
 };
 
 }
