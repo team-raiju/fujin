@@ -135,13 +135,13 @@ angular_acceleration = 0.05
 ## Calibration Test Map ##
 ##########################
 ir_wall_dist_ref_right = 1391
-ir_wall_dist_ref_front_left = 150 
-ir_wall_dist_ref_front_right = 150
+ir_wall_dist_ref_front_left = 200 
+ir_wall_dist_ref_front_right = 200
 ir_wall_dist_ref_left = 800
 
 ir_wall_control_th_right = 1100
-ir_wall_control_th_front_left = 200 
-ir_wall_control_th_front_right = 200
+ir_wall_control_th_front_left = 500 
+ir_wall_control_th_front_right = 500
 ir_wall_control_th_left = 650
 
 ir_wall_detect_th_right = 1200
@@ -155,9 +155,9 @@ constexpr std::array<SensingPattern, 8> ir_wall_patterns = {{
     {500, 685, 1247, 1367}, // F-R
     {500, 710, 1200, 600},  // F
     {805, 67, 246, 1336},   // L-R
-    {741, 28, 37, 640},     // L
+    {741, 28, 37, 800},     // L
     {349, 35, 261, 1326},   // R
-    {357, 66, 238, 643}     // None
+    {357, 66, 238, 800}     // None
 }};
 
 min_move_speed = 0.2
