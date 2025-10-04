@@ -13,7 +13,7 @@
 
 void startup() {
     bsp::buzzer::set_frequency(2000);
-    bsp::buzzer::set_volume(1);
+    bsp::buzzer::set_volume(50);
     bsp::buzzer::start();
 
     for (int i = 0; i < 10; i++) {

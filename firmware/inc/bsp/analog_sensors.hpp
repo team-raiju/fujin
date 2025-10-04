@@ -34,14 +34,14 @@ struct SensingPattern {
 };
 /// @brief Sensor raw values in every wall combination
 constexpr std::array<SensingPattern, 8> ir_wall_patterns = {{
-    {900, 800, 1300, 1415}, // F-L-R
-    {903, 820, 1207, 800},  // F-L
-    {500, 685, 1247, 1367}, // F-R
-    {500, 710, 1200, 600},  // F
-    {805, 67, 246, 1336},   // L-R
-    {741, 28, 37, 800},     // L
-    {349, 35, 261, 1326},   // R
-    {357, 66, 238, 800}     // None
+    {1119, 850, 1290, 1460}, // F-L-R
+    {960, 820, 1200, 880},  // F-L
+    {500, 700, 1160, 1460}, // F-R
+    {520, 755, 1200, 870},  // F
+    {900, 67, 246, 1460},   // L-R
+    {900, 28, 230, 870},     // L
+    {530, 35, 261, 1300},   // R
+    {180, 66, 238, 800}     // None
 }};
 
 typedef void (*bsp_analog_ready_callback_t)(void);
