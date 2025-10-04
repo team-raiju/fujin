@@ -1,7 +1,7 @@
 #pragma once
 
-#include <cstdint>
 #include <array>
+#include <cstdint>
 #include <utility>
 #include <vector>
 
@@ -28,7 +28,7 @@ public:
     /// @param current_position Current cell coordinates
     /// @param walls Current cell wall information
     /// @return Next cell to be visited
-    Direction next_step(Point const& current_position, uint8_t walls, std::span<const Point> const& targets, bool search_mode = true);
+    Direction next_step(Point const& current_position, uint8_t walls, Point const& target, bool search_mode = true);
 
     /// @brief Prints the maze for debugging purpose
     void print(Point const& curr);
@@ -44,7 +44,7 @@ public:
     Point closest_unvisited(Point const& current_position);
 
     void save_maze_to_memory(bool backup);
-    
+
     void read_maze_from_memory(bool backup);
 
     void create_maze_backup();

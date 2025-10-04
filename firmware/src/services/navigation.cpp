@@ -628,17 +628,25 @@ void Navigation::set_movement(Direction dir) {
 Movement Navigation::get_movement(Direction target_dir, Direction current_dir, bool search_mode) {
     using enum Direction;
 
-    if (target_dir == current_dir) {
-        return FORWARD;
-    } else if ((target_dir == NORTH && current_dir == WEST) || (target_dir == EAST && current_dir == NORTH) ||
-               (target_dir == SOUTH && current_dir == EAST) || (target_dir == WEST && current_dir == SOUTH)) {
-        return search_mode ? TURN_RIGHT_90_SEARCH_MODE : TURN_RIGHT_90;
-    } else if ((target_dir == NORTH && current_dir == SOUTH) || (target_dir == EAST && current_dir == WEST) ||
-               (target_dir == SOUTH && current_dir == NORTH) || (target_dir == WEST && current_dir == EAST)) {
-        return TURN_AROUND;
-    } else {
-        return search_mode ? TURN_LEFT_90_SEARCH_MODE : TURN_LEFT_90;
+    if (target_dir == Direction::STOP) {
+        return Movement::STOP;
     }
+
+    if (target_dir == current_dir) {
+        return Movement::FORWARD;
+    }
+
+    if ((target_dir == NORTH && current_dir == WEST) || (target_dir == EAST && current_dir == NORTH) ||
+        (target_dir == SOUTH && current_dir == EAST) || (target_dir == WEST && current_dir == SOUTH)) {
+        return search_mode ? Movement::TURN_RIGHT_90_SEARCH_MODE : Movement::TURN_RIGHT_90;
+    }
+
+    if ((target_dir == NORTH && current_dir == SOUTH) || (target_dir == EAST && current_dir == WEST) ||
+        (target_dir == SOUTH && current_dir == NORTH) || (target_dir == WEST && current_dir == EAST)) {
+        return Movement::TURN_AROUND;
+    }
+
+    return search_mode ? Movement::TURN_LEFT_90_SEARCH_MODE : Movement::TURN_LEFT_90;
 }
 
 void Navigation::update_cell_position_and_dir() {

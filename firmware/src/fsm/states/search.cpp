@@ -332,8 +332,7 @@ State* Search::react(Timeout const&) {
             (sensingStatus.front_seeing * N | sensingStatus.right_seeing * E | sensingStatus.left_seeing * W)
             << robot_dir;
 
-        std::array<Point, 1> target_arr{target};
-        auto dir = maze->next_step(robot_cell_pos, walls, target_arr, true);
+        auto dir = maze->next_step(robot_cell_pos, walls, target, true);
 
         bool main_goal_reached =
             std::any_of(std::begin(services::Maze::GOAL_POSITIONS), std::end(services::Maze::GOAL_POSITIONS),
@@ -365,8 +364,7 @@ State* Search::react(Timeout const&) {
             }
 
             if (!stop_next_move) {
-                std::array<Point, 1> target_arr{target};
-                auto dir = maze->next_step(robot_cell_pos, walls, target_arr, true);
+                auto dir = maze->next_step(robot_cell_pos, walls, target, true);
                 navigation->set_movement(dir);
             }
         } else {

@@ -72,7 +72,7 @@ template <int width, int height>
 using Grid = Cell[width][height];
 
 template <int width, int height>
-void flood_fill(Grid<width, height>& grid, std::span<const Point> const& targets, bool search_mode = true) {
+void flood_fill(Grid<width, height>& grid, Point const& target, bool search_mode = true) {
     // 1. Reset the distance of every cell
     for (int x = 0; x < width; x++) {
         for (int y = 0; y < height; y++) {
@@ -82,13 +82,8 @@ void flood_fill(Grid<width, height>& grid, std::span<const Point> const& targets
 
     RingBuffer<Point, 32> to_visit;
 
-    // 2. Initialize all target points with distance 0 and add to the queue
-    for (auto const& target : targets) {
-        if (target.x >= 0 && target.x < width && target.y >= 0 && target.y < height) {
-            grid[target.x][target.y].distance = 0;
-            to_visit.put(target);
-        }
-    }
+    grid[target.x][target.y].distance = 0;
+    to_visit.put(target);
 
     static constexpr Point Δ[4] = {{0, 1}, {-1, 0}, {0, -1}, {1, 0}};
 

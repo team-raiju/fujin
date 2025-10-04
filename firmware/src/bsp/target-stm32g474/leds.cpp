@@ -22,7 +22,7 @@ Color Color::Pink = Color(0x1F, 0xC8, 0x64);
 Color Color::Cyan = Color(0xD2, 0x32, 0x12);
 
 uint32_t Color::encode() const {
-    return (bit_reverse(b) << 16) | (bit_reverse(r) << 8) | bit_reverse(g);
+    return ((b) << 16) | ((r) << 8) | (g);
 }
 
 /// @section Private variables
@@ -100,7 +100,6 @@ void stripe_set(Color const& color_1, Color const& color_2) {
     ws.set(1, color_2.encode());
     stripe_send();
 }
-
 
 void stripe_set(Color const& color) {
     uint32_t encoded = color.encode();

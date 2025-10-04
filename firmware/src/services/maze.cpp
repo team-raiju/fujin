@@ -103,14 +103,10 @@ void Maze::reset() {
     map[0][0].known_walls = 0b1111;
 }
 
-Direction Maze::next_step(Point const& current_position, uint8_t walls, std::span<const Point> const& targets,
-                          bool search_mode) {
+Direction Maze::next_step(Point const& current_position, uint8_t walls, Point const& target, bool search_mode) {
     algorithm::Cell& cell = map[current_position.x][current_position.y];
 
-    bool target_reached = std::any_of(std::begin(targets), std::end(targets),
-                                      [&](const Point& target) { return target == current_position; });
-
-    if (target_reached) {
+    if (target == current_position) {
         if (search_mode) {
             cell.update_walls(walls);
         }
@@ -128,7 +124,12 @@ Direction Maze::next_step(Point const& current_position, uint8_t walls, std::spa
     }
 
     // Recalculate the distances
-    algorithm::flood_fill(map, targets, search_mode);
+    algorithm::flood_fill(map, target, search_mode);
+
+    if (map[current_position.x][current_position.y].distance == 255) {
+        // Unreachable
+        return Direction::STOP;
+    }
 
     // Check all directions for the best option
     static constexpr Point Δ[4] = {{0, 1}, {-1, 0}, {0, -1}, {1, 0}};
@@ -175,7 +176,7 @@ Direction Maze::next_step(Point const& current_position, uint8_t walls, std::spa
 }
 
 Point Maze::closest_unvisited(Point const& current_position) {
-    algorithm::flood_fill(map, std::span<const Point>{&current_position, 1}, true);
+    algorithm::flood_fill(map, current_position, true);
 
     int closest_dist = 255;
     auto closest_point = ORIGIN;
@@ -202,7 +203,7 @@ std::vector<Direction> Maze::directions_to_goal() {
     bool goal_reached = false;
 
     while (!goal_reached) {
-        auto dir = next_step(pos, map[pos.x][pos.y].walls, services::Maze::GOAL_POSITIONS, false);
+        auto dir = next_step(pos, map[pos.x][pos.y].walls, services::Maze::GOAL_POSITIONS[0], false);
         target_directions.push_back(dir);
         switch (dir) {
         case Direction::NORTH:
@@ -218,7 +219,7 @@ std::vector<Direction> Maze::directions_to_goal() {
             pos.x -= 1;
             break;
         case Direction::STOP:
-            break;
+            return target_directions;
         }
 
         // If position is equal to any of the desired goals
