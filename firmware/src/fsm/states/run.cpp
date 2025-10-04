@@ -327,23 +327,21 @@ void Run::enter() {
     bsp::delay_ms(2000);
     bsp::buzzer::stop();
 
-    services::Control::instance()->start_fan();
     bsp::delay_ms(250);
-
+    
     soft_timer::start(1, soft_timer::CONTINUOUS);
-
+    
     logger->init();
-
+    
     maze->read_maze_from_memory(map_backup);
     maze->print(maze->ORIGIN);
     target_directions = maze->directions_to_goal();
     maze->print(maze->ORIGIN);
 
+    services::Control::instance()->start_fan();
+    bsp::delay_ms(200);
     target_movements.clear();
-
-    // services::Navigation::instance()->set_hardcoded_movements(
-    //     {{Movement::START, 1}, {Movement::FORWARD, 1}, {Movement::STOP, 1}});
-
+    
     target_movements = navigation->get_movements_to_goal(target_directions, move_mode);
 
     move_count = 0;
