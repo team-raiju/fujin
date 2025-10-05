@@ -161,7 +161,7 @@ Navigation::WallBreak Navigation::process_wall_break() {
     }
 
     bool process = false;
-    if ((selected_mode == SEARCH_FAST) || (selected_mode == SEARCH_MEDIUM) || (selected_mode == SEARCH_SLOW)) {
+    if ((selected_mode == SEARCH_FAST) || (selected_mode == SEARCH_MEDIUM) || (selected_mode == SEARCH_SLOW) || (selected_mode == CUSTOM)) {
         bool valid_previous_move =
             ((previous_movement == FORWARD) || (previous_movement == START) || (previous_movement == TURN_AROUND));
 
@@ -500,7 +500,7 @@ bool Navigation::step() {
 
             // Stop condition is based on time on high speeds, as angles becomes unreliable
             if ((selected_mode == SEARCH_SLOW) || (selected_mode == SEARCH_MEDIUM) || (selected_mode == SLOW) ||
-                (selected_mode == SEARCH_FAST)) {
+                (selected_mode == SEARCH_FAST) || (selected_mode == CUSTOM)) {
                 angular_end_speed = 0.4f;
             } else {
                 acceleration_condition = (elapsed_time < current_turn_params.t_start_deccel);
@@ -534,7 +534,7 @@ bool Navigation::step() {
                            current_movement == Movement::TURN_LEFT_90_SEARCH_MODE) {
                     control->set_target_angular_speed(0);
                     // target_travel_cm for FORWARD_2 is based on the calculated position
-                    target_travel_cm = (HALF_CELL_SIZE_CM - (std::abs(current_position_mm.y) / 10.0f)) + 0.4;
+                    target_travel_cm = (HALF_CELL_SIZE_CM - (std::abs(current_position_mm.y) / 10.0f));
                     reference_time = bsp::get_tick_ms();
                     traveled_dist_cm = 0;
                     mini_fsm_state = MiniFSMStates::FORWARD_2;
