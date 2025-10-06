@@ -240,13 +240,11 @@ std::map<Movement, TurnParams> turn_params_custom = {
 
 std::map<Movement, ForwardParams> forward_params_custom = {
 
+    {Movement::START, {1.5, 12.0, 20.0, HALF_CELL_SIZE_CM + ROBOT_DIST_FROM_CENTER_START_CM_FAST}},
+    {Movement::FORWARD, {3.5, 15.0, 20.0, CELL_SIZE_CM}},
     {Movement::DIAGONAL, {3.0, 15.0, 20.0, CELL_DIAGONAL_SIZE_CM}},
-
-    {Movement::START, {0.3, 0.85, 0.85, 10.9}},
-    {Movement::FORWARD, {0.3, 0.85, 0.85, CELL_SIZE_CM}},
-    {Movement::STOP, {0.3, 0.85, 0.85, (HALF_CELL_SIZE_CM)}},
-    {Movement::TURN_AROUND, {0.3, 0.5, 0.5, 8.0}},
-
+    {Movement::STOP, {1.0, 2.0, 30.0, (HALF_CELL_SIZE_CM - 1.0)}},
+    {Movement::TURN_AROUND, {1.5, 12.0, 20.0, 7.9}},
 
     {Movement::TURN_RIGHT_90, {1.3, 12.0, 20.0, 0.5}},
     {Movement::TURN_LEFT_90, {1.3, 12.0, 20.0, 0.5}},
@@ -317,8 +315,8 @@ GeneralParams general_params_medium = {
     0.0025, 0.0000, 0.0050, // Wall P,I,D
     8.0000, 0.1000, 0.0000, // Linear velocity P,I,D
     0.0010, 0.0000, 0.0020, // Diagonal walls P,I,D
-    7.0,                    // Start wall break cm left
-    8.2,                    // Start wall break cm right
+    5.5,                    // Start wall break cm left
+    7.2,                    // Start wall break cm right
     1.0                     // Enable wall break correction
 };
 
@@ -328,8 +326,8 @@ GeneralParams general_params_fast = {
     0.0025, 0.0000, 0.0050, // Wall P,I,D
     8.0000, 0.1000, 0.0000, // Linear velocity P,I,D
     0.0010, 0.0000, 0.0020, // Diagonal walls P,I,D
-    7.0,                    // Start wall break cm left
-    8.2,                    // Start wall break cm right
+    5.5,                    // Start wall break cm left
+    7.2,                    // Start wall break cm right
     1.0                     // Enable wall break correction
 };
 
@@ -339,7 +337,7 @@ GeneralParams general_params_super = {
     0.0025, 0.0000, 0.0050, // Wall P,I,D
     8.0000, 0.1000, 0.0000, // Linear velocity P,I,D
     0.0010, 0.0000, 0.0020, // Diagonal walls P,I,D
-    7.0,                    // Start wall break cm left
-    8.2,                    // Start wall break cm right
+    5.5,                    // Start wall break cm left
+    7.2,                    // Start wall break cm right
     1.0                     // Enable wall break correction
 };

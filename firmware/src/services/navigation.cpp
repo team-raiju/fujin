@@ -161,7 +161,7 @@ Navigation::WallBreak Navigation::process_wall_break() {
     }
 
     bool process = false;
-    if ((selected_mode == SEARCH_FAST) || (selected_mode == SEARCH_MEDIUM) || (selected_mode == SEARCH_SLOW) || (selected_mode == CUSTOM)) {
+    if ((selected_mode == SEARCH_FAST) || (selected_mode == SEARCH_MEDIUM) || (selected_mode == SEARCH_SLOW)) {
         bool valid_previous_move =
             ((previous_movement == FORWARD) || (previous_movement == START) || (previous_movement == TURN_AROUND));
 
@@ -348,7 +348,7 @@ bool Navigation::step() {
             control->set_diagonal_pid_enabled(false);
         }
 
-        if (std::abs(traveled_dist_cm) >= target_travel_cm || front_emergency) {
+        if (std::abs(traveled_dist_cm) >= target_travel_cm) {
             // bsp::leds::stripe_set(Color::Red);
             is_finished = true;
         }
@@ -433,7 +433,7 @@ bool Navigation::step() {
             control->set_target_angular_speed(0);
 
             /* Stop condition */
-            if (std::abs(traveled_dist_cm) >= target_travel_cm || front_emergency) {
+            if (std::abs(traveled_dist_cm) >= target_travel_cm) {
                 if (current_movement == Movement::TURN_AROUND || current_movement == Movement::TURN_AROUND_INPLACE) {
                     if (mini_fsm_state == MiniFSMStates::FORWARD_2) {
                         is_finished = true;
@@ -500,7 +500,7 @@ bool Navigation::step() {
 
             // Stop condition is based on time on high speeds, as angles becomes unreliable
             if ((selected_mode == SEARCH_SLOW) || (selected_mode == SEARCH_MEDIUM) || (selected_mode == SLOW) ||
-                (selected_mode == SEARCH_FAST) || (selected_mode == CUSTOM)) {
+                (selected_mode == SEARCH_FAST)) {
                 angular_end_speed = 0.4f;
             } else {
                 acceleration_condition = (elapsed_time < current_turn_params.t_start_deccel);
