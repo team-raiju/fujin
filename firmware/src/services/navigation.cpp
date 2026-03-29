@@ -348,7 +348,7 @@ bool Navigation::step() {
             control->set_diagonal_pid_enabled(false);
         }
 
-        if (std::abs(traveled_dist_cm) >= target_travel_cm) {
+        if (std::abs(traveled_dist_cm) >= target_travel_cm || front_emergency) {
             // bsp::leds::stripe_set(Color::Red);
             is_finished = true;
         }
@@ -383,9 +383,9 @@ bool Navigation::step() {
 
         if (mini_fsm_state == MiniFSMStates::FORWARD_1 || mini_fsm_state == MiniFSMStates::FORWARD_2) { // Move Forward
 
-            bool front_emergency =
-                ir_reading(SensingDirection::FRONT_LEFT) > 2850 && ir_reading(SensingDirection::FRONT_RIGHT) > 2850 &&
-                ir_reading(SensingDirection::LEFT) > 2470 && ir_reading(SensingDirection::RIGHT) > 2850;
+            // bool front_emergency =
+            //     ir_reading(SensingDirection::FRONT_LEFT) > 2850 && ir_reading(SensingDirection::FRONT_RIGHT) > 2850 &&
+            //     ir_reading(SensingDirection::LEFT) > 2470 && ir_reading(SensingDirection::RIGHT) > 2850;
 
             float max_speed = forward_params[current_movement].max_speed;
             float acceleration = forward_params[current_movement].acceleration;
@@ -461,12 +461,7 @@ bool Navigation::step() {
             }
 
         } else if (mini_fsm_state == MiniFSMStates::TURN) {
-            // If the robot is moving too slow, we use the medium turn params.
-            // This can happen if the robot is turning right afer the start movement. TODO: generalize this function
             auto current_turn_params = turn_params[current_movement];
-            // if (bsp::encoders::get_linear_velocity_m_s() < current_turn_params.turn_linear_speed - 0.25) {
-            //     current_turn_params = turn_params_medium[current_movement];
-            // }
 
             float angular_max_speed = current_turn_params.max_angular_speed;
             float angular_acceleration = current_turn_params.angular_accel;
@@ -695,6 +690,8 @@ void Navigation::set_movement(Movement movement, Movement prev_movement, Movemen
         if (next_movement == Movement::TURN_LEFT_135 || next_movement == Movement::TURN_RIGHT_135 ||
             next_movement == Movement::TURN_LEFT_45 || next_movement == Movement::TURN_RIGHT_45) {
             if ((selected_mode == FAST) || (selected_mode == SUPER)) {
+                // This can happen if the robot is turning right afer the start movement. 
+                // TODO: generalize this function, because now we are forcing medium parameters
                 waiting_for_fast_param = true;
                 turn_params = turn_params_medium;
                 forward_params = forward_params_medium;
