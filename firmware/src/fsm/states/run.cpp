@@ -49,7 +49,7 @@ State* PreRun::react(ButtonPressed const& event) {
     }
 
     if (event.button == ButtonPressed::SHORT2) {
-        return &State::get<Idle>();
+        return &State::get<PreCalib>();
     }
 
     if (event.button == ButtonPressed::LONG1) {
@@ -148,7 +148,6 @@ RunMoveModeSelect::RunMoveModeSelect() {
 }
 
 void RunMoveModeSelect::enter() {
-    // When entering the state, set the LED for the default selection: SMOOTH (Green, Black)
     bsp::leds::stripe_set(bsp::leds::Color::Pink, bsp::leds::Color::Black);
     move_mode = services::Navigation::SMOOTH;
     std::printf("state:RunMoveModeSelect\r\n");

@@ -27,11 +27,11 @@ void PreCalib::enter() {
 
 State* PreCalib::react(ButtonPressed const& event) {
     if (event.button == ButtonPressed::SHORT1) {
-        return &State::get<Idle>();
+        return &State::get<PreRun>();
     }
 
     if (event.button == ButtonPressed::SHORT2) {
-        return &State::get<PreSearch>();
+        return &State::get<Idle>();
     }
 
     if (event.button == ButtonPressed::LONG1) {

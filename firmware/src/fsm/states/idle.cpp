@@ -31,7 +31,7 @@ void Idle::enter() {
 
 State* Idle::react(BleCommand const&) {
     bsp::buzzer::start();
-    bsp::delay_ms(300);
+    bsp::delay_ms(100);
     bsp::buzzer::stop();
 
     return nullptr;
@@ -39,11 +39,11 @@ State* Idle::react(BleCommand const&) {
 
 State* Idle::react(ButtonPressed const& event) {
     if (event.button == ButtonPressed::SHORT1) {
-        return &State::get<PreRun>();
+        return &State::get<PreCalib>();
     }
 
     if (event.button == ButtonPressed::SHORT2) {
-        return &State::get<PreCalib>();
+        return &State::get<PreSearch>();
     }
 
     if (event.button == ButtonPressed::LONG1) {

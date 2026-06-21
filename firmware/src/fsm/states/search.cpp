@@ -45,7 +45,7 @@ State* PreSearch::react(BleCommand const&) {
 
 State* PreSearch::react(ButtonPressed const& event) {
     if (event.button == ButtonPressed::SHORT1) {
-        return &State::get<PreCalib>();
+        return &State::get<Idle>();
     }
 
     if (event.button == ButtonPressed::SHORT2) {
