@@ -24,13 +24,13 @@ const Logger::ParamInfo paramInfoArray[] = {
     {4095, -5, 10, 270.0f},     // target_velocity_ms
     {4095, -70, 70, 29.0f},     // angular_speed_rad_s
     {4095, -70, 70, 29.0f},     // target_rad_s
-    {255, -1000, 1000, 0.127f}, // pwm_left
-    {255, -1000, 1000, 0.127f}, // pwm_right
+    {1023, -1000, 1000, 0.5115f}, // pwm_left
+    {1023, -1000, 1000, 0.5115f}, // pwm_right
     {255, 0, 13000, 0.0195f},   // battery
     {65535, -250, 250, 131.0f}, // position_mm_x
     {65535, -250, 250, 131.0f}, // position_mm_y
-    {65535, -180, 180, 182.0f}, // angle
-    {65535, -50, 1260, 50.0f},  // distance_cm
+    {16383, -180, 180, 45.5083f}, // angle
+    {16383, -50, 1260, 12.5061f}, // distance_cm
 };
 
 // This prevents bugs if a new parameter is added to one but not the other.

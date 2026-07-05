@@ -32,14 +32,14 @@ public:
             uint16_t angular_speed_rad_s : 12;
             uint16_t target_rad_s : 12;
 
-            uint8_t pwm_left : 8;
-            uint8_t pwm_right : 8;
-            uint8_t battery : 8;
+            uint16_t pwm_left : 10;
+            uint16_t pwm_right : 10;
+            uint16_t battery : 8;
 
             uint16_t position_mm_x : 16;
             uint16_t position_mm_y : 16;
-            uint16_t angle : 16;
-            uint16_t distance : 16;
+            uint16_t angle : 14;
+            uint16_t distance : 14;
 
         } __attribute__((packed)) fields;
     };
