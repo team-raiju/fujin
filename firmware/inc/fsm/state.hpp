@@ -228,7 +228,7 @@ public:
     State* react(ButtonPressed const&) override;
 
 private:
-    enum calibration_mode_t { IR_CALIBRATION, IMU_CALIBRATION, FAN_CALIBRATION };
+    enum calibration_mode_t { IR_CALIBRATION, IMU_CALIBRATION, FAN_CALIBRATION, MOTORS_CALIBRATION };
 
     calibration_mode_t calibration_mode;
 };
@@ -273,5 +273,20 @@ public:
 
 private:
     int loop_counter;
+};
+
+class CalibrationMotors : public State {
+public:
+    CalibrationMotors();
+
+    void enter() override;
+    void exit() override;
+
+    State* react(ButtonPressed const&) override;
+    State* react(Timeout const&) override;
+
+private:
+    int loop_counter;
+    float distance_traveled_mm;
 };
 }

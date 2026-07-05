@@ -7,6 +7,7 @@
 #include "bsp/motors.hpp"
 #include "bsp/timers.hpp"
 #include "bsp/fan.hpp"
+#include "bsp/encoders.hpp"
 #include "fsm/state.hpp"
 #include "services/config.hpp"
 #include "utils/soft_timer.hpp"
@@ -60,6 +61,9 @@ State* CalibrationModeSelect::react(ButtonPressed const& event) {
         } else if (calibration_mode == IMU_CALIBRATION) {
             bsp::leds::stripe_set(bsp::leds::Color::Orange, bsp::leds::Color::Black);
             calibration_mode = FAN_CALIBRATION;
+        } else if (calibration_mode == FAN_CALIBRATION) {
+            bsp::leds::stripe_set(bsp::leds::Color::Orange, bsp::leds::Color::Orange);
+            calibration_mode = MOTORS_CALIBRATION;
         } else {
             bsp::leds::stripe_set(bsp::leds::Color::Blue, bsp::leds::Color::Black);
             calibration_mode = IR_CALIBRATION;
@@ -69,6 +73,9 @@ State* CalibrationModeSelect::react(ButtonPressed const& event) {
 
     if (event.button == ButtonPressed::SHORT1) {
         if (calibration_mode == IR_CALIBRATION) {
+            bsp::leds::stripe_set(bsp::leds::Color::Orange, bsp::leds::Color::Orange);
+            calibration_mode = MOTORS_CALIBRATION;
+        } else if (calibration_mode == MOTORS_CALIBRATION) {
             bsp::leds::stripe_set(bsp::leds::Color::Orange, bsp::leds::Color::Black);
             calibration_mode = FAN_CALIBRATION;
         } else if (calibration_mode == FAN_CALIBRATION) {
@@ -78,6 +85,7 @@ State* CalibrationModeSelect::react(ButtonPressed const& event) {
             bsp::leds::stripe_set(bsp::leds::Color::Blue, bsp::leds::Color::Black);
             calibration_mode = IR_CALIBRATION;
         }
+        return nullptr;
     }
 
     if (event.button == ButtonPressed::LONG1) {
@@ -85,8 +93,10 @@ State* CalibrationModeSelect::react(ButtonPressed const& event) {
             return &State::get<CalibrationIRSensors>();
         } else if (calibration_mode == IMU_CALIBRATION) {
             return &State::get<CalibrationIMU>();
-        } else {
+        } else if (calibration_mode == FAN_CALIBRATION) {
             return &State::get<CalibrationFan>();
+        } else {
+            return &State::get<CalibrationMotors>();
         }
     }
 
@@ -236,6 +246,70 @@ void CalibrationFan::exit() {
 
     services::Control::instance()->stop_fan();
     bsp::fan::set(0);
+}
+
+CalibrationMotors::CalibrationMotors() {}
+
+void CalibrationMotors::enter() {
+    bsp::debug::print("state:CalibrationMotors");
+    bsp::motors::set(0, 0);
+    bsp::leds::stripe_set(bsp::leds::Color::Red, bsp::leds::Color::Red);
+    bsp::buzzer::start();
+    bsp::delay_ms(2000);
+    bsp::buzzer::stop();
+
+    loop_counter = 0;
+    distance_traveled_mm = 0.0f;
+    bsp::encoders::reset();
+    soft_timer::start(1, soft_timer::CONTINUOUS);
+}
+
+State* CalibrationMotors::react(ButtonPressed const& event) {
+    if (event.button == ButtonPressed::SHORT1) {
+        bsp::debug::print("motors(50, 50)");
+        bsp::motors::set(50, 50);
+        return nullptr;
+    }
+
+    if (event.button == ButtonPressed::SHORT2) {
+        bsp::debug::print("motors(-50, -50)");
+        bsp::motors::set(-50, -50);
+        return nullptr;
+    }
+
+    if (event.button == ButtonPressed::LONG2 || event.button == ButtonPressed::LONG1) {
+        return &State::get<PreCalib>();
+    }
+
+    return nullptr;
+}
+
+State* CalibrationMotors::react(Timeout const&) {
+    loop_counter++;
+
+    bsp::encoders::update_velocities();
+
+    auto left_encoder = bsp::encoders::get_data(bsp::encoders::EncoderSide::LEFT);
+    auto right_encoder = bsp::encoders::get_data(bsp::encoders::EncoderSide::RIGHT);
+
+    float estimated_delta_l_mm = (left_encoder.ticks * bsp::encoders::get_encoder_dist_mm_pulse());
+    float estimated_delta_r_mm = (right_encoder.ticks * bsp::encoders::get_encoder_dist_mm_pulse());
+
+    float delta_x_mm = (estimated_delta_l_mm + estimated_delta_r_mm) / 2.0f;
+    distance_traveled_mm += delta_x_mm;
+    // bsp::encoders::clear_ticks();
+
+    if (loop_counter % 100 == 0) {
+        // std::printf("Vel: %f m/s; Dist: %f mm\r\n", bsp::encoders::get_linear_velocity_m_s(), distance_traveled_mm);
+        std::printf("ticks: (%ld, %ld)\r\n", left_encoder.ticks, right_encoder.ticks);
+    }
+
+    return nullptr;
+}
+
+void CalibrationMotors::exit() {
+    soft_timer::stop();
+    bsp::motors::set(0, 0);
 }
 
 }

@@ -4,7 +4,9 @@
             "name": "STM",
             "intelliSenseMode": "linux-gcc-arm",
             "configurationProvider": "ms-vscode.cmake-tools",
-            "compileCommands": "build/STM32G474/compile_commands.json"
+            "compileCommands": "build/STM32G474/compile_commands.json",
+            "cppStandard": "c++23",
+            "compilerPath": "/home/marco/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi/bin/arm-none-eabi-g++"
         },
         {
             "name": "PC",
