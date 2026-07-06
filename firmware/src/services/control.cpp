@@ -13,8 +13,6 @@ static constexpr float max_battery_voltage = 12.6;
 static constexpr float mot_kt = 0.0064; // motor torque constant [Nm/A]
 static constexpr float mot_ra = 2.5;    // armature resistance[Ohms]
 static constexpr float CONTROL_FREQUENCY_HZ = 1000.0;
-static constexpr float ACC_FEED_FOWARD_K = 0.00037;
-static constexpr float BREAK_FEED_FOWARD_K = 0.00037;
 
 namespace services {
 
@@ -29,6 +27,9 @@ void Control::init(void) {
         services::Config::angular_kp,
         services::Config::angular_ki,
         services::Config::angular_kd,
+        services::Config::angular_acc_feed_forward_k,
+        services::Config::angular_break_feed_forward_k,
+        services::Config::angular_vel_feed_forward_k,
         services::Config::wall_kp,
         services::Config::wall_ki,
         services::Config::wall_kd,
@@ -102,30 +103,27 @@ void Control::update() {
             target_angular_speed_rad_s += diagonal_walls_pid.calculate(0.0, bsp::analog_sensors::ir_diagonal_error());
         }
 
-
         float linear_ratio = linear_vel_pid.calculate(target_linear_speed_m_s, mean_velocity_m_s);
         float rotation_ratio = -angular_vel_pid.calculate(target_angular_speed_rad_s, bsp::imu::get_rad_per_s());
 
-        float target_angular_acceleration =
-            (target_angular_speed_rad_s - last_target_angular_speed_rad_s) * CONTROL_FREQUENCY_HZ;
-
-        bool is_accelerating = (target_angular_speed_rad_s * target_angular_acceleration) > 0.0f;
-
+        // Feed-Foward
         if (std::abs(target_angular_speed_rad_s) < 0.5) {
             rotation_ff = 0;
         } else {
-            rotation_ff = is_accelerating
-                                    ? target_angular_acceleration * ACC_FEED_FOWARD_K
-                                    : target_angular_acceleration * BREAK_FEED_FOWARD_K;
+            float target_angular_acceleration =
+                (target_angular_speed_rad_s - last_target_angular_speed_rad_s) * CONTROL_FREQUENCY_HZ;
+
+            bool is_accelerating_same_dir = (target_angular_speed_rad_s * target_angular_acceleration) > 0.0f;
+            rotation_ff = is_accelerating_same_dir ? target_angular_acceleration * params.angular_acc_feed_forward_k
+                                          : target_angular_acceleration * params.angular_break_feed_forward_k;
         }
 
-        rotation_ff += target_angular_speed_rad_s * 0.0031;
-        rotation_ratio -= rotation_ff;
+        rotation_ff += target_angular_speed_rad_s * params.angular_vel_feed_forward_k;
         last_target_angular_speed_rad_s = target_angular_speed_rad_s;
+        // End of Feed-Foward
 
-
-        float l_current = linear_ratio + rotation_ratio;
-        float r_current = linear_ratio - rotation_ratio;
+        float l_current = linear_ratio + (rotation_ratio - rotation_ff);
+        float r_current = linear_ratio - (rotation_ratio - rotation_ff);
 
         float left_ang_vel = bsp::encoders::get_left_filtered_ang_vel_rad_s();
         float right_ang_vel = bsp::encoders::get_right_filtered_ang_vel_rad_s();

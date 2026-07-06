@@ -17,6 +17,9 @@ float Config::fan_speed = 0.0; //[0-1000]
 float Config::angular_kp = 0.105;
 float Config::angular_ki = 0.010;
 float Config::angular_kd = 0.0075;
+float Config::angular_acc_feed_forward_k = 0.00037;
+float Config::angular_break_feed_forward_k = 0.00037;
+float Config::angular_vel_feed_forward_k = 0.0031;
 
 float Config::wall_kp = 0.0025;
 float Config::wall_ki = 0.0;
@@ -89,6 +92,9 @@ static std::pair<float*, bsp::eeprom::param_addresses_t> params[] = {
     {&Config::start_wall_break_cm_left, bsp::eeprom::ADDR_START_WALL_BREAK_CM_LEFT},
     {&Config::start_wall_break_cm_right, bsp::eeprom::ADDR_START_WALL_BREAK_CM_RIGHT},
     {&Config::enable_wall_break_correction, bsp::eeprom::ADDR_ENABLE_WALL_BREAK_CORRECTION},
+    {&Config::angular_acc_feed_forward_k, bsp::eeprom::ADDR_ANGULAR_ACC_FEED_FORWARD_K},
+    {&Config::angular_break_feed_forward_k, bsp::eeprom::ADDR_ANGULAR_BREAK_FEED_FORWARD_K},
+    {&Config::angular_vel_feed_forward_k, bsp::eeprom::ADDR_ANGULAR_VEL_FEED_FORWARD_K},
 };
 
 static const std::map<Movement, uint16_t> turn_address_map = {

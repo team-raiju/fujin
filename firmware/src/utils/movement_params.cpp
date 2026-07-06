@@ -266,78 +266,85 @@ std::map<Movement, ForwardParams> forward_params_custom = {
 };
 
 const GeneralParams general_params_search_slow = {
-    0.0,                    // Fan speed
-    0.0350, 0.0020, 0.0000, // Angular P,I,D
-    0.0006, 0.0000, 0.0010, // Wall P,I,D
-    3.0000, 0.0360, 0.0000, // Linear velocity P,I,D
-    0.0000, 0.0000, 0.0000, // Diagonal walls P,I,D
-    4.5,                    // Start wall break cm left
-    5.7,                    // Start wall break cm right
-    1.0                     // Enable wall break correction
+    0.0,                      // Fan speed
+    0.0350,  0.0020,  0.0000, // Angular P,I,D
+    0.00037, 0.00037, 0.0031, // Angular acc/brake/velocity feed-forward
+    0.0006,  0.0000,  0.0010, // Wall P,I,D
+    3.0000,  0.0360,  0.0000, // Linear velocity P,I,D
+    0.0000,  0.0000,  0.0000, // Diagonal walls P,I,D
+    4.5,                      // Start wall break cm left
+    5.7,                      // Start wall break cm right
+    1.0                       // Enable wall break correction
 };
 
 const GeneralParams general_params_search_medium = {
-    150.0,                  // Fan speed
-    0.0550, 0.0090, 0.0000, // Angular P,I,D
-    0.0020, 0.0000, 0.0040, // Wall P,I,D
-    8.0000, 0.1000, 0.0000, // Linear velocity P,I,D
-    0.0000, 0.0000, 0.0000, // Diagonal walls P,I,D
-    5.5,                    // Start wall break cm left
-    6.7,                    // Start wall break cm right
-    1.0                     // Enable wall break correction
+    150.0,                    // Fan speed
+    0.0550,  0.0090,  0.0000, // Angular P,I,D
+    0.00000, 0.00000, 0.0000, // Angular acc/brake/velocity feed-forward
+    0.0020,  0.0000,  0.0040, // Wall P,I,D
+    8.0000,  0.1000,  0.0000, // Linear velocity P,I,D
+    0.0000,  0.0000,  0.0000, // Diagonal walls P,I,D
+    5.5,                      // Start wall break cm left
+    6.7,                      // Start wall break cm right
+    1.0                       // Enable wall break correction
 };
 
 const GeneralParams general_params_search_fast = {
-    220.0,                  // Fan speed
-    0.0850, 0.0110, 0.0000, // Angular P,I,D
-    0.0020, 0.0000, 0.0040, // Wall P,I,D
-    8.0000, 0.1000, 0.0000, // Linear velocity P,I,D
-    0.0000, 0.0000, 0.0000, // Diagonal walls P,I,D
-    5.5,                    // Start wall break cm left
-    6.7,                    // Start wall break cm right
-    1.0                     // Enable wall break correction
+    220.0,                    // Fan speed
+    0.0850,  0.0110,  0.0000, // Angular P,I,D
+    0.00000, 0.00000, 0.0000, // Angular acc/brake/velocity feed-forward
+    0.0020,  0.0000,  0.0040, // Wall P,I,D
+    8.0000,  0.1000,  0.0000, // Linear velocity P,I,D
+    0.0000,  0.0000,  0.0000, // Diagonal walls P,I,D
+    5.5,                      // Start wall break cm left
+    6.7,                      // Start wall break cm right
+    1.0                       // Enable wall break correction
 };
 
 const GeneralParams general_params_slow = {
-    0.0,                    // Fan speed
-    0.0500, 0.0050, 0.0000, // Angular P,I,D
-    0.0015, 0.0000, 0.0025, // Wall P,I,D
-    5.0000, 0.0600, 0.0000, // Linear velocity P,I,D
-    0.0045, 0.0000, 0.0045, // Diagonal walls P,I,D
-    5.3,                    // Start wall break cm left
-    7.5,                    // Start wall break cm right
-    1.0                     // Enable wall break correction
+    0.0,                      // Fan speed
+    0.0480,  0.00042, 0.0000, // Angular P,I,D
+    0.00037, 0.00037, 0.0031, // Angular acc/brake/velocity feed-forward
+    0.0015,  0.0000,  0.0025, // Wall P,I,D
+    5.0000,  0.0600,  0.0000, // Linear velocity P,I,D
+    0.0045,  0.0000,  0.0045, // Diagonal walls P,I,D
+    5.3,                      // Start wall break cm left
+    7.5,                      // Start wall break cm right
+    1.0                       // Enable wall break correction
 };
 
 const GeneralParams general_params_medium = {
-    600.0,                  // Fan speed
-    0.1050, 0.0100, 0.0075, // Angular P,I,D
-    0.0025, 0.0000, 0.0050, // Wall P,I,D
-    8.0000, 0.1000, 0.0000, // Linear velocity P,I,D
-    0.0010, 0.0000, 0.0020, // Diagonal walls P,I,D
-    5.5,                    // Start wall break cm left
-    7.2,                    // Start wall break cm right
-    1.0                     // Enable wall break correction
+    600.0,                    // Fan speed
+    0.1050,  0.0100,  0.0075, // Angular P,I,D
+    0.00000, 0.00000, 0.0000, // Angular acc/brake/velocity feed-forward
+    0.0025,  0.0000,  0.0050, // Wall P,I,D
+    8.0000,  0.1000,  0.0000, // Linear velocity P,I,D
+    0.0010,  0.0000,  0.0020, // Diagonal walls P,I,D
+    5.5,                      // Start wall break cm left
+    7.2,                      // Start wall break cm right
+    1.0                       // Enable wall break correction
 };
 
 const GeneralParams general_params_fast = {
-    600.0,                  // Fan speed
-    0.1050, 0.0100, 0.0075, // Angular P,I,D
-    0.0025, 0.0000, 0.0050, // Wall P,I,D
-    8.0000, 0.1000, 0.0000, // Linear velocity P,I,D
-    0.0010, 0.0000, 0.0020, // Diagonal walls P,I,D
-    5.5,                    // Start wall break cm left
-    7.2,                    // Start wall break cm right
-    1.0                     // Enable wall break correction
+    600.0,                    // Fan speed
+    0.1050,  0.0100,  0.0075, // Angular P,I,D
+    0.00000, 0.00000, 0.0000, // Angular acc/brake/velocity feed-forward
+    0.0025,  0.0000,  0.0050, // Wall P,I,D
+    8.0000,  0.1000,  0.0000, // Linear velocity P,I,D
+    0.0010,  0.0000,  0.0020, // Diagonal walls P,I,D
+    5.5,                      // Start wall break cm left
+    7.2,                      // Start wall break cm right
+    1.0                       // Enable wall break correction
 };
 
 const GeneralParams general_params_super = {
-    600.0,                  // Fan speed
-    0.1050, 0.0100, 0.0075, // Angular P,I,D
-    0.0025, 0.0000, 0.0050, // Wall P,I,D
-    8.0000, 0.1000, 0.0000, // Linear velocity P,I,D
-    0.0010, 0.0000, 0.0020, // Diagonal walls P,I,D
-    5.5,                    // Start wall break cm left
-    7.2,                    // Start wall break cm right
-    1.0                     // Enable wall break correction
+    600.0,                    // Fan speed
+    0.1050,  0.0100,  0.0075, // Angular P,I,D
+    0.00000, 0.00000, 0.0000, // Angular acc/brake/velocity feed-forward
+    0.0025,  0.0000,  0.0050, // Wall P,I,D
+    8.0000,  0.1000,  0.0000, // Linear velocity P,I,D
+    0.0010,  0.0000,  0.0020, // Diagonal walls P,I,D
+    5.5,                      // Start wall break cm left
+    7.2,                      // Start wall break cm right
+    1.0                       // Enable wall break correction
 };
