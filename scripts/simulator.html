@@ -1,0 +1,1785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Robot Turn Velocity Planner Simulator</title>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Hammer.js (Required for Chart.js Zoom plugin panning) -->
+  <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+  <!-- Chart.js Zoom Plugin -->
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
+
+  <style>
+    :root {
+      --bg-color: #f8fafc;
+      --card-bg: #ffffff;
+      --border-color: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --primary: #4f46e5;
+      
+      /* Profile color codes */
+      --color-ideal: #4f46e5;
+      --color-trapezoidal: #059669;
+      --color-trapezoidal-ideal: #10b981;
+      --color-sshape: #e11d48;
+      
+      --radius-sm: 6px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --transition: all 0.25s ease;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      line-height: 1.5;
+      padding: 0;
+    }
+
+    header {
+      background-color: var(--card-bg);
+      border-bottom: 1px solid var(--border-color);
+      padding: 1.25rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .header-title h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .header-title p {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    .app-container {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      min-height: calc(100vh - 70px);
+    }
+
+    /* Sidebar controls */
+    .sidebar {
+      background-color: var(--card-bg);
+      border-right: 1px solid var(--border-color);
+      padding: 1.5rem;
+      overflow-y: auto;
+      height: calc(100vh - 70px);
+      position: sticky;
+      top: 70px;
+    }
+
+    .sidebar-section {
+      margin-bottom: 1.5rem;
+    }
+
+    .sidebar-section-title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+      font-weight: 700;
+    }
+
+    /* Checkbox list */
+    .profile-selector {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .profile-checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 0.9rem;
+      transition: var(--transition);
+    }
+
+    .profile-checkbox-label:hover {
+      background-color: #f1f5f9;
+    }
+
+    .profile-checkbox-label input[type="checkbox"] {
+      width: 1.1rem;
+      height: 1.1rem;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+
+    .profile-checkbox-label.active-ideal {
+      border-color: var(--color-ideal);
+      background-color: #e0e7ff;
+    }
+    .profile-checkbox-label.active-trapezoidal {
+      border-color: var(--color-trapezoidal);
+      background-color: #d1fae5;
+    }
+    .profile-checkbox-label.active-sshape {
+      border-color: var(--color-sshape);
+      background-color: #ffe4e6;
+    }
+
+    /* Accordion settings panels */
+    .accordion {
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      margin-bottom: 1rem;
+      overflow: hidden;
+      background-color: var(--card-bg);
+      transition: var(--transition);
+    }
+
+    .accordion-header {
+      padding: 1rem;
+      background-color: #f8fafc;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid transparent;
+      user-select: none;
+    }
+
+    .accordion-header:hover {
+      background-color: #f1f5f9;
+    }
+
+    .accordion.open .accordion-header {
+      border-bottom-color: var(--border-color);
+    }
+
+    .accordion-indicator {
+      transition: transform 0.2s ease;
+      font-size: 0.75rem;
+    }
+
+    .accordion.open .accordion-indicator {
+      transform: rotate(180deg);
+    }
+
+    .accordion-content {
+      padding: 0;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out;
+    }
+
+    .accordion.open .accordion-content {
+      padding: 1.25rem 1rem;
+      max-height: 1000px;
+      overflow: visible;
+    }
+
+    /* Input groups */
+    .input-group {
+      margin-bottom: 1rem;
+      position: relative;
+    }
+
+    .input-label-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.35rem;
+    }
+
+    .input-group label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #334155;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      font-size: 0.9rem;
+      transition: var(--transition);
+    }
+
+    .input-group input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+    }
+
+    .info-icon {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      cursor: help;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      border: 1px solid var(--text-muted);
+      border-radius: 50%;
+      text-align: center;
+      transition: var(--transition);
+    }
+
+    .info-icon:hover {
+      color: var(--primary);
+      border-color: var(--primary);
+    }
+
+    .helper-text {
+      max-height: 0;
+      overflow: hidden;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0;
+      transition: all 0.2s ease;
+      opacity: 0;
+    }
+
+    .input-group input:focus ~ .helper-text {
+      max-height: 50px;
+      margin-top: 0.25rem;
+      opacity: 1;
+    }
+
+    /* Dashboard main panel */
+    .dashboard {
+      padding: 1.5rem 2rem;
+      overflow-y: auto;
+      height: calc(100vh - 70px);
+    }
+
+    /* Summary Stats Grid */
+    .stats-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .stats-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1rem 1.25rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .stats-card-header {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .stats-card.card-ideal .stats-card-header { color: var(--color-ideal); }
+    .stats-card.card-trapezoidal .stats-card-header { color: var(--color-trapezoidal); }
+    .stats-card.card-sshape .stats-card-header { color: var(--color-sshape); }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .stat-item {
+      font-size: 0.85rem;
+    }
+
+    .stat-label {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+    }
+
+    .stat-val {
+      font-weight: 600;
+    }
+
+    /* Visual Grid Layout for Plots */
+    .plots-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+
+    .plot-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .plot-card.wide-plot {
+      grid-column: span 1;
+    }
+
+    .plot-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 1.25rem;
+      color: var(--text-main);
+    }
+
+    .canvas-container {
+      position: relative;
+      width: 100%;
+      height: 350px;
+    }
+
+    .canvas-container-square {
+      position: relative;
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
+      height: 600px;
+    }
+
+    /* General check box for Trapezoidal Ideal Path */
+    .sub-option-container {
+      margin-top: 0.5rem;
+      padding-left: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .sub-option-container input {
+      accent-color: var(--color-trapezoidal-ideal);
+    }
+
+    @media (max-width: 1024px) {
+      .app-container {
+        grid-template-columns: 1fr;
+      }
+      .sidebar {
+        height: auto;
+        position: static;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+      }
+      .dashboard {
+        height: auto;
+      }
+      .plots-grid {
+        grid-template-columns: 1fr;
+      }
+      .plot-card.wide-plot {
+        grid-column: span 1;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-title">
+      <h1>Robot Turn Velocity Planner Simulator</h1>
+      <p>Interactive web sandbox to simulate and compare angular profile planners</p>
+    </div>
+  </header>
+
+  <div class="app-container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">Select Profiles to Compare</div>
+        <div class="profile-selector">
+          <label class="profile-checkbox-label active-ideal" id="label-ideal">
+            <input type="checkbox" id="chk-ideal" checked onchange="toggleProfile('ideal')">
+            <span>Ideal Curve Profile</span>
+          </label>
+          
+          <label class="profile-checkbox-label active-trapezoidal" id="label-trapezoidal">
+            <input type="checkbox" id="chk-trapezoidal" checked onchange="toggleProfile('trapezoidal')">
+            <span>Trapezoidal Profile</span>
+          </label>
+          
+          <div class="sub-option-container">
+            <input type="checkbox" id="chk-trapezoidal-ideal" checked onchange="updateSimulation()">
+            <label for="chk-trapezoidal-ideal">Show Ideal Arc Path (dashed)</label>
+          </div>
+
+          <label class="profile-checkbox-label active-sshape" id="label-sshape">
+            <input type="checkbox" id="chk-sshape" checked onchange="toggleProfile('sshape')">
+            <span>S-Shape Profile</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="sidebar-section-title">Parameter Configurations</div>
+
+      <!-- Accordion 1: Ideal Profile Parameters -->
+      <div class="accordion open" id="accordion-ideal">
+        <div class="accordion-header" onclick="toggleAccordion('ideal')">
+          <span>Ideal Curve Parameters</span>
+          <span class="accordion-indicator">▲</span>
+        </div>
+        <div class="accordion-content">
+          <div class="input-group">
+            <div class="input-label-container">
+              <label for="ideal-linear-speed">Linear Speed (m/s)</label>
+              <span class="info-icon" title="Forward speed of the robot.">ⓘ</span>
+            </div>
+            <input type="number" id="ideal-linear-speed" value="0.5" step="0.05" onchange="updateSimulation()">
+            <div class="helper-text">Constant forward linear speed in m/s.</div>
+          </div>
+          
+          <div class="input-group">
+            <div class="input-label-container">
+              <label for="ideal-turn-angle">Turn Angle (deg)</label>
+              <span class="info-icon" title="Desired turn angle in degrees.">ⓘ</span>
+            </div>
+            <input type="number" id="ideal-turn-angle" value="90" step="5" onchange="updateSimulation()">
+            <div class="helper-text">Desired orientation angle shift.</div>
+          </div>
+
+          <div class="input-group">
+            <div class="input-label-container">
+              <label for="ideal-abs-max-omega">Abs Max Angular Speed (rad/s)</label>
+              <span class="info-icon" title="Motor speed limit where torque drops to zero.">ⓘ</span>
+            </div>
+            <input type="number" id="ideal-abs-max-omega" value="34.90658" step="0.1" onchange="updateSimulation()">
+            <div class="helper-text">Speed limit where acceleration becomes zero.</div>
+          </div>
+
+          <div class="input-group">
+            <div class="input-label-container">
+              <label for="ideal-ref-omega">Ref Angular Speed (rad/s)</label>
+              <span class="info-icon" title="Reference angular speed to define motor torque curve.">ⓘ</span>
+            </div>
+            <input type="number" id="ideal-ref-omega" value="10.0" step="0.1" onchange="updateSimulation()">
+            <div class="helper-text">Velocity reference to calibrate torque drop.</div>
+          </div>
+
+          <div class="input-group">
+            <div class="input-label-container">
+              <label for="ideal-ref-alpha">Ref Max Accel (rad/s²)</label>
+              <span class="info-icon" title="Maximum angular acceleration at reference speed.">ⓘ</span>
+            </div>
+            <input type="number" id="ideal-ref-alpha" value="104.71975" step="1" onchange="updateSimulation()">
+            <div class="helper-text">Maximum acceleration at the reference speed.</div>
+          </div>
+
+          <div class="input-group">
+            <div class="input-label-container">
+              <label for="ideal-max-speed">Max Angular Speed Cap (rad/s)</label>
+              <span class="info-icon" title="The maximum angular speed cap for this profile.">ⓘ</span>
+            </div>
+            <input type="number" id="ideal-max-speed" value="10.0" step="0.5" onchange="updateSimulation()">
+            <div class="helper-text">The maximum angular speed cap for this profile.</div>
+          </div>
+
+          <div class="input-group">
+            <div class="input-label-container">
+              <label for="ideal-mm-before">mm Before Turn</label>
+              <span class="info-icon" title="Straight distance before turn.">ⓘ</span>
+            </div>
+            <input type="number" id="ideal-mm-before" value="0" step="1" onchange="updateSimulation()">
+            <div class="helper-text">Run-in straight line segment in mm.</div>
+          </div>
+
+          <div class="input-group">
+            <div class="input-label-container">
+              <label for="ideal-mm-after">mm After Turn</label>
+              <span class="info-icon" title="Straight distance after turn.">ⓘ</span>
+            </div>
+            <input type="number" id="ideal-mm-after" value="0" step="1" onchange="updateSimulation()">
+            <div class="helper-text">Run-out straight line segment in mm.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Accordion 2: Trapezoidal Profile Parameters -->
+      <div class="accordion" id="accordion-trapezoidal">
+        <div class="accordion-header" onclick="toggleAccordion('trapezoidal')">
+          <span>Trapezoidal Parameters</span>
+          <span class="accordion-indicator">▲</span>
+        </div>
+        <div class="accordion-content">
+          <div class="input-group">
+            <div class="input-label-container">
+              <label for="trap-linear-speed">Linear Speed (m/s)</label>
+              <span class="info-icon" title="Forward speed of the robot.">ⓘ</span>
+            </div>
+            <input type="number" id="trap-linear-speed" value="0.5" step="0.05" onchange="updateSimulation()">
+            <div class="helper-text">Constant forward linear speed in m/s.</div>
+          </div>
+
+          <div class="input-group">
+            <div class="input-label-container">
+              <label for="trap-turn-angle">Turn Angle (deg)</label>
+              <span class="info-icon" title="Desired turn angle in degrees.">ⓘ</span>
+            </div>
+            <input type="number" id="trap-turn-angle" value="90" step="5" onchange="updateSimulation()">
+            <div class="helper-text">Desired orientation angle shift.</div>
+          </div>
+
+          <div class="input-group">
+            <div class="input-label-container">
+              <label for="trap-radius">Turn Radius (mm)</label>
+              <span class="info-icon" title="Target physical path radius of the turn.">ⓘ</span>
+            </div>
+            <input type="number" id="trap-radius" value="30" step="1" onchange="updateSimulation()">
+            <div class="helper-text">Turn radius in mm (for ideal arc calculations).</div>
+          </div>
+
+          <div class="input-group">
+            <div class="input-label-container">
+              <label for="trap-acceleration">Max Accel (rad/s²)</label>
+              <span class="info-icon" title="Ramp-up acceleration rate.">ⓘ</span>
+            </div>
+            <input type="number" id="trap-acceleration" value="104.71975" step="5" onchange="updateSimulation()">
+            <div class="helper-text">Maximum angular acceleration in rad/s².</div>
+          </div>
+
+          <div class="input-group">
+            <div class="input-label-container">
+              <label for="trap-deceleration">Max Decel (rad/s²)</label>
+              <span class="info-icon" title="Ramp-down deceleration rate.">ⓘ</span>
+            </div>
+            <input type="number" id="trap-deceleration" value="104.71975" step="5" onchange="updateSimulation()">
+            <div class="helper-text">Maximum angular deceleration in rad/s².</div>
+          </div>
+
+          <div class="input-group">
+            <div class="input-label-container">
+              <label for="trap-max-speed">Max Angular Speed Cap (rad/s)</label>
+              <span class="info-icon" title="The maximum angular speed cap for this profile.">ⓘ</span>
+            </div>
+            <input type="number" id="trap-max-speed" value="10.47197" step="0.5" onchange="updateSimulation()">
+            <div class="helper-text">The maximum angular speed cap for this profile.</div>
+          </div>
+
+          <div class="input-group">
+            <div class="input-label-container">
+              <label for="trap-mm-before">mm Before Turn</label>
+              <span class="info-icon" title="Straight distance before turn.">ⓘ</span>
+            </div>
+            <input type="number" id="trap-mm-before" value="0" step="1" onchange="updateSimulation()">
+            <div class="helper-text">Run-in straight line segment in mm.</div>
+          </div>
+
+          <div class="input-group">
+            <div class="input-label-container">
+              <label for="trap-mm-after">mm After Turn</label>
+              <span class="info-icon" title="Straight distance after turn.">ⓘ</span>
+            </div>
+            <input type="number" id="trap-mm-after" value="4.1" step="0.1" onchange="updateSimulation()">
+            <div class="helper-text">Run-out straight line segment in mm.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Accordion 3: S-Shape Parameters -->
+      <div class="accordion" id="accordion-sshape">
+        <div class="accordion-header" onclick="toggleAccordion('sshape')">
+          <span>S-Shape Parameters</span>
+          <span class="accordion-indicator">▲</span>
+        </div>
+        <div class="accordion-content">
+          <div class="input-group">
+            <div class="input-label-container">
+              <label for="s-linear-speed">Linear Speed (m/s)</label>
+              <span class="info-icon" title="Forward speed of the robot.">ⓘ</span>
+            </div>
+            <input type="number" id="s-linear-speed" value="0.7" step="0.05" onchange="updateSimulation()">
+            <div class="helper-text">Constant forward linear speed in m/s.</div>
+          </div>
+
+          <div class="input-group">
+            <div class="input-label-container">
+              <label for="s-turn-angle">Turn Angle (deg)</label>
+              <span class="info-icon" title="Desired turn angle in degrees.">ⓘ</span>
+            </div>
+            <input type="number" id="s-turn-angle" value="90" step="5" onchange="updateSimulation()">
+            <div class="helper-text">Desired orientation angle shift.</div>
+          </div>
+
+          <div class="input-group">
+            <div class="input-label-container">
+              <label for="s-transition-angle">Transition Angle (deg)</label>
+              <span class="info-icon" title="Angle over which acceleration and deceleration take place.">ⓘ</span>
+            </div>
+            <input type="number" id="s-transition-angle" value="25" step="1" onchange="updateSimulation()">
+            <div class="helper-text">The angle in degrees for speed ramp transition.</div>
+          </div>
+
+          <div class="input-group">
+            <div class="input-label-container">
+              <label for="s-max-speed">Max Angular Speed Cap (rad/s)</label>
+              <span class="info-icon" title="The maximum angular speed cap for this profile.">ⓘ</span>
+            </div>
+            <input type="number" id="s-max-speed" value="15.70796" step="0.5" onchange="updateSimulation()">
+            <div class="helper-text">The maximum angular speed cap for this profile.</div>
+          </div>
+
+          <div class="input-group">
+            <div class="input-label-container">
+              <label for="s-sharpness">Sharpness Factor</label>
+              <span class="info-icon" title="Sinusoidal exponent factor. 1.0 is default.">ⓘ</span>
+            </div>
+            <input type="number" id="s-sharpness" value="1.0" step="0.1" onchange="updateSimulation()">
+            <div class="helper-text">Controls S-Curve transition shape exponent.</div>
+          </div>
+
+          <div class="input-group">
+            <div class="input-label-container">
+              <label for="s-mm-before">mm Before Turn</label>
+              <span class="info-icon" title="Straight distance before turn.">ⓘ</span>
+            </div>
+            <input type="number" id="s-mm-before" value="0" step="1" onchange="updateSimulation()">
+            <div class="helper-text">Run-in straight line segment in mm.</div>
+          </div>
+
+          <div class="input-group">
+            <div class="input-label-container">
+              <label for="s-mm-after">mm After Turn</label>
+              <span class="info-icon" title="Straight distance after turn.">ⓘ</span>
+            </div>
+            <input type="number" id="s-mm-after" value="0" step="1" onchange="updateSimulation()">
+            <div class="helper-text">Run-out straight line segment in mm.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div class="dashboard">
+      <!-- Side by Side Stats Comparisons -->
+      <div class="stats-container">
+        <!-- Ideal Stats Card -->
+        <div class="stats-card card-ideal" id="stats-card-ideal">
+          <div class="stats-card-header">
+            🔵 Ideal Curve Profile
+          </div>
+          <div class="stats-grid">
+            <div class="stat-item"><div class="stat-label">Total Time</div><div class="stat-val" id="stat-ideal-time">-</div></div>
+            <div class="stat-item"><div class="stat-label">Peak Speed</div><div class="stat-val" id="stat-ideal-speed">-</div></div>
+            <div class="stat-item"><div class="stat-label">Peak Accel</div><div class="stat-val" id="stat-ideal-accel">-</div></div>
+            <div class="stat-item"><div class="stat-label">Final Position</div><div class="stat-val" id="stat-ideal-pos">-</div></div>
+            <div class="stat-item"><div class="stat-label">Time to Top Speed</div><div class="stat-val" id="stat-ideal-t-top">-</div></div>
+            <div class="stat-item"><div class="stat-label">Time to Decel</div><div class="stat-val" id="stat-ideal-t-decel">-</div></div>
+            <div class="stat-item"><div class="stat-label">Angle at Top Speed</div><div class="stat-val" id="stat-ideal-ang-top">-</div></div>
+            <div class="stat-item"><div class="stat-label">Angle at Decel</div><div class="stat-val" id="stat-ideal-ang-decel">-</div></div>
+          </div>
+        </div>
+
+        <!-- Trapezoidal Stats Card -->
+        <div class="stats-card card-trapezoidal" id="stats-card-trapezoidal">
+          <div class="stats-card-header">
+            🟢 Trapezoidal Profile
+          </div>
+          <div class="stats-grid">
+            <div class="stat-item"><div class="stat-label">Total Time</div><div class="stat-val" id="stat-trap-time">-</div></div>
+            <div class="stat-item"><div class="stat-label">Peak Speed</div><div class="stat-val" id="stat-trap-speed">-</div></div>
+            <div class="stat-item"><div class="stat-label">Peak Accel</div><div class="stat-val" id="stat-trap-accel">-</div></div>
+            <div class="stat-item"><div class="stat-label">Final Position</div><div class="stat-val" id="stat-trap-pos">-</div></div>
+            <div class="stat-item"><div class="stat-label">Time to Top Speed</div><div class="stat-val" id="stat-trap-t-top">-</div></div>
+            <div class="stat-item"><div class="stat-label">Time to Decel</div><div class="stat-val" id="stat-trap-t-decel">-</div></div>
+            <div class="stat-item"><div class="stat-label">Angle at Top Speed</div><div class="stat-val" id="stat-trap-ang-top">-</div></div>
+            <div class="stat-item"><div class="stat-label">Angle at Decel</div><div class="stat-val" id="stat-trap-ang-decel">-</div></div>
+          </div>
+        </div>
+
+        <!-- S-Shape Stats Card -->
+        <div class="stats-card card-sshape" id="stats-card-sshape">
+          <div class="stats-card-header">
+            🔴 S-Shape Profile
+          </div>
+          <div class="stats-grid">
+            <div class="stat-item"><div class="stat-label">Total Time</div><div class="stat-val" id="stat-s-time">-</div></div>
+            <div class="stat-item"><div class="stat-label">Peak Speed</div><div class="stat-val" id="stat-s-speed">-</div></div>
+            <div class="stat-item"><div class="stat-label">Peak Accel</div><div class="stat-val" id="stat-s-accel">-</div></div>
+            <div class="stat-item"><div class="stat-label">Final Position</div><div class="stat-val" id="stat-s-pos">-</div></div>
+            <div class="stat-item"><div class="stat-label">Time to Top Speed</div><div class="stat-val" id="stat-s-t-top">-</div></div>
+            <div class="stat-item"><div class="stat-label">Time to Decel</div><div class="stat-val" id="stat-s-t-decel">-</div></div>
+            <div class="stat-item"><div class="stat-label">Angle at Top Speed</div><div class="stat-val" id="stat-s-ang-top">-</div></div>
+            <div class="stat-item"><div class="stat-label">Angle at Decel</div><div class="stat-val" id="stat-s-ang-decel">-</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Plots layout grid -->
+      <div class="plots-grid">
+        <!-- XY Trajectory -->
+        <div class="plot-card">
+          <div class="plot-title">XY Trajectory / 2D Path (mm)</div>
+          <div class="canvas-container-square">
+            <canvas id="chart-trajectory"></canvas>
+          </div>
+        </div>
+
+        <!-- Angular Speed vs Time -->
+        <div class="plot-card">
+          <div class="plot-title">Angular Speed vs Time (rad/s)</div>
+          <div class="canvas-container">
+            <canvas id="chart-speed"></canvas>
+          </div>
+        </div>
+
+        <!-- Angular Acceleration vs Time -->
+        <div class="plot-card">
+          <div class="plot-title">Angular Acceleration vs Time (rad/s²)</div>
+          <div class="canvas-container">
+            <canvas id="chart-acceleration"></canvas>
+          </div>
+        </div>
+
+        <!-- Acceleration Limit vs Speed (Ideal Profile) -->
+        <div class="plot-card" id="plot-card-limit" style="display: none;">
+          <div class="plot-title">Acceleration Limit vs Speed (Ideal Profile)</div>
+          <div class="canvas-container">
+            <canvas id="chart-accel-vs-speed"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Classes
+    class Position {
+      constructor(x, y, theta) {
+        this.x = x;
+        this.y = y;
+        this.theta = theta;
+      }
+    }
+
+    const deg2rad = deg => deg * Math.PI / 180;
+    const rad2deg = rad => rad * 180 / Math.PI;
+
+    const COLORS = {
+      ideal: '#4f46e5',
+      trapezoidal: '#059669',
+      trapezoidalIdeal: '#10b981',
+      sshape: '#e11d48'
+    };
+
+    // Accordion toggle logic
+    function toggleAccordion(profile) {
+      const el = document.getElementById(`accordion-${profile}`);
+      const isOpen = el.classList.contains('open');
+      
+      // Close all accordions first for clean UI, or keep independent
+      // Keeping independent but you can close others if wanted.
+      el.classList.toggle('open');
+    }
+
+    // Toggle active profile select box colors
+    function toggleProfile(profile) {
+      const chk = document.getElementById(`chk-${profile}`);
+      const label = document.getElementById(`label-${profile}`);
+      const statsCard = document.getElementById(`stats-card-${profile}`);
+      
+      if (chk.checked) {
+        label.classList.add(`active-${profile}`);
+        statsCard.style.display = 'block';
+      } else {
+        label.classList.remove(`active-${profile}`);
+        statsCard.style.display = 'none';
+      }
+      updateSimulation();
+    }
+
+    // Simulation Runners
+    function runIdealSimulation(params) {
+      const {
+        linear_speed_m_s,
+        turn_angle_degree,
+        abs_max_omega_rad_s,
+        ref_angular_speed_rad_s,
+        ref_acceleration_rad_s2,
+        maximum_angular_speed_rad_s,
+        mm_before_turn,
+        mm_after_turn,
+        initial_theta_rad
+      } = params;
+
+      const turn_angle_rad = deg2rad(turn_angle_degree);
+      const alpha_0_rad_s2 = ref_acceleration_rad_s2 / (1.0 - (ref_angular_speed_rad_s / abs_max_omega_rad_s));
+
+      const dt = 0.001; // 1 ms
+      let temp_omega = 0.0;
+      const accel_array = [];
+      const omega_array = [];
+      let theta_accel = 0.0;
+
+      // Safety limit to prevent browser freeze
+      let loopCount = 0;
+      while (temp_omega < maximum_angular_speed_rad_s && loopCount < 10000) {
+        loopCount++;
+        const current_alpha = alpha_0_rad_s2 * (1.0 - (temp_omega / abs_max_omega_rad_s));
+        accel_array.push(current_alpha);
+        omega_array.push(temp_omega);
+
+        theta_accel += temp_omega * dt;
+        temp_omega += current_alpha * dt;
+
+        if (current_alpha <= 0) break;
+      }
+
+      const full_omega = [];
+      const full_alpha = [];
+
+      let t1_ms = 0, t2_ms = 0, t3_ms = 0;
+      let angle_1_rad = 0, angle_2_rad = 0, angle_3_rad = 0;
+
+      if (2.0 * theta_accel <= turn_angle_rad) {
+        const cruise_angle = turn_angle_rad - (2.0 * theta_accel);
+        const cruise_steps = Math.round(cruise_angle / (maximum_angular_speed_rad_s * dt));
+
+        full_omega.push(...omega_array);
+        full_alpha.push(...accel_array);
+
+        for (let i = 0; i < cruise_steps; i++) {
+          full_omega.push(maximum_angular_speed_rad_s);
+          full_alpha.push(0.0);
+        }
+
+        full_omega.push(...[...omega_array].reverse());
+        full_alpha.push(...[...accel_array].reverse().map(a => -a));
+
+        t1_ms = omega_array.length;
+        t2_ms = cruise_steps;
+        t3_ms = omega_array.length;
+
+        angle_1_rad = theta_accel;
+        angle_2_rad = theta_accel + cruise_angle;
+        angle_3_rad = turn_angle_rad;
+      } else {
+        const target_half_angle = turn_angle_rad / 2.0;
+        let current_angle = 0.0;
+        let idx = 0;
+        for (let i = 0; i < omega_array.length; i++) {
+          current_angle += omega_array[i] * dt;
+          if (current_angle >= target_half_angle) {
+            idx = i;
+            break;
+          }
+        }
+
+        const sliced_omega = omega_array.slice(0, idx);
+        const sliced_accel = accel_array.slice(0, idx);
+
+        full_omega.push(...sliced_omega);
+        full_alpha.push(...sliced_accel);
+
+        full_omega.push(...[...sliced_omega].reverse());
+        full_alpha.push(...[...sliced_accel].reverse().map(a => -a));
+
+        t1_ms = idx;
+        t2_ms = 0;
+        t3_ms = idx;
+
+        angle_1_rad = current_angle;
+        angle_2_rad = current_angle;
+        angle_3_rad = current_angle * 2.0;
+      }
+
+      const T_ms = t1_ms + t2_ms + t3_ms;
+
+      const real_ang_speeds = [0.0];
+      const real_accelerations = [full_alpha.length > 0 ? full_alpha[0] : 0.0];
+      const real_positions = [
+        new Position(
+          90 + mm_before_turn * Math.sin(initial_theta_rad),
+          mm_before_turn * Math.cos(initial_theta_rad),
+          initial_theta_rad
+        )
+      ];
+
+      for (let i = 0; i < full_omega.length; i++) {
+        const angular_speed_rad_s = full_omega[i];
+        const current_alpha = full_alpha[i];
+
+        const theta = real_positions[real_positions.length - 1].theta + (angular_speed_rad_s * dt);
+        const linear_speed_mm_ms = linear_speed_m_s * 1000.0 * dt;
+
+        const x = real_positions[real_positions.length - 1].x + linear_speed_mm_ms * Math.sin(theta);
+        const y = real_positions[real_positions.length - 1].y + linear_speed_mm_ms * Math.cos(theta);
+
+        real_positions.push(new Position(x, y, theta));
+        real_ang_speeds.push(angular_speed_rad_s);
+        real_accelerations.push(current_alpha);
+      }
+
+      // Add mm_after_turn
+      const last_x = real_positions[real_positions.length - 1].x + mm_after_turn * Math.sin(real_positions[real_positions.length - 1].theta);
+      const last_y = real_positions[real_positions.length - 1].y + mm_after_turn * Math.cos(real_positions[real_positions.length - 1].theta);
+      real_positions.push(new Position(last_x, last_y, real_positions[real_positions.length - 1].theta));
+      real_ang_speeds.push(0.0);
+      real_accelerations.push(0.0);
+
+      return {
+        t1_ms, t2_ms, t3_ms, T_ms,
+        angle_1_rad, angle_2_rad, angle_3_rad,
+        positions: real_positions,
+        speeds: real_ang_speeds,
+        accelerations: real_accelerations,
+        max_accel: Math.max(...real_accelerations.map(Math.abs)),
+        max_speed: Math.max(...real_ang_speeds)
+      };
+    }
+
+    function runTrapezoidalSimulation(params) {
+      const {
+        linear_speed_m_s,
+        turn_angle_degree,
+        turn_radius_mm,
+        angular_acceleration_rad_s2,
+        angular_desacceleration_rad_s2,
+        maximum_angular_speed_rad_s,
+        mm_before_turn,
+        mm_after_turn,
+        initial_theta_rad
+      } = params;
+
+      const turn_angle_rad = deg2rad(turn_angle_degree);
+      const turn_radius_m = turn_radius_mm / 1000;
+
+      // Ideal path simulation (from Python scripts)
+      const total_ideal_time_ms = ((turn_angle_rad * turn_radius_m) / linear_speed_m_s) * 1000;
+      const ideal_angular_speed_rad_s = (turn_angle_rad / total_ideal_time_ms) * 1000;
+      const angle_area_rad = turn_angle_rad;
+
+      const ideal_positions = [
+        new Position(
+          90 + mm_before_turn * Math.sin(initial_theta_rad),
+          mm_before_turn * Math.cos(initial_theta_rad),
+          initial_theta_rad
+        )
+      ];
+      const ideal_ang_speeds = [0.0];
+      const ideal_accelerations = [0.0];
+
+      const total_ideal_steps = Math.floor(total_ideal_time_ms);
+      for (let t = 1; t <= total_ideal_steps; t++) {
+        let theta = ideal_positions[t - 1].theta;
+        let w_rad_s = 0.0;
+        if (t < total_ideal_time_ms) {
+          w_rad_s = ideal_angular_speed_rad_s;
+          theta = ideal_positions[t - 1].theta + (w_rad_s / 1000);
+        } else {
+          w_rad_s = 0.0;
+          theta = ideal_positions[0].theta + turn_angle_rad;
+        }
+        const linear_speed_mm_ms = linear_speed_m_s;
+        const x = ideal_positions[t - 1].x + linear_speed_mm_ms * Math.sin(theta);
+        const y = ideal_positions[t - 1].y + linear_speed_mm_ms * Math.cos(theta);
+        ideal_positions.push(new Position(x, y, theta));
+        ideal_ang_speeds.push(w_rad_s);
+        ideal_accelerations.push(0.0);
+      }
+
+      // Add mm_after_turn to ideal
+      const ideal_last_x = ideal_positions[ideal_positions.length - 1].x + mm_after_turn * Math.sin(turn_angle_rad + ideal_positions[0].theta);
+      const ideal_last_y = ideal_positions[ideal_positions.length - 1].y + mm_after_turn * Math.cos(turn_angle_rad + ideal_positions[0].theta);
+      ideal_positions.push(new Position(ideal_last_x, ideal_last_y, turn_angle_rad + ideal_positions[0].theta));
+      ideal_ang_speeds.push(0.0);
+      ideal_accelerations.push(0.0);
+
+      // Real path simulation
+      let t1_ms = (maximum_angular_speed_rad_s / angular_acceleration_rad_s2) * 1000;
+      let t3_ms = (maximum_angular_speed_rad_s / angular_desacceleration_rad_s2) * 1000;
+      let t2_ms = (angle_area_rad / maximum_angular_speed_rad_s) * 1000 - (t1_ms / 2) - (t3_ms / 2);
+
+      if (t2_ms < 0) {
+        t2_ms = 0;
+        t1_ms = Math.sqrt((2 * angle_area_rad) / ((1 + angular_acceleration_rad_s2 / angular_desacceleration_rad_s2) * angular_acceleration_rad_s2)) * 1000;
+        t3_ms = t1_ms * (angular_acceleration_rad_s2 / angular_desacceleration_rad_s2);
+      }
+
+      const T_ms = t1_ms + t2_ms + t3_ms;
+      let angular_speed_rad_s = 0.0;
+      const real_ang_speeds = [0.0];
+      const real_accelerations = [angular_acceleration_rad_s2];
+      const real_positions = [
+        new Position(
+          90 + mm_before_turn * Math.sin(initial_theta_rad),
+          mm_before_turn * Math.cos(initial_theta_rad),
+          initial_theta_rad
+        )
+      ];
+
+      const total_steps = Math.round(T_ms);
+      for (let t = 1; t <= total_steps; t++) {
+        let current_accel = 0.0;
+        if (t <= t1_ms) {
+          angular_speed_rad_s += angular_acceleration_rad_s2 / 1000;
+          current_accel = angular_acceleration_rad_s2;
+        } else if (t <= t1_ms + t2_ms) {
+          current_accel = 0.0;
+        } else {
+          angular_speed_rad_s -= angular_desacceleration_rad_s2 / 1000;
+          current_accel = -angular_desacceleration_rad_s2;
+        }
+
+        if (angular_speed_rad_s > maximum_angular_speed_rad_s) {
+          angular_speed_rad_s = maximum_angular_speed_rad_s;
+        } else if (angular_speed_rad_s < 0) {
+          angular_speed_rad_s = 0;
+        }
+
+        const theta = real_positions[t - 1].theta + (angular_speed_rad_s / 1000);
+        const linear_speed_mm_ms = linear_speed_m_s;
+        const x = real_positions[t - 1].x + linear_speed_mm_ms * Math.sin(theta);
+        const y = real_positions[t - 1].y + linear_speed_mm_ms * Math.cos(theta);
+
+        real_positions.push(new Position(x, y, theta));
+        real_ang_speeds.push(angular_speed_rad_s);
+        real_accelerations.push(current_accel);
+      }
+
+      // Add mm_after_turn to real
+      const real_last_x = real_positions[real_positions.length - 1].x + mm_after_turn * Math.sin(real_positions[real_positions.length - 1].theta);
+      const real_last_y = real_positions[real_positions.length - 1].y + mm_after_turn * Math.cos(real_positions[real_positions.length - 1].theta);
+      real_positions.push(new Position(real_last_x, real_last_y, real_positions[real_positions.length - 1].theta));
+      real_ang_speeds.push(0.0);
+      real_accelerations.push(0.0);
+
+      const idx_top = Math.min(Math.round(t1_ms), real_positions.length - 1);
+      const angle_1_rad = real_positions[idx_top].theta - initial_theta_rad;
+      
+      const idx_decel = Math.min(Math.round(t1_ms + t2_ms), real_positions.length - 1);
+      const angle_2_rad = real_positions[idx_decel].theta - initial_theta_rad;
+
+      return {
+        t1_ms, t2_ms, t3_ms, T_ms,
+        angle_1_rad, angle_2_rad,
+        ideal_total_time_ms: total_ideal_time_ms,
+        ideal_positions,
+        ideal_speeds: ideal_ang_speeds,
+        ideal_accelerations,
+        positions: real_positions,
+        speeds: real_ang_speeds,
+        accelerations: real_accelerations,
+        max_accel: Math.max(angular_acceleration_rad_s2, angular_desacceleration_rad_s2),
+        max_speed: Math.max(...real_ang_speeds)
+      };
+    }
+
+    function runSShapeSimulation(params) {
+      const {
+        linear_speed_m_s,
+        turn_angle_degree,
+        angular_transition_degree,
+        maximum_angular_speed_rad_s,
+        sharpness_factor,
+        mm_before_turn,
+        mm_after_turn,
+        initial_theta_rad
+      } = params;
+
+      const turn_angle_rad = deg2rad(turn_angle_degree);
+      const angular_transition_rad = deg2rad(angular_transition_degree);
+      const deceleration_start_angle = turn_angle_rad - angular_transition_rad;
+
+      let angular_speed_rad_s = 0.0;
+      const real_ang_speeds = [0.0];
+      const real_accelerations = [0.0];
+      const real_positions = [
+        new Position(
+          90 + mm_before_turn * Math.sin(initial_theta_rad),
+          mm_before_turn * Math.cos(initial_theta_rad),
+          initial_theta_rad
+        )
+      ];
+
+      let angle_turned_rad = 0;
+      let t = 1;
+      let traveled_dist = 0;
+      let last_angular_speed_rad_s = 0;
+      let max_measured_acceleration_rad_s2 = 0;
+
+      // Safety limit to prevent browser freeze
+      while (angle_turned_rad < turn_angle_rad && t < 10000) {
+        let speed_factor = 1.0;
+        if (angle_turned_rad < angular_transition_rad) {
+          const factor = angle_turned_rad / angular_transition_rad;
+          speed_factor = Math.pow(Math.sin(factor * Math.PI / 2.0), sharpness_factor);
+        } else if (angle_turned_rad >= deceleration_start_angle) {
+          const remaining_angle = turn_angle_rad - angle_turned_rad;
+          const factor = remaining_angle / angular_transition_rad;
+          speed_factor = Math.pow(Math.sin(factor * Math.PI / 2.0), sharpness_factor);
+        }
+
+        angular_speed_rad_s = maximum_angular_speed_rad_s * speed_factor;
+
+        const current_accel = (angular_speed_rad_s - last_angular_speed_rad_s) * 1000.0;
+        if (t === 1) {
+          real_accelerations[0] = current_accel;
+        }
+        real_accelerations.push(current_accel);
+
+        const measured_accel = Math.abs(current_accel);
+        if (measured_accel > max_measured_acceleration_rad_s2) {
+          max_measured_acceleration_rad_s2 = measured_accel;
+        }
+        
+        last_angular_speed_rad_s = angular_speed_rad_s;
+
+        if (angular_speed_rad_s < 0.05) {
+          angular_speed_rad_s = 0.05;
+        }
+
+        const theta = real_positions[t - 1].theta + (angular_speed_rad_s / 1000);
+        const linear_speed_mm_ms = linear_speed_m_s;
+        const x = real_positions[t - 1].x + linear_speed_mm_ms * Math.sin(theta);
+        const y = real_positions[t - 1].y + linear_speed_mm_ms * Math.cos(theta);
+        traveled_dist += linear_speed_mm_ms;
+
+        real_positions.push(new Position(x, y, theta));
+        real_ang_speeds.push(angular_speed_rad_s);
+        angle_turned_rad = theta;
+        t++;
+      }
+
+      // Add mm_after_turn
+      const last_x = real_positions[real_positions.length - 1].x + mm_after_turn * Math.sin(real_positions[real_positions.length - 1].theta);
+      const last_y = real_positions[real_positions.length - 1].y + mm_after_turn * Math.cos(real_positions[real_positions.length - 1].theta);
+      real_positions.push(new Position(last_x, last_y, real_positions[real_positions.length - 1].theta));
+      real_ang_speeds.push(0.0);
+      real_accelerations.push(0.0);
+
+      const peak_speed = Math.max(...real_ang_speeds);
+      let t1_ms = 0;
+      for (let i = 0; i < real_ang_speeds.length; i++) {
+        if (real_ang_speeds[i] >= 0.999 * peak_speed) {
+          t1_ms = i;
+          break;
+        }
+      }
+
+      let t_decel_start = real_ang_speeds.length - 1;
+      for (let i = t1_ms; i < real_ang_speeds.length; i++) {
+        if (real_ang_speeds[i] < 0.999 * peak_speed) {
+          t_decel_start = i;
+          break;
+        }
+      }
+
+      const angle_1_rad = real_positions[t1_ms].theta - initial_theta_rad;
+      const angle_2_rad = real_positions[t_decel_start].theta - initial_theta_rad;
+
+      return {
+        T_ms: t - 1,
+        t1_ms,
+        t_decel_start,
+        angle_1_rad,
+        angle_2_rad,
+        positions: real_positions,
+        speeds: real_ang_speeds,
+        accelerations: real_accelerations,
+        max_accel: max_measured_acceleration_rad_s2,
+        max_speed: Math.max(...real_ang_speeds)
+      };
+    }
+
+    // Global references for Charts
+    let trajectoryChart = null;
+    let speedChart = null;
+    let accelerationChart = null;
+    let limitChart = null;
+
+    // Disconnected segment helper for Drawing grid walls
+    function getWallData() {
+      const wallData = [];
+      function addWall(x1, y1, x2, y2) {
+        wallData.push({x: x1, y: y1});
+        wallData.push({x: x2, y: y2});
+        wallData.push({x: NaN, y: NaN});
+      }
+      
+      // Fixed wall segments from the python scripts
+      addWall(0, 0, 0, 180);
+      addWall(0, 0, 0, -180);
+      addWall(0, 180, 180, 180);
+      addWall(180, 0, 180, -180);
+      addWall(180, 180, 360, 180);
+      addWall(360, 180, 360, 0);
+      addWall(360, 0, 540, 0);
+
+      // Looping ladder walls from Python script
+      for (let i = 180; i < 3600; i += 180) {
+        addWall(i, 180 - i, i, -i);
+        addWall(i, -i, i + 180, -i);
+        addWall(i + 360, 180 - i, i + 360, -i);
+        addWall(i + 360, -i, i + 360 + 180, -i);
+      }
+      return wallData;
+    }
+
+    // Initialize Charts
+    function initCharts() {
+      // 1. XY Trajectory Chart
+      const ctxTraj = document.getElementById('chart-trajectory').getContext('2d');
+      trajectoryChart = new Chart(ctxTraj, {
+        type: 'scatter',
+        data: {
+          datasets: []
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          aspectRatio: 1,
+          scales: {
+            x: {
+              type: 'linear',
+              position: 'bottom',
+              min: -180,
+              max: 900,
+              title: {
+                display: true,
+                text: 'X Position (mm)',
+                font: { weight: 'bold' }
+              },
+              grid: {
+                color: '#e2e8f0'
+              },
+              ticks: {
+                stepSize: 180
+              }
+            },
+            y: {
+              type: 'linear',
+              min: -180,
+              max: 900,
+              title: {
+                display: true,
+                text: 'Y Position (mm)',
+                font: { weight: 'bold' }
+              },
+              grid: {
+                color: '#e2e8f0'
+              },
+              ticks: {
+                stepSize: 180
+              }
+            }
+          },
+          plugins: {
+            legend: {
+              display: true,
+              position: 'top',
+              labels: {
+                filter: function(item, chart) {
+                  // Hide Wall legend
+                  return item.text !== 'Micromouse Walls';
+                }
+              }
+            },
+            zoom: {
+              pan: {
+                enabled: true,
+                mode: 'xy',
+                threshold: 10
+              },
+              zoom: {
+                wheel: {
+                  enabled: true
+                },
+                pinch: {
+                  enabled: true
+                },
+                mode: 'xy'
+              }
+            }
+          }
+        }
+      });
+
+      // 2. Speed Chart
+      const ctxSpeed = document.getElementById('chart-speed').getContext('2d');
+      speedChart = new Chart(ctxSpeed, {
+        type: 'line',
+        data: {
+          datasets: []
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              type: 'linear',
+              title: {
+                display: true,
+                text: 'Time (ms)',
+                font: { size: 10 }
+              }
+            },
+            y: {
+              title: {
+                display: true,
+                text: 'Speed (rad/s)',
+                font: { size: 10 }
+              }
+            }
+          },
+          plugins: {
+            legend: { display: false },
+            zoom: {
+              pan: {
+                enabled: true,
+                mode: 'x',
+                threshold: 10
+              },
+              zoom: {
+                wheel: {
+                  enabled: true
+                },
+                pinch: {
+                  enabled: true
+                },
+                mode: 'x'
+              }
+            }
+          }
+        }
+      });
+
+      // 3. Acceleration Chart
+      const ctxAccel = document.getElementById('chart-acceleration').getContext('2d');
+      accelerationChart = new Chart(ctxAccel, {
+        type: 'line',
+        data: {
+          datasets: []
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              type: 'linear',
+              title: {
+                display: true,
+                text: 'Time (ms)',
+                font: { size: 10 }
+              }
+            },
+            y: {
+              title: {
+                display: true,
+                text: 'Accel (rad/s²)',
+                font: { size: 10 }
+              }
+            }
+          },
+          plugins: {
+            legend: { display: false },
+            zoom: {
+              pan: {
+                enabled: true,
+                mode: 'x',
+                threshold: 10
+              },
+              zoom: {
+                wheel: {
+                  enabled: true
+                },
+                pinch: {
+                  enabled: true
+                },
+                mode: 'x'
+              }
+            }
+          }
+        }
+      });
+
+      // 4. Acceleration Limit vs Speed Chart
+      const ctxLimit = document.getElementById('chart-accel-vs-speed').getContext('2d');
+      limitChart = new Chart(ctxLimit, {
+        type: 'line',
+        data: {
+          datasets: []
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              type: 'linear',
+              min: 0,
+              title: {
+                display: true,
+                text: 'Angular Speed (rad/s)',
+                font: { weight: 'bold' }
+              },
+              grid: {
+                color: '#e2e8f0'
+              }
+            },
+            y: {
+              type: 'linear',
+              title: {
+                display: true,
+                text: 'Max Acceleration (rad/s²)',
+                font: { weight: 'bold' }
+              },
+              grid: {
+                color: '#e2e8f0'
+              }
+            }
+          },
+          plugins: {
+            legend: {
+              display: true,
+              position: 'top'
+            },
+            zoom: {
+              pan: {
+                enabled: true,
+                mode: 'xy',
+                threshold: 10
+              },
+              zoom: {
+                wheel: {
+                  enabled: true
+                },
+                pinch: {
+                  enabled: true
+                },
+                mode: 'xy'
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Main update simulation logic
+    function updateSimulation() {
+      const showIdeal = document.getElementById('chk-ideal').checked;
+      const showTrap = document.getElementById('chk-trapezoidal').checked;
+      const showTrapIdeal = document.getElementById('chk-trapezoidal-ideal').checked;
+      const showSShape = document.getElementById('chk-sshape').checked;
+
+      // Datasets collectors
+      const trajectoryDatasets = [];
+      const speedDatasets = [];
+      const accelDatasets = [];
+
+      // Add micromouse walls as background layout
+      trajectoryDatasets.push({
+        label: 'Micromouse Walls',
+        data: getWallData(),
+        borderColor: '#10b981',
+        borderWidth: 2.5,
+        showLine: true,
+        fill: false,
+        pointRadius: 0,
+        pointHoverRadius: 0
+      });
+
+      // --- Ideal Profile ---
+      if (showIdeal) {
+        const params = {
+          linear_speed_m_s: parseFloat(document.getElementById('ideal-linear-speed').value),
+          turn_angle_degree: parseFloat(document.getElementById('ideal-turn-angle').value),
+          abs_max_omega_rad_s: parseFloat(document.getElementById('ideal-abs-max-omega').value),
+          ref_angular_speed_rad_s: parseFloat(document.getElementById('ideal-ref-omega').value),
+          ref_acceleration_rad_s2: parseFloat(document.getElementById('ideal-ref-alpha').value),
+          maximum_angular_speed_rad_s: parseFloat(document.getElementById('ideal-max-speed').value),
+          mm_before_turn: parseFloat(document.getElementById('ideal-mm-before').value),
+          mm_after_turn: parseFloat(document.getElementById('ideal-mm-after').value),
+          initial_theta_rad: 0.0
+        };
+
+        const res = runIdealSimulation(params);
+
+        // Update stats
+        document.getElementById('stat-ideal-time').innerText = `${Math.round(res.T_ms)} ms`;
+        document.getElementById('stat-ideal-speed').innerText = `${res.max_speed.toFixed(2)} rad/s`;
+        document.getElementById('stat-ideal-accel').innerText = `${res.max_accel.toFixed(1)} rad/s²`;
+        const lastPos = res.positions[res.positions.length - 1];
+        document.getElementById('stat-ideal-pos').innerText = `${lastPos.x.toFixed(1)}, ${lastPos.y.toFixed(1)}, ${rad2deg(lastPos.theta).toFixed(0)}°`;
+
+        document.getElementById('stat-ideal-t-top').innerText = `${Math.round(res.t1_ms)} ms`;
+        document.getElementById('stat-ideal-t-decel').innerText = `${Math.round(res.t1_ms + res.t2_ms)} ms`;
+        document.getElementById('stat-ideal-ang-top').innerText = `${res.angle_1_rad.toFixed(3)} rad (${rad2deg(res.angle_1_rad).toFixed(1)}°)`;
+        document.getElementById('stat-ideal-ang-decel').innerText = `${res.angle_2_rad.toFixed(3)} rad (${rad2deg(res.angle_2_rad).toFixed(1)}°)`;
+
+        // Push datasets
+        trajectoryDatasets.push({
+          label: 'Ideal Curve Path',
+          data: res.positions.map(p => ({ x: p.x, y: p.y })),
+          borderColor: COLORS.ideal,
+          borderWidth: 2,
+          showLine: true,
+          pointRadius: 0,
+          fill: false
+        });
+
+        speedDatasets.push({
+          label: 'Ideal Curve Speed',
+          data: res.speeds.map((w, idx) => ({ x: idx, y: w })),
+          borderColor: COLORS.ideal,
+          borderWidth: 2,
+          pointRadius: 0,
+          fill: false
+        });
+
+        accelDatasets.push({
+          label: 'Ideal Curve Accel',
+          data: res.accelerations.map((a, idx) => ({ x: idx, y: a })),
+          borderColor: COLORS.ideal,
+          borderWidth: 2,
+          pointRadius: 0,
+          fill: false
+        });
+      }
+
+      // --- Trapezoidal Profile ---
+      if (showTrap) {
+        const params = {
+          linear_speed_m_s: parseFloat(document.getElementById('trap-linear-speed').value),
+          turn_angle_degree: parseFloat(document.getElementById('trap-turn-angle').value),
+          turn_radius_mm: parseFloat(document.getElementById('trap-radius').value),
+          angular_acceleration_rad_s2: parseFloat(document.getElementById('trap-acceleration').value),
+          angular_desacceleration_rad_s2: parseFloat(document.getElementById('trap-deceleration').value),
+          maximum_angular_speed_rad_s: parseFloat(document.getElementById('trap-max-speed').value),
+          mm_before_turn: parseFloat(document.getElementById('trap-mm-before').value),
+          mm_after_turn: parseFloat(document.getElementById('trap-mm-after').value),
+          initial_theta_rad: 0.0
+        };
+
+        const res = runTrapezoidalSimulation(params);
+
+        // Update stats
+        document.getElementById('stat-trap-time').innerText = `${Math.round(res.T_ms)} ms`;
+        document.getElementById('stat-trap-speed').innerText = `${res.max_speed.toFixed(2)} rad/s`;
+        document.getElementById('stat-trap-accel').innerText = `${res.max_accel.toFixed(1)} rad/s²`;
+        const lastPos = res.positions[res.positions.length - 1];
+        document.getElementById('stat-trap-pos').innerText = `${lastPos.x.toFixed(1)}, ${lastPos.y.toFixed(1)}, ${rad2deg(lastPos.theta).toFixed(0)}°`;
+
+        document.getElementById('stat-trap-t-top').innerText = `${Math.round(res.t1_ms)} ms`;
+        document.getElementById('stat-trap-t-decel').innerText = `${Math.round(res.t1_ms + res.t2_ms)} ms`;
+        document.getElementById('stat-trap-ang-top').innerText = `${res.angle_1_rad.toFixed(3)} rad (${rad2deg(res.angle_1_rad).toFixed(1)}°)`;
+        document.getElementById('stat-trap-ang-decel').innerText = `${res.angle_2_rad.toFixed(3)} rad (${rad2deg(res.angle_2_rad).toFixed(1)}°)`;
+
+        // Trapezoidal Real Path
+        trajectoryDatasets.push({
+          label: 'Trapezoidal Real Path',
+          data: res.positions.map(p => ({ x: p.x, y: p.y })),
+          borderColor: COLORS.trapezoidal,
+          borderWidth: 2,
+          showLine: true,
+          pointRadius: 0,
+          fill: false
+        });
+
+        // Optional Trapezoidal Ideal Path
+        if (showTrapIdeal) {
+          trajectoryDatasets.push({
+            label: 'Trapezoidal Ideal Path',
+            data: res.ideal_positions.map(p => ({ x: p.x, y: p.y })),
+            borderColor: COLORS.trapezoidalIdeal,
+            borderWidth: 1.5,
+            borderDash: [5, 5],
+            showLine: true,
+            pointRadius: 0,
+            fill: false
+          });
+        }
+
+        speedDatasets.push({
+          label: 'Trapezoidal Real Speed',
+          data: res.speeds.map((w, idx) => ({ x: idx, y: w })),
+          borderColor: COLORS.trapezoidal,
+          borderWidth: 2,
+          pointRadius: 0,
+          fill: false
+        });
+
+        accelDatasets.push({
+          label: 'Trapezoidal Real Accel',
+          data: res.accelerations.map((a, idx) => ({ x: idx, y: a })),
+          borderColor: COLORS.trapezoidal,
+          borderWidth: 2,
+          pointRadius: 0,
+          fill: false
+        });
+      }
+
+      // --- S-Shape Profile ---
+      if (showSShape) {
+        const params = {
+          linear_speed_m_s: parseFloat(document.getElementById('s-linear-speed').value),
+          turn_angle_degree: parseFloat(document.getElementById('s-turn-angle').value),
+          angular_transition_degree: parseFloat(document.getElementById('s-transition-angle').value),
+          maximum_angular_speed_rad_s: parseFloat(document.getElementById('s-max-speed').value),
+          sharpness_factor: parseFloat(document.getElementById('s-sharpness').value),
+          mm_before_turn: parseFloat(document.getElementById('s-mm-before').value),
+          mm_after_turn: parseFloat(document.getElementById('s-mm-after').value),
+          initial_theta_rad: 0.0
+        };
+
+        const res = runSShapeSimulation(params);
+
+        // Update stats
+        document.getElementById('stat-s-time').innerText = `${Math.round(res.T_ms)} ms`;
+        document.getElementById('stat-s-speed').innerText = `${res.max_speed.toFixed(2)} rad/s`;
+        document.getElementById('stat-s-accel').innerText = `${res.max_accel.toFixed(1)} rad/s²`;
+        const lastPos = res.positions[res.positions.length - 1];
+        document.getElementById('stat-s-pos').innerText = `${lastPos.x.toFixed(1)}, ${lastPos.y.toFixed(1)}, ${rad2deg(lastPos.theta).toFixed(0)}°`;
+
+        document.getElementById('stat-s-t-top').innerText = `${Math.round(res.t1_ms)} ms`;
+        document.getElementById('stat-s-t-decel').innerText = `${Math.round(res.t_decel_start)} ms`;
+        document.getElementById('stat-s-ang-top').innerText = `${res.angle_1_rad.toFixed(3)} rad (${rad2deg(res.angle_1_rad).toFixed(1)}°)`;
+        document.getElementById('stat-s-ang-decel').innerText = `${res.angle_2_rad.toFixed(3)} rad (${rad2deg(res.angle_2_rad).toFixed(1)}°)`;
+
+        trajectoryDatasets.push({
+          label: 'S-Shape Path',
+          data: res.positions.map(p => ({ x: p.x, y: p.y })),
+          borderColor: COLORS.sshape,
+          borderWidth: 2,
+          showLine: true,
+          pointRadius: 0,
+          fill: false
+        });
+
+        speedDatasets.push({
+          label: 'S-Shape Speed',
+          data: res.speeds.map((w, idx) => ({ x: idx, y: w })),
+          borderColor: COLORS.sshape,
+          borderWidth: 2,
+          pointRadius: 0,
+          fill: false
+        });
+
+        accelDatasets.push({
+          label: 'S-Shape Accel',
+          data: res.accelerations.map((a, idx) => ({ x: idx, y: a })),
+          borderColor: COLORS.sshape,
+          borderWidth: 2,
+          pointRadius: 0,
+          fill: false
+        });
+      }
+
+      // Update Charts Datasets and draw
+      trajectoryChart.data.datasets = trajectoryDatasets;
+      trajectoryChart.update();
+
+      speedChart.data.datasets = speedDatasets;
+      speedChart.update();
+
+      accelerationChart.data.datasets = accelDatasets;
+      accelerationChart.update();
+
+      // Update Acceleration Limit Chart (Ideal Profile only)
+      const limitCard = document.getElementById('plot-card-limit');
+      if (showIdeal) {
+        limitCard.style.display = 'flex';
+        const limitDatasets = [];
+        
+        const idealParams = {
+          abs_max_omega_rad_s: parseFloat(document.getElementById('ideal-abs-max-omega').value),
+          ref_angular_speed_rad_s: parseFloat(document.getElementById('ideal-ref-omega').value),
+          ref_acceleration_rad_s2: parseFloat(document.getElementById('ideal-ref-alpha').value)
+        };
+        
+        const alpha_0_rad_s2 = idealParams.ref_acceleration_rad_s2 / (1.0 - (idealParams.ref_angular_speed_rad_s / idealParams.abs_max_omega_rad_s));
+
+        // Theoretical limit line
+        limitDatasets.push({
+          label: 'Theoretical Max Accel Limit',
+          data: [
+            { x: 0, y: alpha_0_rad_s2 },
+            { x: idealParams.abs_max_omega_rad_s, y: 0 }
+          ],
+          borderColor: COLORS.ideal,
+          borderDash: [5, 5],
+          borderWidth: 2,
+          showLine: true,
+          pointRadius: 0,
+          fill: false
+        });
+
+        // Add operating path points from simulated run
+        const idealRes = runIdealSimulation({
+          linear_speed_m_s: parseFloat(document.getElementById('ideal-linear-speed').value),
+          turn_angle_degree: parseFloat(document.getElementById('ideal-turn-angle').value),
+          abs_max_omega_rad_s: idealParams.abs_max_omega_rad_s,
+          ref_angular_speed_rad_s: idealParams.ref_angular_speed_rad_s,
+          ref_acceleration_rad_s2: idealParams.ref_acceleration_rad_s2,
+          maximum_angular_speed_rad_s: parseFloat(document.getElementById('ideal-max-speed').value),
+          mm_before_turn: parseFloat(document.getElementById('ideal-mm-before').value),
+          mm_after_turn: parseFloat(document.getElementById('ideal-mm-after').value),
+          initial_theta_rad: 0.0
+        });
+
+        const operatingPoints = idealRes.speeds.map((w, idx) => ({
+          x: w,
+          y: Math.abs(idealRes.accelerations[idx])
+        }));
+
+        limitDatasets.push({
+          label: 'Simulation Operating Envelope',
+          data: operatingPoints,
+          borderColor: '#8b5cf6',
+          borderWidth: 2.5,
+          showLine: true,
+          pointRadius: 1,
+          fill: false
+        });
+
+        limitChart.data.datasets = limitDatasets;
+        limitChart.update();
+      } else {
+        limitCard.style.display = 'none';
+      }
+    }
+
+    // Document Ready Initializations
+    window.addEventListener('load', () => {
+      initCharts();
+      updateSimulation();
+    });
+  </script>
+</body>
+</html>
