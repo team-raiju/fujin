@@ -14,11 +14,10 @@ public:
     float integral_limit;
 
     float calculate(float const& target, float const& measured_value);
-    float get_integral() { return integral; }
+    float get_integral() const { return integral; }
 
     void reset();
 
-private:
     float integral;
     float previous_error;
 };

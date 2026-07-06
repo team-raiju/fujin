@@ -4,6 +4,8 @@
 
 namespace services {
 
+#define CONTROL_LOG_MODE 1
+
 enum class ParamIndex : uint8_t {
     VelocityMS,
     TargetVelocityMS,
@@ -11,11 +13,19 @@ enum class ParamIndex : uint8_t {
     TargetRadS,
     PwmLeft,
     PwmRight,
+#if CONTROL_LOG_MODE
+    VelP,
+    VelI,
+    AngP,
+    AngI,
+    RotationFF,
+#else
     Battery,
     PositionX,
     PositionY,
     Angle,
     Distance,
+#endif
     COUNT
 };
 
@@ -34,15 +44,25 @@ public:
 
             uint16_t pwm_left : 10;
             uint16_t pwm_right : 10;
+
+#if CONTROL_LOG_MODE
+            uint16_t vel_p : 14;
+            uint16_t vel_i : 14;
+            uint16_t ang_p : 14;
+            uint16_t ang_i : 14;
+            uint16_t rotation_ff : 12;
+#else
             uint16_t battery : 8;
 
             uint16_t position_mm_x : 16;
             uint16_t position_mm_y : 16;
             uint16_t angle : 14;
             uint16_t distance : 14;
+#endif
 
         } __attribute__((packed)) fields;
     };
+    static_assert(sizeof(LogData) == 17, "LogData size must be exactly 17 bytes!");
 
     struct ParamInfo {
         uint16_t max_store_value; // Max integer value for the bitfield (e.g., 4095 for 12 bits)

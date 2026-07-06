@@ -9,6 +9,7 @@ from datetime import datetime
 SERIAL_PORT = '/dev/ttyACM0'
 BAUD_RATE = 115200
 READ_TIMEOUT = 1.0
+CONTROL_LOG_MODE = True  # Set to True for new control parameters, False for original metrics
 
 def signal_handler(sig, frame):
     """Handles the Ctrl+C signal to ensure a clean exit."""
@@ -38,18 +39,30 @@ def parse_log_file(file_path):
         print(f"Error: Log file '{file_path}' not found.")
         return None
 
-    keys = [
-        'time', 'lin_vel_act', 'lin_vel_tgt', 'ang_vel_act', 'ang_vel_tgt',
-        'pwm_left', 'pwm_right', 'battery', 'pos_x', 'pos_y', 'angle', 'dist'
-    ]
-    data_dict = {k: [] for k in keys}
-
     with open(file_path, 'r') as f:
         lines = f.readlines()
 
     if len(lines) <= 1:
         print(f"Log file '{file_path}' is empty or missing data rows.")
         return None
+
+    # Detect mode based on header if possible
+    header_line = lines[0].strip().lower()
+    is_control = "velp" in header_line or "rotff" in header_line
+
+    if is_control:
+        keys = [
+            'time', 'lin_vel_act', 'lin_vel_tgt', 'ang_vel_act', 'ang_vel_tgt',
+            'pwm_left', 'pwm_right', 'vel_p', 'vel_i', 'ang_p', 'ang_i', 'rotation_ff'
+        ]
+    else:
+        keys = [
+            'time', 'lin_vel_act', 'lin_vel_tgt', 'ang_vel_act', 'ang_vel_tgt',
+            'pwm_left', 'pwm_right', 'battery', 'pos_x', 'pos_y', 'angle', 'dist'
+        ]
+
+    data_dict = {k: [] for k in keys}
+    data_dict['is_control_mode'] = is_control
 
     for line in lines[1:]:
         line = line.strip()
@@ -72,36 +85,135 @@ def parse_log_file(file_path):
 def plot_single(data_dict, title_suffix=""):
     """Generates the system analysis visualizations for a single data set."""
     t = data_dict['time']
+    is_control = data_dict.get('is_control_mode', CONTROL_LOG_MODE)
     
-    fig1, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(12, 15))
-    fig1.suptitle(f'Motion Control Performance {title_suffix}', fontsize=16)
-    
-    ax1.plot(t, data_dict['lin_vel_act'], label='Actual Linear Velocity')
-    ax1.plot(t, data_dict['lin_vel_tgt'], label='Target', linestyle='--')
-    ax1.set_title('Linear Velocities'); ax1.set_xlabel('Time (ms)'); ax1.set_ylabel('m/s'); ax1.legend(); ax1.grid(True)
-    
-    ax2.plot(t, data_dict['ang_vel_act'], label='Actual Angular Velocity')
-    ax2.plot(t, data_dict['ang_vel_tgt'], label='Target', linestyle='--')
-    ax2.set_title('Angular Velocities'); ax2.set_xlabel('Time (ms)'); ax2.set_ylabel('rad/s'); ax2.legend(); ax2.grid(True)
-    
-    ax3.plot(t, data_dict['pwm_left'], label='PWM Left')
-    ax3.plot(t, data_dict['pwm_right'], label='PWM Right')
-    ax3.set_title('PWM Signals'); ax3.set_xlabel('Time (ms)'); ax3.set_ylabel('Duty Cycle (0-1000)'); ax3.legend(); ax3.grid(True)
-    fig1.tight_layout(rect=[0, 0.03, 1, 0.95])
+    if is_control:
+        fig, axs = plt.subplots(3, 2, figsize=(15, 12))
+        fig.suptitle(f'Motion Control Performance {title_suffix}', fontsize=16)
 
-    fig2, (ax4, ax5, ax6) = plt.subplots(3, 1, figsize=(12, 18))
-    fig2.suptitle(f'System and Sensor Data {title_suffix}', fontsize=16)
-    
-    ax4.plot(t, data_dict['battery'], label='Battery Voltage')
-    ax4.set_title('Battery Voltage over Time'); ax4.set_xlabel('Time (ms)'); ax4.set_ylabel('Voltage (mV)'); ax4.legend(); ax4.grid(True)
-    
-    ax5.plot(t, data_dict['dist'], label='Distance')
-    ax5.set_title('Distance over Time'); ax5.set_xlabel('Time (ms)'); ax5.set_ylabel('Distance'); ax5.legend(); ax5.grid(True)
-    
-    ax6.plot(t, data_dict['angle'], label='Angle')
-    ax6.set_title('Angle over Time'); ax6.set_xlabel('Time (ms)'); ax6.set_ylabel('Angle (rad)'); ax6.legend(); ax6.grid(True)
-    fig2.tight_layout(rect=[0, 0.03, 1, 0.95])
-    
+        # Row 1, Col 1: Velocity
+        ax1 = axs[0, 0]
+        ax1.plot(t, data_dict['lin_vel_act'], label='Actual Linear Velocity')
+        ax1.plot(t, data_dict['lin_vel_tgt'], label='Target', linestyle='--')
+        ax1.set_title('Linear Velocity')
+        ax1.set_xlabel('Time (ms)')
+        ax1.set_ylabel('m/s')
+        ax1.legend()
+        ax1.grid(True)
+
+        # Row 1, Col 2: Angular Velocity
+        ax2 = axs[0, 1]
+        ax2.plot(t, data_dict['ang_vel_act'], label='Actual Angular Velocity')
+        ax2.plot(t, data_dict['ang_vel_tgt'], label='Target', linestyle='--')
+        ax2.set_title('Angular Velocity')
+        ax2.set_xlabel('Time (ms)')
+        ax2.set_ylabel('rad/s')
+        ax2.legend()
+        ax2.grid(True)
+
+        # Row 2, Col 1: Velocity PID
+        ax3 = axs[1, 0]
+        ax3.plot(t, data_dict['vel_p'], label='Velocity P Term')
+        ax3.plot(t, data_dict['vel_i'], label='Velocity I Term')
+        ax3.set_title('Velocity PID Terms')
+        ax3.set_xlabel('Time (ms)')
+        ax3.set_ylabel('Value')
+        ax3.legend()
+        ax3.grid(True)
+
+        # Row 2, Col 2: Angular Velocity PID
+        ax4 = axs[1, 1]
+        ax4.plot(t, data_dict['ang_p'], label='Angular P Term')
+        ax4.plot(t, data_dict['ang_i'], label='Angular I Term')
+        ax4.set_title('Angular Velocity PID Terms')
+        ax4.set_xlabel('Time (ms)')
+        ax4.set_ylabel('Value')
+        ax4.legend()
+        ax4.grid(True)
+
+        # Row 3, Col 1: PWMs
+        ax5 = axs[2, 0]
+        ax5.plot(t, data_dict['pwm_left'], label='PWM Left')
+        ax5.plot(t, data_dict['pwm_right'], label='PWM Right')
+        ax5.set_title('PWM Signals')
+        ax5.set_xlabel('Time (ms)')
+        ax5.set_ylabel('Duty Cycle (0-1000)')
+        ax5.legend()
+        ax5.grid(True)
+
+        # Row 3, Col 2: Feed Forward
+        ax6 = axs[2, 1]
+        ax6.plot(t, data_dict['rotation_ff'], label='Rotation Feedforward')
+        ax6.set_title('Feed Forward (rotation_ff)')
+        ax6.set_xlabel('Time (ms)')
+        ax6.set_ylabel('Value')
+        ax6.legend()
+        ax6.grid(True)
+
+        fig.tight_layout(rect=[0, 0.03, 1, 0.95])
+    else:
+        fig, axs = plt.subplots(3, 2, figsize=(15, 12))
+        fig.suptitle(f'System and Sensor Data {title_suffix}', fontsize=16)
+
+        # Row 1, Col 1: Velocity
+        ax1 = axs[0, 0]
+        ax1.plot(t, data_dict['lin_vel_act'], label='Actual Linear Velocity')
+        ax1.plot(t, data_dict['lin_vel_tgt'], label='Target', linestyle='--')
+        ax1.set_title('Linear Velocity')
+        ax1.set_xlabel('Time (ms)')
+        ax1.set_ylabel('m/s')
+        ax1.legend()
+        ax1.grid(True)
+
+        # Row 1, Col 2: Angular Velocity
+        ax2 = axs[0, 1]
+        ax2.plot(t, data_dict['ang_vel_act'], label='Actual Angular Velocity')
+        ax2.plot(t, data_dict['ang_vel_tgt'], label='Target', linestyle='--')
+        ax2.set_title('Angular Velocity')
+        ax2.set_xlabel('Time (ms)')
+        ax2.set_ylabel('rad/s')
+        ax2.legend()
+        ax2.grid(True)
+
+        # Row 2, Col 1: Distance
+        ax3 = axs[1, 0]
+        ax3.plot(t, data_dict['dist'], label='Distance')
+        ax3.set_title('Distance over Time')
+        ax3.set_xlabel('Time (ms)')
+        ax3.set_ylabel('Distance')
+        ax3.legend()
+        ax3.grid(True)
+
+        # Row 2, Col 2: Angle
+        ax4 = axs[1, 1]
+        ax4.plot(t, data_dict['angle'], label='Angle')
+        ax4.set_title('Angle over Time')
+        ax4.set_xlabel('Time (ms)')
+        ax4.set_ylabel('Angle (rad)')
+        ax4.legend()
+        ax4.grid(True)
+
+        # Row 3, Col 1: PWMs
+        ax5 = axs[2, 0]
+        ax5.plot(t, data_dict['pwm_left'], label='PWM Left')
+        ax5.plot(t, data_dict['pwm_right'], label='PWM Right')
+        ax5.set_title('PWM Signals')
+        ax5.set_xlabel('Time (ms)')
+        ax5.set_ylabel('Duty Cycle (0-1000)')
+        ax5.legend()
+        ax5.grid(True)
+
+        # Row 3, Col 2: Battery Voltage
+        ax6 = axs[2, 1]
+        ax6.plot(t, data_dict['battery'], label='Battery Voltage')
+        ax6.set_title('Battery Voltage over Time')
+        ax6.set_xlabel('Time (ms)')
+        ax6.set_ylabel('Voltage (mV)')
+        ax6.legend()
+        ax6.grid(True)
+
+        fig.tight_layout(rect=[0, 0.03, 1, 0.95])
+        
     plt.show()
 
 def plot_comparison(file1, file2, offset=0.0):
@@ -126,68 +238,181 @@ def plot_comparison(file1, file2, offset=0.0):
     c1_act, c1_tgt = 'tab:blue', 'tab:cyan'
     c2_act, c2_tgt = 'tab:green', 'tab:olive'
 
-    # --- Figure 1: Motion Performance Comparison ---
-    fig1, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(14, 15))
-    fig1.suptitle(f'Comparison: {name1} vs {name2}{offset_msg}', fontsize=16)
+    is_control = d1.get('is_control_mode', CONTROL_LOG_MODE)
 
-    # 1. Linear Velocities
-    ax1.plot(d1['time'], d1['lin_vel_act'], color=c1_act, label=f'Actual ({name1})')
-    ax1.plot(d1['time'], d1['lin_vel_tgt'], '--', color=c1_tgt, label=f'Target ({name1})')
-    ax1.plot(d2['time'], d2['lin_vel_act'], color=c2_act, label=f'Actual ({name2})')
-    ax1.plot(d2['time'], d2['lin_vel_tgt'], '--', color=c2_tgt, label=f'Target ({name2})')
-    ax1.set_title('Linear Velocity Comparison'); ax1.set_xlabel('Time (ms)'); ax1.set_ylabel('m/s'); ax1.legend(fontsize='small'); ax1.grid(True)
+    if is_control:
+        fig, axs = plt.subplots(3, 2, figsize=(16, 12))
+        fig.suptitle(f'Comparison: {name1} vs {name2}{offset_msg}', fontsize=16)
 
-    # 2. Angular Velocities
-    ax2.plot(d1['time'], d1['ang_vel_act'], color=c1_act, label=f'Actual ({name1})')
-    ax2.plot(d1['time'], d1['ang_vel_tgt'], '--', color=c1_tgt, label=f'Target ({name1})')
-    ax2.plot(d2['time'], d2['ang_vel_act'], color=c2_act, label=f'Actual ({name2})')
-    ax2.plot(d2['time'], d2['ang_vel_tgt'], '--', color=c2_tgt, label=f'Target ({name2})')
-    ax2.set_title('Angular Velocity Comparison'); ax2.set_xlabel('Time (ms)'); ax2.set_ylabel('rad/s'); ax2.legend(fontsize='small'); ax2.grid(True)
+        # Row 1, Col 1: Velocity
+        ax1 = axs[0, 0]
+        ax1.plot(d1['time'], d1['lin_vel_act'], color=c1_act, label=f'Actual ({name1})')
+        ax1.plot(d1['time'], d1['lin_vel_tgt'], '--', color=c1_tgt, label=f'Target ({name1})')
+        ax1.plot(d2['time'], d2['lin_vel_act'], color=c2_act, label=f'Actual ({name2})')
+        ax1.plot(d2['time'], d2['lin_vel_tgt'], '--', color=c2_tgt, label=f'Target ({name2})')
+        ax1.set_title('Linear Velocity Comparison')
+        ax1.set_xlabel('Time (ms)')
+        ax1.set_ylabel('m/s')
+        ax1.legend(fontsize='small')
+        ax1.grid(True)
 
-    # 3. PWMs
-    ax3.plot(d1['time'], d1['pwm_left'], color=c1_act, label=f'PWM Left ({name1})')
-    ax3.plot(d1['time'], d1['pwm_right'], ':', color=c1_act, label=f'PWM Right ({name1})')
-    ax3.plot(d2['time'], d2['pwm_left'], color=c2_act, label=f'PWM Left ({name2})')
-    ax3.plot(d2['time'], d2['pwm_right'], ':', color=c2_act, label=f'PWM Right ({name2})')
-    ax3.set_title('PWM Signals Comparison'); ax3.set_xlabel('Time (ms)'); ax3.set_ylabel('Duty Cycle (0-1000)'); ax3.legend(fontsize='small'); ax3.grid(True)
-    fig1.tight_layout(rect=[0, 0.03, 1, 0.95])
+        # Row 1, Col 2: Angular Velocity
+        ax2 = axs[0, 1]
+        ax2.plot(d1['time'], d1['ang_vel_act'], color=c1_act, label=f'Actual ({name1})')
+        ax2.plot(d1['time'], d1['ang_vel_tgt'], '--', color=c1_tgt, label=f'Target ({name1})')
+        ax2.plot(d2['time'], d2['ang_vel_act'], color=c2_act, label=f'Actual ({name2})')
+        ax2.plot(d2['time'], d2['ang_vel_tgt'], '--', color=c2_tgt, label=f'Target ({name2})')
+        ax2.set_title('Angular Velocity Comparison')
+        ax2.set_xlabel('Time (ms)')
+        ax2.set_ylabel('rad/s')
+        ax2.legend(fontsize='small')
+        ax2.grid(True)
 
-    # --- Figure 2: Metrics and Spatial Maps ---
-    fig2, (ax4, ax5, ax6) = plt.subplots(3, 1, figsize=(14, 18))
-    fig2.suptitle(f'Metrics Comparison: {name1} vs {name2}{offset_msg}', fontsize=16)
+        # Row 2, Col 1: Velocity PID
+        ax3 = axs[1, 0]
+        ax3.plot(d1['time'], d1['vel_p'], color=c1_act, label=f'Vel P ({name1})')
+        ax3.plot(d1['time'], d1['vel_i'], ':', color=c1_act, label=f'Vel I ({name1})')
+        ax3.plot(d2['time'], d2['vel_p'], color=c2_act, label=f'Vel P ({name2})')
+        ax3.plot(d2['time'], d2['vel_i'], ':', color=c2_act, label=f'Vel I ({name2})')
+        ax3.set_title('Velocity PID Terms Comparison')
+        ax3.set_xlabel('Time (ms)')
+        ax3.set_ylabel('Value')
+        ax3.legend(fontsize='small')
+        ax3.grid(True)
 
-    # 4. Battery
-    ax4.plot(d1['time'], d1['battery'], color=c1_act, label=name1)
-    ax4.plot(d2['time'], d2['battery'], color=c2_act, label=name2)
-    ax4.set_title('Battery Voltage'); ax4.set_xlabel('Time (ms)'); ax4.set_ylabel('mV'); ax4.legend(); ax4.grid(True)
+        # Row 2, Col 2: Angular Velocity PID
+        ax4 = axs[1, 1]
+        ax4.plot(d1['time'], d1['ang_p'], color=c1_act, label=f'Ang P ({name1})')
+        ax4.plot(d1['time'], d1['ang_i'], ':', color=c1_act, label=f'Ang I ({name1})')
+        ax4.plot(d2['time'], d2['ang_p'], color=c2_act, label=f'Ang P ({name2})')
+        ax4.plot(d2['time'], d2['ang_i'], ':', color=c2_act, label=f'Ang I ({name2})')
+        ax4.set_title('Angular PID Terms Comparison')
+        ax4.set_xlabel('Time (ms)')
+        ax4.set_ylabel('Value')
+        ax4.legend(fontsize='small')
+        ax4.grid(True)
 
-    # 5. Distance
-    ax5.plot(d1['time'], d1['dist'], color=c1_act, label=name1)
-    ax5.plot(d2['time'], d2['dist'], color=c2_act, label=name2)
-    ax5.set_title('Distance Tracking'); ax5.set_xlabel('Time (ms)'); ax5.set_ylabel('Distance'); ax5.legend(); ax5.grid(True)
+        # Row 3, Col 1: PWMs
+        ax5 = axs[2, 0]
+        ax5.plot(d1['time'], d1['pwm_left'], color=c1_act, label=f'PWM Left ({name1})')
+        ax5.plot(d1['time'], d1['pwm_right'], ':', color=c1_act, label=f'PWM Right ({name1})')
+        ax5.plot(d2['time'], d2['pwm_left'], color=c2_act, label=f'PWM Left ({name2})')
+        ax5.plot(d2['time'], d2['pwm_right'], ':', color=c2_act, label=f'PWM Right ({name2})')
+        ax5.set_title('PWM Signals Comparison')
+        ax5.set_xlabel('Time (ms)')
+        ax5.set_ylabel('Duty Cycle (0-1000)')
+        ax5.legend(fontsize='small')
+        ax5.grid(True)
 
-    # 6. Odometry Map (XY Position tracking)
-    ax6.plot(d1['pos_x'], d1['pos_y'], color=c1_act, label=f'Path ({name1})', marker='o', markersize=2, alpha=0.7)
-    ax6.plot(d2['pos_x'], d2['pos_y'], color=c2_act, label=f'Path ({name2})', marker='x', markersize=2, alpha=0.7)
-    ax6.set_title('Spatial Odometry Tracking'); ax6.set_xlabel('X Position (m)'); ax6.set_ylabel('Y Position (m)')
-    ax6.axis('equal'); ax6.legend(); ax6.grid(True)
-    fig2.tight_layout(rect=[0, 0.03, 1, 0.95])
+        # Row 3, Col 2: Feed Forward
+        ax6 = axs[2, 1]
+        ax6.plot(d1['time'], d1['rotation_ff'], color=c1_act, label=name1)
+        ax6.plot(d2['time'], d2['rotation_ff'], color=c2_act, label=name2)
+        ax6.set_title('Rotation Feedforward Comparison')
+        ax6.set_xlabel('Time (ms)')
+        ax6.set_ylabel('Value')
+        ax6.legend(fontsize='small')
+        ax6.grid(True)
 
+        fig.tight_layout(rect=[0, 0.03, 1, 0.95])
+    else:
+        fig, axs = plt.subplots(3, 2, figsize=(16, 12))
+        fig.suptitle(f'Comparison: {name1} vs {name2}{offset_msg}', fontsize=16)
+
+        # Row 1, Col 1: Velocity
+        ax1 = axs[0, 0]
+        ax1.plot(d1['time'], d1['lin_vel_act'], color=c1_act, label=f'Actual ({name1})')
+        ax1.plot(d1['time'], d1['lin_vel_tgt'], '--', color=c1_tgt, label=f'Target ({name1})')
+        ax1.plot(d2['time'], d2['lin_vel_act'], color=c2_act, label=f'Actual ({name2})')
+        ax1.plot(d2['time'], d2['lin_vel_tgt'], '--', color=c2_tgt, label=f'Target ({name2})')
+        ax1.set_title('Linear Velocity Comparison')
+        ax1.set_xlabel('Time (ms)')
+        ax1.set_ylabel('m/s')
+        ax1.legend(fontsize='small')
+        ax1.grid(True)
+
+        # Row 1, Col 2: Angular Velocity
+        ax2 = axs[0, 1]
+        ax2.plot(d1['time'], d1['ang_vel_act'], color=c1_act, label=f'Actual ({name1})')
+        ax2.plot(d1['time'], d1['ang_vel_tgt'], '--', color=c1_tgt, label=f'Target ({name1})')
+        ax2.plot(d2['time'], d2['ang_vel_act'], color=c2_act, label=f'Actual ({name2})')
+        ax2.plot(d2['time'], d2['ang_vel_tgt'], '--', color=c2_tgt, label=f'Target ({name2})')
+        ax2.set_title('Angular Velocity Comparison')
+        ax2.set_xlabel('Time (ms)')
+        ax2.set_ylabel('rad/s')
+        ax2.legend(fontsize='small')
+        ax2.grid(True)
+
+        # Row 2, Col 1: Distance Comparison
+        ax3 = axs[1, 0]
+        ax3.plot(d1['time'], d1['dist'], color=c1_act, label=name1)
+        ax3.plot(d2['time'], d2['dist'], color=c2_act, label=name2)
+        ax3.set_title('Distance Tracking Comparison')
+        ax3.set_xlabel('Time (ms)')
+        ax3.set_ylabel('Distance')
+        ax3.legend(fontsize='small')
+        ax3.grid(True)
+
+        # Row 2, Col 2: Spatial Odometry Tracking Comparison (pos_x vs pos_y)
+        ax4 = axs[1, 1]
+        ax4.plot(d1['pos_x'], d1['pos_y'], color=c1_act, label=f'Path ({name1})', marker='o', markersize=2, alpha=0.7)
+        ax4.plot(d2['pos_x'], d2['pos_y'], color=c2_act, label=f'Path ({name2})', marker='x', markersize=2, alpha=0.7)
+        ax4.set_title('Spatial Odometry Tracking')
+        ax4.set_xlabel('X Position (m)')
+        ax4.set_ylabel('Y Position (m)')
+        ax4.axis('equal')
+        ax4.legend(fontsize='small')
+        ax4.grid(True)
+
+        # Row 3, Col 1: PWMs
+        ax5 = axs[2, 0]
+        ax5.plot(d1['time'], d1['pwm_left'], color=c1_act, label=f'PWM Left ({name1})')
+        ax5.plot(d1['time'], d1['pwm_right'], ':', color=c1_act, label=f'PWM Right ({name1})')
+        ax5.plot(d2['time'], d2['pwm_left'], color=c2_act, label=f'PWM Left ({name2})')
+        ax5.plot(d2['time'], d2['pwm_right'], ':', color=c2_act, label=f'PWM Right ({name2})')
+        ax5.set_title('PWM Signals Comparison')
+        ax5.set_xlabel('Time (ms)')
+        ax5.set_ylabel('Duty Cycle (0-1000)')
+        ax5.legend(fontsize='small')
+        ax5.grid(True)
+
+        # Row 3, Col 2: Battery Voltage
+        ax6 = axs[2, 1]
+        ax6.plot(d1['time'], d1['battery'], color=c1_act, label=name1)
+        ax6.plot(d2['time'], d2['battery'], color=c2_act, label=name2)
+        ax6.set_title('Battery Voltage Comparison')
+        ax6.set_xlabel('Time (ms)')
+        ax6.set_ylabel('mV')
+        ax6.legend(fontsize='small')
+        ax6.grid(True)
+
+        fig.tight_layout(rect=[0, 0.03, 1, 0.95])
     plt.show()
 
 def collect_print_and_plot_data():
     """Connects to serial port, pipes text stream, logs to disk, and updates graphs."""
-    keys = [
-        'time', 'lin_vel_act', 'lin_vel_tgt', 'ang_vel_act', 'ang_vel_tgt',
-        'pwm_left', 'pwm_right', 'battery', 'pos_x', 'pos_y', 'angle', 'dist'
-    ]
-    data_dict = {k: [] for k in keys}
-    data_lines = []
+    if CONTROL_LOG_MODE:
+        keys = [
+            'time', 'lin_vel_act', 'lin_vel_tgt', 'ang_vel_act', 'ang_vel_tgt',
+            'pwm_left', 'pwm_right', 'vel_p', 'vel_i', 'ang_p', 'ang_i', 'rotation_ff'
+        ]
+        header = (
+            "Time(ms);ActualLinearVel;TargetLinearVel;ActualAngularVel;TargetAngularVel;"
+            "PWML;PWMR;VelP;VelI;AngP;AngI;RotationFF"
+        )
+    else:
+        keys = [
+            'time', 'lin_vel_act', 'lin_vel_tgt', 'ang_vel_act', 'ang_vel_tgt',
+            'pwm_left', 'pwm_right', 'battery', 'pos_x', 'pos_y', 'angle', 'dist'
+        ]
+        header = (
+            "Time(ms);ActualLinearVel;TargetLinearVel;ActualAngularVel;TargetAngularVel;"
+            "PWML;PWMR;Battery(mV);PosX(m);PosY(m);Angle(rad);Dist"
+        )
 
-    header = (
-        "Time(ms);ActualLinearVel;TargetLinearVel;ActualAngularVel;TargetAngularVel;"
-        "PWML;PWMR;Battery(mV);PosX(m);PosY(m);Angle(rad);Dist"
-    )
+    data_dict = {k: [] for k in keys}
+    data_dict['is_control_mode'] = CONTROL_LOG_MODE
+    data_lines = []
 
     try:
         with serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=READ_TIMEOUT) as ser:

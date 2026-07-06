@@ -12,6 +12,9 @@
 static constexpr float max_battery_voltage = 12.6;
 static constexpr float mot_kt = 0.0064; // motor torque constant [Nm/A]
 static constexpr float mot_ra = 2.5;    // armature resistance[Ohms]
+static constexpr float CONTROL_FREQUENCY_HZ = 1000.0;
+static constexpr float ACC_FEED_FOWARD_K = 0.00037;
+static constexpr float BREAK_FEED_FOWARD_K = 0.00037;
 
 namespace services {
 
@@ -70,7 +73,9 @@ void Control::reset(GeneralParams general_params) {
     diagonal_walls_pid.integral_limit = 0;
 
     target_angular_speed_rad_s = 0;
+    last_target_angular_speed_rad_s = 0;
     target_linear_speed_m_s = 0;
+    rotation_ff = 0.0f;
 
     motor_control_disabled = false;
     emergency = false;
@@ -82,6 +87,7 @@ void Control::update() {
 
     if (motor_control_disabled) {
         bsp::motors::set(0, 0);
+        last_target_angular_speed_rad_s = target_angular_speed_rad_s;
     } else {
         float mean_velocity_m_s = bsp::encoders::get_filtered_velocity_m_s();
         auto angular_speed_error_raw = std::abs(target_angular_speed_rad_s - bsp::imu::get_rad_per_s());
@@ -99,6 +105,23 @@ void Control::update() {
 
         float linear_ratio = linear_vel_pid.calculate(target_linear_speed_m_s, mean_velocity_m_s);
         float rotation_ratio = -angular_vel_pid.calculate(target_angular_speed_rad_s, bsp::imu::get_rad_per_s());
+
+        float target_angular_acceleration =
+            (target_angular_speed_rad_s - last_target_angular_speed_rad_s) * CONTROL_FREQUENCY_HZ;
+
+        bool is_accelerating = (target_angular_speed_rad_s * target_angular_acceleration) > 0.0f;
+
+        if (std::abs(target_angular_speed_rad_s) < 0.5) {
+            rotation_ff = 0;
+        } else {
+            rotation_ff = is_accelerating
+                                    ? target_angular_acceleration * ACC_FEED_FOWARD_K
+                                    : target_angular_acceleration * BREAK_FEED_FOWARD_K;
+        }
+
+        rotation_ff += target_angular_speed_rad_s * 0.0031;
+        rotation_ratio -= rotation_ff;
+        last_target_angular_speed_rad_s = target_angular_speed_rad_s;
 
 
         float l_current = linear_ratio + rotation_ratio;
