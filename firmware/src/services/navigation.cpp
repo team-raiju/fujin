@@ -16,8 +16,6 @@
 
 /// @section Constants
 
-static constexpr float CONTROL_FREQUENCY_HZ = 1000.0;
-
 static std::map<Movement, TurnParams> turn_params;
 static std::map<Movement, ForwardParams> forward_params;
 static GeneralParams general_params;
@@ -316,13 +314,13 @@ bool Navigation::step() {
                 if (control_linear_speed < 1.0 ||
                     std::abs(traveled_dist_cm) >
                         2.0) { // Safe margin of 2cm before starting to accelerate for stability
-                    control_linear_speed += acceleration / CONTROL_FREQUENCY_HZ;
+                    control_linear_speed += acceleration / Config::CONTROL_FREQUENCY_HZ;
                     control_linear_speed = std::min(control_linear_speed, max_speed);
                 }
             }
         } else {
             if (control_linear_speed > forward_end_speed) {
-                control_linear_speed -= deceleration / CONTROL_FREQUENCY_HZ;
+                control_linear_speed -= deceleration / Config::CONTROL_FREQUENCY_HZ;
                 control_linear_speed = std::max(control_linear_speed, Config::min_move_speed);
             }
         }
@@ -422,12 +420,12 @@ bool Navigation::step() {
                 (target_travel_cm -
                  (100.0f * get_torricelli_distance(final_speed, control_linear_speed, -deceleration)))) {
                 if (control_linear_speed < max_speed) {
-                    control_linear_speed += acceleration / CONTROL_FREQUENCY_HZ;
+                    control_linear_speed += acceleration / Config::CONTROL_FREQUENCY_HZ;
                     control_linear_speed = std::min(control_linear_speed, max_speed);
                 }
             } else {
                 if (control_linear_speed > final_speed) {
-                    control_linear_speed -= deceleration / CONTROL_FREQUENCY_HZ;
+                    control_linear_speed -= deceleration / Config::CONTROL_FREQUENCY_HZ;
                     control_linear_speed = std::max(control_linear_speed, Config::min_move_speed);
                 }
             }
@@ -508,12 +506,12 @@ bool Navigation::step() {
 
             if (acceleration_condition) {
                 if (control_angular_speed_abs < angular_max_speed) {
-                    control_angular_speed_abs += angular_acceleration / CONTROL_FREQUENCY_HZ;
+                    control_angular_speed_abs += angular_acceleration / Config::CONTROL_FREQUENCY_HZ;
                     control_angular_speed_abs = std::min(control_angular_speed_abs, angular_max_speed);
                 }
             } else {
                 if (control_angular_speed_abs > angular_end_speed) {
-                    control_angular_speed_abs -= angular_deceleration / CONTROL_FREQUENCY_HZ;
+                    control_angular_speed_abs -= angular_deceleration / Config::CONTROL_FREQUENCY_HZ;
                     control_angular_speed_abs = std::max(control_angular_speed_abs, angular_end_speed);
                 }
             }

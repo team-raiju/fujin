@@ -59,6 +59,7 @@ uint32_t* ir_latest_reading(void);
 uint32_t battery_latest_reading(void);
 uint32_t* current_latest_reading(void);
 float battery_latest_reading_mv(void);
+float battery_latest_reading_volts(void);
 bool battery_low();
 
 uint32_t ir_reading(SensingDirection direction);

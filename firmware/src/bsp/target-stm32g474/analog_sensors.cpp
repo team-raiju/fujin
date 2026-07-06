@@ -32,6 +32,8 @@ namespace bsp::analog_sensors {
 
 #define ADC_MAX_VALUE 4095.0
 #define ADC_MAX_VOLTAGE_MV 3300.0
+#define ADC_MAX_VOLTAGE_VOLTS 3.3f
+
 #define PWR_BATTERY_THRESHOLD_MV 10700.0
 #define PWR_BAT_VOLTAGE_DIV_R1 100.0
 #define PWR_BAT_VOLTAGE_DIV_R2 33.0
@@ -91,6 +93,11 @@ uint32_t battery_latest_reading(void) {
 
 float battery_latest_reading_mv(void) {
     float measured_adc_voltage = (battery_reading / ADC_MAX_VALUE) * ADC_MAX_VOLTAGE_MV;
+    return measured_adc_voltage * PWR_BAT_VOLTAGE_MULTIPLIER;
+}
+
+float battery_latest_reading_volts(void) {
+    float measured_adc_voltage = (battery_reading / ADC_MAX_VALUE) * ADC_MAX_VOLTAGE_VOLTS;
     return measured_adc_voltage * PWR_BAT_VOLTAGE_MULTIPLIER;
 }
 

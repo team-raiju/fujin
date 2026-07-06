@@ -45,6 +45,10 @@ class Control {
     private:
         Control() {}
 
+        void fan_control_update();
+        std::pair<int16_t, int16_t> clamp_pwms(int16_t pwm_l, int16_t pwm_r);
+
+
         float rotation_ff = 0.0f;
 
         algorithm::PID linear_vel_pid;

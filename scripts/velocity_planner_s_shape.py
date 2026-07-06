@@ -85,7 +85,7 @@ def plot_angular_speeds(real_speeds):
     
     # Add labels and legend
     plt.xlabel('Time (ms)')
-    plt.ylabel('Angular Speed (deg/s)')
+    plt.ylabel('Angular Speed (rad/s)')
     plt.title('Angular Speeds Over Time')
     plt.legend()
     plt.grid(True)
@@ -93,29 +93,25 @@ def plot_angular_speeds(real_speeds):
 
 def main():
 
-    #### Inputs ####
+    #### Inputs (Strictly in Radians and standard SI/Metric prefixes) ####
     linear_speed_m_s = 0.7
-    turn_angle_deg = 90
-    angular_transition_deg = 25
-    maximum_angular_speed_deg_s = 900
+    turn_angle_degree = 90
+    turn_angle_rad = np.radians(turn_angle_degree)
+    angular_transition_degree = 25
+    angular_transition_rad = np.radians(angular_transition_degree)
+    maximum_angular_speed_rad_s = 15.70796
     sharpness_factor = 1.0
 
     mm_before_turn = 0
     mm_after_turn = 0
-    initial_theta_deg = 0
+    initial_theta_rad = 0.0
 
-
-    #### Units conversion ####
-    turn_angle_rad = np.deg2rad(turn_angle_deg)
-    angular_transition_rad =  np.deg2rad(angular_transition_deg)
-    initial_theta_rad = np.deg2rad(initial_theta_deg)
-    maximum_angular_speed_rad_s = np.deg2rad(maximum_angular_speed_deg_s)
 
     #### Print inputs ####
     print(f"linear_speed_m_s: {linear_speed_m_s}")
-    print(f"turn_angle_deg: {turn_angle_deg} -> {turn_angle_rad:.3f} rad")
-    print(f"angular_transition_deg: {angular_transition_deg} -> {angular_transition_rad:.3f} rad")
-    print(f"maximum_angular_speed_deg_s: {maximum_angular_speed_deg_s} -> {maximum_angular_speed_rad_s:.3f} rad/s")
+    print(f"turn_angle_degree: {turn_angle_degree} -> {turn_angle_rad:.3f} rad")
+    print(f"angular_transition_degree: {angular_transition_degree} -> {angular_transition_rad:.3f} rad")
+    print(f"maximum_angular_speed_rad_s: {maximum_angular_speed_rad_s:.3f} rad/s -> {np.rad2deg(maximum_angular_speed_rad_s):.3f} deg/s")
     print(f"sharpness_factor: {sharpness_factor}")
     print(f"mm_before_turn: {mm_before_turn}")
     print(f"mm_after_turn: {mm_after_turn}")
@@ -123,7 +119,7 @@ def main():
 
     #### Calculate Real Positions ####
     angular_speed_rad_s = 0
-    real_ang_speeds = [0]
+    real_ang_speeds = [0.0]
     real_positions = [
         Position(90 + mm_before_turn * np.sin(initial_theta_rad), 
                   mm_before_turn * np.cos(initial_theta_rad), 
@@ -169,23 +165,23 @@ def main():
         traveled_dist += linear_speed_mm_ms
 
         real_positions.append(Position(x, y, theta))
-        real_ang_speeds.append(angular_speed_rad_s * 180 / np.pi)
+        real_ang_speeds.append(angular_speed_rad_s)
 
 
         if (real_positions[t - 1].theta < angular_transition_rad and theta >= angular_transition_rad): 
-            print(f"t: {t}, x: {x:.3f}, y: {y:.3f}, angular_speed_rad_s: {angular_speed_rad_s:.3f}, theta: {theta * 180 / np.pi:.3f}, traveled_dist: {traveled_dist:.3f}")
+            print(f"t: {t}, x: {x:.3f}, y: {y:.3f}, angular_speed_rad_s: {angular_speed_rad_s:.3f}, theta: {np.rad2deg(theta):.3f}, traveled_dist: {traveled_dist:.3f}")
             turn_arc_dist = traveled_dist
 
         elif (real_positions[t - 1].theta < deceleration_start_angle and theta >= deceleration_start_angle):
-            print(f"t: {t}, x: {x:.3f}, y: {y:.3f}, angular_speed_rad_s: {angular_speed_rad_s:.3f}, theta: {theta * 180 / np.pi:.3f}, traveled_dist: {traveled_dist:.3f}")
+            print(f"t: {t}, x: {x:.3f}, y: {y:.3f}, angular_speed_rad_s: {angular_speed_rad_s:.3f}, theta: {np.rad2deg(theta):.3f}, traveled_dist: {traveled_dist:.3f}")
             turn_arc_dist = traveled_dist - turn_arc_dist
             print(f"Turn arc distance: {turn_arc_dist:.3f} mm")
 
         angle_turned_rad = theta
         t = t + 1
 
-    print(f"Final Real Position: {real_positions[-1].x:.3f}, {real_positions[-1].y:.3f}, {real_positions[-1].theta * 180 / np.pi:.3f}")
-    print(f"Max measured acceleration: {max_measured_acceleration_rad_s2:.3f} rad/s² -> {max_measured_acceleration_rad_s2 * 180 / np.pi:.3f} deg/s²")
+    print(f"Final Real Position: {real_positions[-1].x:.3f}, {real_positions[-1].y:.3f}, {np.rad2deg(real_positions[-1].theta):.3f}")
+    print(f"Max measured acceleration: {max_measured_acceleration_rad_s2:.3f} rad/s² -> {np.rad2deg(max_measured_acceleration_rad_s2):.3f} deg/s²")
     print(f"Total time: {t} ms")
 
     #### Manually add the mm_after_turn ####
