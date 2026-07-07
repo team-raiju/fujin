@@ -58,7 +58,7 @@ void Control::reset(GeneralParams general_params) {
     angular_vel_pid.kp = params.angular_kp;
     angular_vel_pid.ki = params.angular_ki;
     angular_vel_pid.kd = params.angular_kd;
-    angular_vel_pid.integral_limit = 500; // approximately (max_bat_voltage / Config::angular_ki)
+    angular_vel_pid.integral_limit = 500;
 
     walls_pid.reset();
     walls_pid.kp = params.wall_kp;

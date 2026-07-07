@@ -21,29 +21,31 @@ namespace services {
 
 #if CONTROL_LOG_MODE
 const Logger::ParamInfo paramInfoArray[] = {
-    {4095, -5, 10, 270.0f},         // velocity_ms
-    {4095, -5, 10, 270.0f},         // target_velocity_ms
-    {4095, -70, 70, 29.0f},         // angular_speed_rad_s
-    {4095, -70, 70, 29.0f},         // target_rad_s
-    {1023, -1000, 1000, 0.5115f},   // pwm_left
-    {1023, -1000, 1000, 0.5115f},   // pwm_right
-    {16383, -3, 3, 2730.5f},        // vel_p
-    {16383, -3, 3, 2730.5f},       // vel_i
-    {16383, -2, 2, 4095.75f},       // ang_p
-    {16383, -2, 2, 4095.75f},        // ang_i
+    {8191, -5, 10, 546.0f},       // velocity_ms
+    {8191, -5, 10, 546.0f},       // target_velocity_ms
+    {8191, -70, 70, 58.0f},       // angular_speed_rad_s
+    {8191, -70, 70, 58.0f},       // target_rad_s
+    {1023, -1000, 1000, 0.5115f}, // pwm_left
+    {1023, -1000, 1000, 0.5115f}, // pwm_right
+    {4095, -5, 5, 409.5f},        // encoder_imu_diff
+    {16383, -3, 3, 2730.5f},      // vel_p
+    {16383, -3, 3, 2730.5f},      // vel_i
+    {16383, -2, 2, 4095.75f},     // ang_p
+    {16383, -2, 2, 4095.75f},     // ang_i
     {4095, -1, 1, 2047.5f},       // rotation_ff
 };
 #else
 const Logger::ParamInfo paramInfoArray[] = {
-    {4095, -5, 10, 270.0f},     // velocity_ms
-    {4095, -5, 10, 270.0f},     // target_velocity_ms
-    {4095, -70, 70, 29.0f},     // angular_speed_rad_s
-    {4095, -70, 70, 29.0f},     // target_rad_s
+    {8191, -5, 10, 546.0f},       // velocity_ms
+    {8191, -5, 10, 546.0f},       // target_velocity_ms
+    {8191, -70, 70, 58.0f},       // angular_speed_rad_s
+    {8191, -70, 70, 58.0f},       // target_rad_s
     {1023, -1000, 1000, 0.5115f}, // pwm_left
     {1023, -1000, 1000, 0.5115f}, // pwm_right
-    {255, 0, 13000, 0.0195f},   // battery
-    {65535, -250, 250, 131.0f}, // position_mm_x
-    {65535, -250, 250, 131.0f}, // position_mm_y
+    {4095, -5, 5, 409.5f},        // encoder_imu_diff
+    {255, 0, 13000, 0.0195f},     // battery
+    {65535, -250, 250, 131.0f},   // position_mm_x
+    {65535, -250, 250, 131.0f},   // position_mm_y
     {16383, -180, 180, 45.5083f}, // angle
     {16383, -50, 1260, 12.5061f}, // distance_cm
 };
@@ -87,9 +89,8 @@ void Logger::update() {
     }
 
     auto control = services::Control::instance();
-#if !CONTROL_LOG_MODE
     auto nav = services::Navigation::instance();
-#endif
+
     auto& current_log_entry = logdata[log_data_idx].fields;
 
     current_log_entry.velocity_ms = encode_value(bsp::encoders::get_filtered_velocity_m_s(),
@@ -104,6 +105,8 @@ void Logger::update() {
         encode_value(control->get_pwm_duty_l(), paramInfoArray[static_cast<size_t>(ParamIndex::PwmLeft)]);
     current_log_entry.pwm_right =
         encode_value(control->get_pwm_duty_r(), paramInfoArray[static_cast<size_t>(ParamIndex::PwmRight)]);
+    current_log_entry.encoder_imu_diff =
+        encode_value(nav->get_encoder_imu_diff(), paramInfoArray[static_cast<size_t>(ParamIndex::EncoderImuDiff)]);
 #if CONTROL_LOG_MODE
     current_log_entry.vel_p = encode_value(control->get_vel_pid().kp * control->get_vel_pid().previous_error,
                                            paramInfoArray[static_cast<size_t>(ParamIndex::VelP)]);
@@ -113,8 +116,8 @@ void Logger::update() {
                                            paramInfoArray[static_cast<size_t>(ParamIndex::AngP)]);
     current_log_entry.ang_i = encode_value(control->get_ang_vel_pid().ki * control->get_ang_vel_pid().integral,
                                            paramInfoArray[static_cast<size_t>(ParamIndex::AngI)]);
-    current_log_entry.rotation_ff = encode_value(control->get_rotation_ff(),
-                                                 paramInfoArray[static_cast<size_t>(ParamIndex::RotationFF)]);
+    current_log_entry.rotation_ff =
+        encode_value(control->get_rotation_ff(), paramInfoArray[static_cast<size_t>(ParamIndex::RotationFF)]);
 #else
     current_log_entry.battery = encode_value(bsp::analog_sensors::battery_latest_reading_mv(),
                                              paramInfoArray[static_cast<size_t>(ParamIndex::Battery)]);
@@ -140,9 +143,9 @@ void Logger::update() {
 
 void Logger::print_log() {
 #if CONTROL_LOG_MODE
-    std::printf("t;Vel;TgtVel;AngVel;TgtAngVel;PWM_L;PWM_R;VelP;VelI;AngP;AngI;RotFF\r\n");
+    std::printf("t;Vel;TgtVel;AngVel;TgtAngVel;PWM_L;PWM_R;ImuDiff;VelP;VelI;AngP;AngI;RotFF\r\n");
 #else
-    std::printf("t;Vel;TgtVel;AngVel;TgtAngVel;PWM_L;PWM_R;Batt_mV;PosX;PosY;Angle;Dist\r\n");
+    std::printf("t;Vel;TgtVel;AngVel;TgtAngVel;PWM_L;PWM_R;ImuDiff;Batt_mV;PosX;PosY;Angle;Dist\r\n");
 #endif
     bsp::delay_ms(5);
 
@@ -159,23 +162,7 @@ void Logger::print_log() {
 
 #if CONTROL_LOG_MODE
         std::printf(
-            "%d;%0.4f;%0.4f;%0.4f;%0.4f;%0.f;%0.f;%0.4f;%0.4f;%0.4f;%0.4f;%0.4f\r\n", idx,
-            decode_value(read_logdata.fields.velocity_ms, paramInfoArray[static_cast<size_t>(ParamIndex::VelocityMS)]),
-            decode_value(read_logdata.fields.target_velocity_ms,
-                          paramInfoArray[static_cast<size_t>(ParamIndex::TargetVelocityMS)]),
-            decode_value(read_logdata.fields.angular_speed_rad_s,
-                          paramInfoArray[static_cast<size_t>(ParamIndex::AngularSpeedRadS)]),
-            decode_value(read_logdata.fields.target_rad_s, paramInfoArray[static_cast<size_t>(ParamIndex::TargetRadS)]),
-            decode_value(read_logdata.fields.pwm_left, paramInfoArray[static_cast<size_t>(ParamIndex::PwmLeft)]),
-            decode_value(read_logdata.fields.pwm_right, paramInfoArray[static_cast<size_t>(ParamIndex::PwmRight)]),
-            decode_value(read_logdata.fields.vel_p, paramInfoArray[static_cast<size_t>(ParamIndex::VelP)]),
-            decode_value(read_logdata.fields.vel_i, paramInfoArray[static_cast<size_t>(ParamIndex::VelI)]),
-            decode_value(read_logdata.fields.ang_p, paramInfoArray[static_cast<size_t>(ParamIndex::AngP)]),
-            decode_value(read_logdata.fields.ang_i, paramInfoArray[static_cast<size_t>(ParamIndex::AngI)]),
-            decode_value(read_logdata.fields.rotation_ff, paramInfoArray[static_cast<size_t>(ParamIndex::RotationFF)]));
-#else
-        std::printf(
-            "%d;%0.4f;%0.4f;%0.4f;%0.4f;%0.f;%0.f;%0.f;%0.4f;%0.4f;%0.4f;%0.4f\r\n", idx,
+            "%d;%0.4f;%0.4f;%0.4f;%0.4f;%0.f;%0.f;%0.4f;%0.4f;%0.4f;%0.4f;%0.4f;%0.4f\r\n", idx,
             decode_value(read_logdata.fields.velocity_ms, paramInfoArray[static_cast<size_t>(ParamIndex::VelocityMS)]),
             decode_value(read_logdata.fields.target_velocity_ms,
                          paramInfoArray[static_cast<size_t>(ParamIndex::TargetVelocityMS)]),
@@ -184,6 +171,24 @@ void Logger::print_log() {
             decode_value(read_logdata.fields.target_rad_s, paramInfoArray[static_cast<size_t>(ParamIndex::TargetRadS)]),
             decode_value(read_logdata.fields.pwm_left, paramInfoArray[static_cast<size_t>(ParamIndex::PwmLeft)]),
             decode_value(read_logdata.fields.pwm_right, paramInfoArray[static_cast<size_t>(ParamIndex::PwmRight)]),
+            decode_value(read_logdata.fields.encoder_imu_diff, paramInfoArray[static_cast<size_t>(ParamIndex::EncoderImuDiff)]),
+            decode_value(read_logdata.fields.vel_p, paramInfoArray[static_cast<size_t>(ParamIndex::VelP)]),
+            decode_value(read_logdata.fields.vel_i, paramInfoArray[static_cast<size_t>(ParamIndex::VelI)]),
+            decode_value(read_logdata.fields.ang_p, paramInfoArray[static_cast<size_t>(ParamIndex::AngP)]),
+            decode_value(read_logdata.fields.ang_i, paramInfoArray[static_cast<size_t>(ParamIndex::AngI)]),
+            decode_value(read_logdata.fields.rotation_ff, paramInfoArray[static_cast<size_t>(ParamIndex::RotationFF)]));
+#else
+        std::printf(
+            "%d;%0.4f;%0.4f;%0.4f;%0.4f;%0.f;%0.f;%0.f;%0.4f;%0.4f;%0.4f;%0.4f;%0.4f\r\n", idx,
+            decode_value(read_logdata.fields.velocity_ms, paramInfoArray[static_cast<size_t>(ParamIndex::VelocityMS)]),
+            decode_value(read_logdata.fields.target_velocity_ms,
+                         paramInfoArray[static_cast<size_t>(ParamIndex::TargetVelocityMS)]),
+            decode_value(read_logdata.fields.angular_speed_rad_s,
+                         paramInfoArray[static_cast<size_t>(ParamIndex::AngularSpeedRadS)]),
+            decode_value(read_logdata.fields.target_rad_s, paramInfoArray[static_cast<size_t>(ParamIndex::TargetRadS)]),
+            decode_value(read_logdata.fields.pwm_left, paramInfoArray[static_cast<size_t>(ParamIndex::PwmLeft)]),
+            decode_value(read_logdata.fields.pwm_right, paramInfoArray[static_cast<size_t>(ParamIndex::PwmRight)]),
+            decode_value(read_logdata.fields.encoder_imu_diff, paramInfoArray[static_cast<size_t>(ParamIndex::EncoderImuDiff)]),
             decode_value(read_logdata.fields.battery, paramInfoArray[static_cast<size_t>(ParamIndex::Battery)]),
             decode_value(read_logdata.fields.position_mm_x, paramInfoArray[static_cast<size_t>(ParamIndex::PositionX)]),
             decode_value(read_logdata.fields.position_mm_y, paramInfoArray[static_cast<size_t>(ParamIndex::PositionY)]),
@@ -207,11 +212,10 @@ void Logger::send_log_ble() {
             break;
         }
 
-        memcpy(packet + 2, ram_logger + i, sizeof(read_logdata.data));
+        memcpy(packet + 2, ram_logger + i, 17);
 
         bsp::ble::transmit(packet, sizeof(packet));
         bsp::delay_ms(5);
     }
-
 }
 }

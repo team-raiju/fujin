@@ -218,24 +218,35 @@ void Navigation::update(void) {
     bsp::encoders::EncoderData right_encoder = bsp::encoders::get_data(bsp::encoders::EncoderSide::RIGHT);
     float measured_angle_rad = bsp::imu::get_angle();
 
-    if (left_encoder.ticks != 0 || right_encoder.ticks != 0) {
-        float estimated_delta_l_mm = (left_encoder.ticks * bsp::encoders::get_encoder_dist_mm_pulse());
-        float estimated_delta_r_mm = (right_encoder.ticks * bsp::encoders::get_encoder_dist_mm_pulse());
+    float estimated_delta_l_mm =
+        (left_encoder.ticks * bsp::encoders::get_encoder_dist_mm_pulse());
+    float estimated_delta_r_mm =
+        (right_encoder.ticks * bsp::encoders::get_encoder_dist_mm_pulse());
 
-        float delta_x_mm = (estimated_delta_l_mm + estimated_delta_r_mm) / 2.0;
-        traveled_dist_cm += delta_x_mm / 10.0;
 
-        float delta_angle_rad = get_shortest_delta_angle(measured_angle_rad, current_angle_rad);
-
-        float intermediate_angle_rad = current_angle_rad + (delta_angle_rad / 2.0);
-        intermediate_angle_rad = limit_angle_minus_pi_pi(intermediate_angle_rad);
-
-        Position rotated_delta;
-        rotated_delta.x = delta_x_mm * std::cos(intermediate_angle_rad);
-        rotated_delta.y = delta_x_mm * std::sin(intermediate_angle_rad);
-        current_position_mm.x += rotated_delta.x;
-        current_position_mm.y += rotated_delta.y;
+    float delta_x_mm = (estimated_delta_l_mm + estimated_delta_r_mm) / 2.0;
+    float encoder_diff_mm = (estimated_delta_r_mm - estimated_delta_l_mm);
+    if (left_encoder.ticks == 0 && right_encoder.ticks == 0) {
+        delta_x_mm = 0.0f;
+        encoder_diff_mm = 0.0f;
     }
+
+    float imu_delta_angle_rad = get_shortest_delta_angle(measured_angle_rad, current_angle_rad);
+    
+    float intermediate_angle_rad = current_angle_rad + (imu_delta_angle_rad / 2.0);
+    intermediate_angle_rad = limit_angle_minus_pi_pi(intermediate_angle_rad);
+
+    
+    float expected_diff_mm = imu_delta_angle_rad * Config::WHEELS_DIST_MM;
+    encoder_imu_diff = encoder_diff_mm - expected_diff_mm;
+
+    traveled_dist_cm += delta_x_mm / 10.0;
+
+    Position rotated_delta;
+    rotated_delta.x = delta_x_mm * std::cos(intermediate_angle_rad);
+    rotated_delta.y = delta_x_mm * std::sin(intermediate_angle_rad);
+    current_position_mm.x += rotated_delta.x;
+    current_position_mm.y += rotated_delta.y;
 
     current_angle_rad = measured_angle_rad;
     bsp::encoders::clear_ticks();

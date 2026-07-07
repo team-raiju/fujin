@@ -17,7 +17,6 @@ static constexpr float WHEEL_TO_ENCODER_RATIO = (1.0);
 static constexpr float ENCODER_PPR = (1024.0);
 static constexpr float PULSES_PER_WHEEL_ROTATION = (WHEEL_TO_ENCODER_RATIO * ENCODER_PPR);
 
-static constexpr float WHEELS_DIST_CM = (7.0);
 static constexpr float ENCODER_DIST_CM_PULSE = (WHEEL_PERIMETER_CM / PULSES_PER_WHEEL_ROTATION);
 static constexpr float ENCODER_DIST_MM_PULSE = (ENCODER_DIST_CM_PULSE * 10.0);
 

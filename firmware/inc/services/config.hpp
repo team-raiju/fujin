@@ -10,6 +10,9 @@ public:
     static constexpr float CONTROL_FREQUENCY_HZ = 1000.0;
     static constexpr float CONTROL_PERIOD_S = 1.0 / CONTROL_FREQUENCY_HZ;
 
+    static constexpr float WHEELS_DIST_MM = (70.0);
+
+
     static float fan_speed;
 
     static float angular_kp;

@@ -61,6 +61,9 @@ public:
     std::vector<std::pair<Movement, uint8_t>> get_hardcoded_movements();
     void set_hardcoded_movements(std::vector<std::pair<Movement, uint8_t>> moves);
 
+    float get_encoder_imu_diff() const { return encoder_imu_diff; };
+
+
 private:
     enum class PathState {
         Start,
@@ -138,6 +141,7 @@ private:
     uint32_t wall_left_counter_off = 0;
     uint32_t wall_break_last_dist = 0;
     bool current_wall_break_detected = false;
+    float encoder_imu_diff = 0;
 
     MiniFSMStates mini_fsm_state = MiniFSMStates::FORWARD_1;
 
