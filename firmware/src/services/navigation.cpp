@@ -494,17 +494,6 @@ bool Navigation::step() {
 
             bool stop_condition = (imu_incremental_angle >= (final_angle_rad));
 
-            // Smoothen acceleration when going to high speeds
-            if (angular_max_speed > 17.0 && (selected_mode != SEARCH_FAST)) {
-                if (control_angular_speed_abs < 4.0) {
-                    angular_deceleration *= 0.35;
-                }
-            } else if (angular_max_speed > 23.0 && (selected_mode != SEARCH_FAST)) {
-                if (control_angular_speed_abs < 8.0) {
-                    angular_deceleration *= 0.22;
-                }
-            }
-
             // Stop condition is based on time on high speeds, as angles becomes unreliable
             if ((selected_mode == SEARCH_SLOW) || (selected_mode == SEARCH_MEDIUM) || (selected_mode == SLOW) ||
                 (selected_mode == SEARCH_FAST)) {
@@ -545,7 +534,7 @@ bool Navigation::step() {
                     reference_time = bsp::get_tick_ms();
                     traveled_dist_cm = 0;
                     mini_fsm_state = MiniFSMStates::FORWARD_2;
-                } else { // TURN LEFT or RIGHT (45, 90, 135 from 45)
+                } else { // TURN LEFT (45, 90, 135) or RIGHT (45, 90, 135) from 45
                     is_finished = true;
                     mini_fsm_state = MiniFSMStates::FORWARD_1;
                 }

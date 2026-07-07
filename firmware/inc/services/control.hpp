@@ -41,11 +41,12 @@ class Control {
         algorithm::PID get_vel_pid() const { return linear_vel_pid; }
         algorithm::PID get_ang_vel_pid() const { return angular_vel_pid; }
         float get_rotation_ff() const { return rotation_ff; }
+        uint16_t get_fan_pwm() const { return fan_pwm; }
 
     private:
         Control() {}
 
-        void fan_control_update();
+        void fan_control_update(float bat_volts);
         std::pair<int16_t, int16_t> clamp_pwms(int16_t pwm_l, int16_t pwm_r);
 
 
@@ -65,6 +66,7 @@ class Control {
         int16_t pwm_duty_r;
         bool motor_control_disabled = false;
         bool emergency = false;
+        uint16_t fan_pwm = 0;
 
         GeneralParams params;
 

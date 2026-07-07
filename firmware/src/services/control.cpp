@@ -76,6 +76,7 @@ void Control::reset(GeneralParams general_params) {
     last_target_angular_speed_rad_s = 0;
     target_linear_speed_m_s = 0;
     rotation_ff = 0.0f;
+    fan_pwm = 0.0f;
 
     motor_control_disabled = false;
     emergency = false;
@@ -135,7 +136,7 @@ void Control::update() {
         bsp::motors::set(pwm_duty_l, pwm_duty_r);
     }
 
-    fan_control_update();
+    fan_control_update(bat_volts);
 }
 
 std::pair<int16_t, int16_t> Control::clamp_pwms(int16_t pwm_l, int16_t pwm_r) {
@@ -167,20 +168,18 @@ std::pair<int16_t, int16_t> Control::clamp_pwms(int16_t pwm_l, int16_t pwm_r) {
     return {pwm_l, pwm_r};
 }
 
-void Control::fan_control_update() {
-
-    float bat_volts = bsp::analog_sensors::battery_latest_reading_volts();
+void Control::fan_control_update(float bat_volts) {
 
     float target_fan_speed = std::min(params.fan_speed, static_cast<float>(bsp::fan::MAX_SPEED));
     float desired_fan_voltage =
         (target_fan_speed / static_cast<float>(bsp::fan::MAX_SPEED)) * bsp::fan::get_max_fan_voltage();
 
     if (bat_volts > 5.0) { // To avoid turning on fan when battery measurement is not reliable
-        uint16_t fan_pwm = (desired_fan_voltage / bat_volts) * bsp::fan::MAX_SPEED;
-        bsp::fan::set(fan_pwm);
+        fan_pwm = (desired_fan_voltage / bat_volts) * bsp::fan::MAX_SPEED;
     } else {
-        bsp::fan::set(0);
+        fan_pwm = 0;
     }
+    bsp::fan::set(fan_pwm);
 }
 
 void Control::start_fan() {
@@ -195,7 +194,7 @@ void Control::start_fan() {
             bsp::fan::set(0);
             break;
         }
-        uint16_t fan_pwm = (volts / bat_volts) * bsp::fan::MAX_SPEED;
+        fan_pwm = (volts / bat_volts) * bsp::fan::MAX_SPEED;
         std::printf("volts: %f, bat: %f, pwm: %d\r\n", volts, bat_volts, fan_pwm);
         bsp::fan::set(fan_pwm);
         bsp::delay_ms(20);
@@ -212,7 +211,7 @@ void Control::stop_fan() {
             bsp::fan::set(0);
             break;
         }
-        uint16_t fan_pwm = (volts / bat_volts) * bsp::fan::MAX_SPEED;
+        fan_pwm = (volts / bat_volts) * bsp::fan::MAX_SPEED;
         bsp::fan::set(fan_pwm);
         bsp::delay_ms(20);
     }

@@ -267,8 +267,8 @@ std::map<Movement, ForwardParams> forward_params_custom = {
 
 const GeneralParams general_params_search_slow = {
     0.0,                      // Fan speed
-    0.0350,  0.0020,  0.0000, // Angular P,I,D
-    0.00037, 0.00037, 0.0031, // Angular acc/brake/velocity feed-forward
+    0.0480,  0.00042, 0.0000, // Angular P,I,D
+    0.00044, 0.00044, 0.0035, // Angular acc/brake/velocity feed-forward
     0.0006,  0.0000,  0.0010, // Wall P,I,D
     3.0000,  0.0360,  0.0000, // Linear velocity P,I,D
     0.0000,  0.0000,  0.0000, // Diagonal walls P,I,D
@@ -304,7 +304,7 @@ const GeneralParams general_params_search_fast = {
 const GeneralParams general_params_slow = {
     0.0,                      // Fan speed
     0.0480,  0.00042, 0.0000, // Angular P,I,D
-    0.00037, 0.00037, 0.0031, // Angular acc/brake/velocity feed-forward
+    0.00044, 0.00044, 0.0035, // Angular acc/brake/velocity feed-forward
     0.0015,  0.0000,  0.0025, // Wall P,I,D
     5.0000,  0.0600,  0.0000, // Linear velocity P,I,D
     0.0045,  0.0000,  0.0045, // Diagonal walls P,I,D
