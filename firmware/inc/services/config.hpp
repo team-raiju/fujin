@@ -19,8 +19,13 @@ public:
     static float angular_ki;
     static float angular_kd;
     static float angular_acc_feed_forward_k;
-    static float angular_break_feed_forward_k;
     static float angular_vel_feed_forward_k;
+
+    static float linear_vel_acc_feed_forward_k;
+    static float linear_vel_brake_feed_forward_k;
+    static float linear_vel_feed_forward_k;
+    static float linear_jerk_ff_k;
+    static float linear_jerk_ff_ms;
 
     static float wall_kp;
     static float wall_ki;

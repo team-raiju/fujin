@@ -41,6 +41,7 @@ class Control {
         algorithm::PID get_vel_pid() const { return linear_vel_pid; }
         algorithm::PID get_ang_vel_pid() const { return angular_vel_pid; }
         float get_rotation_ff() const { return rotation_ff; }
+        float get_linear_ff() const { return linear_ff; }
         uint16_t get_fan_pwm() const { return fan_pwm; }
 
     private:
@@ -51,6 +52,7 @@ class Control {
 
 
         float rotation_ff = 0.0f;
+        float linear_ff = 0.0f;
 
         algorithm::PID linear_vel_pid;
         algorithm::PID angular_vel_pid;
@@ -58,6 +60,10 @@ class Control {
         algorithm::PID diagonal_walls_pid;
 
         float target_linear_speed_m_s;
+        float last_target_linear_speed_m_s;
+        float last_target_linear_acceleration = 0.0f;
+        float jerk_ff_value = 0.0f;
+        uint32_t jerk_ff_counter = 0;
         float target_angular_speed_rad_s;
         float last_target_angular_speed_rad_s;
         bool wall_pid_enabled;

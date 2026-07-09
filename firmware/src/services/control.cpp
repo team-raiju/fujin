@@ -27,8 +27,12 @@ void Control::init(void) {
         services::Config::angular_ki,
         services::Config::angular_kd,
         services::Config::angular_acc_feed_forward_k,
-        services::Config::angular_break_feed_forward_k,
         services::Config::angular_vel_feed_forward_k,
+        services::Config::linear_vel_acc_feed_forward_k,
+        services::Config::linear_vel_brake_feed_forward_k,
+        services::Config::linear_vel_feed_forward_k,
+        services::Config::linear_jerk_ff_k,
+        services::Config::linear_jerk_ff_ms,
         services::Config::wall_kp,
         services::Config::wall_ki,
         services::Config::wall_kd,
@@ -75,6 +79,10 @@ void Control::reset(GeneralParams general_params) {
     target_angular_speed_rad_s = 0;
     last_target_angular_speed_rad_s = 0;
     target_linear_speed_m_s = 0;
+    last_target_linear_speed_m_s = 0;
+    last_target_linear_acceleration = 0.0f;
+    jerk_ff_value = 0.0f;
+    jerk_ff_counter = 0;
     rotation_ff = 0.0f;
     fan_pwm = 0.0f;
 
@@ -89,11 +97,15 @@ void Control::update() {
     if (motor_control_disabled) {
         bsp::motors::set(0, 0);
         last_target_angular_speed_rad_s = target_angular_speed_rad_s;
+        last_target_linear_speed_m_s = target_linear_speed_m_s;
+        last_target_linear_acceleration = 0.0f;
+        jerk_ff_value = 0.0f;
+        jerk_ff_counter = 0;
     } else {
         float mean_velocity_m_s = bsp::encoders::get_filtered_velocity_m_s();
         auto angular_speed_error_raw = std::abs(target_angular_speed_rad_s - bsp::imu::get_rad_per_s());
         auto linear_speed_error = std::abs(target_linear_speed_m_s - mean_velocity_m_s);
-        emergency = ((linear_speed_error > 1.0) || (angular_speed_error_raw > 17.0));
+        emergency = ((linear_speed_error > 0.75) || (angular_speed_error_raw > 16.0));
 
         if (wall_pid_enabled) {
             target_angular_speed_rad_s += walls_pid.calculate(0.0, bsp::analog_sensors::ir_side_wall_error());
@@ -106,24 +118,47 @@ void Control::update() {
         float linear_ratio = linear_vel_pid.calculate(target_linear_speed_m_s, mean_velocity_m_s);
         float rotation_ratio = -angular_vel_pid.calculate(target_angular_speed_rad_s, bsp::imu::get_rad_per_s());
 
-        // Feed-Foward
-        if (std::abs(target_angular_speed_rad_s) < 0.5) {
-            rotation_ff = 0;
-        } else {
-            float target_angular_acceleration =
-                (target_angular_speed_rad_s - last_target_angular_speed_rad_s) * Config::CONTROL_FREQUENCY_HZ;
+        // Angular Feed-Foward
+        float target_angular_acceleration =
+            (target_angular_speed_rad_s - last_target_angular_speed_rad_s) * Config::CONTROL_FREQUENCY_HZ;
 
-            bool is_accelerating_same_dir = (target_angular_speed_rad_s * target_angular_acceleration) > 0.0f;
-            rotation_ff = is_accelerating_same_dir ? target_angular_acceleration * params.angular_acc_feed_forward_k
-                                                   : target_angular_acceleration * params.angular_break_feed_forward_k;
-        }
-
+        rotation_ff = target_angular_acceleration * params.angular_acc_feed_forward_k;
         rotation_ff += target_angular_speed_rad_s * params.angular_vel_feed_forward_k;
         last_target_angular_speed_rad_s = target_angular_speed_rad_s;
-        // End of Feed-Foward
+        
+        // Linear Feed-Foward
+        float target_linear_acceleration =
+            (target_linear_speed_m_s - last_target_linear_speed_m_s) * Config::CONTROL_FREQUENCY_HZ;
 
-        float l_current = linear_ratio + (rotation_ratio - rotation_ff);
-        float r_current = linear_ratio - (rotation_ratio - rotation_ff);
+        float accel_variation = target_linear_acceleration - last_target_linear_acceleration;
+        if (std::abs(accel_variation) > 10.0f && std::abs(target_linear_speed_m_s) > 0.5 ) {
+            jerk_ff_value = accel_variation * params.linear_jerk_ff_k;
+            jerk_ff_counter = static_cast<uint32_t>(params.linear_jerk_ff_ms);
+            if (jerk_ff_counter == 0) {
+                jerk_ff_value = 0.0f;
+            }
+        } else {
+            if (jerk_ff_counter > 0) {
+                jerk_ff_counter--;
+                if (jerk_ff_counter == 0) {
+                    jerk_ff_value = 0.0f;
+                }
+            }
+        }
+        last_target_linear_acceleration = target_linear_acceleration;
+
+        if (target_linear_acceleration >= 0.0f) {
+            linear_ff = target_linear_acceleration * params.linear_vel_acc_feed_forward_k;
+        } else {
+            linear_ff = target_linear_acceleration * params.linear_vel_brake_feed_forward_k;
+        }
+        linear_ff += target_linear_speed_m_s * params.linear_vel_feed_forward_k;
+        linear_ff += jerk_ff_value;
+        last_target_linear_speed_m_s = target_linear_speed_m_s;
+
+        // Control
+        float l_current = (linear_ratio + linear_ff) + (rotation_ratio - rotation_ff);
+        float r_current = (linear_ratio + linear_ff) - (rotation_ratio - rotation_ff);
 
         float left_ang_vel = bsp::encoders::get_left_filtered_ang_vel_rad_s();
         float right_ang_vel = bsp::encoders::get_right_filtered_ang_vel_rad_s();

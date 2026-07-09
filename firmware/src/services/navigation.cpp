@@ -78,8 +78,12 @@ void Navigation::reset(navigation_mode_t mode) {
             services::Config::angular_ki,
             services::Config::angular_kd,
             services::Config::angular_acc_feed_forward_k,
-            services::Config::angular_break_feed_forward_k,
             services::Config::angular_vel_feed_forward_k,
+            services::Config::linear_vel_acc_feed_forward_k,
+            services::Config::linear_vel_brake_feed_forward_k,
+            services::Config::linear_vel_feed_forward_k,
+            services::Config::linear_jerk_ff_k,
+            services::Config::linear_jerk_ff_ms,
             services::Config::wall_kp,
             services::Config::wall_ki,
             services::Config::wall_kd,
@@ -134,6 +138,7 @@ void Navigation::reset_movement_variables() {
     reset_wall_break();
     reference_time = bsp::get_tick_ms();
     is_finished = false;
+    is_braking = false;
 }
 
 float Navigation::get_torricelli_distance(float final_speed, float initial_speed, float acceleration) {
@@ -218,11 +223,8 @@ void Navigation::update(void) {
     bsp::encoders::EncoderData right_encoder = bsp::encoders::get_data(bsp::encoders::EncoderSide::RIGHT);
     float measured_angle_rad = bsp::imu::get_angle();
 
-    float estimated_delta_l_mm =
-        (left_encoder.ticks * bsp::encoders::get_encoder_dist_mm_pulse());
-    float estimated_delta_r_mm =
-        (right_encoder.ticks * bsp::encoders::get_encoder_dist_mm_pulse());
-
+    float estimated_delta_l_mm = (left_encoder.ticks * bsp::encoders::get_encoder_dist_mm_pulse());
+    float estimated_delta_r_mm = (right_encoder.ticks * bsp::encoders::get_encoder_dist_mm_pulse());
 
     float delta_x_mm = (estimated_delta_l_mm + estimated_delta_r_mm) / 2.0;
     float encoder_diff_mm = (estimated_delta_r_mm - estimated_delta_l_mm);
@@ -232,11 +234,10 @@ void Navigation::update(void) {
     }
 
     float imu_delta_angle_rad = get_shortest_delta_angle(measured_angle_rad, current_angle_rad);
-    
+
     float intermediate_angle_rad = current_angle_rad + (imu_delta_angle_rad / 2.0);
     intermediate_angle_rad = limit_angle_minus_pi_pi(intermediate_angle_rad);
 
-    
     float expected_diff_mm = imu_delta_angle_rad * Config::WHEELS_DIST_MM;
     encoder_imu_diff = encoder_diff_mm - expected_diff_mm;
 
@@ -316,22 +317,21 @@ bool Navigation::step() {
             }
         }
 
-        float break_margin = 2.0;
+        float break_margin = 2.0f;
+        float accel_margin = 2.0f;
+        float required_brake_distance =
+            (100.0f * get_torricelli_distance(forward_end_speed, control_linear_speed, -deceleration)) + break_margin;
 
-        if (std::abs(traveled_dist_cm) <
-            ((target_travel_cm - break_margin) -
-             (100.0f * get_torricelli_distance(forward_end_speed, control_linear_speed, -deceleration)))) {
-            if (control_linear_speed < max_speed) {
-                if (control_linear_speed < 1.0 ||
-                    std::abs(traveled_dist_cm) >
-                        2.0) { // Safe margin of 2cm before starting to accelerate for stability
-                    control_linear_speed += acceleration / Config::CONTROL_FREQUENCY_HZ;
-                    control_linear_speed = std::min(control_linear_speed, max_speed);
-                }
+        if (!is_braking && (std::abs(traveled_dist_cm) < (target_travel_cm - required_brake_distance))) {
+            if (control_linear_speed < 1.0 || std::abs(traveled_dist_cm) > accel_margin) {
+                control_linear_speed += acceleration / Config::CONTROL_FREQUENCY_HZ;
+                control_linear_speed = std::min(control_linear_speed, max_speed);
             }
         } else {
+            is_braking = true;
             if (control_linear_speed > forward_end_speed) {
                 control_linear_speed -= deceleration / Config::CONTROL_FREQUENCY_HZ;
+                control_linear_speed = std::max(control_linear_speed, forward_end_speed);
                 control_linear_speed = std::max(control_linear_speed, Config::min_move_speed);
             }
         }
@@ -396,8 +396,8 @@ bool Navigation::step() {
         if (mini_fsm_state == MiniFSMStates::FORWARD_1 || mini_fsm_state == MiniFSMStates::FORWARD_2) { // Move Forward
 
             // bool front_emergency =
-            //     ir_reading(SensingDirection::FRONT_LEFT) > 2850 && ir_reading(SensingDirection::FRONT_RIGHT) > 2850 &&
-            //     ir_reading(SensingDirection::LEFT) > 2470 && ir_reading(SensingDirection::RIGHT) > 2850;
+            //     ir_reading(SensingDirection::FRONT_LEFT) > 2850 && ir_reading(SensingDirection::FRONT_RIGHT) > 2850
+            //     && ir_reading(SensingDirection::LEFT) > 2470 && ir_reading(SensingDirection::RIGHT) > 2850;
 
             float max_speed = forward_params[current_movement].max_speed;
             float acceleration = forward_params[current_movement].acceleration;
@@ -691,7 +691,7 @@ void Navigation::set_movement(Movement movement, Movement prev_movement, Movemen
         if (next_movement == Movement::TURN_LEFT_135 || next_movement == Movement::TURN_RIGHT_135 ||
             next_movement == Movement::TURN_LEFT_45 || next_movement == Movement::TURN_RIGHT_45) {
             if ((selected_mode == FAST) || (selected_mode == SUPER)) {
-                // This can happen if the robot is turning right afer the start movement. 
+                // This can happen if the robot is turning right afer the start movement.
                 // TODO: generalize this function, because now we are forcing medium parameters
                 waiting_for_fast_param = true;
                 turn_params = turn_params_medium;

@@ -32,7 +32,7 @@ const Logger::ParamInfo paramInfoArray[] = {
     {16383, -3, 3, 2730.5f},      // vel_i
     {16383, -2, 2, 4095.75f},     // ang_p
     {16383, -2, 2, 4095.75f},     // ang_i
-    {4095, -1, 1, 2047.5f},       // rotation_ff
+    {4095, -2, 2, 1023.0f},       // rotation_ff
 };
 #else
 const Logger::ParamInfo paramInfoArray[] = {
@@ -117,7 +117,7 @@ void Logger::update() {
     current_log_entry.ang_i = encode_value(control->get_ang_vel_pid().ki * control->get_ang_vel_pid().integral,
                                            paramInfoArray[static_cast<size_t>(ParamIndex::AngI)]);
     current_log_entry.rotation_ff =
-        encode_value(control->get_rotation_ff(), paramInfoArray[static_cast<size_t>(ParamIndex::RotationFF)]);
+        encode_value(control->get_linear_ff(), paramInfoArray[static_cast<size_t>(ParamIndex::RotationFF)]);
 #else
     current_log_entry.battery = encode_value(bsp::analog_sensors::battery_latest_reading_mv(),
                                              paramInfoArray[static_cast<size_t>(ParamIndex::Battery)]);

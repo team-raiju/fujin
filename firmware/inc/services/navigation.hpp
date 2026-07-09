@@ -141,6 +141,7 @@ private:
     uint32_t wall_left_counter_off = 0;
     uint32_t wall_break_last_dist = 0;
     bool current_wall_break_detected = false;
+    bool is_braking = false;
     float encoder_imu_diff = 0;
 
     MiniFSMStates mini_fsm_state = MiniFSMStates::FORWARD_1;
