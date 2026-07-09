@@ -132,10 +132,15 @@ void Control::update() {
 
         float accel_variation = target_linear_acceleration - last_target_linear_acceleration;
         if (std::abs(accel_variation) > 10.0f && std::abs(target_linear_speed_m_s) > 0.5 ) {
-            jerk_ff_value = accel_variation * params.linear_jerk_ff_k;
-            jerk_ff_counter = static_cast<uint32_t>(params.linear_jerk_ff_ms);
-            if (jerk_ff_counter == 0) {
+            if (jerk_ff_counter == 0){
+                jerk_ff_value = accel_variation * params.linear_jerk_ff_k;
+                jerk_ff_counter = static_cast<uint32_t>(params.linear_jerk_ff_ms);
+                if (jerk_ff_counter == 0) {
+                    jerk_ff_value = 0.0f;
+                }
+            } else {
                 jerk_ff_value = 0.0f;
+                jerk_ff_counter = 0.0f;
             }
         } else {
             if (jerk_ff_counter > 0) {

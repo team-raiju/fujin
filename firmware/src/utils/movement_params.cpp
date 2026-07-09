@@ -352,7 +352,7 @@ const GeneralParams general_params_fast = {
 const GeneralParams general_params_super = {
     600.0,                   // Fan speed
     0.0950,  0.0010, 0.0000, // Angular P,I,D
-    0.00055, 0.006,          // Angular acc, velocity feed-forward
+    0.00059, 0.006,          // Angular acc, velocity feed-forward
     0.0,     0.02,   0.0,    // Linear velocity acc, brake, velocity feed-forward
     0.03,    8.0,            // Linear jerk feed-forward k, Linear jerk limit ms
     0.0025,  0.0000, 0.0050, // Wall P,I,D

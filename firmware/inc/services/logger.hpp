@@ -20,6 +20,7 @@ enum class ParamIndex : uint8_t {
     AngP,
     AngI,
     RotationFF,
+    LinearFF,
 #else
     Battery,
     PositionX,
@@ -34,7 +35,11 @@ class Logger {
 public:
     union LogData {
 
-        uint8_t data[19];
+        #if CONTROL_LOG_MODE
+        uint8_t data[20];
+        #else
+        uint8_t data[17];
+        #endif
 
         struct {
             uint16_t velocity_ms : 13;
@@ -52,7 +57,8 @@ public:
             uint16_t vel_i : 14;
             uint16_t ang_p : 14;
             uint16_t ang_i : 14;
-            uint16_t rotation_ff : 12;
+            uint16_t rotation_ff : 10;
+            uint16_t linear_ff : 10;
 #else
             uint16_t battery : 8;
 
@@ -64,7 +70,13 @@ public:
 
         } __attribute__((packed)) fields;
     };
-    static_assert(sizeof(LogData) == 19, "LogData size must be exactly 17 bytes!");
+
+    #if CONTROL_LOG_MODE
+    static_assert(sizeof(LogData) == 20, "LogData size must be exactly 20 bytes!");
+    #else
+    static_assert(sizeof(LogData) == 17, "LogData size must be exactly 17 bytes!");
+    #endif
+
 
     struct ParamInfo {
         uint16_t max_store_value; // Max integer value for the bitfield (e.g., 4095 for 12 bits)

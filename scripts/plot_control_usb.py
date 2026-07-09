@@ -50,7 +50,7 @@ def parse_log_file(file_path):
     if CONTROL_LOG_MODE:
         keys = [
             'time', 'lin_vel_act', 'lin_vel_tgt', 'ang_vel_act', 'ang_vel_tgt',
-            'pwm_left', 'pwm_right', 'imu_diff', 'vel_p', 'vel_i', 'ang_p', 'ang_i', 'rotation_ff'
+            'pwm_left', 'pwm_right', 'imu_diff', 'vel_p', 'vel_i', 'ang_p', 'ang_i', 'rotation_ff', 'linear_ff'
         ]
     else:
         keys = [
@@ -66,9 +66,10 @@ def parse_log_file(file_path):
             continue
         try:
             fields = [float(x) for x in line.split(';')]
-            if len(fields) >= len(keys):
-                for idx, key in enumerate(keys):
-                    data_dict[key].append(fields[idx])
+            # Handle legacy files dynamically: loop only up to the available column count
+            for idx, field_val in enumerate(fields):
+                if idx < len(keys):
+                    data_dict[keys[idx]].append(field_val)
         except ValueError:
             continue
 
@@ -122,9 +123,13 @@ def plot_single(data_dict, title_suffix=""):
         axs[2, 0].set_title('PWM Signals')
         axs[2, 0].set_ylabel('Duty Cycle (0-1000)')
 
-        # Row 3, Col 2: Feed Forward
+        # Row 3, Col 2: Feed Forward (Plots both if linear_ff data exists)
         axs[2, 1].plot(t, data_dict['rotation_ff'], label='Rotation Feedforward')
-        axs[2, 1].set_title('Feed Forward (rotation_ff)')
+        if 'linear_ff' in data_dict and len(data_dict['linear_ff']) == len(t):
+            axs[2, 1].plot(t, data_dict['linear_ff'], label='Linear Feedforward')
+            axs[2, 1].set_title('Feed Forward Terms')
+        else:
+            axs[2, 1].set_title('Feed Forward (rotation_ff)')
         axs[2, 1].set_ylabel('Value')
 
     else:
@@ -237,10 +242,18 @@ def plot_comparison(file1, file2, offset=0.0):
         axs[1, 1].set_title('Angular PID Terms Comparison')
         axs[1, 1].set_ylabel('Value')
 
-        # Row 3, Col 2: Feed Forward
-        axs[2, 1].plot(d1['time'], d1['rotation_ff'], color=c1_act, label=name1)
-        axs[2, 1].plot(d2['time'], d2['rotation_ff'], color=c2_act, label=name2)
-        axs[2, 1].set_title('Rotation Feedforward Comparison')
+        # Row 3, Col 2: Feed Forward Comparison
+        axs[2, 1].plot(d1['time'], d1['rotation_ff'], color=c1_act, label=f'Rot FF ({name1})')
+        axs[2, 1].plot(d2['time'], d2['rotation_ff'], color=c2_act, label=f'Rot FF ({name2})')
+        
+        # Dynamically append linear feedforward to comparison if available
+        if 'linear_ff' in d1 and len(d1['linear_ff']) == len(d1['time']):
+            axs[2, 1].plot(d1['time'], d1['linear_ff'], color=c1_act, label=f'Lin FF ({name1})')
+        if 'linear_ff' in d2 and len(d2['linear_ff']) == len(d2['time']):
+            axs[2, 1].plot(d1['time'], d1['linear_ff'], color=c2_act, label=f'Lin FF ({name1})')
+
+            
+        axs[2, 1].set_title('Feedforward Terms Comparison')
         axs[2, 1].set_ylabel('Value')
     else:
         # Row 2, Col 1: Non-control context dynamic toggle
@@ -278,7 +291,7 @@ def plot_comparison(file1, file2, offset=0.0):
     axs[2, 0].set_ylabel('Duty Cycle (0-1000)')
 
     for ax in axs.flat:
-        if ax != axs[1, 1] or CONTROL_LOG_MODE:  # skip setting time label on spatial odometry plot
+        if not (ax == axs[1, 1] and not CONTROL_LOG_MODE):  # skip setting time label on spatial odometry plot
             ax.set_xlabel('Time (ms)')
         ax.legend(fontsize='small')
         ax.grid(True)
@@ -291,11 +304,11 @@ def collect_print_and_plot_data():
     if CONTROL_LOG_MODE:
         keys = [
             'time', 'lin_vel_act', 'lin_vel_tgt', 'ang_vel_act', 'ang_vel_tgt',
-            'pwm_left', 'pwm_right', 'imu_diff', 'vel_p', 'vel_i', 'ang_p', 'ang_i', 'rotation_ff'
+            'pwm_left', 'pwm_right', 'imu_diff', 'vel_p', 'vel_i', 'ang_p', 'ang_i', 'rotation_ff', 'linear_ff'
         ]
         header = (
             "Time(ms);ActualLinearVel;TargetLinearVel;ActualAngularVel;TargetAngularVel;"
-            "PWML;PWMR;ImuDiff;VelP;VelI;AngP;AngI;RotationFF"
+            "PWML;PWMR;ImuDiff;VelP;VelI;AngP;AngI;RotationFF;LinearFF"
         )
     else:
         keys = [
@@ -329,10 +342,11 @@ def collect_print_and_plot_data():
                 
                 try:
                     fields = line.split(';')
-                    if len(fields) >= len(keys):
-                        data_lines.append(";".join(fields[:len(keys)]))
-                        for idx, key in enumerate(keys):
-                            data_dict[key].append(float(fields[idx]))
+                    if len(fields) >= len(fields): # parse whatever columns show up
+                        data_lines.append(";".join(fields))
+                        for idx, field_val in enumerate(fields):
+                            if idx < len(keys):
+                                data_dict[keys[idx]].append(float(field_val))
                 except (ValueError, IndexError) as e:
                     print(f"Skipping malformed line '{line}': {e}")
             
@@ -348,7 +362,6 @@ def collect_print_and_plot_data():
 
     save_log_to_disk(header, data_lines)
     plot_single(data_dict, title_suffix="(Live Session)")
-
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal_handler)
