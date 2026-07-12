@@ -66,6 +66,9 @@ class Control {
         uint32_t jerk_ff_counter = 0;
         float target_angular_speed_rad_s;
         float last_target_angular_speed_rad_s;
+        float last_target_angular_acceleration = 0.0f;
+        float angular_jerk_ff_value = 0.0f;
+        uint32_t angular_jerk_ff_counter = 0;
         bool wall_pid_enabled;
         bool diagonal_pid_enabled;
         int16_t pwm_duty_l;

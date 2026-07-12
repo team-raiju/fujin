@@ -24,6 +24,8 @@ float Config::linear_vel_brake_feed_forward_k = 0.0;
 float Config::linear_vel_feed_forward_k = 0.0;
 float Config::linear_jerk_ff_k = 0.001;
 float Config::linear_jerk_ff_ms = 5.0;
+float Config::angular_jerk_ff_k = 0.00042;
+float Config::angular_jerk_ff_ms = 5.0;
 
 float Config::wall_kp = 0.0025;
 float Config::wall_ki = 0.0;
@@ -103,6 +105,8 @@ static std::pair<float*, bsp::eeprom::param_addresses_t> params[] = {
     {&Config::linear_vel_feed_forward_k, bsp::eeprom::ADDR_LINEAR_VEL_FEED_FORWARD_K},
     {&Config::linear_jerk_ff_k, bsp::eeprom::ADDR_LINEAR_JERK_FEED_FORWARD_K},
     {&Config::linear_jerk_ff_ms, bsp::eeprom::ADDR_LINEAR_JERK_FEED_FORWARD_LIMIT},
+    {&Config::angular_jerk_ff_k, bsp::eeprom::ADDR_ANGULAR_JERK_FEED_FORWARD_K},
+    {&Config::angular_jerk_ff_ms, bsp::eeprom::ADDR_ANGULAR_JERK_FEED_FORWARD_LIMIT},
 };
 
 static const std::map<Movement, uint16_t> turn_address_map = {

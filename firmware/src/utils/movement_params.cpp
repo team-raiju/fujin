@@ -271,6 +271,7 @@ const GeneralParams general_params_search_slow = {
     0.00044, 0.0035,          // Angular acc, velocity feed-forward
     0.0,     0.0,     0.0,    // Linear velocity acc, brake, velocity feed-forward
     0.0,     0.0,             // Linear jerk feed-forward k, Linear jerk limit ms
+    0.0,     0.0,             // Angular jerk feed-forward k, Angular jerk limit ms
     0.0006,  0.0000,  0.0010, // Wall P,I,D
     3.0000,  0.0360,  0.0000, // Linear velocity P,I,D
     0.0000,  0.0000,  0.0000, // Diagonal walls P,I,D
@@ -285,6 +286,7 @@ const GeneralParams general_params_search_medium = {
     0.00000, 0.0000,         // Angular acc, velocity feed-forward
     0.0,     0.0,    0.0,    // Linear velocity acc, brake, velocity feed-forward
     0.0,     0.0,            // Linear jerk feed-forward k, Linear jerk limit ms
+    0.0,     0.0,            // Angular jerk feed-forward k, Angular jerk limit ms
     0.0020,  0.0000, 0.0040, // Wall P,I,D
     8.0000,  0.1000, 0.0000, // Linear velocity P,I,D
     0.0000,  0.0000, 0.0000, // Diagonal walls P,I,D
@@ -299,6 +301,7 @@ const GeneralParams general_params_search_fast = {
     0.00000, 0.0000,         // Angular acc, velocity feed-forward
     0.0,     0.0,    0.0,    // Linear velocity acc, brake, velocity feed-forward
     0.0,     0.0,            // Linear jerk feed-forward k, Linear jerk limit ms
+    0.0,     0.0,            // Angular jerk feed-forward k, Angular jerk limit ms
     0.0020,  0.0000, 0.0040, // Wall P,I,D
     8.0000,  0.1000, 0.0000, // Linear velocity P,I,D
     0.0000,  0.0000, 0.0000, // Diagonal walls P,I,D
@@ -313,6 +316,7 @@ const GeneralParams general_params_slow = {
     0.00044, 0.0035,          // Angular acc, velocity feed-forward
     0.0,     0.0,     0.0,    // Linear velocity acc, brake, velocity feed-forward
     0.0,     0.0,             // Linear jerk feed-forward k, Linear jerk limit ms
+    0.0,     0.0,             // Angular jerk feed-forward k, Angular jerk limit ms
     0.0015,  0.0000,  0.0025, // Wall P,I,D
     5.0000,  0.0600,  0.0000, // Linear velocity P,I,D
     0.0045,  0.0000,  0.0045, // Diagonal walls P,I,D
@@ -327,6 +331,7 @@ const GeneralParams general_params_medium = {
     0.00055, 0.006,          // Angular acc, velocity feed-forward
     0.0,     0.02,   0.0,    // Linear velocity acc, brake, velocity feed-forward
     0.03,    8.0,            // Linear jerk feed-forward k, Linear jerk limit ms
+    0.0,     0.0,            // Angular jerk feed-forward k, Angular jerk limit ms
     0.0020,  0.0000, 0.0040, // Wall P,I,D
     9.2500,  0.1440, 0.0000, // Linear velocity P,I,D
     0.0010,  0.0000, 0.0020, // Diagonal walls P,I,D
@@ -341,6 +346,7 @@ const GeneralParams general_params_fast = {
     0.00055, 0.006,          // Angular acc, velocity feed-forward
     0.0,     0.02,   0.0,    // Linear velocity acc, brake, velocity feed-forward
     0.03,    8.0,            // Linear jerk feed-forward k, Linear jerk limit ms
+    0.0,     0.0,            // Angular jerk feed-forward k, Angular jerk limit ms
     0.0020,  0.0000, 0.0040, // Wall P,I,D
     9.2500,  0.1440, 0.0000, // Linear velocity P,I,D
     0.0010,  0.0000, 0.0020, // Diagonal walls P,I,D
@@ -350,11 +356,12 @@ const GeneralParams general_params_fast = {
 };
 
 const GeneralParams general_params_super = {
-    600.0,                   // Fan speed
+    675.0,                   // Fan speed
     0.0950,  0.0010, 0.0000, // Angular P,I,D
     0.00059, 0.006,          // Angular acc, velocity feed-forward
     0.0,     0.02,   0.0,    // Linear velocity acc, brake, velocity feed-forward
     0.03,    8.0,            // Linear jerk feed-forward k, Linear jerk limit ms
+    0.00042, 5.0,            // Angular jerk feed-forward k, Angular jerk limit ms
     0.0025,  0.0000, 0.0050, // Wall P,I,D
     9.2500,  0.1440, 0.0000, // Linear velocity P,I,D
     0.0010,  0.0000, 0.0020, // Diagonal walls P,I,D

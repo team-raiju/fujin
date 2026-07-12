@@ -84,6 +84,8 @@ void Navigation::reset(navigation_mode_t mode) {
             services::Config::linear_vel_feed_forward_k,
             services::Config::linear_jerk_ff_k,
             services::Config::linear_jerk_ff_ms,
+            services::Config::angular_jerk_ff_k,
+            services::Config::angular_jerk_ff_ms,
             services::Config::wall_kp,
             services::Config::wall_ki,
             services::Config::wall_kd,
@@ -327,7 +329,7 @@ bool Navigation::step() {
                 control_linear_speed += acceleration / Config::CONTROL_FREQUENCY_HZ;
                 control_linear_speed = std::min(control_linear_speed, max_speed);
             }
-        } else {
+        } else if (std::abs(traveled_dist_cm) > accel_margin) {
             is_braking = true;
             if (control_linear_speed > forward_end_speed) {
                 control_linear_speed -= deceleration / Config::CONTROL_FREQUENCY_HZ;
