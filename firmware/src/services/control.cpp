@@ -44,8 +44,8 @@ void Control::init(void) {
         services::Config::diagonal_walls_kp,
         services::Config::diagonal_walls_ki,
         services::Config::diagonal_walls_kd,
-        services::Config::start_wall_break_cm_left,
-        services::Config::start_wall_break_cm_right,
+        services::Config::start_wall_break_mm_left,
+        services::Config::start_wall_break_mm_right,
         services::Config::enable_wall_break_correction,
     };
     reset(general_params);

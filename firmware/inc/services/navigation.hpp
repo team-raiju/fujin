@@ -41,7 +41,7 @@ public:
     Point get_robot_cell_position();
     Position get_robot_position_mm();
     Direction get_robot_direction();
-    float get_robot_travelled_dist_cm();
+    float get_robot_travelled_dist_mm();
 
     /// @brief Configure and reset movement variables based on a target direction. Update method will execute the
     /// movement Used on search mode, to set the next movement
@@ -116,14 +116,14 @@ private:
 
     services::Control* control;
 
-    float target_travel_cm;
+    float target_travel_mm;
     float forward_end_speed;
 
     bool is_initialized = false;
     bool is_finished = false;
 
     uint32_t reference_time;
-    float traveled_dist_cm = 0;
+    float traveled_dist_mm = 0;
     int32_t encoder_right_counter;
     int32_t encoder_left_counter;
     Point current_cell;
@@ -139,7 +139,7 @@ private:
     uint32_t wall_left_counter_on = 0;
     uint32_t wall_right_counter_off = 0;
     uint32_t wall_left_counter_off = 0;
-    uint32_t wall_break_last_dist = 0;
+    float wall_break_last_dist = 0;
     bool current_wall_break_detected = false;
     bool is_braking = false;
     float encoder_imu_diff = 0;

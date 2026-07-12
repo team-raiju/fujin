@@ -58,12 +58,12 @@ float Config::ir_wall_detect_th_left = 600;
 
 float Config::z_imu_bias = -0.4905;
 
-// float Config::start_wall_break_cm_left = 6.1; // 2.0m/s
-// float Config::start_wall_break_cm_left = 6.1; // 1.5m/s
-// float Config::start_wall_break_cm_right = 7.5;// 1.5m/s
+// float Config::start_wall_break_mm_left = 61.0; // 2.0m/s
+// float Config::start_wall_break_mm_left = 61.0; // 1.5m/s
+// float Config::start_wall_break_mm_right = 75.0;// 1.5m/s
 
-float Config::start_wall_break_cm_left = 6.5;  // 3.0m/s
-float Config::start_wall_break_cm_right = 8.0; // 3.0m/s
+float Config::start_wall_break_mm_left = 65.0;  // 3.0m/s
+float Config::start_wall_break_mm_right = 80.0; // 3.0m/s
 float Config::enable_wall_break_correction = 1.0;
 
 // All params
@@ -95,8 +95,8 @@ static std::pair<float*, bsp::eeprom::param_addresses_t> params[] = {
     {&Config::ir_wall_detect_th_front_right, bsp::eeprom::ADDR_IR_WALL_DETECT_TH_FRONT_RIGHT},
     {&Config::ir_wall_detect_th_left, bsp::eeprom::ADDR_IR_WALL_DETECT_TH_LEFT},
     {&Config::z_imu_bias, bsp::eeprom::ADDR_Z_IMU_BIAS},
-    {&Config::start_wall_break_cm_left, bsp::eeprom::ADDR_START_WALL_BREAK_CM_LEFT},
-    {&Config::start_wall_break_cm_right, bsp::eeprom::ADDR_START_WALL_BREAK_CM_RIGHT},
+    {&Config::start_wall_break_mm_left, bsp::eeprom::ADDR_START_WALL_BREAK_MM_LEFT},
+    {&Config::start_wall_break_mm_right, bsp::eeprom::ADDR_START_WALL_BREAK_MM_RIGHT},
     {&Config::enable_wall_break_correction, bsp::eeprom::ADDR_ENABLE_WALL_BREAK_CORRECTION},
     {&Config::angular_acc_feed_forward_k, bsp::eeprom::ADDR_ANGULAR_ACC_FEED_FORWARD_K},
     {&Config::angular_vel_feed_forward_k, bsp::eeprom::ADDR_ANGULAR_VEL_FEED_FORWARD_K},
@@ -281,8 +281,8 @@ int Config::parse_movement_packet(uint8_t packet[bsp::ble::max_packet_size]) {
         case bsp::ble::ForwardParamID::DECELERATION:
             forward_params_custom[movement_id].deceleration = value;
             break;
-        case bsp::ble::ForwardParamID::TARGET_TRAVEL_CM:
-            forward_params_custom[movement_id].target_travel_cm = value;
+        case bsp::ble::ForwardParamID::TARGET_TRAVEL_MM:
+            forward_params_custom[movement_id].target_travel_mm = value;
             break;
         default:
             return -1;
@@ -361,8 +361,8 @@ void Config::send_movement_parameters() {
         send_param(0, movement_id, static_cast<uint8_t>(bsp::ble::ForwardParamID::MAX_SPEED), params.max_speed);
         send_param(0, movement_id, static_cast<uint8_t>(bsp::ble::ForwardParamID::ACCELERATION), params.acceleration);
         send_param(0, movement_id, static_cast<uint8_t>(bsp::ble::ForwardParamID::DECELERATION), params.deceleration);
-        send_param(0, movement_id, static_cast<uint8_t>(bsp::ble::ForwardParamID::TARGET_TRAVEL_CM),
-                   params.target_travel_cm);
+        send_param(0, movement_id, static_cast<uint8_t>(bsp::ble::ForwardParamID::TARGET_TRAVEL_MM),
+                   params.target_travel_mm);
     }
 
     for (const auto& pair : turn_params_custom) {

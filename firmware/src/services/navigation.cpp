@@ -95,8 +95,8 @@ void Navigation::reset(navigation_mode_t mode) {
             services::Config::diagonal_walls_kp,
             services::Config::diagonal_walls_ki,
             services::Config::diagonal_walls_kd,
-            services::Config::start_wall_break_cm_left,
-            services::Config::start_wall_break_cm_right,
+            services::Config::start_wall_break_mm_left,
+            services::Config::start_wall_break_mm_right,
             services::Config::enable_wall_break_correction,
         };
         break;
@@ -126,7 +126,7 @@ void Navigation::reset(navigation_mode_t mode) {
 
     current_movement = Movement::START;
     previous_movement = Movement::START;
-    target_travel_cm = forward_params[Movement::START].target_travel_cm;
+    target_travel_mm = forward_params[Movement::START].target_travel_mm;
     forward_end_speed = forward_params[Movement::START].max_speed;
 }
 
@@ -134,7 +134,7 @@ void Navigation::reset_movement_variables() {
     bsp::imu::reset_angle();
     mini_fsm_state = MiniFSMStates::FORWARD_1;
 
-    traveled_dist_cm = 0;
+    traveled_dist_mm = 0;
     current_position_mm = {0, 0};
     current_angle_rad = 0;
     reset_wall_break();
@@ -154,13 +154,13 @@ void Navigation::reset_wall_break() {
     wall_right_counter_off = 0;
     wall_left_counter_off = 0;
 
-    wall_break_last_dist = 0;
+    wall_break_last_dist = 0.0f;
     current_wall_break_detected = false;
 }
 
 Navigation::WallBreak Navigation::process_wall_break() {
 
-    if ((traveled_dist_cm - wall_break_last_dist) >= 18 && (traveled_dist_cm - wall_break_last_dist) < 18.75) {
+    if ((traveled_dist_mm - wall_break_last_dist) >= 180.0f && (traveled_dist_mm - wall_break_last_dist) < 187.5f) {
         bsp::leds::stripe_set(Color::Black);
     }
 
@@ -173,10 +173,10 @@ Navigation::WallBreak Navigation::process_wall_break() {
         bool valid_previous_move =
             ((previous_movement == FORWARD) || (previous_movement == START) || (previous_movement == TURN_AROUND));
 
-        if (valid_previous_move && ((traveled_dist_cm - wall_break_last_dist) > 4.0) && !current_wall_break_detected) {
+        if (valid_previous_move && ((traveled_dist_mm - wall_break_last_dist) > 40.0f) && !current_wall_break_detected) {
             process = true;
         }
-    } else if ((traveled_dist_cm - wall_break_last_dist) > CELL_SIZE_CM) {
+    } else if ((traveled_dist_mm - wall_break_last_dist) > CELL_SIZE_MM) {
         process = true;
     }
 
@@ -202,13 +202,13 @@ Navigation::WallBreak Navigation::process_wall_break() {
     }
 
     if (wall_right_counter_on > 10 && wall_right_counter_off > 0) {
-        wall_break_last_dist = traveled_dist_cm;
+        wall_break_last_dist = traveled_dist_mm;
         current_wall_break_detected = true;
         return WallBreak::RIGHT;
     }
 
     if (wall_left_counter_on > 10 && wall_left_counter_off > 0) {
-        wall_break_last_dist = traveled_dist_cm;
+        wall_break_last_dist = traveled_dist_mm;
         current_wall_break_detected = true;
         return WallBreak::LEFT;
     }
@@ -243,7 +243,7 @@ void Navigation::update(void) {
     float expected_diff_mm = imu_delta_angle_rad * Config::WHEELS_DIST_MM;
     encoder_imu_diff = encoder_diff_mm - expected_diff_mm;
 
-    traveled_dist_cm += delta_x_mm / 10.0;
+    traveled_dist_mm += delta_x_mm;
 
     Position rotated_delta;
     rotated_delta.x = delta_x_mm * std::cos(intermediate_angle_rad);
@@ -296,21 +296,21 @@ bool Navigation::step() {
             WallBreak wall_break = process_wall_break();
             if (wall_break != WallBreak::NONE) {
 
-                float current_movement_traveled = traveled_dist_cm - complete_prev_move_travel;
-                int cells_traveled = (current_movement_traveled / CELL_SIZE_CM);
+                float current_movement_traveled = traveled_dist_mm - complete_prev_move_travel;
+                int cells_traveled = static_cast<int>(current_movement_traveled / CELL_SIZE_MM);
 
-                float corrected_distance_cm = 0;
+                float corrected_distance_mm = 0;
                 if (wall_break == WallBreak::LEFT) {
-                    corrected_distance_cm = (cells_traveled * CELL_SIZE_CM) + general_params.start_wall_break_cm_left +
+                    corrected_distance_mm = (cells_traveled * CELL_SIZE_MM) + general_params.start_wall_break_mm_left +
                                             complete_prev_move_travel;
                 } else {
-                    corrected_distance_cm = (cells_traveled * CELL_SIZE_CM) + general_params.start_wall_break_cm_right +
+                    corrected_distance_mm = (cells_traveled * CELL_SIZE_MM) + general_params.start_wall_break_mm_right +
                                             complete_prev_move_travel;
                 }
 
-                float distance_error_cm = current_movement_traveled - corrected_distance_cm;
-                if (std::abs(distance_error_cm) < 6.0) {
-                    traveled_dist_cm = corrected_distance_cm;
+                float distance_error_mm = current_movement_traveled - corrected_distance_mm;
+                if (std::abs(distance_error_mm) < 60.0f) {
+                    traveled_dist_mm = corrected_distance_mm;
                     // bsp::buzzer::start();
                     bsp::leds::stripe_set(Color::Red);
                 } else {
@@ -319,17 +319,17 @@ bool Navigation::step() {
             }
         }
 
-        float break_margin = 2.0f;
-        float accel_margin = 2.0f;
+        float break_margin = 20.0f;
+        float accel_margin = 20.0f;
         float required_brake_distance =
-            (100.0f * get_torricelli_distance(forward_end_speed, control_linear_speed, -deceleration)) + break_margin;
+            (1000.0f * get_torricelli_distance(forward_end_speed, control_linear_speed, -deceleration)) + break_margin;
 
-        if (!is_braking && (std::abs(traveled_dist_cm) < (target_travel_cm - required_brake_distance))) {
-            if (control_linear_speed < 1.0 || std::abs(traveled_dist_cm) > accel_margin) {
+        if (!is_braking && (std::abs(traveled_dist_mm) < (target_travel_mm - required_brake_distance))) {
+            if (control_linear_speed < 1.0 || std::abs(traveled_dist_mm) > accel_margin) {
                 control_linear_speed += acceleration / Config::CONTROL_FREQUENCY_HZ;
                 control_linear_speed = std::min(control_linear_speed, max_speed);
             }
-        } else if (std::abs(traveled_dist_cm) > accel_margin) {
+        } else if (std::abs(traveled_dist_mm) > accel_margin) {
             is_braking = true;
             if (control_linear_speed > forward_end_speed) {
                 control_linear_speed -= deceleration / Config::CONTROL_FREQUENCY_HZ;
@@ -344,7 +344,7 @@ bool Navigation::step() {
         if (current_movement == Movement::DIAGONAL) {
             control->set_wall_pid_enabled(false);
             // It is safer to disable diagonal pid when reaching diagonal end
-            if (std::abs(traveled_dist_cm) < (target_travel_cm - (CELL_DIAGONAL_SIZE_CM / 2.0))) {
+            if (std::abs(traveled_dist_mm) < (target_travel_mm - (CELL_DIAGONAL_SIZE_MM / 2.0f))) {
                 control->set_diagonal_pid_enabled(true);
             } else {
                 control->set_diagonal_pid_enabled(false);
@@ -362,7 +362,7 @@ bool Navigation::step() {
             control->set_diagonal_pid_enabled(false);
         }
 
-        if (std::abs(traveled_dist_cm) >= target_travel_cm || front_emergency) {
+        if (std::abs(traveled_dist_mm) >= target_travel_mm || front_emergency) {
             // bsp::leds::stripe_set(Color::Red);
             is_finished = true;
         }
@@ -420,7 +420,7 @@ bool Navigation::step() {
             if ((current_movement == Movement::TURN_RIGHT_90_FROM_45 ||
                  current_movement == Movement::TURN_LEFT_90_FROM_45) &&
                 mini_fsm_state == MiniFSMStates::FORWARD_1) {
-                if (std::abs(traveled_dist_cm) < 5.0) { // Only fix diagonal on the very begin of the movement
+                if (std::abs(traveled_dist_mm) < 50.0f) { // Only fix diagonal on the very begin of the movement
                     control->set_diagonal_pid_enabled(true);
                 } else {
                     control->set_diagonal_pid_enabled(false);
@@ -429,9 +429,9 @@ bool Navigation::step() {
 
             float control_linear_speed = control->get_target_linear_speed();
 
-            if (std::abs(traveled_dist_cm) <
-                (target_travel_cm -
-                 (100.0f * get_torricelli_distance(final_speed, control_linear_speed, -deceleration)))) {
+            if (std::abs(traveled_dist_mm) <
+                (target_travel_mm -
+                 (1000.0f * get_torricelli_distance(final_speed, control_linear_speed, -deceleration)))) {
                 if (control_linear_speed < max_speed) {
                     control_linear_speed += acceleration / Config::CONTROL_FREQUENCY_HZ;
                     control_linear_speed = std::min(control_linear_speed, max_speed);
@@ -446,8 +446,7 @@ bool Navigation::step() {
             control->set_target_linear_speed(control_linear_speed);
             control->set_target_angular_speed(0);
 
-            /* Stop condition */
-            if (std::abs(traveled_dist_cm) >= target_travel_cm) {
+            if (std::abs(traveled_dist_mm) >= target_travel_mm) {
                 if (current_movement == Movement::TURN_AROUND || current_movement == Movement::TURN_AROUND_INPLACE) {
                     if (mini_fsm_state == MiniFSMStates::FORWARD_2) {
                         is_finished = true;
@@ -460,7 +459,7 @@ bool Navigation::step() {
                     }
                 } else { // TURN_LEFT or TURN_RIGHT (45, 90, 135)
                     if (mini_fsm_state == MiniFSMStates::FORWARD_1) {
-                        traveled_dist_cm = 0;
+                        traveled_dist_mm = 0;
                         reference_time = bsp::get_tick_ms();
                         mini_fsm_state = MiniFSMStates::TURN;
                         if ((selected_mode != SEARCH_FAST) && (selected_mode != SEARCH_MEDIUM) &&
@@ -531,10 +530,10 @@ bool Navigation::step() {
                 } else if (current_movement == Movement::TURN_RIGHT_90_SEARCH_MODE ||
                            current_movement == Movement::TURN_LEFT_90_SEARCH_MODE) {
                     control->set_target_angular_speed(0);
-                    // target_travel_cm for FORWARD_2 is based on the calculated position
-                    target_travel_cm = (HALF_CELL_SIZE_CM - (std::abs(current_position_mm.y) / 10.0f));
+                    // target_travel_mm for FORWARD_2 is based on the calculated position
+                    target_travel_mm = (HALF_CELL_SIZE_MM - std::abs(current_position_mm.y));
                     reference_time = bsp::get_tick_ms();
-                    traveled_dist_cm = 0;
+                    traveled_dist_mm = 0;
                     mini_fsm_state = MiniFSMStates::FORWARD_2;
                 } else { // TURN LEFT (45, 90, 135) or RIGHT (45, 90, 135) from 45
                     is_finished = true;
@@ -550,7 +549,7 @@ bool Navigation::step() {
                 reference_time = bsp::get_tick_ms();
                 control->reset(general_params);
                 control->set_motor_control_disabled(false);
-                traveled_dist_cm = 0;
+                traveled_dist_mm = 0;
                 mini_fsm_state = MiniFSMStates::TURN;
             }
         } else if (mini_fsm_state == MiniFSMStates::STABILIZE_2) { // Stop and stabilize
@@ -561,14 +560,14 @@ bool Navigation::step() {
                 reference_time = bsp::get_tick_ms();
                 control->reset(general_params);
                 control->set_motor_control_disabled(false);
-                traveled_dist_cm = 0;
+                traveled_dist_mm = 0;
 
                 if (current_movement == Movement::TURN_AROUND_INPLACE) {
                     is_finished = true;
                     mini_fsm_state = MiniFSMStates::FORWARD_1;
                 } else {
-                    // target_travel_cm for FORWARD_2 is based on the calculated position
-                    target_travel_cm = (std::abs(current_position_mm.x) / 10.0f);
+                    // target_travel_mm for FORWARD_2 is based on the calculated position
+                    target_travel_mm = std::abs(current_position_mm.x);
                     mini_fsm_state = MiniFSMStates::FORWARD_2;
                 }
             }
@@ -602,8 +601,8 @@ Direction Navigation::get_robot_direction(void) {
     return current_direction;
 }
 
-float Navigation::get_robot_travelled_dist_cm() {
-    return traveled_dist_cm;
+float Navigation::get_robot_travelled_dist_mm() {
+    return traveled_dist_mm;
 }
 
 void Navigation::set_movement(Direction dir) {
@@ -614,7 +613,7 @@ void Navigation::set_movement(Direction dir) {
     current_movement = get_movement(dir, current_direction, true);
     reset_movement_variables();
 
-    target_travel_cm = forward_params[current_movement].target_travel_cm;
+    target_travel_mm = forward_params[current_movement].target_travel_mm;
 
     if (current_movement == Movement::STOP) {
         forward_end_speed = 0;
@@ -687,7 +686,7 @@ void Navigation::set_movement(Movement movement, Movement prev_movement, Movemen
                 general_params = general_params_super;
             }
         }
-        target_travel_cm = complete_prev_move_travel + (forward_params[movement].target_travel_cm * count) +
+        target_travel_mm = complete_prev_move_travel + (forward_params[movement].target_travel_mm * count) +
                            turn_params[next_movement].start;
     } else if (movement == Movement::START) {
         if (next_movement == Movement::TURN_LEFT_135 || next_movement == Movement::TURN_RIGHT_135 ||
@@ -701,13 +700,13 @@ void Navigation::set_movement(Movement movement, Movement prev_movement, Movemen
                 general_params = general_params_medium;
             }
         }
-        target_travel_cm = forward_params[movement].target_travel_cm + turn_params[next_movement].start;
+        target_travel_mm = forward_params[movement].target_travel_mm + turn_params[next_movement].start;
     } else {
-        target_travel_cm = complete_prev_move_travel + forward_params[movement].target_travel_cm;
+        target_travel_mm = complete_prev_move_travel + forward_params[movement].target_travel_mm;
     }
 
     // When target travel is 0, we directly go to turn state
-    if (target_travel_cm <= 0) {
+    if (target_travel_mm <= 0) {
         mini_fsm_state = MiniFSMStates::TURN;
     }
 

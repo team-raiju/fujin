@@ -60,8 +60,8 @@ public:
 
     static float z_imu_bias;
 
-    static float start_wall_break_cm_left;
-    static float start_wall_break_cm_right;
+    static float start_wall_break_mm_left;
+    static float start_wall_break_mm_right;
     static float enable_wall_break_correction;
 
     static void init();

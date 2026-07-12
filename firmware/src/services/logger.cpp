@@ -48,7 +48,7 @@ const Logger::ParamInfo paramInfoArray[] = {
     {65535, -250, 250, 131.0f},   // position_mm_x
     {65535, -250, 250, 131.0f},   // position_mm_y
     {16383, -180, 180, 45.5083f}, // angle
-    {16383, -50, 1260, 12.5061f}, // distance_cm
+    {16383, -500, 12600, 1.25061f}, // distance_mm
 };
 #endif
 
@@ -133,7 +133,7 @@ void Logger::update() {
     current_log_entry.angle = encode_value(angle_deg, paramInfoArray[static_cast<size_t>(ParamIndex::Angle)]);
 
     current_log_entry.distance =
-        encode_value(nav->get_robot_travelled_dist_cm(), paramInfoArray[static_cast<size_t>(ParamIndex::Distance)]);
+        encode_value(nav->get_robot_travelled_dist_mm(), paramInfoArray[static_cast<size_t>(ParamIndex::Distance)]);
 #endif
 
     // --- Buffer Management ---

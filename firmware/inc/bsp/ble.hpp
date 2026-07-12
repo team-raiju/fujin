@@ -42,7 +42,7 @@ enum ForwardParamID : uint8_t {
     MAX_SPEED = 0x00,
     ACCELERATION = 0x01,
     DECELERATION = 0x02,
-    TARGET_TRAVEL_CM = 0x03,
+    TARGET_TRAVEL_MM = 0x03,
 };
 
 enum TurnParamID : uint8_t {
