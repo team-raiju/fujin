@@ -28,8 +28,8 @@
       /* Profile color codes */
       --color-ideal: #4f46e5;
       --color-trapezoidal: #059669;
-      --color-trapezoidal-ideal: #10b981;
-      --color-sshape: #e11d48;
+      --color-firmware: #d97706;
+      --color-fw-angle: #8b5cf6;
       
       --radius-sm: 6px;
       --radius-md: 12px;
@@ -147,10 +147,15 @@
       border-color: var(--color-trapezoidal);
       background-color: #d1fae5;
     }
-    .profile-checkbox-label.active-sshape {
-      border-color: var(--color-sshape);
-      background-color: #ffe4e6;
+    .profile-checkbox-label.active-firmware {
+      border-color: var(--color-firmware);
+      background-color: #fef3c7;
     }
+    .profile-checkbox-label.active-fw-angle {
+      border-color: var(--color-fw-angle);
+      background-color: #f5f3ff;
+    }
+
 
     /* Accordion settings panels */
     .accordion {
@@ -312,7 +317,8 @@
 
     .stats-card.card-ideal .stats-card-header { color: var(--color-ideal); }
     .stats-card.card-trapezoidal .stats-card-header { color: var(--color-trapezoidal); }
-    .stats-card.card-sshape .stats-card-header { color: var(--color-sshape); }
+    .stats-card.card-firmware .stats-card-header { color: var(--color-firmware); }
+    .stats-card.card-fw-angle .stats-card-header { color: var(--color-fw-angle); }
 
     .stats-grid {
       display: grid;
@@ -375,20 +381,7 @@
       height: 600px;
     }
 
-    /* General check box for Trapezoidal Ideal Path */
-    .sub-option-container {
-      margin-top: 0.5rem;
-      padding-left: 1rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.8rem;
-      color: var(--text-muted);
-    }
 
-    .sub-option-container input {
-      accent-color: var(--color-trapezoidal-ideal);
-    }
 
     @media (max-width: 1024px) {
       .app-container {
@@ -436,15 +429,15 @@
             <input type="checkbox" id="chk-trapezoidal" checked onchange="toggleProfile('trapezoidal')">
             <span>Trapezoidal Profile</span>
           </label>
-          
-          <div class="sub-option-container">
-            <input type="checkbox" id="chk-trapezoidal-ideal" checked onchange="updateSimulation()">
-            <label for="chk-trapezoidal-ideal">Show Ideal Arc Path (dashed)</label>
-          </div>
 
-          <label class="profile-checkbox-label active-sshape" id="label-sshape">
-            <input type="checkbox" id="chk-sshape" checked onchange="toggleProfile('sshape')">
-            <span>S-Shape Profile</span>
+          <label class="profile-checkbox-label active-firmware" id="label-firmware">
+            <input type="checkbox" id="chk-firmware" checked onchange="toggleProfile('firmware')">
+            <span>Firmware Arc Turn</span>
+          </label>
+
+          <label class="profile-checkbox-label active-fw-angle" id="label-fw-angle">
+            <input type="checkbox" id="chk-fw-angle" checked onchange="toggleProfile('fw-angle')">
+            <span>Firmware Angle Turn</span>
           </label>
         </div>
       </div>
@@ -613,73 +606,147 @@
         </div>
       </div>
 
-      <!-- Accordion 3: S-Shape Parameters -->
-      <div class="accordion" id="accordion-sshape">
-        <div class="accordion-header" onclick="toggleAccordion('sshape')">
-          <span>S-Shape Parameters</span>
+
+
+      <!-- Accordion 4: Firmware Arc Turn Parameters -->
+      <div class="accordion" id="accordion-firmware">
+        <div class="accordion-header" onclick="toggleAccordion('firmware')">
+          <span>Firmware Arc Turn Parameters</span>
           <span class="accordion-indicator">▲</span>
         </div>
         <div class="accordion-content">
           <div class="input-group">
             <div class="input-label-container">
-              <label for="s-linear-speed">Linear Speed (m/s)</label>
-              <span class="info-icon" title="Forward speed of the robot.">ⓘ</span>
+              <label for="fw-linear-speed">Linear Speed (m/s)</label>
+              <span class="info-icon" title="turn.linear_speed from move.c, converted to m/s.">ⓘ</span>
             </div>
-            <input type="number" id="s-linear-speed" value="0.7" step="0.05" onchange="updateSimulation()">
-            <div class="helper-text">Constant forward linear speed in m/s.</div>
+            <input type="number" id="fw-linear-speed" value="1.696" step="0.001" onchange="updateSimulation()">
+            <div class="helper-text">Forward speed used by move_arc_turn.</div>
           </div>
 
           <div class="input-group">
             <div class="input-label-container">
-              <label for="s-turn-angle">Turn Angle (deg)</label>
-              <span class="info-icon" title="Desired turn angle in degrees.">ⓘ</span>
+              <label for="fw-max-speed">Max Angular Speed (rad/s)</label>
+              <span class="info-icon" title="turn.max_angular_speed from move.c.">ⓘ</span>
             </div>
-            <input type="number" id="s-turn-angle" value="90" step="5" onchange="updateSimulation()">
-            <div class="helper-text">Desired orientation angle shift.</div>
+            <input type="number" id="fw-max-speed" value="12.5630" step="0.0001" onchange="updateSimulation()">
+            <div class="helper-text">Plateau angular speed commanded during the arc.</div>
           </div>
 
           <div class="input-group">
             <div class="input-label-container">
-              <label for="s-transition-angle">Transition Angle (deg)</label>
-              <span class="info-icon" title="Angle over which acceleration and deceleration take place.">ⓘ</span>
+              <label for="fw-transition-mm">Transition Distance (mm)</label>
+              <span class="info-icon" title="turn.transition from move.c. The sine ramp is distance-based.">ⓘ</span>
             </div>
-            <input type="number" id="s-transition-angle" value="25" step="1" onchange="updateSimulation()">
-            <div class="helper-text">The angle in degrees for speed ramp transition.</div>
+            <input type="number" id="fw-transition-mm" value="63.3541" step="0.0001" onchange="updateSimulation()">
+            <div class="helper-text">Distance used for each sine ramp.</div>
           </div>
 
           <div class="input-group">
             <div class="input-label-container">
-              <label for="s-max-speed">Max Angular Speed Cap (rad/s)</label>
-              <span class="info-icon" title="The maximum angular speed cap for this profile.">ⓘ</span>
+              <label for="fw-arc-mm">Arc Distance (mm)</label>
+              <span class="info-icon" title="turn.arc from move.c. Full-speed section distance between transition ramps.">ⓘ</span>
             </div>
-            <input type="number" id="s-max-speed" value="15.70796" step="0.5" onchange="updateSimulation()">
-            <div class="helper-text">The maximum angular speed cap for this profile.</div>
+            <input type="number" id="fw-arc-mm" value="131.4061" step="0.0001" onchange="updateSimulation()">
+            <div class="helper-text">Distance of the constant angular speed section.</div>
           </div>
 
           <div class="input-group">
             <div class="input-label-container">
-              <label for="s-sharpness">Sharpness Factor</label>
-              <span class="info-icon" title="Sinusoidal exponent factor. 1.0 is default.">ⓘ</span>
+              <label for="fw-sign">Turn Sign</label>
+              <span class="info-icon" title="Use 1 for right turns and -1 for left turns.">ⓘ</span>
             </div>
-            <input type="number" id="s-sharpness" value="1.0" step="0.1" onchange="updateSimulation()">
-            <div class="helper-text">Controls S-Curve transition shape exponent.</div>
+            <input type="number" id="fw-sign" value="1" step="2" onchange="updateSimulation()">
+            <div class="helper-text">Direction multiplier from turn.sign.</div>
           </div>
 
           <div class="input-group">
             <div class="input-label-container">
-              <label for="s-mm-before">mm Before Turn</label>
+              <label for="fw-mm-before">mm Before Turn</label>
               <span class="info-icon" title="Straight distance before turn.">ⓘ</span>
             </div>
-            <input type="number" id="s-mm-before" value="0" step="1" onchange="updateSimulation()">
+            <input type="number" id="fw-mm-before" value="0" step="1" onchange="updateSimulation()">
             <div class="helper-text">Run-in straight line segment in mm.</div>
           </div>
 
           <div class="input-group">
             <div class="input-label-container">
-              <label for="s-mm-after">mm After Turn</label>
+              <label for="fw-mm-after">mm After Turn</label>
               <span class="info-icon" title="Straight distance after turn.">ⓘ</span>
             </div>
-            <input type="number" id="s-mm-after" value="0" step="1" onchange="updateSimulation()">
+            <input type="number" id="fw-mm-after" value="0" step="1" onchange="updateSimulation()">
+            <div class="helper-text">Run-out straight line segment in mm.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Accordion 5: Firmware Angle Turn Parameters -->
+      <div class="accordion" id="accordion-fw-angle">
+        <div class="accordion-header" onclick="toggleAccordion('fw-angle')">
+          <span>Firmware Angle Turn Parameters</span>
+          <span class="accordion-indicator">▲</span>
+        </div>
+        <div class="accordion-content">
+          <div class="input-group">
+            <div class="input-label-container">
+              <label for="fw-angle-linear-speed">Linear Speed (m/s)</label>
+              <span class="info-icon" title="Forward linear speed in m/s.">ⓘ</span>
+            </div>
+            <input type="number" id="fw-angle-linear-speed" value="1.696" step="0.001" onchange="updateSimulation()">
+            <div class="helper-text">Forward speed used by angle-based turn.</div>
+          </div>
+
+          <div class="input-group">
+            <div class="input-label-container">
+              <label for="fw-angle-turn-angle">Turn Angle (deg)</label>
+              <span class="info-icon" title="Total desired turn angle in degrees.">ⓘ</span>
+            </div>
+            <input type="number" id="fw-angle-turn-angle" value="90" step="5" onchange="updateSimulation()">
+            <div class="helper-text">Desired orientation angle shift.</div>
+          </div>
+
+          <div class="input-group">
+            <div class="input-label-container">
+              <label for="fw-angle-transition-deg">Transition Angle (deg)</label>
+              <span class="info-icon" title="Angle used for the transition phase (acceleration / deceleration).">ⓘ</span>
+            </div>
+            <input type="number" id="fw-angle-transition-deg" value="20.0" step="0.5" onchange="updateSimulation()">
+            <div class="helper-text">Angle threshold for transition ramps.</div>
+          </div>
+
+          <div class="input-group">
+            <div class="input-label-container">
+              <label for="fw-angle-max-speed">Max Angular Speed (rad/s)</label>
+              <span class="info-icon" title="Plateau angular speed commanded during the turn.">ⓘ</span>
+            </div>
+            <input type="number" id="fw-angle-max-speed" value="12.5630" step="0.0001" onchange="updateSimulation()">
+            <div class="helper-text">Plateau angular speed commanded during the turn.</div>
+          </div>
+
+          <div class="input-group">
+            <div class="input-label-container">
+              <label for="fw-angle-sign">Turn Sign</label>
+              <span class="info-icon" title="Use 1 for right turns and -1 for left turns.">ⓘ</span>
+            </div>
+            <input type="number" id="fw-angle-sign" value="1" step="2" onchange="updateSimulation()">
+            <div class="helper-text">Direction multiplier.</div>
+          </div>
+
+          <div class="input-group">
+            <div class="input-label-container">
+              <label for="fw-angle-mm-before">mm Before Turn</label>
+              <span class="info-icon" title="Straight distance before turn.">ⓘ</span>
+            </div>
+            <input type="number" id="fw-angle-mm-before" value="0" step="1" onchange="updateSimulation()">
+            <div class="helper-text">Run-in straight line segment in mm.</div>
+          </div>
+
+          <div class="input-group">
+            <div class="input-label-container">
+              <label for="fw-angle-mm-after">mm After Turn</label>
+              <span class="info-icon" title="Straight distance after turn.">ⓘ</span>
+            </div>
+            <input type="number" id="fw-angle-mm-after" value="0" step="1" onchange="updateSimulation()">
             <div class="helper-text">Run-out straight line segment in mm.</div>
           </div>
         </div>
@@ -724,23 +791,44 @@
           </div>
         </div>
 
-        <!-- S-Shape Stats Card -->
-        <div class="stats-card card-sshape" id="stats-card-sshape">
+
+
+        <!-- Firmware Arc Turn Stats Card -->
+        <div class="stats-card card-firmware" id="stats-card-firmware">
           <div class="stats-card-header">
-            🔴 S-Shape Profile
+            🟠 Firmware Arc Turn
           </div>
           <div class="stats-grid">
-            <div class="stat-item"><div class="stat-label">Total Time</div><div class="stat-val" id="stat-s-time">-</div></div>
-            <div class="stat-item"><div class="stat-label">Peak Speed</div><div class="stat-val" id="stat-s-speed">-</div></div>
-            <div class="stat-item"><div class="stat-label">Peak Accel</div><div class="stat-val" id="stat-s-accel">-</div></div>
-            <div class="stat-item"><div class="stat-label">Final Position</div><div class="stat-val" id="stat-s-pos">-</div></div>
-            <div class="stat-item"><div class="stat-label">Time to Top Speed</div><div class="stat-val" id="stat-s-t-top">-</div></div>
-            <div class="stat-item"><div class="stat-label">Time to Decel</div><div class="stat-val" id="stat-s-t-decel">-</div></div>
-            <div class="stat-item"><div class="stat-label">Angle at Top Speed</div><div class="stat-val" id="stat-s-ang-top">-</div></div>
-            <div class="stat-item"><div class="stat-label">Angle at Decel</div><div class="stat-val" id="stat-s-ang-decel">-</div></div>
+            <div class="stat-item"><div class="stat-label">Total Time</div><div class="stat-val" id="stat-fw-time">-</div></div>
+            <div class="stat-item"><div class="stat-label">Peak Speed</div><div class="stat-val" id="stat-fw-speed">-</div></div>
+            <div class="stat-item"><div class="stat-label">Peak Accel</div><div class="stat-val" id="stat-fw-accel">-</div></div>
+            <div class="stat-item"><div class="stat-label">Final Position</div><div class="stat-val" id="stat-fw-pos">-</div></div>
+            <div class="stat-item"><div class="stat-label">Time to Top Speed</div><div class="stat-val" id="stat-fw-t-top">-</div></div>
+            <div class="stat-item"><div class="stat-label">Time to Decel</div><div class="stat-val" id="stat-fw-t-decel">-</div></div>
+            <div class="stat-item"><div class="stat-label">Angle at Top Speed</div><div class="stat-val" id="stat-fw-ang-top">-</div></div>
+            <div class="stat-item"><div class="stat-label">Angle at Decel</div><div class="stat-val" id="stat-fw-ang-decel">-</div></div>
+          </div>
+        </div>
+
+        <!-- Firmware Angle Turn Stats Card -->
+        <div class="stats-card card-fw-angle" id="stats-card-fw-angle">
+          <div class="stats-card-header">
+            🟣 Firmware Angle Turn
+          </div>
+          <div class="stats-grid">
+            <div class="stat-item"><div class="stat-label">Total Time</div><div class="stat-val" id="stat-fw-angle-time">-</div></div>
+            <div class="stat-item"><div class="stat-label">Peak Speed</div><div class="stat-val" id="stat-fw-angle-speed">-</div></div>
+            <div class="stat-item"><div class="stat-label">Peak Accel</div><div class="stat-val" id="stat-fw-angle-accel">-</div></div>
+            <div class="stat-item"><div class="stat-label">Final Position</div><div class="stat-val" id="stat-fw-angle-pos">-</div></div>
+            <div class="stat-item"><div class="stat-label">Time to Top Speed</div><div class="stat-val" id="stat-fw-angle-t-top">-</div></div>
+            <div class="stat-item"><div class="stat-label">Time to Decel</div><div class="stat-val" id="stat-fw-angle-t-decel">-</div></div>
+            <div class="stat-item"><div class="stat-label">Angle at Top Speed</div><div class="stat-val" id="stat-fw-angle-ang-top">-</div></div>
+            <div class="stat-item"><div class="stat-label">Angle at Decel</div><div class="stat-val" id="stat-fw-angle-ang-decel">-</div></div>
           </div>
         </div>
       </div>
+
+      
 
       <!-- Plots layout grid -->
       <div class="plots-grid">
@@ -795,8 +883,8 @@
     const COLORS = {
       ideal: '#4f46e5',
       trapezoidal: '#059669',
-      trapezoidalIdeal: '#10b981',
-      sshape: '#e11d48'
+      firmware: '#d97706',
+      fw_angle: '#8b5cf6'
     };
 
     // Accordion toggle logic
@@ -1102,23 +1190,32 @@
       };
     }
 
-    function runSShapeSimulation(params) {
+
+
+    function runFirmwareArcTurnSimulation(params) {
       const {
         linear_speed_m_s,
-        turn_angle_degree,
-        angular_transition_degree,
         maximum_angular_speed_rad_s,
-        sharpness_factor,
+        transition_mm,
+        arc_mm,
+        sign,
         mm_before_turn,
         mm_after_turn,
         initial_theta_rad
       } = params;
 
-      const turn_angle_rad = deg2rad(turn_angle_degree);
-      const angular_transition_rad = deg2rad(angular_transition_degree);
-      const deceleration_start_angle = turn_angle_rad - angular_transition_rad;
+      const dt = 0.001;
+      const linear_speed_mm_ms = linear_speed_m_s;
+      const turn_sign = sign < 0 ? -1 : 1;
+      const total_turn_distance_mm = 2.0 * transition_mm + arc_mm;
 
-      let angular_speed_rad_s = 0.0;
+      let travelled_mm = 0.0;
+      let t = 0;
+      let last_angular_speed_rad_s = 0.0;
+      let max_measured_acceleration_rad_s2 = 0.0;
+      let t1_ms = null;
+      let t_decel_start = null;
+
       const real_ang_speeds = [0.0];
       const real_accelerations = [0.0];
       const real_positions = [
@@ -1129,52 +1226,157 @@
         )
       ];
 
-      let angle_turned_rad = 0;
-      let t = 1;
-      let traveled_dist = 0;
-      let last_angular_speed_rad_s = 0;
-      let max_measured_acceleration_rad_s2 = 0;
+      while (travelled_mm < total_turn_distance_mm && t < 20000) {
+        let angular_speed_rad_s = turn_sign * maximum_angular_speed_rad_s;
 
-      // Safety limit to prevent browser freeze
-      while (angle_turned_rad < turn_angle_rad && t < 10000) {
-        let speed_factor = 1.0;
-        if (angle_turned_rad < angular_transition_rad) {
-          const factor = angle_turned_rad / angular_transition_rad;
-          speed_factor = Math.pow(Math.sin(factor * Math.PI / 2.0), sharpness_factor);
-        } else if (angle_turned_rad >= deceleration_start_angle) {
-          const remaining_angle = turn_angle_rad - angle_turned_rad;
-          const factor = remaining_angle / angular_transition_rad;
-          speed_factor = Math.pow(Math.sin(factor * Math.PI / 2.0), sharpness_factor);
+        if (travelled_mm < transition_mm) {
+          const factor = travelled_mm / transition_mm;
+          angular_speed_rad_s *= Math.sin(factor * Math.PI / 2.0);
+        } else if (travelled_mm >= transition_mm + arc_mm) {
+          const factor = (travelled_mm - arc_mm) / transition_mm;
+          angular_speed_rad_s *= Math.sin(factor * Math.PI / 2.0);
         }
 
-        angular_speed_rad_s = maximum_angular_speed_rad_s * speed_factor;
-
-        const current_accel = (angular_speed_rad_s - last_angular_speed_rad_s) * 1000.0;
-        if (t === 1) {
-          real_accelerations[0] = current_accel;
+        if (t1_ms === null && travelled_mm >= transition_mm) {
+          t1_ms = t;
         }
-        real_accelerations.push(current_accel);
+        if (t_decel_start === null && travelled_mm >= transition_mm + arc_mm) {
+          t_decel_start = t;
+        }
 
+        const current_accel = (angular_speed_rad_s - last_angular_speed_rad_s) / dt;
         const measured_accel = Math.abs(current_accel);
         if (measured_accel > max_measured_acceleration_rad_s2) {
           max_measured_acceleration_rad_s2 = measured_accel;
         }
-        
-        last_angular_speed_rad_s = angular_speed_rad_s;
 
-        if (angular_speed_rad_s < 0.05) {
-          angular_speed_rad_s = 0.05;
+        if (t === 0) {
+          real_accelerations[0] = current_accel;
         }
 
-        const theta = real_positions[t - 1].theta + (angular_speed_rad_s / 1000);
-        const linear_speed_mm_ms = linear_speed_m_s;
-        const x = real_positions[t - 1].x + linear_speed_mm_ms * Math.sin(theta);
-        const y = real_positions[t - 1].y + linear_speed_mm_ms * Math.cos(theta);
-        traveled_dist += linear_speed_mm_ms;
+        const theta = real_positions[real_positions.length - 1].theta + (angular_speed_rad_s * dt);
+        const x = real_positions[real_positions.length - 1].x + linear_speed_mm_ms * Math.sin(theta);
+        const y = real_positions[real_positions.length - 1].y + linear_speed_mm_ms * Math.cos(theta);
 
         real_positions.push(new Position(x, y, theta));
         real_ang_speeds.push(angular_speed_rad_s);
-        angle_turned_rad = theta;
+        real_accelerations.push(current_accel);
+
+        last_angular_speed_rad_s = angular_speed_rad_s;
+        travelled_mm += linear_speed_mm_ms;
+        t++;
+      }
+
+      const last_x = real_positions[real_positions.length - 1].x + mm_after_turn * Math.sin(real_positions[real_positions.length - 1].theta);
+      const last_y = real_positions[real_positions.length - 1].y + mm_after_turn * Math.cos(real_positions[real_positions.length - 1].theta);
+      real_positions.push(new Position(last_x, last_y, real_positions[real_positions.length - 1].theta));
+      real_ang_speeds.push(0.0);
+      real_accelerations.push(0.0);
+
+      t1_ms = t1_ms ?? 0;
+      t_decel_start = t_decel_start ?? t;
+      const idx_top = Math.min(t1_ms, real_positions.length - 1);
+      const idx_decel = Math.min(t_decel_start, real_positions.length - 1);
+      const angle_1_rad = real_positions[idx_top].theta - initial_theta_rad;
+      const angle_2_rad = real_positions[idx_decel].theta - initial_theta_rad;
+
+      return {
+        T_ms: t,
+        t1_ms,
+        t_decel_start,
+        angle_1_rad,
+        angle_2_rad,
+        positions: real_positions,
+        speeds: real_ang_speeds,
+        accelerations: real_accelerations,
+        max_accel: max_measured_acceleration_rad_s2,
+        max_speed: Math.max(...real_ang_speeds.map(Math.abs))
+      };
+    }
+
+    function runFirmwareAngleTurnSimulation(params) {
+      const {
+        linear_speed_m_s,
+        turn_angle_degree,
+        angular_transition_degree,
+        maximum_angular_speed_rad_s,
+        sign,
+        mm_before_turn,
+        mm_after_turn,
+        initial_theta_rad
+      } = params;
+
+      const turn_angle_rad = deg2rad(turn_angle_degree);
+      const angular_transition_rad = Math.min(deg2rad(angular_transition_degree), Math.abs(turn_angle_rad) / 2.0);
+      const arc_angle_rad = turn_angle_rad - (2.0 * angular_transition_rad);
+      const deceleration_start_angle = angular_transition_rad + arc_angle_rad;
+      const turn_sign = sign < 0 ? -1 : 1;
+
+      const real_ang_speeds = [0.0];
+      const real_accelerations = [0.0];
+      const real_positions = [
+        new Position(
+          90 + mm_before_turn * Math.sin(initial_theta_rad),
+          mm_before_turn * Math.cos(initial_theta_rad),
+          initial_theta_rad
+        )
+      ];
+
+      const dt = 0.001;
+      const linear_speed_mm_ms = linear_speed_m_s;
+      
+      // New planned integration variables from the green diff
+      const angle_area_rad = maximum_angular_speed_rad_s * ((4.0 * angular_transition_rad) / Math.PI + arc_angle_rad); // Fully written based on standard profile area integration
+      const planned_angle_rate_rad_s = angle_area_rad / turn_angle_rad;
+      let planned_angle_rad = 0.0;
+      
+      let t = 0;
+      let last_angular_speed_rad_s = 0.0;
+      let max_measured_acceleration_rad_s2 = 0.0;
+      let t1_ms = null;
+      let t_decel_start = null;
+
+      // The loop conditional now tracks planned_angle_rad
+      while (planned_angle_rad < turn_angle_rad && t < 20000) {
+        const profile_angle_rad = Math.min(planned_angle_rad, turn_angle_rad);
+        let angular_speed_rad_s = turn_sign * maximum_angular_speed_rad_s;
+
+        if (profile_angle_rad < angular_transition_rad) {
+          const factor = profile_angle_rad / angular_transition_rad;
+          angular_speed_rad_s *= Math.sin(factor * Math.PI / 2.0);
+        } else if (profile_angle_rad >= deceleration_start_angle) {
+          const factor = (profile_angle_rad - arc_angle_rad) / angular_transition_rad;
+          angular_speed_rad_s *= Math.sin(factor * Math.PI / 2.0);
+        }
+
+        if (t1_ms === null && profile_angle_rad >= angular_transition_rad) {
+          t1_ms = t;
+        }
+
+        if (t_decel_start === null && profile_angle_rad >= deceleration_start_angle) {
+          t_decel_start = t;
+        }
+
+        const current_accel = (angular_speed_rad_s - last_angular_speed_rad_s) / dt;
+        const measured_accel = Math.abs(current_accel);
+        if (measured_accel > max_measured_acceleration_rad_s2) {
+          max_measured_acceleration_rad_s2 = measured_accel;
+        }
+
+        if (t === 0) {
+          real_accelerations[0] = current_accel;
+        }
+
+        const theta = real_positions[real_positions.length - 1].theta + (angular_speed_rad_s * dt);
+        const x = real_positions[real_positions.length - 1].x + linear_speed_mm_ms * Math.sin(theta);
+        const y = real_positions[real_positions.length - 1].y + linear_speed_mm_ms * Math.cos(theta);
+
+        real_positions.push(new Position(x, y, theta));
+        real_ang_speeds.push(angular_speed_rad_s);
+        real_accelerations.push(current_accel);
+
+        last_angular_speed_rad_s = angular_speed_rad_s;
+        planned_angle_rad += planned_angle_rate_rad_s * dt;
         t++;
       }
 
@@ -1185,28 +1387,15 @@
       real_ang_speeds.push(0.0);
       real_accelerations.push(0.0);
 
-      const peak_speed = Math.max(...real_ang_speeds);
-      let t1_ms = 0;
-      for (let i = 0; i < real_ang_speeds.length; i++) {
-        if (real_ang_speeds[i] >= 0.999 * peak_speed) {
-          t1_ms = i;
-          break;
-        }
-      }
-
-      let t_decel_start = real_ang_speeds.length - 1;
-      for (let i = t1_ms; i < real_ang_speeds.length; i++) {
-        if (real_ang_speeds[i] < 0.999 * peak_speed) {
-          t_decel_start = i;
-          break;
-        }
-      }
-
-      const angle_1_rad = real_positions[t1_ms].theta - initial_theta_rad;
-      const angle_2_rad = real_positions[t_decel_start].theta - initial_theta_rad;
+      t1_ms = t1_ms ?? 0;
+      t_decel_start = t_decel_start ?? t;
+      const idx_top = Math.min(t1_ms, real_positions.length - 1);
+      const idx_decel = Math.min(t_decel_start, real_positions.length - 1);
+      const angle_1_rad = real_positions[idx_top].theta - initial_theta_rad;
+      const angle_2_rad = real_positions[idx_decel].theta - initial_theta_rad;
 
       return {
-        T_ms: t - 1,
+        T_ms: t,
         t1_ms,
         t_decel_start,
         angle_1_rad,
@@ -1215,7 +1404,7 @@
         speeds: real_ang_speeds,
         accelerations: real_accelerations,
         max_accel: max_measured_acceleration_rad_s2,
-        max_speed: Math.max(...real_ang_speeds)
+        max_speed: Math.max(...real_ang_speeds.map(Math.abs))
       };
     }
 
@@ -1495,8 +1684,9 @@
     function updateSimulation() {
       const showIdeal = document.getElementById('chk-ideal').checked;
       const showTrap = document.getElementById('chk-trapezoidal').checked;
-      const showTrapIdeal = document.getElementById('chk-trapezoidal-ideal').checked;
-      const showSShape = document.getElementById('chk-sshape').checked;
+      const showFirmware = document.getElementById('chk-firmware').checked;
+      const showFwAngle = document.getElementById('chk-fw-angle').checked;
+
 
       // Datasets collectors
       const trajectoryDatasets = [];
@@ -1612,19 +1802,7 @@
           fill: false
         });
 
-        // Optional Trapezoidal Ideal Path
-        if (showTrapIdeal) {
-          trajectoryDatasets.push({
-            label: 'Trapezoidal Ideal Path',
-            data: res.ideal_positions.map(p => ({ x: p.x, y: p.y })),
-            borderColor: COLORS.trapezoidalIdeal,
-            borderWidth: 1.5,
-            borderDash: [5, 5],
-            showLine: true,
-            pointRadius: 0,
-            fill: false
-          });
-        }
+
 
         speedDatasets.push({
           label: 'Trapezoidal Real Speed',
@@ -1645,37 +1823,38 @@
         });
       }
 
-      // --- S-Shape Profile ---
-      if (showSShape) {
+
+
+           // --- Firmware Arc Turn Profile ---
+      if (showFirmware) {
         const params = {
-          linear_speed_m_s: parseFloat(document.getElementById('s-linear-speed').value),
-          turn_angle_degree: parseFloat(document.getElementById('s-turn-angle').value),
-          angular_transition_degree: parseFloat(document.getElementById('s-transition-angle').value),
-          maximum_angular_speed_rad_s: parseFloat(document.getElementById('s-max-speed').value),
-          sharpness_factor: parseFloat(document.getElementById('s-sharpness').value),
-          mm_before_turn: parseFloat(document.getElementById('s-mm-before').value),
-          mm_after_turn: parseFloat(document.getElementById('s-mm-after').value),
+          linear_speed_m_s: parseFloat(document.getElementById('fw-linear-speed').value),
+          maximum_angular_speed_rad_s: parseFloat(document.getElementById('fw-max-speed').value),
+          transition_mm: parseFloat(document.getElementById('fw-transition-mm').value),
+          arc_mm: parseFloat(document.getElementById('fw-arc-mm').value),
+          sign: parseFloat(document.getElementById('fw-sign').value),
+          mm_before_turn: parseFloat(document.getElementById('fw-mm-before').value),
+          mm_after_turn: parseFloat(document.getElementById('fw-mm-after').value),
           initial_theta_rad: 0.0
         };
 
-        const res = runSShapeSimulation(params);
+        const res = runFirmwareArcTurnSimulation(params);
 
-        // Update stats
-        document.getElementById('stat-s-time').innerText = `${Math.round(res.T_ms)} ms`;
-        document.getElementById('stat-s-speed').innerText = `${res.max_speed.toFixed(2)} rad/s`;
-        document.getElementById('stat-s-accel').innerText = `${res.max_accel.toFixed(1)} rad/s²`;
+        document.getElementById('stat-fw-time').innerText = `${Math.round(res.T_ms)} ms`;
+        document.getElementById('stat-fw-speed').innerText = `${res.max_speed.toFixed(2)} rad/s`;
+        document.getElementById('stat-fw-accel').innerText = `${res.max_accel.toFixed(1)} rad/s²`;
         const lastPos = res.positions[res.positions.length - 1];
-        document.getElementById('stat-s-pos').innerText = `${lastPos.x.toFixed(1)}, ${lastPos.y.toFixed(1)}, ${rad2deg(lastPos.theta).toFixed(0)}°`;
+        document.getElementById('stat-fw-pos').innerText = `${lastPos.x.toFixed(1)}, ${lastPos.y.toFixed(1)}, ${rad2deg(lastPos.theta).toFixed(0)}°`;
 
-        document.getElementById('stat-s-t-top').innerText = `${Math.round(res.t1_ms)} ms`;
-        document.getElementById('stat-s-t-decel').innerText = `${Math.round(res.t_decel_start)} ms`;
-        document.getElementById('stat-s-ang-top').innerText = `${res.angle_1_rad.toFixed(3)} rad (${rad2deg(res.angle_1_rad).toFixed(1)}°)`;
-        document.getElementById('stat-s-ang-decel').innerText = `${res.angle_2_rad.toFixed(3)} rad (${rad2deg(res.angle_2_rad).toFixed(1)}°)`;
+        document.getElementById('stat-fw-t-top').innerText = `${Math.round(res.t1_ms)} ms`;
+        document.getElementById('stat-fw-t-decel').innerText = `${Math.round(res.t_decel_start)} ms`;
+        document.getElementById('stat-fw-ang-top').innerText = `${res.angle_1_rad.toFixed(3)} rad (${rad2deg(res.angle_1_rad).toFixed(1)}°)`;
+        document.getElementById('stat-fw-ang-decel').innerText = `${res.angle_2_rad.toFixed(3)} rad (${rad2deg(res.angle_2_rad).toFixed(1)}°)`;
 
         trajectoryDatasets.push({
-          label: 'S-Shape Path',
+          label: 'Firmware Arc Turn Path',
           data: res.positions.map(p => ({ x: p.x, y: p.y })),
-          borderColor: COLORS.sshape,
+          borderColor: COLORS.firmware,
           borderWidth: 2,
           showLine: true,
           pointRadius: 0,
@@ -1683,23 +1862,79 @@
         });
 
         speedDatasets.push({
-          label: 'S-Shape Speed',
+          label: 'Firmware Arc Turn Speed',
           data: res.speeds.map((w, idx) => ({ x: idx, y: w })),
-          borderColor: COLORS.sshape,
+          borderColor: COLORS.firmware,
           borderWidth: 2,
           pointRadius: 0,
           fill: false
         });
 
         accelDatasets.push({
-          label: 'S-Shape Accel',
+          label: 'Firmware Arc Turn Accel',
           data: res.accelerations.map((a, idx) => ({ x: idx, y: a })),
-          borderColor: COLORS.sshape,
+          borderColor: COLORS.firmware,
           borderWidth: 2,
           pointRadius: 0,
           fill: false
         });
       }
+
+      // --- Firmware Angle Turn Profile ---
+      if (showFwAngle) {
+        const params = {
+          linear_speed_m_s: parseFloat(document.getElementById('fw-angle-linear-speed').value),
+          turn_angle_degree: parseFloat(document.getElementById('fw-angle-turn-angle').value),
+          angular_transition_degree: parseFloat(document.getElementById('fw-angle-transition-deg').value),
+          maximum_angular_speed_rad_s: parseFloat(document.getElementById('fw-angle-max-speed').value),
+          sign: parseFloat(document.getElementById('fw-angle-sign').value),
+          mm_before_turn: parseFloat(document.getElementById('fw-angle-mm-before').value),
+          mm_after_turn: parseFloat(document.getElementById('fw-angle-mm-after').value),
+          initial_theta_rad: 0.0
+        };
+
+        const res = runFirmwareAngleTurnSimulation(params);
+
+        document.getElementById('stat-fw-angle-time').innerText = `${Math.round(res.T_ms)} ms`;
+        document.getElementById('stat-fw-angle-speed').innerText = `${res.max_speed.toFixed(2)} rad/s`;
+        document.getElementById('stat-fw-angle-accel').innerText = `${res.max_accel.toFixed(1)} rad/s²`;
+        const lastPos = res.positions[res.positions.length - 1];
+        document.getElementById('stat-fw-angle-pos').innerText = `${lastPos.x.toFixed(1)}, ${lastPos.y.toFixed(1)}, ${rad2deg(lastPos.theta).toFixed(0)}°`;
+
+        document.getElementById('stat-fw-angle-t-top').innerText = `${Math.round(res.t1_ms)} ms`;
+        document.getElementById('stat-fw-angle-t-decel').innerText = `${Math.round(res.t_decel_start)} ms`;
+        document.getElementById('stat-fw-angle-ang-top').innerText = `${res.angle_1_rad.toFixed(3)} rad (${rad2deg(res.angle_1_rad).toFixed(1)}°)`;
+        document.getElementById('stat-fw-angle-ang-decel').innerText = `${res.angle_2_rad.toFixed(3)} rad (${rad2deg(res.angle_2_rad).toFixed(1)}°)`;
+
+        trajectoryDatasets.push({
+          label: 'Firmware Angle Turn Path',
+          data: res.positions.map(p => ({ x: p.x, y: p.y })),
+          borderColor: COLORS.fw_angle,
+          borderWidth: 2,
+          showLine: true,
+          pointRadius: 0,
+          fill: false
+        });
+
+        speedDatasets.push({
+          label: 'Firmware Angle Turn Speed',
+          data: res.speeds.map((w, idx) => ({ x: idx, y: w })),
+          borderColor: COLORS.fw_angle,
+          borderWidth: 2,
+          pointRadius: 0,
+          fill: false
+        });
+
+        accelDatasets.push({
+          label: 'Firmware Angle Turn Accel',
+          data: res.accelerations.map((a, idx) => ({ x: idx, y: a })),
+          borderColor: COLORS.fw_angle,
+          borderWidth: 2,
+          pointRadius: 0,
+          fill: false
+        });
+      }
+
 
       // Update Charts Datasets and draw
       trajectoryChart.data.datasets = trajectoryDatasets;
