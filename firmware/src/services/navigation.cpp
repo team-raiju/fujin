@@ -133,6 +133,7 @@ void Navigation::reset(navigation_mode_t mode) {
 void Navigation::reset_movement_variables() {
     bsp::imu::reset_angle();
     mini_fsm_state = MiniFSMStates::FORWARD_1;
+    current_angular_acceleration = 0.0f;
 
     traveled_dist_mm = 0;
     current_position_mm = {0, 0};
@@ -173,7 +174,8 @@ Navigation::WallBreak Navigation::process_wall_break() {
         bool valid_previous_move =
             ((previous_movement == FORWARD) || (previous_movement == START) || (previous_movement == TURN_AROUND));
 
-        if (valid_previous_move && ((traveled_dist_mm - wall_break_last_dist) > 40.0f) && !current_wall_break_detected) {
+        if (valid_previous_move && ((traveled_dist_mm - wall_break_last_dist) > 40.0f) &&
+            !current_wall_break_detected) {
             process = true;
         }
     } else if ((traveled_dist_mm - wall_break_last_dist) > CELL_SIZE_MM) {
@@ -462,6 +464,7 @@ bool Navigation::step() {
                         traveled_dist_mm = 0;
                         reference_time = bsp::get_tick_ms();
                         mini_fsm_state = MiniFSMStates::TURN;
+                        current_angular_acceleration = 0.0f;
                         if ((selected_mode != SEARCH_FAST) && (selected_mode != SEARCH_MEDIUM) &&
                             (selected_mode != SEARCH_SLOW)) {
                             bsp::leds::stripe_set(Color::Blue);
@@ -477,45 +480,46 @@ bool Navigation::step() {
             auto current_turn_params = turn_params[current_movement];
 
             float angular_max_speed = current_turn_params.max_angular_speed;
-            float angular_acceleration = current_turn_params.angular_accel;
-            float angular_deceleration = current_turn_params.angular_accel;
+            float max_angular_acceleration = current_turn_params.angular_accel;
+            float max_angular_deceleration = -current_turn_params.angular_accel;
             float control_angular_speed_abs = std::abs(control->get_target_angular_speed());
-
-            float final_angle_rad = current_turn_params.angle_to_turn;
             int turn_sign = current_turn_params.sign;
 
-            float angular_end_speed = 0.0;
-            float imu_incremental_angle = std::abs(bsp::imu::get_incremental_angle());
+            // Hardcoded physical param for jerk
+            uint32_t time_to_decrease_jerk_1 = 70;
+            uint32_t time_to_decrease_jerk_2 = 220;
+            float hardcoded_jerk = 5000.0f;
+
             uint32_t elapsed_time = bsp::get_tick_ms() - reference_time;
 
-            bool acceleration_condition =
-                imu_incremental_angle <
-                (final_angle_rad -
-                 get_torricelli_distance(angular_end_speed, control_angular_speed_abs, -angular_deceleration));
-
-            bool stop_condition = (imu_incremental_angle >= (final_angle_rad));
-
-            // Stop condition is based on time on high speeds, as angles becomes unreliable
-            if ((selected_mode == SEARCH_SLOW) || (selected_mode == SEARCH_MEDIUM) || (selected_mode == SLOW) ||
-                (selected_mode == SEARCH_FAST)) {
-                angular_end_speed = 0.4f;
-            } else {
-                acceleration_condition = (elapsed_time < current_turn_params.t_start_deccel);
-                stop_condition = (elapsed_time > current_turn_params.t_stop);
-                angular_end_speed = 0.85f;
-            }
+            bool acceleration_condition = (elapsed_time <= current_turn_params.t_start_deccel);
+            bool stop_condition = (elapsed_time > current_turn_params.t_stop);
 
             if (acceleration_condition) {
-                if (control_angular_speed_abs < angular_max_speed) {
-                    control_angular_speed_abs += angular_acceleration / Config::CONTROL_FREQUENCY_HZ;
-                    control_angular_speed_abs = std::min(control_angular_speed_abs, angular_max_speed);
+                if (hardcoded_jerk == 0 || time_to_decrease_jerk_1 == 0) {
+                    current_angular_acceleration = max_angular_acceleration;
+                } else if (elapsed_time <= time_to_decrease_jerk_1) {
+                    current_angular_acceleration += hardcoded_jerk / Config::CONTROL_FREQUENCY_HZ;
+                    current_angular_acceleration = std::min(current_angular_acceleration, max_angular_acceleration);
+                } else {
+                    current_angular_acceleration -= hardcoded_jerk / Config::CONTROL_FREQUENCY_HZ;
+                    current_angular_acceleration = std::max(current_angular_acceleration, 0.0f);
                 }
             } else {
-                if (control_angular_speed_abs > angular_end_speed) {
-                    control_angular_speed_abs -= angular_deceleration / Config::CONTROL_FREQUENCY_HZ;
-                    control_angular_speed_abs = std::max(control_angular_speed_abs, angular_end_speed);
+                if (hardcoded_jerk == 0 || time_to_decrease_jerk_2 == 0) {
+                    current_angular_acceleration = max_angular_deceleration;
+                } else if (elapsed_time <= time_to_decrease_jerk_2) {
+                    current_angular_acceleration -= hardcoded_jerk / Config::CONTROL_FREQUENCY_HZ;
+                    current_angular_acceleration = std::max(current_angular_acceleration, max_angular_deceleration);
+                } else {
+                    current_angular_acceleration += hardcoded_jerk / Config::CONTROL_FREQUENCY_HZ;
+                    current_angular_acceleration = std::min(current_angular_acceleration, 0.0f);
                 }
             }
+
+            control_angular_speed_abs += current_angular_acceleration / Config::CONTROL_FREQUENCY_HZ;
+            control_angular_speed_abs = std::min(control_angular_speed_abs, angular_max_speed);
+            control_angular_speed_abs = std::max(control_angular_speed_abs, 0.0f);
 
             control->set_target_angular_speed(control_angular_speed_abs * turn_sign);
             control->set_wall_pid_enabled(false);
@@ -551,6 +555,7 @@ bool Navigation::step() {
                 control->set_motor_control_disabled(false);
                 traveled_dist_mm = 0;
                 mini_fsm_state = MiniFSMStates::TURN;
+                current_angular_acceleration = 0.0f;
             }
         } else if (mini_fsm_state == MiniFSMStates::STABILIZE_2) { // Stop and stabilize
             uint32_t elapsed_time = bsp::get_tick_ms() - reference_time;
@@ -708,6 +713,7 @@ void Navigation::set_movement(Movement movement, Movement prev_movement, Movemen
     // When target travel is 0, we directly go to turn state
     if (target_travel_mm <= 0) {
         mini_fsm_state = MiniFSMStates::TURN;
+        current_angular_acceleration = 0.0f;
     }
 
     if (movement == Movement::STOP) {

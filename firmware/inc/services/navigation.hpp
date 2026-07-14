@@ -144,6 +144,8 @@ private:
     bool is_braking = false;
     float encoder_imu_diff = 0;
 
+    float current_angular_acceleration = 0.0f;
+
     MiniFSMStates mini_fsm_state = MiniFSMStates::FORWARD_1;
 
     std::vector<std::pair<Movement, uint8_t>> hardcoded_movements;
