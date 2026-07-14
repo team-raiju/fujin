@@ -20,9 +20,10 @@ function simulateTrapezoidal(p) {
   }
   const T = t1 + t2 + t3;
 
+  const initialAngleRad = (p.initialAngleDeg || 0) * D2R;
   const times = [0], omegaArr = [0], alphaArr = [0];
-  const positions = [{ x: 90, y: 0, theta: 0 }];
-  let omega = 0, theta = 0;
+  const positions = [{ x: 90, y: 0, theta: initialAngleRad }];
+  let omega = 0, theta = initialAngleRad;
   const totalSteps = Math.max(1, Math.round(T));
 
   for (let t = 1; t <= totalSteps; t++) {
@@ -100,9 +101,10 @@ function simulateIdealCurve(p) {
     fullAlpha = fullAlpha.concat([...accelArr.slice(0, idx)].reverse().map(a => -a));
   }
 
+  const initialAngleRad = (p.initialAngleDeg || 0) * D2R;
   const times = [0], omegaArr = [0], alphaArr = [0];
-  const positions = [{ x: 90, y: 0, theta: 0 }];
-  let theta = 0;
+  const positions = [{ x: 90, y: 0, theta: initialAngleRad }];
+  let theta = initialAngleRad;
   for (let i = 0; i < fullOmega.length; i++) {
     const omega = fullOmega[i];
     theta += omega * DT;
@@ -248,9 +250,10 @@ function simulateJerk(p) {
   }
 
   // Full simulation
+  const initialAngleRad = (p.initialAngleDeg || 0) * D2R;
   const times = [0], omegaArr = [0], alphaArr = [0];
-  const positions = [{ x: 90, y: 0, theta: 0 }];
-  let theta = 0, omega = 0, tMs = 0;
+  const positions = [{ x: 90, y: 0, theta: initialAngleRad }];
+  let theta = initialAngleRad, omega = 0, tMs = 0;
 
   function step(alpha) {
     omega += alpha * dt;
@@ -330,10 +333,11 @@ function simulateArc(p) {
   const total_turn_distance_mm = 2.0 * p.arcTransition + p.arcArc;
 
   if (linear_speed_mm_ms <= 0.0001 || total_turn_distance_mm <= 0) {
+    const initialAngleRad = (p.initialAngleDeg || 0) * D2R;
     return {
       times: [0], omegaArr: [0], alphaArr: [0],
-      positions: [{ x: 90, y: 0, theta: 0 }],
-      results: { t1: 0, t2: 0, t3: 0, T: 0, peakAccel: 0, peakOmega: 0, final: { x: 90, y: 0, theta: 0 } }
+      positions: [{ x: 90, y: 0, theta: initialAngleRad }],
+      results: { t1: 0, t2: 0, t3: 0, T: 0, peakAccel: 0, peakOmega: 0, final: { x: 90, y: 0, theta: initialAngleRad } }
     };
   }
 
@@ -344,10 +348,11 @@ function simulateArc(p) {
   let t1_ms = null;
   let t_decel_start = null;
 
+  const initialAngleRad = (p.initialAngleDeg || 0) * D2R;
   const times = [0];
   const omegaArr = [0.0];
   const alphaArr = [0.0];
-  const positions = [{ x: 90, y: 0, theta: 0 }];
+  const positions = [{ x: 90, y: 0, theta: initialAngleRad }];
 
   while (travelled_mm < total_turn_distance_mm && t <= 20000) {
     // Increment travelled_mm first as we move forward during this 1ms step

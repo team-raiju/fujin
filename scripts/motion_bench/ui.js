@@ -10,6 +10,7 @@ const CH_META = {
 
 const fields = [
   ['turnAngle', 'turnAngleDeg', 0],
+  ['initialAngle', 'initialAngleDeg', 0],
   ['linSpeed', 'linearSpeed', 3],
   ['mmBefore', 'mmBeforeTurn', 1],
   ['mmAfter', 'mmAfterTurn', 1],
@@ -66,6 +67,17 @@ fields.forEach(([id, key, decimals]) => {
     }
   });
 });
+
+// Bind plotTemplate select
+state.plotTemplate = 'corner';
+const selTemplate = document.getElementById('s-plotTemplate');
+if (selTemplate) {
+  state.plotTemplate = selTemplate.value;
+  selTemplate.addEventListener('change', () => {
+    state.plotTemplate = selTemplate.value;
+    recomputeAndRender();
+  });
+}
 
 const activeChannels = { trap: true, ideal: false, jerk: false, arc: false };
 ['trap', 'ideal', 'jerk', 'arc'].forEach(ch => {
@@ -153,27 +165,56 @@ const DATA_SPAN = DATA_MAX - DATA_MIN;
 function mapX(x) { return ((x - DATA_MIN) / DATA_SPAN) * SVG_SIZE; }
 function mapY(y) { return SVG_SIZE - ((y - DATA_MIN) / DATA_SPAN) * SVG_SIZE; }
 
-function wallSegments() {
+function wallSegments(template) {
   const segs = [];
-  segs.push([0, 0, 0, 180]);
-  segs.push([0, 0, 0, -180]);
-  segs.push([0, 180, 180, 180]);
-  segs.push([180, 0, 180, -180]);
-  segs.push([180, 180, 360, 180]);
-  segs.push([360, 180, 360, 0]);
-  segs.push([360, 0, 540, 0]);
-  for (let i = 180; i < 3600; i += 180) {
-    segs.push([i, 180 - i, i, -i]);
-    segs.push([i, -i, i + 180, -i]);
-    segs.push([i + 360, 180 - i, i + 360, -i]);
-    segs.push([i + 360, -i, i + 360 + 180, -i]);
+  if (template === 'diagonal') {
+    // Generate S-curve diagonal zigzag walls
+    segs.push([-180, -180, -180, 0]);
+    segs.push([0, 0, 0, 180]);
+    segs.push([-180, 0, 0, 0]);
+    segs.push([0, -180, 180, -180]);
+
+    for (let k = 1; k < 20; k++) {
+      const offset = 180 * k;
+      segs.push([offset, offset - 360, offset, offset - 180]);
+      segs.push([offset, offset, offset, offset + 180]);
+      segs.push([offset - 180, offset, offset, offset]);
+      segs.push([offset, offset - 180, offset + 180, offset - 180]);
+    }
+  } else if (template === 'multiple') {
+    // V90 / S-Turn walls
+    segs.push([-360, -180, -180, -180]);
+    segs.push([-180, -180, -180, 0]);
+    segs.push([-180, 0, 0, 0]);
+    segs.push([0, 0, 0, 180]);
+    segs.push([0, 180, 360, 180]);
+    segs.push([360, 180, 540, 180]);
+    segs.push([360, 0, 540, 0]);
+    segs.push([540, 0, 540, -180]);
+    segs.push([540, -180, 720, -180]);
+    segs.push([180, -180, 180, 0]);
+    segs.push([0, -250, 0, -180]);
+    segs.push([360, -250, 360, -180]);
+  } else {
+    segs.push([0, 0, 0, 180]);
+    segs.push([0, 0, 0, -180]);
+    segs.push([0, 180, 180, 180]);
+    segs.push([180, 0, 180, -180]);
+    segs.push([180, 180, 360, 180]);
+    segs.push([360, 180, 360, 0]);
+    segs.push([360, 0, 540, 0]);
+    for (let i = 180; i < 3600; i += 180) {
+      segs.push([i, 180 - i, i, -i]);
+      segs.push([i, -i, i + 180, -i]);
+      segs.push([i + 360, 180 - i, i + 360, -i]);
+      segs.push([i + 360, -i, i + 360 + 180, -i]);
+    }
   }
   return segs.filter(([x1, y1, x2, y2]) =>
     (x1 >= DATA_MIN && x1 <= DATA_MAX && y1 >= DATA_MIN && y1 <= DATA_MAX) ||
     (x2 >= DATA_MIN && x2 <= DATA_MAX && y2 >= DATA_MIN && y2 <= DATA_MAX)
   );
 }
-const WALLS = wallSegments();
 
 function buildTrajectorySVG(runs) {
   let gridLines = '';
@@ -187,7 +228,8 @@ function buildTrajectorySVG(runs) {
   }
 
   let wallLines = '';
-  WALLS.forEach(([x1, y1, x2, y2]) => {
+  const walls = wallSegments(state.plotTemplate);
+  walls.forEach(([x1, y1, x2, y2]) => {
     wallLines += `<line x1="${mapX(x1)}" y1="${mapY(y1)}" x2="${mapX(x2)}" y2="${mapY(y2)}" stroke="#3a4a41" stroke-width="4" stroke-linecap="square"/>`;
   });
 
@@ -208,10 +250,14 @@ function buildTrajectorySVG(runs) {
 
   const startX = (runs.length > 0 && runs[0].positions.length > 0) ? runs[0].positions[0].x : 90;
   const startY = (runs.length > 0 && runs[0].positions.length > 0) ? runs[0].positions[0].y : 0;
+  const startTheta = (runs.length > 0 && runs[0].positions.length > 0) ? runs[0].positions[0].theta : 0;
+  const appX = startX - 200 * Math.sin(startTheta);
+  const appY = startY - 200 * Math.cos(startTheta);
+  const approachLine = `<line x1="${mapX(appX)}" y1="${mapY(appY)}" x2="${mapX(startX)}" y2="${mapY(startY)}" stroke="#dfe9e3" stroke-width="1.5" stroke-dasharray="3,3" opacity="0.35"/>`;
   const startPt = `<circle cx="${mapX(startX)}" cy="${mapY(startY)}" r="3" fill="#dfe9e3"/>`;
 
   return `<svg width="${SVG_SIZE}" height="${SVG_SIZE}" viewBox="0 0 ${SVG_SIZE} ${SVG_SIZE}" style="background:#0b100e; border:1px solid #24322c; border-radius:3px;">
-${gridLines}${wallLines}${paths}${startPt}
+${gridLines}${wallLines}${approachLine}${paths}${startPt}
   </svg>`;
 }
 
@@ -243,13 +289,15 @@ function buildReadoutCard(ch, res) {
    MAIN RENDER
    ========================================================= */
 function applyBeforeAfterTurn(positions, mmBefore, mmAfter) {
-  // mmBefore simply shifts the entire turn along y:
-  //   negative → turn starts before y=0 (shifted down)
-  //   positive → turn starts after y=0 (shifted up)
   const result = [];
+  if (positions.length === 0) return result;
+
+  const startTheta = positions[0].theta;
+  const dx = mmBefore * Math.sin(startTheta);
+  const dy = mmBefore * Math.cos(startTheta);
 
   for (const pt of positions) {
-    result.push({ x: pt.x, y: pt.y + mmBefore, theta: pt.theta });
+    result.push({ x: pt.x + dx, y: pt.y + dy, theta: pt.theta });
   }
 
   // Append segment: robot continuing straight after the turn

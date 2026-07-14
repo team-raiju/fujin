@@ -53,8 +53,15 @@
         <div class="field">
           <label><span>Turn angle</span><span class="val mono" id="v-turnAngle">90</span></label>
           <div class="field-input-row">
-            <input type="range" id="r-turnAngle" min="1" max="360" step="1" value="90">
-            <input type="number" id="n-turnAngle" min="1" max="360" step="any" value="90">
+            <input type="range" id="r-turnAngle" min="0" max="180" step="45" value="90">
+            <input type="number" id="n-turnAngle" min="0" max="180" step="any" value="90">
+          </div>
+        </div>
+        <div class="field">
+          <label><span>Initial angle</span><span class="val mono" id="v-initialAngle">0</span></label>
+          <div class="field-input-row">
+            <input type="range" id="r-initialAngle" min="0" max="45" step="45" value="0">
+            <input type="number" id="n-initialAngle" min="0" max="45" step="any" value="0">
           </div>
         </div>
         <div class="field">
@@ -74,8 +81,18 @@
         <div class="field">
           <label><span>mm After Turn</span><span class="val mono" id="v-mmAfter">0</span></label>
           <div class="field-input-row">
-            <input type="range" id="r-mmAfter" min="0" max="200" step="0.1" value="0">
-            <input type="number" id="n-mmAfter" min="0" max="200" step="any" value="0">
+            <input type="range" id="r-mmAfter" min="0" max="300" step="0.5" value="0">
+            <input type="number" id="n-mmAfter" min="0" max="300" step="any" value="0">
+          </div>
+        </div>
+        <div class="field">
+          <label><span>Plot template</span></label>
+          <div class="field-input-row">
+            <select id="s-plotTemplate">
+              <option value="corner" selected>90° Corner</option>
+              <option value="multiple">Multiple</option>
+              <option value="diagonal">Diagonal Zigzag</option>
+            </select>
           </div>
         </div>
       </div>

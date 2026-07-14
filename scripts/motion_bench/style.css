@@ -327,6 +327,23 @@ input[type="number"]:focus {
   border-color: var(--muted);
 }
 
+select {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--line-bright);
+  color: var(--text);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  padding: 3px 5px;
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+select:focus {
+  border-color: var(--muted);
+}
+
 /* ---------- main ---------- */
 main {
   padding: 20px 26px 40px 26px;
