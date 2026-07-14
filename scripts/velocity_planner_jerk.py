@@ -110,8 +110,9 @@ def main():
     turn_angle_rad = np.radians(turn_angle_degree)
 
     max_angular_acceleration_rad_s2 = 1000
-    max_angular_speed_rad_s = 30        
-    max_jerk_rad_s3 = 100000.0 # New Input! Defines how fast acceleration changes
+    max_angular_speed_rad_s = 25        
+    max_jerk_1_rad_s3 = 100000.0 # Jerk for 0 -> max accel, and -max_accel -> 0
+    max_jerk_2_rad_s3 = 40000.0  # Jerk for max accel -> 0, and 0 -> -max_accel
 
     dt = 0.001  # 1 ms steps
 
@@ -120,26 +121,37 @@ def main():
     print(f"Turn angle                 : {turn_angle_degree:.3f} deg -> {turn_angle_rad:.3f} rad")
     print(f"Max angular acceleration   : {max_angular_acceleration_rad_s2:.3f} rad/s²")
     print(f"Max angular speed (cap)    : {max_angular_speed_rad_s:.3f} rad/s")
-    print(f"Max jerk limit             : {max_jerk_rad_s3:.3f} rad/s³")
+    print(f"Max jerk 1 limit           : {max_jerk_1_rad_s3:.3f} rad/s³")
+    print(f"Max jerk 2 limit           : {max_jerk_2_rad_s3:.3f} rad/s³")
     print("")
 
     #### 1. Calculate Analytical Kinematics ####
     # We solve for the maximum achievable speed given the half-distance constraint
     theta_half = turn_angle_rad / 2.0
+    j1 = max_jerk_1_rad_s3
+    j2 = max_jerk_2_rad_s3
     
     # Calculate what speed we would reach if we didn't have enough room to hit max acceleration
-    omega_limit_case1 = (theta_half ** (2.0 / 3.0)) * (max_jerk_rad_s3 ** (1.0 / 3.0))
-    alpha_req = math.sqrt(omega_limit_case1 * max_jerk_rad_s3)
+    K = 1.0 / (6.0 * j1**2) + 1.0 / (2.0 * j1 * j2) + 1.0 / (3.0 * j2**2)
+    A_peak_dist = (theta_half / K) ** (1.0 / 3.0)
     
-    if alpha_req <= max_angular_acceleration_rad_s2:
+    if A_peak_dist <= max_angular_acceleration_rad_s2:
         # Turn is very short, we don't even reach max_alpha
-        achievable_omega = omega_limit_case1
+        achievable_omega = 0.5 * (A_peak_dist**2) * (1.0 / j1 + 1.0 / j2)
     else:
-        # We reach max_alpha, solve the quadratic equation for peak omega
-        A = 1.0 / max_angular_acceleration_rad_s2
-        B = max_angular_acceleration_rad_s2 / max_jerk_rad_s3
-        C = -2.0 * theta_half
-        achievable_omega = (-B + math.sqrt(B**2 - 4 * A * C)) / (2 * A)
+        # We reach max_alpha
+        achieved_alpha = max_angular_acceleration_rad_s2
+        tau1 = achieved_alpha / j1
+        tau3 = achieved_alpha / j2
+        omega_1 = 0.5 * j1 * (tau1**2)
+        
+        C_quad = (1.0/6.0) * (achieved_alpha**3) / (j1**2) + omega_1 * tau3 + (1.0/3.0) * (achieved_alpha**3) / (j2**2) - theta_half
+        B_quad = omega_1 + achieved_alpha * tau3
+        A_quad = 0.5 * achieved_alpha
+        
+        discriminant = B_quad**2 - 4 * A_quad * C_quad
+        tau2 = (-B_quad + math.sqrt(discriminant)) / (2 * A_quad) if discriminant >= 0 else 0.0
+        achievable_omega = omega_1 + achieved_alpha * tau2 + 0.5 * j2 * (tau3**2)
         
     # The actual peak omega is restricted by our physical speed cap
     peak_omega = min(max_angular_speed_rad_s, achievable_omega)
@@ -149,22 +161,25 @@ def main():
         print(f"Peak speed capped at {peak_omega:.3f} rad/s instead of {max_angular_speed_rad_s:.3f} rad/s.\n")
 
     # Now recalculate phase times based on the locked-in peak_omega
-    if math.sqrt(peak_omega * max_jerk_rad_s3) <= max_angular_acceleration_rad_s2:
-        # Triangular acceleration profile (no constant acceleration phase)
-        tau1 = math.sqrt(peak_omega / max_jerk_rad_s3)
+    A_req = math.sqrt(2.0 * peak_omega / (1.0 / j1 + 1.0 / j2))
+    
+    if A_req <= max_angular_acceleration_rad_s2:
+        # Triangular acceleration profile
+        achieved_alpha = A_req
+        tau1 = achieved_alpha / j1
         tau2 = 0.0
-        achieved_alpha = max_jerk_rad_s3 * tau1
+        tau3 = achieved_alpha / j2
     else:
         # Trapezoidal acceleration profile
-        tau1 = max_angular_acceleration_rad_s2 / max_jerk_rad_s3
-        tau2 = (peak_omega / max_angular_acceleration_rad_s2) - tau1
         achieved_alpha = max_angular_acceleration_rad_s2
+        tau1 = achieved_alpha / j1
+        tau3 = achieved_alpha / j2
+        omega_ramp = 0.5 * (achieved_alpha**2) * (1.0 / j1 + 1.0 / j2)
+        tau2 = (peak_omega - omega_ramp) / achieved_alpha
         
-    tau3 = tau1
-    
     #### 2. Verify auto-calculated transition angles ####
     # Angle swept in phase 1 (jerk ramp)
-    transition_angle_1_rad = (1.0 / 6.0) * max_jerk_rad_s3 * (tau1 ** 3)
+    transition_angle_1_rad = (1.0 / 6.0) * j1 * (tau1 ** 3)
     
     # Angle swept in phase 2 (const accel)
     omega_1 = 0.5 * achieved_alpha * tau1
@@ -210,8 +225,9 @@ def main():
     T_ms = t1_ms + t2_ms + t1_ms
 
     print("--- Timing ---")
-    print(f"tau (jerk ramp) time       : {tau1 * 1000:.3f} ms")
-    print(f"tau (const max accel) time : {tau2 * 1000:.3f} ms")
+    print(f"tau1 (jerk 1 ramp) time    : {tau1 * 1000:.3f} ms")
+    print(f"tau2 (const max accel) time: {tau2 * 1000:.3f} ms")
+    print(f"tau3 (jerk 2 ramp) time    : {tau3 * 1000:.3f} ms")
     print(f"t1 (ms) [acceleration]     : {t1_ms}")
     print(f"t2 (ms) [cruise]           : {t2_ms}")
     print(f"t3 (ms) [deceleration]     : {t1_ms}")
@@ -263,11 +279,11 @@ def main():
     print(f"Started deceleration at t = {t_ms} ms, angle = {np.rad2deg(theta):.3f} deg -> {theta:.3f} rad")
 
     # --- Decel A: jerk ramp-up (deceleration grows 0 -> -max_alpha) ---
-    def alpha_decelA(t): return -achieved_alpha * (t / tau1) if tau1 > 0 else 0.0
+    def alpha_decelA(t): return -achieved_alpha * (t / tau3) if tau3 > 0 else 0.0
     def alpha_decelB(t): return -achieved_alpha
-    def alpha_decelC(t): return -achieved_alpha * (1.0 - t / tau3) if tau3 > 0 else 0.0
+    def alpha_decelC(t): return -achieved_alpha * (1.0 - t / tau1) if tau1 > 0 else 0.0
 
-    theta, omega, n = simulate_ramp(theta, omega, t_ms, tau1, alpha_decelA, dt,
+    theta, omega, n = simulate_ramp(theta, omega, t_ms, tau3, alpha_decelA, dt,
                                      linear_speed_m_s, max_angular_speed_rad_s,
                                      positions, accel_hist, omega_hist, times_ms, last_pos)
     t_ms += n
@@ -279,7 +295,7 @@ def main():
     t_ms += n
 
     # --- Decel C: jerk ramp-down (deceleration eases back to 0) ---
-    theta, omega, n = simulate_ramp(theta, omega, t_ms, tau3, alpha_decelC, dt,
+    theta, omega, n = simulate_ramp(theta, omega, t_ms, tau1, alpha_decelC, dt,
                                      linear_speed_m_s, max_angular_speed_rad_s,
                                      positions, accel_hist, omega_hist, times_ms, last_pos)
     t_ms += n
