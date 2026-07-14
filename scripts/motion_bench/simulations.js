@@ -197,7 +197,7 @@ function simulateJerk(p) {
     for (const p of phases) {
       const n = Math.round(p.dur / dt);
       for (let i = 0; i < n; i++) {
-        const alpha = p.fn(i * dt);
+        const alpha = p.fn((i + 1) * dt);
         omega += alpha * dt;
         omega = Math.min(Math.max(omega, 0.0), maxOmega);
         theta += omega * dt;
@@ -240,19 +240,19 @@ function simulateJerk(p) {
   // --- Phase 1: jerk ramp-up ---
   const n1 = Math.max(0, Math.round(tau1 / dt));
   for (let i = 0; i < n1; i++) {
-    step(alpha_phase1(i * dt));
+    step(alpha_phase1((i + 1) * dt));
   }
 
   // --- Phase 2: constant max acceleration ---
   const n2 = Math.max(0, Math.round(tau2 / dt));
   for (let i = 0; i < n2; i++) {
-    step(alpha_phase2(i * dt));
+    step(alpha_phase2((i + 1) * dt));
   }
 
   // --- Phase 3: jerk ramp-down ---
   const n3 = Math.max(0, Math.round(tau3 / dt));
   for (let i = 0; i < n3; i++) {
-    step(alpha_phase3(i * dt));
+    step(alpha_phase3((i + 1) * dt));
   }
 
   // --- Cruise phase ---
@@ -265,21 +265,21 @@ function simulateJerk(p) {
   const alpha_decelA = (t) => tau3 > 0 ? -achieved_alpha * (t / tau3) : 0.0;
   const nDecelA = Math.max(0, Math.round(tau3 / dt));
   for (let i = 0; i < nDecelA; i++) {
-    step(alpha_decelA(i * dt));
+    step(alpha_decelA((i + 1) * dt));
   }
 
   // --- Decel B: constant max deceleration ---
   const alpha_decelB = (t) => -achieved_alpha;
   const nDecelB = Math.max(0, Math.round(tau2 / dt));
   for (let i = 0; i < nDecelB; i++) {
-    step(alpha_decelB(i * dt));
+    step(alpha_decelB((i + 1) * dt));
   }
 
   // --- Decel C: jerk ramp-down (deceleration eases back to 0) ---
   const alpha_decelC = (t) => tau1 > 0 ? -achieved_alpha * (1.0 - t / tau1) : 0.0;
   const nDecelC = Math.max(0, Math.round(tau1 / dt));
   for (let i = 0; i < nDecelC; i++) {
-    step(alpha_decelC(i * dt));
+    step(alpha_decelC((i + 1) * dt));
   }
 
   const t1 = n1 + n2 + n3;
