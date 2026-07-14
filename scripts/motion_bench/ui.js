@@ -233,6 +233,8 @@ function buildReadoutCard(ch, res) {
   <div class="rc-item"><span class="rc-label">peak accel</span><span class="rc-value">${res.peakAccel.toFixed(1)}<span class="rc-unit">rad/s&sup2;</span></span></div>
   <div class="rc-item"><span class="rc-label">peak speed</span><span class="rc-value">${res.peakOmega.toFixed(3)}<span class="rc-unit">rad/s</span></span></div>
   <div class="rc-item"><span class="rc-label">final position</span><span class="rc-value">${res.final.x.toFixed(1)}, ${res.final.y.toFixed(1)}, ${(res.final.theta * R2D).toFixed(2)}&#176;</span></div>
+  <div class="rc-item"><span class="rc-label">t4 jerk decel</span><span class="rc-value">${formatMs(res.t4 || 0)}<span class="rc-unit">ms</span></span></div>
+  <div class="rc-item"><span class="rc-label">t5 jerk accel</span><span class="rc-value">${formatMs(res.t5 || 0)}<span class="rc-unit">ms</span></span></div>
 </div>
   </div>`;
 }

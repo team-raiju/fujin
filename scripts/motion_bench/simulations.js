@@ -50,6 +50,7 @@ function simulateTrapezoidal(p) {
     times, omegaArr, alphaArr, positions,
     results: {
       t1: Math.round(t1), t2: Math.round(t2), t3: Math.round(t3), T: Math.round(T),
+      t4: 0, t5: 0,
       peakAccel: maxAlpha, peakOmega: Math.max(...omegaArr),
       final: positions[positions.length - 1]
     }
@@ -119,6 +120,7 @@ function simulateIdealCurve(p) {
     times, omegaArr, alphaArr, positions,
     results: {
       t1, t2: fullOmega.length - 2 * t1 > 0 ? fullOmega.length - 2 * t1 : 0, t3: t1, T: fullOmega.length,
+      t4: 0, t5: 0,
       peakAccel: fullAlpha.length ? Math.max(...fullAlpha) : 0, peakOmega: fullOmega.length ? Math.max(...fullOmega) : 0,
       final: positions[positions.length - 1]
     }
@@ -182,9 +184,9 @@ function simulateJerk(p) {
   }
 
   // Define alpha functions for simulation
-  const alpha_phase1 = (t) => tau1 > 0 ? achieved_alpha * (t / tau1) : 0.0;
+  const alpha_phase1 = (t) => tau1 > 0 ? Math.min(achieved_alpha, achieved_alpha * (t / tau1)) : 0.0;
   const alpha_phase2 = (t) => achieved_alpha;
-  const alpha_phase3 = (t) => tau3 > 0 ? achieved_alpha * (1.0 - t / tau3) : 0.0;
+  const alpha_phase3 = (t) => tau3 > 0 ? Math.max(0.0, achieved_alpha * (1.0 - t / tau3)) : 0.0;
 
   // Compute Euler-simulated theta to match the exact discretised simulation steps
   function compute_simulated_theta_1() {
@@ -208,8 +210,35 @@ function simulateJerk(p) {
 
   const { theta: sim_theta_1, omega: sim_omega_peak } = compute_simulated_theta_1();
 
-  // Calculate cruise phase based on the simulated acceleration angle to avoid rounding errors
-  let cruise_angle_rad = turnAngleRad - (2.0 * sim_theta_1);
+  // Define alpha functions for deceleration
+  const alpha_decelA = (t) => tau3 > 0 ? Math.max(-achieved_alpha, -achieved_alpha * (t / tau3)) : 0.0;
+  const alpha_decelB = (t) => -achieved_alpha;
+  const alpha_decelC = (t) => tau1 > 0 ? Math.min(0.0, -achieved_alpha * (1.0 - t / tau1)) : 0.0;
+
+  // Compute Euler-simulated theta to match the exact discretised simulation steps for deceleration
+  function compute_simulated_theta_2() {
+    let theta = 0, omega = sim_omega_peak;
+    const phases = [
+      { fn: alpha_decelA, dur: tau3 },
+      { fn: alpha_decelB, dur: tau2 },
+      { fn: alpha_decelC, dur: tau1 }
+    ];
+    for (const p of phases) {
+      const n = Math.round(p.dur / dt);
+      for (let i = 0; i < n; i++) {
+        const alpha = p.fn((i + 1) * dt);
+        omega += alpha * dt;
+        omega = Math.min(Math.max(omega, 0.0), maxOmega);
+        theta += omega * dt;
+      }
+    }
+    return theta;
+  }
+
+  const sim_theta_2 = compute_simulated_theta_2();
+
+  // Calculate cruise phase based on the simulated acceleration and deceleration angles to avoid rounding errors
+  let cruise_angle_rad = turnAngleRad - (sim_theta_1 + sim_theta_2);
   let cruise_time_s = 0.0;
   if (cruise_angle_rad < 1e-9) {
     cruise_angle_rad = 0.0;
@@ -262,21 +291,18 @@ function simulateJerk(p) {
   }
 
   // --- Decel A: jerk ramp-up (deceleration grows 0 -> -max_alpha) ---
-  const alpha_decelA = (t) => tau3 > 0 ? -achieved_alpha * (t / tau3) : 0.0;
   const nDecelA = Math.max(0, Math.round(tau3 / dt));
   for (let i = 0; i < nDecelA; i++) {
     step(alpha_decelA((i + 1) * dt));
   }
 
   // --- Decel B: constant max deceleration ---
-  const alpha_decelB = (t) => -achieved_alpha;
   const nDecelB = Math.max(0, Math.round(tau2 / dt));
   for (let i = 0; i < nDecelB; i++) {
     step(alpha_decelB((i + 1) * dt));
   }
 
   // --- Decel C: jerk ramp-down (deceleration eases back to 0) ---
-  const alpha_decelC = (t) => tau1 > 0 ? -achieved_alpha * (1.0 - t / tau1) : 0.0;
   const nDecelC = Math.max(0, Math.round(tau1 / dt));
   for (let i = 0; i < nDecelC; i++) {
     step(alpha_decelC((i + 1) * dt));
@@ -289,6 +315,8 @@ function simulateJerk(p) {
     times, omegaArr, alphaArr, positions,
     results: {
       t1, t2, t3: t1, T: 2 * t1 + t2,
+      t4: n1 + n2,
+      t5: n1 + n2 + n3 + nCruise + nDecelA + nDecelB,
       peakAccel: achieved_alpha, peakOmega: sim_omega_peak,
       final: positions[positions.length - 1]
     }
@@ -375,6 +403,7 @@ function simulateArc(p) {
       t2: Math.round(t_decel_start - t1_ms),
       t3: Math.round(t - 1 - t_decel_start),
       T: Math.round(t - 1),
+      t4: 0, t5: 0,
       peakAccel: max_measured_acceleration_rad_s2,
       peakOmega: Math.max(...omegaArr.map(Math.abs)),
       final: positions[positions.length - 1]
