@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MOTION BENCH — Turn Profile Comparator</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="lib/chart.min.js"></script>
+</head>
+
+<body>
+
+  <div id="app">
+    <header class="topbar">
+      <div class="brand">
+        <h1>MOTION&nbsp;BENCH</h1>
+        <span class="tag">TURN PROFILE COMPARATOR</span>
+      </div>
+      <div class="sub">micromouse · 90&#176; corner · angular motion planner</div>
+    </header>
+
+    <aside id="sidebar">
+      <div class="channels">
+        <div class="channel-row active" data-ch="trap">
+          <div class="led"></div>
+          <div class="ch-label">TRAPEZOIDAL</div>
+          <div class="ch-num">CH1</div>
+          <input type="checkbox" id="chk-trap" checked>
+        </div>
+        <div class="channel-row" data-ch="ideal">
+          <div class="led"></div>
+          <div class="ch-label">MOTOR CURVE</div>
+          <div class="ch-num">CH2</div>
+          <input type="checkbox" id="chk-ideal">
+        </div>
+        <div class="channel-row" data-ch="jerk">
+          <div class="led"></div>
+          <div class="ch-label">JERK S-CURVE</div>
+          <div class="ch-num">CH3</div>
+          <input type="checkbox" id="chk-jerk">
+        </div>
+        <div class="channel-row" data-ch="arc">
+          <div class="led"></div>
+          <div class="ch-label">ARC CURVE</div>
+          <div class="ch-num">CH4</div>
+          <input type="checkbox" id="chk-arc">
+        </div>
+      </div>
+
+      <div class="group" data-owner="common">
+        <div class="group-title">Common</div>
+        <div class="field">
+          <label><span>Turn angle</span><span class="val mono" id="v-turnAngle">90</span></label>
+          <div class="field-input-row">
+            <input type="range" id="r-turnAngle" min="1" max="360" step="1" value="90">
+            <input type="number" id="n-turnAngle" min="1" max="360" step="any" value="90">
+          </div>
+        </div>
+        <div class="field">
+          <label><span>Linear speed</span><span class="val mono" id="v-linSpeed">0.500</span></label>
+          <div class="field-input-row">
+            <input type="range" id="r-linSpeed" min="0" max="5" step="0.001" value="0.5">
+            <input type="number" id="n-linSpeed" min="0" max="5" step="any" value="0.5">
+          </div>
+        </div>
+        <div class="field">
+          <label><span>mm Before Turn</span><span class="val mono" id="v-mmBefore">0</span></label>
+          <div class="field-input-row">
+            <input type="range" id="r-mmBefore" min="-200" max="200" step="0.1" value="0">
+            <input type="number" id="n-mmBefore" min="-200" max="200" step="any" value="0">
+          </div>
+        </div>
+        <div class="field">
+          <label><span>mm After Turn</span><span class="val mono" id="v-mmAfter">0</span></label>
+          <div class="field-input-row">
+            <input type="range" id="r-mmAfter" min="0" max="200" step="0.1" value="0">
+            <input type="number" id="n-mmAfter" min="0" max="200" step="any" value="0">
+          </div>
+        </div>
+      </div>
+
+      <div class="group" data-owner="trap">
+        <div class="group-title">Trapezoidal &mdash; CH1</div>
+        <div class="field">
+          <label><span>Max angular accel</span><span class="val mono" id="v-trapAccel">104.720</span></label>
+          <div class="field-input-row">
+            <input type="range" id="r-trapAccel" min="0.1" max="2000" step="0.1" value="104.71975">
+            <input type="number" id="n-trapAccel" min="0.1" max="2000" step="any" value="104.71975">
+          </div>
+        </div>
+        <div class="field">
+          <label><span>Max angular decel</span><span class="val mono" id="v-trapDecel">104.720</span></label>
+          <div class="field-input-row">
+            <input type="range" id="r-trapDecel" min="0.1" max="2000" step="0.1" value="104.71975">
+            <input type="number" id="n-trapDecel" min="0.1" max="2000" step="any" value="104.71975">
+          </div>
+        </div>
+        <div class="field">
+          <label><span>Max angular speed</span><span class="val mono" id="v-trapOmega">10.472</span></label>
+          <div class="field-input-row">
+            <input type="range" id="r-trapOmega" min="0.1" max="200" step="0.01" value="10.47197">
+            <input type="number" id="n-trapOmega" min="0.1" max="200" step="any" value="10.47197">
+          </div>
+        </div>
+      </div>
+
+      <div class="group" data-owner="ideal">
+        <div class="group-title">Motor Curve &mdash; CH2</div>
+        <div class="field">
+          <label><span>Abs. max &omega; (stall-free)</span><span class="val mono"
+              id="v-idealAbsMax">34.907</span></label>
+          <div class="field-input-row">
+            <input type="range" id="r-idealAbsMax" min="0.1" max="500" step="0.1" value="34.90658">
+            <input type="number" id="n-idealAbsMax" min="0.1" max="500" step="any" value="34.90658">
+          </div>
+        </div>
+        <div class="field">
+          <label><span>Reference &omega;</span><span class="val mono" id="v-idealRefOmega">10.000</span></label>
+          <div class="field-input-row">
+            <input type="range" id="r-idealRefOmega" min="0.1" max="200" step="0.1" value="10">
+            <input type="number" id="n-idealRefOmega" min="0.1" max="200" step="any" value="10">
+          </div>
+        </div>
+        <div class="field">
+          <label><span>Accel @ reference &omega;</span><span class="val mono"
+              id="v-idealRefAccel">104.720</span></label>
+          <div class="field-input-row">
+            <input type="range" id="r-idealRefAccel" min="0.1" max="2000" step="0.1" value="104.71975">
+            <input type="number" id="n-idealRefAccel" min="0.1" max="2000" step="any" value="104.71975">
+          </div>
+        </div>
+        <div class="field">
+          <label><span>Max target &omega; (cap)</span><span class="val mono" id="v-idealMaxTarget">10.000</span></label>
+          <div class="field-input-row">
+            <input type="range" id="r-idealMaxTarget" min="0.1" max="200" step="0.1" value="10">
+            <input type="number" id="n-idealMaxTarget" min="0.1" max="200" step="any" value="10">
+          </div>
+        </div>
+      </div>
+
+      <div class="group" data-owner="jerk">
+        <div class="group-title">Jerk S-Curve &mdash; CH3</div>
+        <div class="field">
+          <label><span>Max jerk start</span><span class="val mono" id="v-jerkJerk">5000</span></label>
+          <div class="field-input-row">
+            <input type="range" id="r-jerkJerk" min="2000" max="500000" step="100" value="5000">
+            <input type="number" id="n-jerkJerk" min="2000" max="500000" step="any" value="5000">
+          </div>
+        </div>
+        <div class="field">
+          <label><span>Max jerk after</span><span class="val mono" id="v-jerkJerkAfter">5000</span></label>
+          <div class="field-input-row">
+            <input type="range" id="r-jerkJerkAfter" min="2000" max="500000" step="100" value="5000">
+            <input type="number" id="n-jerkJerkAfter" min="2000" max="500000" step="any" value="5000">
+          </div>
+        </div>
+        <div class="field">
+          <label><span>Max angular accel</span><span class="val mono" id="v-jerkAccel">104.720</span></label>
+          <div class="field-input-row">
+            <input type="range" id="r-jerkAccel" min="0.1" max="2000" step="0.1" value="104.71975">
+            <input type="number" id="n-jerkAccel" min="0.1" max="2000" step="any" value="104.71975">
+          </div>
+        </div>
+        <div class="field">
+          <label><span>Max angular speed</span><span class="val mono" id="v-jerkOmega">10.472</span></label>
+          <div class="field-input-row">
+            <input type="range" id="r-jerkOmega" min="0.1" max="200" step="0.01" value="10.47197">
+            <input type="number" id="n-jerkOmega" min="0.1" max="200" step="any" value="10.47197">
+          </div>
+        </div>
+      </div>
+
+      <div class="group" data-owner="arc">
+        <div class="group-title">Arc Curve &mdash; CH4</div>
+        <div class="field">
+          <label><span>Transition mm</span><span class="val mono" id="v-arcTransition">63.3541</span></label>
+          <div class="field-input-row">
+            <input type="range" id="r-arcTransition" min="0" max="500" step="0.1" value="63.3541">
+            <input type="number" id="n-arcTransition" min="0" max="500" step="any" value="63.3541">
+          </div>
+        </div>
+        <div class="field">
+          <label><span>Arc mm</span><span class="val mono" id="v-arcArc">131.4061</span></label>
+          <div class="field-input-row">
+            <input type="range" id="r-arcArc" min="0" max="500" step="0.1" value="131.4061">
+            <input type="number" id="n-arcArc" min="0" max="500" step="any" value="131.4061">
+          </div>
+        </div>
+        <div class="field">
+          <label><span>Max angular speed</span><span class="val mono" id="v-arcOmega">12.5630</span></label>
+          <div class="field-input-row">
+            <input type="range" id="r-arcOmega" min="0.1" max="200" step="0.01" value="12.5630">
+            <input type="number" id="n-arcOmega" min="0.1" max="200" step="any" value="12.5630">
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <main>
+      <section class="panel">
+        <div class="panel-title">Readouts</div>
+        <div id="readouts"></div>
+        <div id="empty-readouts" style="display:none;">No channel selected &mdash; toggle CH1 / CH2 / CH3 / CH4 to see
+          results.</div>
+      </section>
+
+      <section class="charts-row">
+        <div class="panel">
+          <div class="panel-title">Angular velocity &middot; rad/s vs ms</div>
+          <div class="chart-wrap"><canvas id="chart-omega"></canvas></div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Angular acceleration &middot; rad/s&sup2; vs ms</div>
+          <div class="chart-wrap"><canvas id="chart-alpha"></canvas></div>
+        </div>
+      </section>
+
+      <section class="panel" id="traj-panel">
+        <div>
+          <div class="panel-title">Trajectory &middot; mm</div>
+          <div id="traj-svg-wrap"></div>
+        </div>
+        <div id="traj-legend"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="simulations.js"></script>
+  <script src="ui.js"></script>
+</body>
+
+</html>
