@@ -21,10 +21,12 @@ static constexpr float ROBOT_DIST_FROM_CENTER_START_MM = 19.0;  // Actually 15.5
  * @param turn_linear_speed The linear speed during the turn in [m/s]
  * @param angular_accel The angular acceleration during the turn in [rad/s^2]
  * @param max_angular_speed The maximum angular speed during the turn in [rad/s]
- * @param angle_to_turn The angle to turn in [rad]
  * @param t_start_deccel The time elapsed when deceleration is going to start [ms]
  * @param t_stop The time elapsed when curve is going to stop [ms]
  * @param sign The direction sign of the turn (positive = LEFT or negative = RIGHT).
+ * @param time_to_decrease_jerk_1 Time to decrease jerk 1 in [ms]
+ * @param time_to_decrease_jerk_2 Time to decrease jerk 2 in [ms]
+ * @param hardcoded_jerk Jerk limit value
  *
  */
 struct TurnParams {
@@ -33,19 +35,23 @@ struct TurnParams {
     float turn_linear_speed;
     float angular_accel;
     float max_angular_speed;
-    float angle_to_turn;
     uint16_t t_start_deccel;
     uint16_t t_stop;
     int sign;
+    uint16_t time_to_decrease_jerk_1;
+    uint16_t time_to_decrease_jerk_2;
+    float jerk;
 
     constexpr TurnParams()
-        : start(0), end(0), turn_linear_speed(0), angular_accel(0), max_angular_speed(0), angle_to_turn(0),
-          t_start_deccel(0), t_stop(0), sign(0) {}
+        : start(0), end(0), turn_linear_speed(0), angular_accel(0), max_angular_speed(0),
+          t_start_deccel(0), t_stop(0), sign(0), time_to_decrease_jerk_1(0), time_to_decrease_jerk_2(0),
+          jerk(0) {}
 
-    constexpr TurnParams(float s, float e, float ls, float aa, float mas, float att, float tsd, float ts,
-                         int sg) noexcept
-        : start(s), end(e), turn_linear_speed(ls), angular_accel(aa), max_angular_speed(mas), angle_to_turn(att),
-          t_start_deccel(tsd), t_stop(ts), sign(sg) {}
+    constexpr TurnParams(float s, float e, float ls, float aa, float mas, uint16_t tsd, uint16_t ts,
+                         int sg, uint16_t j1 = 0, uint16_t j2 = 0, float j = 0.0f) noexcept
+        : start(s), end(e), turn_linear_speed(ls), angular_accel(aa), max_angular_speed(mas),
+          t_start_deccel(tsd), t_stop(ts), sign(sg), time_to_decrease_jerk_1(j1), time_to_decrease_jerk_2(j2),
+          jerk(j) {}
 };
 
 /**

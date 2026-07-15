@@ -485,10 +485,10 @@ bool Navigation::step() {
             float control_angular_speed_abs = std::abs(control->get_target_angular_speed());
             int turn_sign = current_turn_params.sign;
 
-            // Hardcoded physical param for jerk
-            uint32_t time_to_decrease_jerk_1 = 70;
-            uint32_t time_to_decrease_jerk_2 = 220;
-            float hardcoded_jerk = 5000.0f;
+            // Jerk parameters read from TurnParams
+            uint16_t time_to_decrease_jerk_1 = current_turn_params.time_to_decrease_jerk_1;
+            uint16_t time_to_decrease_jerk_2 = current_turn_params.time_to_decrease_jerk_2;
+            float jerk = current_turn_params.jerk;
 
             uint32_t elapsed_time = bsp::get_tick_ms() - reference_time;
 
@@ -496,23 +496,23 @@ bool Navigation::step() {
             bool stop_condition = (elapsed_time > current_turn_params.t_stop);
 
             if (acceleration_condition) {
-                if (hardcoded_jerk == 0 || time_to_decrease_jerk_1 == 0) {
+                if (jerk == 0 || time_to_decrease_jerk_1 == 0) {
                     current_angular_acceleration = max_angular_acceleration;
                 } else if (elapsed_time <= time_to_decrease_jerk_1) {
-                    current_angular_acceleration += hardcoded_jerk / Config::CONTROL_FREQUENCY_HZ;
+                    current_angular_acceleration += jerk / Config::CONTROL_FREQUENCY_HZ;
                     current_angular_acceleration = std::min(current_angular_acceleration, max_angular_acceleration);
                 } else {
-                    current_angular_acceleration -= hardcoded_jerk / Config::CONTROL_FREQUENCY_HZ;
+                    current_angular_acceleration -= jerk / Config::CONTROL_FREQUENCY_HZ;
                     current_angular_acceleration = std::max(current_angular_acceleration, 0.0f);
                 }
             } else {
-                if (hardcoded_jerk == 0 || time_to_decrease_jerk_2 == 0) {
+                if (jerk == 0 || time_to_decrease_jerk_2 == 0) {
                     current_angular_acceleration = max_angular_deceleration;
                 } else if (elapsed_time <= time_to_decrease_jerk_2) {
-                    current_angular_acceleration -= hardcoded_jerk / Config::CONTROL_FREQUENCY_HZ;
+                    current_angular_acceleration -= jerk / Config::CONTROL_FREQUENCY_HZ;
                     current_angular_acceleration = std::max(current_angular_acceleration, max_angular_deceleration);
                 } else {
-                    current_angular_acceleration += hardcoded_jerk / Config::CONTROL_FREQUENCY_HZ;
+                    current_angular_acceleration += jerk / Config::CONTROL_FREQUENCY_HZ;
                     current_angular_acceleration = std::min(current_angular_acceleration, 0.0f);
                 }
             }

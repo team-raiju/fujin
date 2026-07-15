@@ -10,7 +10,7 @@ SERIAL_PORT = '/dev/ttyACM0'
 BAUD_RATE = 115200
 READ_TIMEOUT = 1.0
 CONTROL_LOG_MODE = True  # Set to True for control parameters, False for original metrics
-PLOT_IMU_DIFF = False     # True: Plots IMU_Encoder_Diff | False: Plots Velocity P/I Terms
+PLOT_IMU_DIFF = True     # True: Plots IMU_Encoder_Diff | False: Plots Velocity P/I Terms
 
 def signal_handler(sig, frame):
     """Handles the Ctrl+C signal to ensure a clean exit."""

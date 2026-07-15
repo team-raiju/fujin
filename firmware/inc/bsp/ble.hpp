@@ -51,10 +51,12 @@ enum TurnParamID : uint8_t {
     TURN_LINEAR_SPEED = 0x02,
     ANGULAR_ACCEL = 0x03,
     MAX_ANGULAR_SPEED = 0x04,
-    ANGLE_TO_TURN = 0x05,
-    T_START_DECCEL = 0x06,
-    T_STOP = 0x07,
-    SIGN = 0x08,
+    T_START_DECCEL = 0x05,
+    T_STOP = 0x06,
+    SIGN = 0x07,
+    TIME_TO_DECREASE_JERK_1 = 0x08,
+    TIME_TO_DECREASE_JERK_2 = 0x09,
+    JERK = 0x0A,
 };
 
 /// @brief callback function for BLE received data
