@@ -52,6 +52,8 @@ void Navigation::reset(navigation_mode_t mode) {
     current_direction = Direction::NORTH;
 
     bsp::encoders::reset();
+    bsp::imu::reset();
+
     selected_mode = mode;
     switch (mode) {
     case SEARCH_SLOW:
@@ -140,6 +142,7 @@ void Navigation::reset_movement_variables() {
     current_angle_rad = 0;
     reset_wall_break();
     reference_time = bsp::get_tick_ms();
+    turn_tick_counter = 0;
     is_finished = false;
     is_braking = false;
 }
@@ -463,6 +466,7 @@ bool Navigation::step() {
                     if (mini_fsm_state == MiniFSMStates::FORWARD_1) {
                         traveled_dist_mm = 0;
                         reference_time = bsp::get_tick_ms();
+                        turn_tick_counter = 0;
                         mini_fsm_state = MiniFSMStates::TURN;
                         current_angular_acceleration = 0.0f;
                         if ((selected_mode != SEARCH_FAST) && (selected_mode != SEARCH_MEDIUM) &&
@@ -490,7 +494,8 @@ bool Navigation::step() {
             uint16_t time_to_decrease_jerk_2 = current_turn_params.time_to_decrease_jerk_2;
             float jerk = current_turn_params.jerk;
 
-            uint32_t elapsed_time = bsp::get_tick_ms() - reference_time;
+            uint32_t elapsed_time = turn_tick_counter;
+            turn_tick_counter++;
 
             bool acceleration_condition = (elapsed_time <= current_turn_params.t_start_deccel);
             bool stop_condition = (elapsed_time > current_turn_params.t_stop);
@@ -554,6 +559,7 @@ bool Navigation::step() {
                 control->reset(general_params);
                 control->set_motor_control_disabled(false);
                 traveled_dist_mm = 0;
+                turn_tick_counter = 0;
                 mini_fsm_state = MiniFSMStates::TURN;
                 current_angular_acceleration = 0.0f;
             }
@@ -714,6 +720,7 @@ void Navigation::set_movement(Movement movement, Movement prev_movement, Movemen
     if (target_travel_mm <= 0) {
         mini_fsm_state = MiniFSMStates::TURN;
         current_angular_acceleration = 0.0f;
+        turn_tick_counter = 0;
     }
 
     if (movement == Movement::STOP) {

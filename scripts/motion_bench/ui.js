@@ -79,6 +79,17 @@ if (selTemplate) {
   });
 }
 
+// Bind simStep select
+state.simStep = 0.001;
+const selSimStep = document.getElementById('s-simStep');
+if (selSimStep) {
+  state.simStep = parseFloat(selSimStep.value);
+  selSimStep.addEventListener('change', () => {
+    state.simStep = parseFloat(selSimStep.value);
+    recomputeAndRender();
+  });
+}
+
 const activeChannels = { trap: true, ideal: false, jerk: false, arc: false };
 ['trap', 'ideal', 'jerk', 'arc'].forEach(ch => {
   const row = document.querySelector(`.channel-row[data-ch="${ch}"]`);
@@ -118,7 +129,13 @@ function baseChartOptions(yLabel) {
         type: 'linear',
         title: { display: true, text: 'time (ms)', color: '#526059' },
         grid: { color: '#1c2622' },
-        ticks: { color: '#7d9188' }
+        ticks: {
+          color: '#7d9188',
+          callback: function(value) {
+            const step = state.simStep || 0.001;
+            return step < 0.001 ? value.toFixed(1) : value.toFixed(0);
+          }
+        }
       },
       y: {
         title: { display: true, text: yLabel, color: '#526059' },
@@ -128,7 +145,20 @@ function baseChartOptions(yLabel) {
     },
     plugins: {
       legend: { display: true, labels: { boxWidth: 12, boxHeight: 2, color: '#a9bab1' } },
-      tooltip: { backgroundColor: '#0b100e', borderColor: '#24322c', borderWidth: 1, titleColor: '#dfe9e3', bodyColor: '#dfe9e3' }
+      tooltip: {
+        backgroundColor: '#0b100e',
+        borderColor: '#24322c',
+        borderWidth: 1,
+        titleColor: '#dfe9e3',
+        bodyColor: '#dfe9e3',
+        callbacks: {
+          title: function(context) {
+            const val = context[0].parsed.x;
+            const step = state.simStep || 0.001;
+            return 'Time: ' + (step < 0.001 ? val.toFixed(1) : val.toFixed(0)) + ' ms';
+          }
+        }
+      }
     },
     elements: { point: { radius: 0 }, line: { borderWidth: 2, tension: 0 } }
   };
@@ -146,7 +176,7 @@ const alphaChart = new Chart(document.getElementById('chart-alpha'), {
   options: baseChartOptions('rad/s²')
 });
 
-function downsample(times, values, maxPoints = 400) {
+function downsample(times, values, maxPoints = 2000) {
   const n = times.length;
   if (n <= maxPoints) return times.map((t, i) => ({ x: t, y: values[i] }));
   const step = Math.ceil(n / maxPoints);
@@ -264,7 +294,10 @@ ${gridLines}${wallLines}${approachLine}${paths}${startPt}
 /* =========================================================
    RESULTS CARDS
    ========================================================= */
-function formatMs(v) { return v.toFixed(0); }
+function formatMs(v) {
+  const step = state.simStep || 0.001;
+  return step < 0.001 ? v.toFixed(1) : v.toFixed(0);
+}
 
 function buildReadoutCard(ch, res) {
   const meta = CH_META[ch];
@@ -278,7 +311,7 @@ function buildReadoutCard(ch, res) {
   <div class="rc-item"><span class="rc-label">t1+t2</span><span class="rc-value">${formatMs(res.t1 + res.t2)}<span class="rc-unit">ms</span></span></div>
   <div class="rc-item"><span class="rc-label">peak accel</span><span class="rc-value">${res.peakAccel.toFixed(1)}<span class="rc-unit">rad/s&sup2;</span></span></div>
   <div class="rc-item"><span class="rc-label">peak speed</span><span class="rc-value">${res.peakOmega.toFixed(3)}<span class="rc-unit">rad/s</span></span></div>
-  <div class="rc-item"><span class="rc-label">final position</span><span class="rc-value">${res.final.x.toFixed(1)}, ${res.final.y.toFixed(1)}, ${(res.final.theta * R2D).toFixed(2)}&#176;</span></div>
+  <div class="rc-item"><span class="rc-label">final position</span><span class="rc-value">${res.final.x.toFixed(2)}, ${res.final.y.toFixed(2)}, ${(res.final.theta * R2D).toFixed(2)}&#176;</span></div>
   <div class="rc-item"><span class="rc-label">t4 jerk decel</span><span class="rc-value">${formatMs(res.t4 || 0)}<span class="rc-unit">ms</span></span></div>
   <div class="rc-item"><span class="rc-label">t5 jerk accel</span><span class="rc-value">${formatMs(res.t5 || 0)}<span class="rc-unit">ms</span></span></div>
 </div>

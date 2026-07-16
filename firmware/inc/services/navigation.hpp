@@ -123,6 +123,7 @@ private:
     bool is_finished = false;
 
     uint32_t reference_time;
+    uint32_t turn_tick_counter = 0;
     float traveled_dist_mm = 0;
     int32_t encoder_right_counter;
     int32_t encoder_left_counter;

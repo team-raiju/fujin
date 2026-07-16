@@ -21,7 +21,7 @@ namespace bsp::imu {
 /// @section Private variables
 // If OUTPUT_DATA_RATE_HZ > 415, motion gc will not work. bias is not updated
 static bool enable_motion_gc = false;
-static uint16_t output_data_rate = 1200;
+static uint16_t output_data_rate = 2100;
 static uint16_t motion_gc_data_rate = 415;
 
 static LSM6DSR_Object_t lsm6dsr_ctx;
@@ -207,6 +207,7 @@ ImuResult update() {
         α = (ω - last_ω) / δt;
     }
 
+    ω = ω * 0.7 + last_ω * 0.3;
     last_ω = ω;
 
     φ += ω * δt;
@@ -241,6 +242,11 @@ void reset_angle() {
     last_time_imu = 0;
     φ = 0;
     incremental_φ = 0;
+}
+
+void reset() {
+    reset_angle();
+    last_ω = 0;
 }
 
 float get_rad_per_s() {

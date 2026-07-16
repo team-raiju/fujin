@@ -20,29 +20,33 @@ function simulateTrapezoidal(p) {
   }
   const T = t1 + t2 + t3;
 
+  const dt = p.simStep || 0.001;
+  const dtMs = dt * 1000;
+
   const initialAngleRad = (p.initialAngleDeg || 0) * D2R;
   const times = [0], omegaArr = [0], alphaArr = [0];
   const positions = [{ x: 90, y: 0, theta: initialAngleRad }];
   let omega = 0, theta = initialAngleRad;
-  const totalSteps = Math.max(1, Math.round(T));
+  const totalSteps = Math.max(1, Math.round(T / dtMs));
 
-  for (let t = 1; t <= totalSteps; t++) {
+  for (let step = 1; step <= totalSteps; step++) {
+    const tMs = step * dtMs;
     let alpha;
-    if (t <= t1) alpha = maxAlpha;
-    else if (t <= t1 + t2) alpha = 0;
-    else if (t <= T) alpha = -maxDecel;
+    if (tMs <= t1) alpha = maxAlpha;
+    else if (tMs <= t1 + t2) alpha = 0;
+    else if (tMs <= T) alpha = -maxDecel;
     else alpha = 0;
 
-    omega += alpha * DT;
+    omega += alpha * dt;
     if (omega > maxOmega) omega = maxOmega;
     if (omega < 0) omega = 0;
-    theta += omega * DT;
+    theta += omega * dt;
 
     const last = positions[positions.length - 1];
-    const x = last.x + (p.linearSpeed * 1000 * DT) * Math.sin(theta);
-    const y = last.y + (p.linearSpeed * 1000 * DT) * Math.cos(theta);
+    const x = last.x + (p.linearSpeed * 1000 * dt) * Math.sin(theta);
+    const y = last.y + (p.linearSpeed * 1000 * dt) * Math.cos(theta);
     positions.push({ x, y, theta });
-    times.push(t);
+    times.push(tMs);
     omegaArr.push(omega);
     alphaArr.push(alpha);
   }
@@ -50,7 +54,7 @@ function simulateTrapezoidal(p) {
   return {
     times, omegaArr, alphaArr, positions,
     results: {
-      t1: Math.round(t1), t2: Math.round(t2), t3: Math.round(t3), T: Math.round(T),
+      t1: Math.round(t1 * 10) / 10, t2: Math.round(t2 * 10) / 10, t3: Math.round(t3 * 10) / 10, T: Math.round(T * 10) / 10,
       t4: 0, t5: 0,
       peakAccel: maxAlpha, peakOmega: Math.max(...omegaArr),
       final: positions[positions.length - 1]
@@ -59,6 +63,8 @@ function simulateTrapezoidal(p) {
 }
 
 function simulateIdealCurve(p) {
+  const dt = p.simStep || 0.001;
+  const dtMs = dt * 1000;
   const turnAngleRad = p.turnAngleDeg * D2R;
   const { idealAbsMax: absMaxOmega, idealRefOmega: refOmega, idealRefAccel: refAccel, idealMaxTarget: maxTargetOmega } = p;
   const alpha0 = refAccel / (1 - refOmega / absMaxOmega);
@@ -71,8 +77,8 @@ function simulateIdealCurve(p) {
     const alpha = alpha0 * (1 - tempOmega / absMaxOmega);
     accelArr.push(alpha);
     omegaPreArr.push(tempOmega);
-    thetaAccel += tempOmega * DT;
-    tempOmega += alpha * DT;
+    thetaAccel += tempOmega * dt;
+    tempOmega += alpha * dt;
     if (alpha <= 0) break;
   }
 
@@ -82,7 +88,7 @@ function simulateIdealCurve(p) {
     fullOmega = [0]; fullAlpha = [0];
   } else if (2 * thetaAccel <= turnAngleRad) {
     const cruiseAngle = turnAngleRad - 2 * thetaAccel;
-    const cruiseSteps = Math.max(0, Math.round(cruiseAngle / (maxTargetOmega * DT)));
+    const cruiseSteps = Math.max(0, Math.round(cruiseAngle / (maxTargetOmega * dt)));
     fullOmega = fullOmega.concat(omegaPreArr);
     fullAlpha = fullAlpha.concat(accelArr);
     for (let i = 0; i < cruiseSteps; i++) { fullOmega.push(maxTargetOmega); fullAlpha.push(0); }
@@ -92,7 +98,7 @@ function simulateIdealCurve(p) {
     const targetHalf = turnAngleRad / 2;
     let currentAngle = 0, idx = omegaPreArr.length - 1;
     for (let i = 0; i < omegaPreArr.length; i++) {
-      currentAngle += omegaPreArr[i] * DT;
+      currentAngle += omegaPreArr[i] * dt;
       if (currentAngle >= targetHalf) { idx = i; break; }
     }
     fullOmega = fullOmega.concat(omegaPreArr.slice(0, idx));
@@ -107,21 +113,23 @@ function simulateIdealCurve(p) {
   let theta = initialAngleRad;
   for (let i = 0; i < fullOmega.length; i++) {
     const omega = fullOmega[i];
-    theta += omega * DT;
+    theta += omega * dt;
     const last = positions[positions.length - 1];
-    const x = last.x + (p.linearSpeed * 1000 * DT) * Math.sin(theta);
-    const y = last.y + (p.linearSpeed * 1000 * DT) * Math.cos(theta);
+    const x = last.x + (p.linearSpeed * 1000 * dt) * Math.sin(theta);
+    const y = last.y + (p.linearSpeed * 1000 * dt) * Math.cos(theta);
     positions.push({ x, y, theta });
-    times.push(i + 1);
+    times.push((i + 1) * dtMs);
     omegaArr.push(omega);
     alphaArr.push(fullAlpha[i]);
   }
 
-  const t1 = omegaPreArr.length;
+  const t1 = omegaPreArr.length * dtMs;
+  const T = fullOmega.length * dtMs;
+  const t2 = T - 2 * t1 > 0 ? T - 2 * t1 : 0;
   return {
     times, omegaArr, alphaArr, positions,
     results: {
-      t1, t2: fullOmega.length - 2 * t1 > 0 ? fullOmega.length - 2 * t1 : 0, t3: t1, T: fullOmega.length,
+      t1: Math.round(t1 * 10) / 10, t2: Math.round(t2 * 10) / 10, t3: Math.round(t1 * 10) / 10, T: Math.round(T * 10) / 10,
       t4: 0, t5: 0,
       peakAccel: fullAlpha.length ? Math.max(...fullAlpha) : 0, peakOmega: fullOmega.length ? Math.max(...fullOmega) : 0,
       final: positions[positions.length - 1]
@@ -135,7 +143,7 @@ function simulateJerk(p) {
   const j2 = p.jerkJerkAfter;
   const maxAlpha = p.jerkAccel;
   const maxOmega = p.jerkOmega;
-  const dt = DT;
+  const dt = p.simStep || 0.001;
 
   const theta_half = turnAngleRad / 2.0;
 
@@ -254,6 +262,7 @@ function simulateJerk(p) {
   const times = [0], omegaArr = [0], alphaArr = [0];
   const positions = [{ x: 90, y: 0, theta: initialAngleRad }];
   let theta = initialAngleRad, omega = 0, tMs = 0;
+  const dtMs = dt * 1000;
 
   function step(alpha) {
     omega += alpha * dt;
@@ -263,7 +272,7 @@ function simulateJerk(p) {
     const x = last.x + (p.linearSpeed * 1000 * dt) * Math.sin(theta);
     const y = last.y + (p.linearSpeed * 1000 * dt) * Math.cos(theta);
     positions.push({ x, y, theta });
-    tMs += 1;
+    tMs += dtMs;
     times.push(tMs);
     omegaArr.push(omega);
     alphaArr.push(alpha);
@@ -311,15 +320,15 @@ function simulateJerk(p) {
     step(alpha_decelC((i + 1) * dt));
   }
 
-  const t1 = n1 + n2 + n3;
-  const t2 = nCruise;
+  const t1 = (n1 + n2 + n3) * dtMs;
+  const t2 = nCruise * dtMs;
 
   return {
     times, omegaArr, alphaArr, positions,
     results: {
-      t1, t2, t3: t1, T: 2 * t1 + t2,
-      t4: n1 + n2,
-      t5: n1 + n2 + n3 + nCruise + nDecelA + nDecelB,
+      t1: Math.round(t1 * 10) / 10, t2: Math.round(t2 * 10) / 10, t3: Math.round(t1 * 10) / 10, T: Math.round((2 * t1 + t2) * 10) / 10,
+      t4: Math.round((n1 + n2) * dtMs * 10) / 10,
+      t5: Math.round((n1 + n2 + n3 + nCruise + nDecelA + nDecelB) * dtMs * 10) / 10,
       peakAccel: achieved_alpha, peakOmega: sim_omega_peak,
       final: positions[positions.length - 1]
     }
@@ -327,7 +336,8 @@ function simulateJerk(p) {
 }
 
 function simulateArc(p) {
-  const dt = 0.001;
+  const dt = p.simStep || 0.001;
+  const dtMs = dt * 1000;
   const linear_speed_mm_ms = p.linearSpeed;
   const turn_sign = 1;
   const total_turn_distance_mm = 2.0 * p.arcTransition + p.arcArc;
@@ -342,7 +352,7 @@ function simulateArc(p) {
   }
 
   let travelled_mm = 0.0;
-  let t = 1;
+  let tMs = 0;
   let last_angular_speed_rad_s = 0.0;
   let max_measured_acceleration_rad_s2 = 0.0;
   let t1_ms = null;
@@ -354,9 +364,10 @@ function simulateArc(p) {
   const alphaArr = [0.0];
   const positions = [{ x: 90, y: 0, theta: initialAngleRad }];
 
-  while (travelled_mm < total_turn_distance_mm && t <= 20000) {
-    // Increment travelled_mm first as we move forward during this 1ms step
-    travelled_mm += linear_speed_mm_ms;
+  while (travelled_mm < total_turn_distance_mm && tMs < 20000) {
+    tMs += dtMs;
+    // Increment travelled_mm first as we move forward during this step
+    travelled_mm += linear_speed_mm_ms * dtMs;
 
     let angular_speed_rad_s = turn_sign * p.arcOmega;
 
@@ -369,10 +380,10 @@ function simulateArc(p) {
     }
 
     if (t1_ms === null && travelled_mm >= p.arcTransition) {
-      t1_ms = t;
+      t1_ms = tMs;
     }
     if (t_decel_start === null && travelled_mm >= p.arcTransition + p.arcArc) {
-      t_decel_start = t;
+      t_decel_start = tMs;
     }
 
     const current_accel = (angular_speed_rad_s - last_angular_speed_rad_s) / dt;
@@ -383,20 +394,19 @@ function simulateArc(p) {
 
     const last = positions[positions.length - 1];
     const theta = last.theta + (angular_speed_rad_s * dt);
-    const x = last.x + linear_speed_mm_ms * Math.sin(theta);
-    const y = last.y + linear_speed_mm_ms * Math.cos(theta);
+    const x = last.x + linear_speed_mm_ms * dtMs * Math.sin(theta);
+    const y = last.y + linear_speed_mm_ms * dtMs * Math.cos(theta);
 
     positions.push({ x, y, theta });
     omegaArr.push(angular_speed_rad_s);
     alphaArr.push(current_accel);
-    times.push(t);
+    times.push(tMs);
 
     last_angular_speed_rad_s = angular_speed_rad_s;
-    t++;
   }
 
   t1_ms = t1_ms ?? 0;
-  t_decel_start = t_decel_start ?? t;
+  t_decel_start = t_decel_start ?? tMs;
 
   return {
     times,
@@ -404,10 +414,10 @@ function simulateArc(p) {
     alphaArr,
     positions,
     results: {
-      t1: Math.round(t1_ms),
-      t2: Math.round(t_decel_start - t1_ms),
-      t3: Math.round(t - 1 - t_decel_start),
-      T: Math.round(t - 1),
+      t1: Math.round(t1_ms * 10) / 10,
+      t2: Math.round((t_decel_start - t1_ms) * 10) / 10,
+      t3: Math.round((tMs - t_decel_start) * 10) / 10,
+      T: Math.round(tMs * 10) / 10,
       t4: 0, t5: 0,
       peakAccel: max_measured_acceleration_rad_s2,
       peakOmega: Math.max(...omegaArr.map(Math.abs)),

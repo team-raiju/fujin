@@ -134,7 +134,7 @@ void Control::update() {
         if (std::abs(angular_accel_variation) > 800.0f) {
             if (angular_jerk_ff_counter == 0) {
                 angular_jerk_ff_value = angular_accel_variation * params.angular_jerk_ff_k;
-                angular_jerk_ff_counter = static_cast<uint32_t>(params.angular_jerk_ff_ms);
+                angular_jerk_ff_counter = Config::ms_to_ticks(params.angular_jerk_ff_ms);
                 if (angular_jerk_ff_counter == 0) {
                     angular_jerk_ff_value = 0.0f;
                 }
@@ -165,7 +165,7 @@ void Control::update() {
         if (std::abs(accel_variation) > 10.0f && std::abs(target_linear_speed_m_s) > 0.5 ) {
             if (jerk_ff_counter == 0){
                 jerk_ff_value = accel_variation * params.linear_jerk_ff_k;
-                jerk_ff_counter = static_cast<uint32_t>(params.linear_jerk_ff_ms);
+                jerk_ff_counter = Config::ms_to_ticks(params.linear_jerk_ff_ms);
                 if (jerk_ff_counter == 0) {
                     jerk_ff_value = 0.0f;
                 }

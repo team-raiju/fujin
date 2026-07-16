@@ -115,10 +115,11 @@ void update_velocities() {
     } else {
         int32_t ticks = left_encoder.ticks;
         if (ticks == 0) { // No tick detected in the last delta_vel_time (e.g 1ms)
-            ticks = left_encoder.direction == CW ? -1 : 1;
+            left_encoder.linear_vel_m_s = 0;
+        } else {
+            left_encoder.linear_vel_m_s = ((ticks * ENCODER_DIST_MM_PULSE) / (float)delta_vel_time) * MM_PER_US_TO_M_PER_S;
         }
-
-        left_encoder.linear_vel_m_s = ((ticks * ENCODER_DIST_MM_PULSE) / (float)delta_vel_time) * MM_PER_US_TO_M_PER_S;
+        
     }
 
     /* Right wheel */
@@ -127,10 +128,11 @@ void update_velocities() {
     } else {
         int32_t ticks = right_encoder.ticks;
         if (ticks == 0) { // No tick detected in the last delta_vel_time (e.g 1ms)
-            ticks = right_encoder.direction == CW ? -1 : 1;
+            right_encoder.linear_vel_m_s = 0;
+        } else {
+            right_encoder.linear_vel_m_s = ((ticks * ENCODER_DIST_MM_PULSE) / (float)delta_vel_time) * MM_PER_US_TO_M_PER_S;
         }
 
-        right_encoder.linear_vel_m_s = ((ticks * ENCODER_DIST_MM_PULSE) / (float)delta_vel_time) * MM_PER_US_TO_M_PER_S;
     }
 
     set_left_ang_vel_rad_s(left_encoder.linear_vel_m_s / WHEEL_RADIUS_M);
@@ -142,7 +144,7 @@ void update_velocities() {
     // filtered_velocity_m_s = (0.112157918)*(linear_velocity_m_s + last_velocity_m_s) +
     // (0.775684163)*(filtered_velocity_m_s); // Low pass 40hz filtered_velocity_m_s =
     // (0.072960747)*(linear_velocity_m_s + last_velocity_m_s) + (0.854078506)*(filtered_velocity_m_s); // Low pass 25hz
-    filtered_velocity_m_s = linear_velocity_m_s * 0.1 + filtered_velocity_m_s * 0.9;
+    filtered_velocity_m_s = linear_velocity_m_s * 0.051 + filtered_velocity_m_s * 0.949;
     last_velocity_m_s = linear_velocity_m_s;
 }
 

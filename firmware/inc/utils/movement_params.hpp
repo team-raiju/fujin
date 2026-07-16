@@ -21,11 +21,11 @@ static constexpr float ROBOT_DIST_FROM_CENTER_START_MM = 19.0;  // Actually 15.5
  * @param turn_linear_speed The linear speed during the turn in [m/s]
  * @param angular_accel The angular acceleration during the turn in [rad/s^2]
  * @param max_angular_speed The maximum angular speed during the turn in [rad/s]
- * @param t_start_deccel The time elapsed when deceleration is going to start [ms]
- * @param t_stop The time elapsed when curve is going to stop [ms]
+ * @param t_start_deccel The time elapsed when deceleration is going to start [control ticks]
+ * @param t_stop The time elapsed when curve is going to stop [control ticks]
  * @param sign The direction sign of the turn (positive = LEFT or negative = RIGHT).
- * @param time_to_decrease_jerk_1 Time to decrease jerk 1 in [ms]
- * @param time_to_decrease_jerk_2 Time to decrease jerk 2 in [ms]
+ * @param time_to_decrease_jerk_1 Time to decrease jerk 1 in [control ticks]
+ * @param time_to_decrease_jerk_2 Time to decrease jerk 2 in [control ticks]
  * @param hardcoded_jerk Jerk limit value
  *
  */

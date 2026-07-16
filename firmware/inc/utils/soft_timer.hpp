@@ -17,7 +17,7 @@ typedef enum {
 /// @brief callback function timer expire
 typedef std::function<void()> SoftTimerCallback;
 
-void start(uint32_t timeout_ms, timer_type_t timer_type);
+void start(uint32_t timeout_ticks, timer_type_t timer_type);
 void stop(void);
 void tick(void);
 void register_callback(SoftTimerCallback callback);

@@ -13,6 +13,7 @@
 #include "bsp/timers.hpp"
 #include "fsm/state.hpp"
 #include "services/control.hpp"
+#include "services/config.hpp"
 #include "services/maze.hpp"
 #include "services/navigation.hpp"
 #include "services/notification.hpp"
@@ -199,7 +200,7 @@ void SearchWaitStart::enter() {
 
     /* Only start IR if powered by the battery */
     if (bsp::analog_sensors::battery_latest_reading_mv() > 7000) {
-        soft_timer::start(100, soft_timer::SINGLE);
+        soft_timer::start(services::Config::ms_to_ticks(100), soft_timer::SINGLE);
     }
 }
 
@@ -214,7 +215,7 @@ State* SearchWaitStart::react(Timeout const&) {
 
     for (int i = 0; i < 400; i++) {
         if (!ir_reading_wall(SensingDirection::FRONT_LEFT) || !ir_reading_wall(SensingDirection::FRONT_RIGHT)) {
-            soft_timer::start(100, soft_timer::SINGLE);
+            soft_timer::start(services::Config::ms_to_ticks(100), soft_timer::SINGLE);
             bsp::leds::ir_emitter_all_off();
             bsp::analog_sensors::enable_modulation(false);
             return &State::get<SearchWaitStart>();

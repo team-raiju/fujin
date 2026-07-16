@@ -170,13 +170,13 @@ State* CalibrationIMU::react(ButtonPressed const& event) {
 }
 
 State* CalibrationIMU::react(Timeout const&) {
-    if (loop_counter > 10000) {
+    if (loop_counter > 20000) {
         soft_timer::stop();
         return &State::get<PreCalib>();
     }
 
     loop_counter++;
-    if (loop_counter % 200 == 0) {
+    if (loop_counter % 400 == 0) {
         std::printf("bias: %f; Angle: %f; Loop: %d\r\n", bsp::imu::get_g_bias_z(), bsp::imu::get_angle(), loop_counter);
     }
 
@@ -232,7 +232,7 @@ State* CalibrationFan::react(ButtonPressed const& event) {
 }
 
 State* CalibrationFan::react(Timeout const&) {
-    if (loop_counter++ > 3000) {
+    if (loop_counter++ > 6000) {
         soft_timer::stop();
         return &State::get<PreCalib>();
     }

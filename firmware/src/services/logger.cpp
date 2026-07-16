@@ -163,10 +163,11 @@ void Logger::print_log() {
 
         memcpy(read_logdata.data, ram_logger + i, sizeof(read_logdata.data));
         uint16_t idx = i / sizeof(LogData);
+        float time_ms = services::Config::ticks_to_ms(idx);
 
 #if CONTROL_LOG_MODE
         std::printf(
-            "%d;%0.4f;%0.4f;%0.4f;%0.4f;%0.f;%0.f;%0.4f;%0.4f;%0.4f;%0.4f;%0.4f;%0.4f;%0.4f\r\n", idx,
+            "%0.1f;%0.4f;%0.4f;%0.4f;%0.4f;%0.f;%0.f;%0.4f;%0.4f;%0.4f;%0.4f;%0.4f;%0.4f;%0.4f\r\n", time_ms,
             decode_value(read_logdata.fields.velocity_ms, paramInfoArray[static_cast<size_t>(ParamIndex::VelocityMS)]),
             decode_value(read_logdata.fields.target_velocity_ms,
                          paramInfoArray[static_cast<size_t>(ParamIndex::TargetVelocityMS)]),

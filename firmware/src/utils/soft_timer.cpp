@@ -13,9 +13,9 @@ void register_callback(SoftTimerCallback callback) {
     external_callback = callback;
 }
 
-void start(uint32_t timeout_ms, timer_type_t timer_type) {
-    counter = timeout_ms;
-    reload_value = timeout_ms;
+void start(uint32_t timeout_ticks, timer_type_t timer_type) {
+    counter = timeout_ticks;
+    reload_value = timeout_ticks;
     running = true;
     type = timer_type;
 }

@@ -7,8 +7,11 @@ namespace services {
 class Config {
 public:
 
-    static constexpr float CONTROL_FREQUENCY_HZ = 1000.0;
+    static constexpr float CONTROL_FREQUENCY_HZ = 2000.0;
     static constexpr float CONTROL_PERIOD_S = 1.0 / CONTROL_FREQUENCY_HZ;
+    static constexpr float TICKS_PER_MS = CONTROL_FREQUENCY_HZ / 1000.0f;
+    static constexpr uint16_t ms_to_ticks(float ms) { return static_cast<uint16_t>(ms * TICKS_PER_MS); }
+    static constexpr float ticks_to_ms(uint32_t ticks) { return ticks / TICKS_PER_MS; }
 
     static constexpr float WHEELS_DIST_MM = (70.0);
 

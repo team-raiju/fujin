@@ -15,6 +15,8 @@ enum ImuResult {
 
 ImuResult init();
 ImuResult update();
+void reset();
+
 
 // All angles are related to the Z axis
 float get_angle();

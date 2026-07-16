@@ -139,8 +139,30 @@ void prepare_dfu() {
 }
 
 void SysTick_Handler(void) {
-    HAL_IncTick();
+    static uint32_t tick_divider = 0;
+    tick_divider++;
+    if (tick_divider >= 2) {
+        tick_divider = 0;
+        HAL_IncTick();
+    }
     soft_timer::tick();
+}
+
+extern "C" HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority) {
+    // Configure SysTick to interrupt at 2000Hz (500us period)
+    if (SysTick_Config(SystemCoreClock / 2000U) > 0U) {
+        return HAL_ERROR;
+    }
+    
+    // Configure the SysTick IRQ priority
+    if (TickPriority < (1UL << __NVIC_PRIO_BITS)) {
+        HAL_NVIC_SetPriority(SysTick_IRQn, TickPriority, 0U);
+        uwTickPrio = TickPriority;
+    } else {
+        return HAL_ERROR;
+    }
+    
+    return HAL_OK;
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {

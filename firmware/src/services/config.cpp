@@ -314,19 +314,19 @@ int Config::parse_movement_packet(uint8_t packet[bsp::ble::max_packet_size]) {
             turn_params_custom[movement_id].max_angular_speed = value;
             break;
         case bsp::ble::TurnParamID::T_START_DECCEL:
-            turn_params_custom[movement_id].t_start_deccel = static_cast<uint16_t>(value);
+            turn_params_custom[movement_id].t_start_deccel = Config::ms_to_ticks(value);
             break;
         case bsp::ble::TurnParamID::T_STOP:
-            turn_params_custom[movement_id].t_stop = static_cast<uint16_t>(value);
+            turn_params_custom[movement_id].t_stop = Config::ms_to_ticks(value);
             break;
         case bsp::ble::TurnParamID::SIGN:
             turn_params_custom[movement_id].sign = static_cast<int>(value);
             break;
         case bsp::ble::TurnParamID::TIME_TO_DECREASE_JERK_1:
-            turn_params_custom[movement_id].time_to_decrease_jerk_1 = static_cast<uint16_t>(value);
+            turn_params_custom[movement_id].time_to_decrease_jerk_1 = Config::ms_to_ticks(value);
             break;
         case bsp::ble::TurnParamID::TIME_TO_DECREASE_JERK_2:
-            turn_params_custom[movement_id].time_to_decrease_jerk_2 = static_cast<uint16_t>(value);
+            turn_params_custom[movement_id].time_to_decrease_jerk_2 = Config::ms_to_ticks(value);
             break;
         case bsp::ble::TurnParamID::JERK:
             turn_params_custom[movement_id].jerk = value;
@@ -382,14 +382,14 @@ void Config::send_movement_parameters() {
         send_param(1, movement_id, static_cast<uint8_t>(bsp::ble::TurnParamID::MAX_ANGULAR_SPEED),
                    params.max_angular_speed);
         send_param(1, movement_id, static_cast<uint8_t>(bsp::ble::TurnParamID::T_START_DECCEL),
-                   static_cast<float>(params.t_start_deccel));
+                   static_cast<float>(params.t_start_deccel) / Config::TICKS_PER_MS);
         send_param(1, movement_id, static_cast<uint8_t>(bsp::ble::TurnParamID::T_STOP),
-                   static_cast<float>(params.t_stop));
+                   static_cast<float>(params.t_stop) / Config::TICKS_PER_MS);
         send_param(1, movement_id, static_cast<uint8_t>(bsp::ble::TurnParamID::SIGN), static_cast<float>(params.sign));
         send_param(1, movement_id, static_cast<uint8_t>(bsp::ble::TurnParamID::TIME_TO_DECREASE_JERK_1),
-                   static_cast<float>(params.time_to_decrease_jerk_1));
+                   static_cast<float>(params.time_to_decrease_jerk_1) / Config::TICKS_PER_MS);
         send_param(1, movement_id, static_cast<uint8_t>(bsp::ble::TurnParamID::TIME_TO_DECREASE_JERK_2),
-                   static_cast<float>(params.time_to_decrease_jerk_2));
+                   static_cast<float>(params.time_to_decrease_jerk_2) / Config::TICKS_PER_MS);
         send_param(1, movement_id, static_cast<uint8_t>(bsp::ble::TurnParamID::JERK), params.jerk);
     }
 }
