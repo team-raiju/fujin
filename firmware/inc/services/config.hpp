@@ -76,6 +76,7 @@ public:
     static int write_turn_param_to_eeprom(Movement movement_id);
     static int write_forward_param_to_eeprom(Movement movement_id);
     static void send_parameters();
+    static void print_parameters();
     static void send_movement_parameters();
     static void send_move_sequence();
     static int save_z_bias();

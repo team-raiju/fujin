@@ -315,7 +315,7 @@ const GeneralParams general_params_search_fast = {
 const GeneralParams general_params_slow = {
     0.0,                      // Fan speed
     0.0480,  0.00021, 0.0000, // Angular P,I,D
-    0.00040, 0.004,          // Angular acc, velocity feed-forward
+    0.00040, 0.004,           // Angular acc, velocity feed-forward
     0.0,     0.0,     0.0,    // Linear velocity acc, brake, velocity feed-forward
     0.0,     0.0,             // Linear jerk feed-forward k, Linear jerk limit ms
     0.0,     0.0,             // Angular jerk feed-forward k, Angular jerk limit ms

@@ -22,17 +22,17 @@ static constexpr float ENCODER_DIST_MM_PULSE = (WHEEL_PERIMETER_MM / PULSES_PER_
 
 static float linear_velocity_m_s;
 
-float filtered_velocity_m_s;
-float last_velocity_m_s;
+static float filtered_velocity_m_s;
+static float last_velocity_m_s;
 
-float right_filtered_ang_vel_rad_s;
-float left_filtered_ang_vel_rad_s;
+static float right_filtered_ang_vel_rad_s;
+static float left_filtered_ang_vel_rad_s;
 
-uint32_t last_update_vel_time;
-uint32_t delta_vel_time;
+static uint32_t last_update_vel_time;
+static uint32_t delta_vel_time;
 
-EncoderData left_encoder;
-EncoderData right_encoder;
+static EncoderData left_encoder;
+static EncoderData right_encoder;
 
 /// @section Interface implementation
 

@@ -10,7 +10,7 @@ SERIAL_PORT = '/dev/ttyACM0'
 BAUD_RATE = 115200
 READ_TIMEOUT = 1.0
 CONTROL_LOG_MODE = True  # Set to True for control parameters, False for original metrics
-PLOT_IMU_DIFF = True     # True: Plots IMU_Encoder_Diff | False: Plots Velocity P/I Terms
+PLOT_IMU_DIFF = False     # True: Plots IMU_Encoder_Diff | False: Plots Velocity P/I Terms
 
 def signal_handler(sig, frame):
     """Handles the Ctrl+C signal to ensure a clean exit."""
@@ -60,9 +60,17 @@ def parse_log_file(file_path):
 
     data_dict = {k: [] for k in keys}
 
-    for line in lines[1:]:
+    in_param_block = False
+    for line in lines:
         line = line.strip()
         if not line: 
+            continue
+        if line.startswith("general_params = {"):
+            in_param_block = True
+            continue
+        if in_param_block:
+            if line.startswith("};") or line == "}":
+                in_param_block = False
             continue
         try:
             fields = [float(x) for x in line.split(';')]
@@ -336,19 +344,19 @@ def collect_print_and_plot_data():
                     break
             
             while line:
-                line = ser.readline().decode('utf-8', errors='ignore').strip()
-                if not line:
-                    break 
+                data_lines.append(line)
                 
                 try:
                     fields = line.split(';')
-                    if len(fields) >= len(fields): # parse whatever columns show up
-                        data_lines.append(";".join(fields))
-                        for idx, field_val in enumerate(fields):
+                    if len(fields) > 1:
+                        float_fields = [float(x) for x in fields]
+                        for idx, field_val in enumerate(float_fields):
                             if idx < len(keys):
-                                data_dict[keys[idx]].append(float(field_val))
-                except (ValueError, IndexError) as e:
-                    print(f"Skipping malformed line '{line}': {e}")
+                                data_dict[keys[idx]].append(field_val)
+                except ValueError:
+                    pass
+                
+                line = ser.readline().decode('utf-8', errors='ignore').strip()
             
             print(f"Data collection complete. Received {len(data_dict['time'])} data points.")
 

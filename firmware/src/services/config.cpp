@@ -246,6 +246,64 @@ void Config::send_parameters() {
     }
 }
 
+void Config::print_parameters() {
+    std::printf("general_params = {\r\n");
+    bsp::delay_ms(5);
+    std::printf("    fan_speed = %f,\r\n", Config::fan_speed);
+    bsp::delay_ms(5);
+    std::printf("    angular_kp = %f,\r\n", Config::angular_kp);
+    bsp::delay_ms(5);
+    std::printf("    angular_ki = %f,\r\n", Config::angular_ki);
+    bsp::delay_ms(5);
+    std::printf("    angular_kd = %f,\r\n", Config::angular_kd);
+    bsp::delay_ms(5);
+    std::printf("    angular_acc_feed_forward_k = %f,\r\n", Config::angular_acc_feed_forward_k);
+    bsp::delay_ms(5);
+    std::printf("    angular_vel_feed_forward_k = %f,\r\n", Config::angular_vel_feed_forward_k);
+    bsp::delay_ms(5);
+    std::printf("    linear_vel_acc_feed_forward_k = %f,\r\n", Config::linear_vel_acc_feed_forward_k);
+    bsp::delay_ms(5);
+    std::printf("    linear_vel_brake_feed_forward_k = %f,\r\n", Config::linear_vel_brake_feed_forward_k);
+    bsp::delay_ms(5);
+    std::printf("    linear_vel_feed_forward_k = %f,\r\n", Config::linear_vel_feed_forward_k);
+    bsp::delay_ms(5);
+    std::printf("    linear_jerk_ff_k = %f,\r\n", Config::linear_jerk_ff_k);
+    bsp::delay_ms(5);
+    std::printf("    linear_jerk_ff_ms = %f,\r\n", Config::linear_jerk_ff_ms);
+    bsp::delay_ms(5);
+    std::printf("    angular_jerk_ff_k = %f,\r\n", Config::angular_jerk_ff_k);
+    bsp::delay_ms(5);
+    std::printf("    angular_jerk_ff_ms = %f,\r\n", Config::angular_jerk_ff_ms);
+    bsp::delay_ms(5);
+    std::printf("    wall_kp = %f,\r\n", Config::wall_kp);
+    bsp::delay_ms(5);
+    std::printf("    wall_ki = %f,\r\n", Config::wall_ki);
+    bsp::delay_ms(5);
+    std::printf("    wall_kd = %f,\r\n", Config::wall_kd);
+    bsp::delay_ms(5);
+    std::printf("    linear_vel_kp = %f,\r\n", Config::linear_vel_kp);
+    bsp::delay_ms(5);
+    std::printf("    linear_vel_ki = %f,\r\n", Config::linear_vel_ki);
+    bsp::delay_ms(5);
+    std::printf("    linear_vel_kd = %f,\r\n", Config::linear_vel_kd);
+    bsp::delay_ms(5);
+    std::printf("    diagonal_walls_kp = %f,\r\n", Config::diagonal_walls_kp);
+    bsp::delay_ms(5);
+    std::printf("    diagonal_walls_ki = %f,\r\n", Config::diagonal_walls_ki);
+    bsp::delay_ms(5);
+    std::printf("    diagonal_walls_kd = %f,\r\n", Config::diagonal_walls_kd);
+    bsp::delay_ms(5);
+    std::printf("    start_wall_break_mm_left = %f,\r\n", Config::start_wall_break_mm_left);
+    bsp::delay_ms(5);
+    std::printf("    start_wall_break_mm_right = %f,\r\n", Config::start_wall_break_mm_right);
+    bsp::delay_ms(5);
+    std::printf("    enable_wall_break_correction = %f,\r\n", Config::enable_wall_break_correction);
+    bsp::delay_ms(5);
+    std::printf("};\r\n");
+    bsp::delay_ms(5);
+}
+
+
 int Config::parse_movement_packet(uint8_t packet[bsp::ble::max_packet_size]) {
     if (packet[0] != bsp::ble::header) {
         return -1;

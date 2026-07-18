@@ -42,21 +42,21 @@ public:
         #endif
 
         struct {
-            uint16_t velocity_ms : 13;
-            uint16_t target_velocity_ms : 13;
+            uint16_t velocity_ms : 15;
+            uint16_t target_velocity_ms : 15;
 
-            uint16_t angular_speed_rad_s : 13;
-            uint16_t target_rad_s : 13;
+            uint16_t angular_speed_rad_s : 15;
+            uint16_t target_rad_s : 15;
 
             uint16_t pwm_left : 10;
             uint16_t pwm_right : 10;
             uint16_t encoder_imu_diff : 12;
 
 #if CONTROL_LOG_MODE
-            uint16_t vel_p : 14;
-            uint16_t vel_i : 14;
-            uint16_t ang_p : 14;
-            uint16_t ang_i : 14;
+            uint16_t vel_p : 12;
+            uint16_t vel_i : 12;
+            uint16_t ang_p : 12;
+            uint16_t ang_i : 12;
             uint16_t rotation_ff : 10;
             uint16_t linear_ff : 10;
 #else
@@ -106,7 +106,7 @@ private:
     LogData logdata[7];
     uint8_t log_data_idx;
     uint32_t addr_offset;
-    uint8_t ram_logger[60000]; // Max log number is 60000 / sizeof(LogData)
+    uint8_t ram_logger[80000]; // Max log number is 60000 / sizeof(LogData)
 };
 
 }

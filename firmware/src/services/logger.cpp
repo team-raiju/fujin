@@ -9,6 +9,7 @@
 #include "bsp/encoders.hpp"
 #include "bsp/imu.hpp"
 #include "bsp/timers.hpp"
+#include "services/config.hpp"
 #include "services/control.hpp"
 #include "services/logger.hpp"
 #include "services/navigation.hpp"
@@ -21,33 +22,33 @@ namespace services {
 
 #if CONTROL_LOG_MODE
 const Logger::ParamInfo paramInfoArray[] = {
-    {8191, -5, 10, 546.0f},       // velocity_ms
-    {8191, -5, 10, 546.0f},       // target_velocity_ms
-    {8191, -70, 70, 58.0f},       // angular_speed_rad_s
-    {8191, -70, 70, 58.0f},       // target_rad_s
+    {32767, -5, 10, 2184.0f},     // velocity_ms
+    {32767, -5, 10, 2184.0f},     // target_velocity_ms
+    {32767, -11, 2, 2000.0f},     // angular_speed_rad_s
+    {32767, -11, 2, 2000.0f},     // target_rad_s
     {1023, -1000, 1000, 0.5115f}, // pwm_left
     {1023, -1000, 1000, 0.5115f}, // pwm_right
     {4095, -5, 5, 409.5f},        // encoder_imu_diff
-    {16383, -3, 3, 2730.5f},      // vel_p
-    {16383, -3, 3, 2730.5f},      // vel_i
-    {16383, -2, 2, 4095.75f},     // ang_p
-    {16383, -2, 2, 4095.75f},     // ang_i
-    {1023, -2, 2, 255.0f},        // linear_ff
+    {4095, -3, 3, 682.6f},        // vel_p
+    {4095, -3, 3, 682.6f},        // vel_i
+    {4095, -2, 2, 1023.0f},       // ang_p
+    {4095, -2, 2, 1023.0f},       // ang_i
     {1023, -2, 2, 255.0f},        // rotation_ff
+    {1023, -4, 4, 127.0f},        // linear_ff
 };
 #else
 const Logger::ParamInfo paramInfoArray[] = {
-    {8191, -5, 10, 546.0f},       // velocity_ms
-    {8191, -5, 10, 546.0f},       // target_velocity_ms
-    {8191, -70, 70, 58.0f},       // angular_speed_rad_s
-    {8191, -70, 70, 58.0f},       // target_rad_s
-    {1023, -1000, 1000, 0.5115f}, // pwm_left
-    {1023, -1000, 1000, 0.5115f}, // pwm_right
-    {4095, -5, 5, 409.5f},        // encoder_imu_diff
-    {255, 0, 13000, 0.0195f},     // battery
-    {65535, -250, 250, 131.0f},   // position_mm_x
-    {65535, -250, 250, 131.0f},   // position_mm_y
-    {16383, -180, 180, 45.5083f}, // angle
+    {32767, -5, 10, 2184.0f},       // velocity_ms
+    {32767, -5, 10, 2184.0f},       // target_velocity_ms
+    {32767, -11, 2, 2000.0f},       // angular_speed_rad_s
+    {32767, -11, 2, 2000.0f},       // target_rad_s
+    {1023, -1000, 1000, 0.5115f},   // pwm_left
+    {1023, -1000, 1000, 0.5115f},   // pwm_right
+    {4095, -5, 5, 409.5f},          // encoder_imu_diff
+    {255, 0, 13000, 0.0195f},       // battery
+    {65535, -250, 250, 131.0f},     // position_mm_x
+    {65535, -250, 250, 131.0f},     // position_mm_y
+    {16383, -180, 180, 45.5083f},   // angle
     {16383, -500, 12600, 1.25061f}, // distance_mm
 };
 #endif
@@ -146,6 +147,9 @@ void Logger::update() {
 }
 
 void Logger::print_log() {
+
+    // Print current params
+    services::Config::print_parameters();
 #if CONTROL_LOG_MODE
     std::printf("t;Vel;TgtVel;AngVel;TgtAngVel;PWM_L;PWM_R;ImuDiff;VelP;VelI;AngP;AngI;RotFF;LinFF\r\n");
 #else
@@ -155,14 +159,14 @@ void Logger::print_log() {
 
     uint32_t saved_size = addr_offset;
 
-    for (uint16_t i = 0; i < saved_size; i += sizeof(LogData)) {
+    for (uint32_t i = 0; i < saved_size; i += sizeof(LogData)) {
         LogData read_logdata;
         if (i + sizeof(read_logdata.data) > sizeof(ram_logger)) {
             break;
         }
 
         memcpy(read_logdata.data, ram_logger + i, sizeof(read_logdata.data));
-        uint16_t idx = i / sizeof(LogData);
+        uint32_t idx = i / sizeof(LogData);
         float time_ms = services::Config::ticks_to_ms(idx);
 
 #if CONTROL_LOG_MODE
@@ -210,8 +214,8 @@ void Logger::print_log() {
 
 void Logger::send_log_ble() {
 
-    #if CONTROL_LOG_MODE
-    #else
+#if CONTROL_LOG_MODE
+#else
     uint32_t saved_size = addr_offset;
     uint8_t packet[19] = {0};
     packet[0] = bsp::ble::header;
@@ -228,7 +232,6 @@ void Logger::send_log_ble() {
         bsp::ble::transmit(packet, sizeof(packet));
         bsp::delay_ms(5);
     }
-    #endif
-
+#endif
 }
 }
