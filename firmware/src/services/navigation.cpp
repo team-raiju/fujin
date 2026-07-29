@@ -280,21 +280,16 @@ bool Navigation::step() {
         }
 
         float max_speed = forward_params[current_movement].max_speed;
-        float acceleration = forward_params[current_movement].acceleration;
+        float max_acceleration = forward_params[current_movement].acceleration;
         float deceleration = forward_params[current_movement].deceleration;
         float control_linear_speed = control->get_target_linear_speed();
 
-        // if (control_linear_speed < 1.0) {
-        //     acceleration = std::min(acceleration, 5.0f);
-        // }
+        float K = -2.5;
+        float a0 = 10;
+        float ideal_acceleration = K * control_linear_speed + a0;
 
-        if (control_linear_speed > 3.8) {
-            acceleration *= 0.75;
-        }
+        float acceleration = std::min(ideal_acceleration, max_acceleration);
 
-        if (control_linear_speed > 4.8) {
-            acceleration *= 0.65;
-        }
 
         if (general_params.enable_wall_break_correction) {
 
@@ -324,8 +319,9 @@ bool Navigation::step() {
             }
         }
 
-        float break_margin = 20.0f;
-        float accel_margin = 20.0f;
+        float break_margin = 20.0f; // Final velocity reached on target_travel_mm - break_margin
+        float accel_margin = 20.0f; // Only accelerates after a accel_margin
+
         float required_brake_distance =
             (1000.0f * get_torricelli_distance(forward_end_speed, control_linear_speed, -deceleration)) + break_margin;
 
@@ -368,7 +364,6 @@ bool Navigation::step() {
         }
 
         if (std::abs(traveled_dist_mm) >= target_travel_mm || front_emergency) {
-            // bsp::leds::stripe_set(Color::Red);
             is_finished = true;
         }
 
