@@ -59,24 +59,28 @@ void Control::reset(GeneralParams general_params) {
     linear_vel_pid.ki = params.linear_vel_ki;
     linear_vel_pid.kd = params.linear_vel_kd;
     linear_vel_pid.integral_limit = 100;
+    linear_vel_pid.derivative_filter = 0.15f;
 
     angular_vel_pid.reset();
     angular_vel_pid.kp = params.angular_kp;
     angular_vel_pid.ki = params.angular_ki;
     angular_vel_pid.kd = params.angular_kd;
     angular_vel_pid.integral_limit = 500;
+    angular_vel_pid.derivative_filter = 0.15f;
 
     walls_pid.reset();
     walls_pid.kp = params.wall_kp;
     walls_pid.ki = params.wall_ki;
     walls_pid.kd = params.wall_kd;
     walls_pid.integral_limit = 0;
+    walls_pid.derivative_filter = 1.0f;
 
     diagonal_walls_pid.reset();
     diagonal_walls_pid.kp = params.diagonal_walls_kp;
     diagonal_walls_pid.ki = params.diagonal_walls_ki;
     diagonal_walls_pid.kd = params.diagonal_walls_kd;
     diagonal_walls_pid.integral_limit = 0;
+    diagonal_walls_pid.derivative_filter = 1.0f;
 
     target_angular_speed_rad_s = 0;
     last_target_angular_speed_rad_s = 0;
@@ -113,7 +117,7 @@ void Control::update() {
         float mean_velocity_m_s = bsp::encoders::get_filtered_velocity_m_s();
         auto angular_speed_error_raw = std::abs(target_angular_speed_rad_s - bsp::imu::get_rad_per_s());
         auto linear_speed_error = std::abs(target_linear_speed_m_s - mean_velocity_m_s);
-        emergency = ((linear_speed_error > 0.75) || (angular_speed_error_raw > 16.0));
+        emergency = ((linear_speed_error > 0.4) || (angular_speed_error_raw > 6.0));
 
         if (wall_pid_enabled) {
             target_angular_speed_rad_s += walls_pid.calculate(0.0, bsp::analog_sensors::ir_side_wall_error());
@@ -156,14 +160,14 @@ void Control::update() {
         rotation_ff += target_angular_speed_rad_s * params.angular_vel_feed_forward_k;
         rotation_ff += angular_jerk_ff_value;
         last_target_angular_speed_rad_s = target_angular_speed_rad_s;
-        
+
         // Linear Feed-Foward
         float target_linear_acceleration =
             (target_linear_speed_m_s - last_target_linear_speed_m_s) * Config::CONTROL_FREQUENCY_HZ;
 
         float accel_variation = target_linear_acceleration - last_target_linear_acceleration;
-        if (std::abs(accel_variation) > 10.0f && std::abs(target_linear_speed_m_s) > 0.5 ) {
-            if (jerk_ff_counter == 0){
+        if (std::abs(accel_variation) > 10.0f && std::abs(target_linear_speed_m_s) > 0.5) {
+            if (jerk_ff_counter == 0) {
                 jerk_ff_value = accel_variation * params.linear_jerk_ff_k;
                 jerk_ff_counter = Config::ms_to_ticks(params.linear_jerk_ff_ms);
                 if (jerk_ff_counter == 0) {
@@ -188,6 +192,13 @@ void Control::update() {
         } else {
             linear_ff = target_linear_acceleration * params.linear_vel_brake_feed_forward_k;
         }
+
+        // Coulomb ff
+        if (std::abs(target_linear_speed_m_s) > 0.001f) {
+            float direction = (target_linear_speed_m_s > 0.0f) ? 1.0f : -1.0f;
+            linear_ff += 0.13 * direction;
+        }
+
         linear_ff += target_linear_speed_m_s * params.linear_vel_feed_forward_k;
         linear_ff += jerk_ff_value;
         last_target_linear_speed_m_s = target_linear_speed_m_s;

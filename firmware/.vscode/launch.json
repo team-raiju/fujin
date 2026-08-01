@@ -21,6 +21,22 @@
             // }
         },
         {
+            "name": "Cortex Debug (OpenOCD)",
+            "type": "cortex-debug",
+            "request": "launch",
+            "servertype": "openocd",
+            "cwd": "${workspaceFolder}",
+            "gdbPath": "arm-none-eabi-gdb",
+            "executable": "${workspaceFolder}/build/STM32G474-Debug/fujin.elf",
+            "device": "STM32G474RC",
+            "runToEntryPoint": "main",
+            "svdFile": "./STM32G474xx.svd",
+            "configFiles": [
+                "interface/stlink.cfg",
+                "target/stm32g4x.cfg"
+            ]
+        },
+        {
             "name": "(gdb) Launch",
             "type": "cppdbg",
             "request": "launch",

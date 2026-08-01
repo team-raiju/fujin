@@ -136,6 +136,7 @@ void Navigation::reset_movement_variables() {
     bsp::imu::reset_angle();
     mini_fsm_state = MiniFSMStates::FORWARD_1;
     current_angular_acceleration = 0.0f;
+    current_linear_acceleration = 0.0f;
 
     traveled_dist_mm = 0;
     current_position_mm = {0, 0};
@@ -149,6 +150,44 @@ void Navigation::reset_movement_variables() {
 
 float Navigation::get_torricelli_distance(float final_speed, float initial_speed, float acceleration) {
     return (final_speed * final_speed - initial_speed * initial_speed) / (2.0f * acceleration);
+}
+
+float Navigation::get_s_curve_brake_distance(float initial_speed, float final_speed, float deceleration, float jerk) {
+    if (initial_speed <= final_speed || deceleration <= 0.0f || jerk <= 0.0f) {
+        return 0.0f;
+    }
+
+    float delta_v = initial_speed - final_speed;
+    float v_threshold = (deceleration * deceleration) / jerk;
+
+    if (delta_v >= v_threshold) {
+        return ((initial_speed * initial_speed - final_speed * final_speed) / (2.0f * deceleration)) +
+               (((initial_speed + final_speed) * deceleration) / (2.0f * jerk));
+    } else {
+        return (initial_speed + final_speed) * std::sqrt(delta_v / jerk);
+    }
+}
+
+bool Navigation::start_accel_ramp_down(float current_speed, float current_accel, float max_speed, float jerk) {
+    if (jerk <= 0.0f) {
+        return false;
+    }
+    if (current_accel <= 0.0f) {
+        return current_speed >= max_speed;
+    }
+    float pred_speed = current_speed + (current_accel * current_accel) / (2.0f * jerk);
+    return pred_speed >= max_speed;
+}
+
+bool Navigation::start_brake_ramp_up(float current_speed, float current_accel, float final_speed, float jerk) {
+    if (jerk <= 0.0f) {
+        return false;
+    }
+    if (current_accel >= 0.0f) {
+        return current_speed <= final_speed;
+    }
+    float pred_speed = current_speed - (current_accel * current_accel) / (2.0f * jerk);
+    return pred_speed <= final_speed;
 }
 
 void Navigation::reset_wall_break() {
@@ -284,12 +323,8 @@ bool Navigation::step() {
         float deceleration = forward_params[current_movement].deceleration;
         float control_linear_speed = control->get_target_linear_speed();
 
-        float K = -2.5;
-        float a0 = 10;
-        float ideal_acceleration = K * control_linear_speed + a0;
-
-        float acceleration = std::min(ideal_acceleration, max_acceleration);
-
+        float acc_jerk = 100.0f;
+        float brake_jerk = 100.0f;
 
         if (general_params.enable_wall_break_correction) {
 
@@ -322,20 +357,62 @@ bool Navigation::step() {
         float break_margin = 20.0f; // Final velocity reached on target_travel_mm - break_margin
         float accel_margin = 20.0f; // Only accelerates after a accel_margin
 
-        float required_brake_distance =
-            (1000.0f * get_torricelli_distance(forward_end_speed, control_linear_speed, -deceleration)) + break_margin;
+        float required_brake_distance = break_margin;
+        if (current_linear_acceleration > 0.0f && brake_jerk > 0.0f) {
+            float t_ramp = current_linear_acceleration / brake_jerk;
+            float delta_v = (current_linear_acceleration * current_linear_acceleration) / (2.0f * brake_jerk);
+            float v_peak = control_linear_speed + delta_v;
+            float d_ramp_m = (control_linear_speed * t_ramp) +
+                             (current_linear_acceleration * current_linear_acceleration * current_linear_acceleration) /
+                                 (3.0f * brake_jerk * brake_jerk);
+            required_brake_distance +=
+                1000.0f * (d_ramp_m + get_s_curve_brake_distance(v_peak, forward_end_speed, deceleration, brake_jerk));
+        } else {
+            required_brake_distance +=
+                1000.0f * get_s_curve_brake_distance(control_linear_speed, forward_end_speed, deceleration, brake_jerk);
+        }
 
         if (!is_braking && (std::abs(traveled_dist_mm) < (target_travel_mm - required_brake_distance))) {
             if (control_linear_speed < 1.0 || std::abs(traveled_dist_mm) > accel_margin) {
-                control_linear_speed += acceleration / Config::CONTROL_FREQUENCY_HZ;
-                control_linear_speed = std::min(control_linear_speed, max_speed);
+                if (control_linear_speed >= max_speed) {
+                    current_linear_acceleration = 0.0f;
+                    control_linear_speed = max_speed;
+                } else if (start_accel_ramp_down(control_linear_speed, current_linear_acceleration, max_speed,
+                                                 acc_jerk)) {
+                    current_linear_acceleration -= (acc_jerk / Config::CONTROL_FREQUENCY_HZ);
+                    current_linear_acceleration = std::max(current_linear_acceleration, 0.0f);
+                    control_linear_speed += current_linear_acceleration / Config::CONTROL_FREQUENCY_HZ;
+                    control_linear_speed = std::min(control_linear_speed, max_speed);
+                } else {
+                    current_linear_acceleration += (acc_jerk / Config::CONTROL_FREQUENCY_HZ);
+                    current_linear_acceleration = std::min(current_linear_acceleration, max_acceleration);
+                    control_linear_speed += current_linear_acceleration / Config::CONTROL_FREQUENCY_HZ;
+                    control_linear_speed = std::min(control_linear_speed, max_speed);
+                }
             }
         } else if (std::abs(traveled_dist_mm) > accel_margin) {
             is_braking = true;
             if (control_linear_speed > forward_end_speed) {
-                control_linear_speed -= deceleration / Config::CONTROL_FREQUENCY_HZ;
+                if (start_brake_ramp_up(control_linear_speed, current_linear_acceleration, forward_end_speed,
+                                        brake_jerk)) {
+                    current_linear_acceleration += (brake_jerk / Config::CONTROL_FREQUENCY_HZ);
+                    current_linear_acceleration = std::min(current_linear_acceleration, 0.0f);
+                } else {
+                    current_linear_acceleration -= (brake_jerk / Config::CONTROL_FREQUENCY_HZ);
+                    current_linear_acceleration = std::max(current_linear_acceleration, -deceleration);
+                }
+
+                control_linear_speed += current_linear_acceleration / Config::CONTROL_FREQUENCY_HZ;
                 control_linear_speed = std::max(control_linear_speed, forward_end_speed);
-                control_linear_speed = std::max(control_linear_speed, Config::min_move_speed);
+                if (forward_end_speed > 0.0f) {
+                    control_linear_speed = std::max(control_linear_speed, Config::min_move_speed);
+                }
+            } else {
+                current_linear_acceleration = 0.0f;
+                control_linear_speed = std::min(control_linear_speed, forward_end_speed);
+                if (forward_end_speed > 0.0f) {
+                    control_linear_speed = std::max(control_linear_speed, Config::min_move_speed);
+                }
             }
         }
 
@@ -363,7 +440,8 @@ bool Navigation::step() {
             control->set_diagonal_pid_enabled(false);
         }
 
-        if (std::abs(traveled_dist_mm) >= target_travel_mm || front_emergency) {
+        if (std::abs(traveled_dist_mm) >= target_travel_mm || front_emergency ||
+            (current_movement == Movement::STOP && is_braking && control_linear_speed <= 0.0f)) {
             is_finished = true;
         }
 
@@ -721,6 +799,8 @@ void Navigation::set_movement(Movement movement, Movement prev_movement, Movemen
     if (movement == Movement::STOP) {
         forward_end_speed = 0;
         bsp::leds::stripe_set(Color::Blue);
+    } else if (movement == Movement::START) {
+        forward_end_speed = forward_params[Movement::START].max_speed;
     } else if (next_movement == Movement::FORWARD || next_movement == Movement::DIAGONAL) {
         forward_end_speed = forward_params[next_movement].max_speed;
     } else if (next_movement == Movement::STOP) {

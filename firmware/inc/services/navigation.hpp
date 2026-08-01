@@ -100,6 +100,9 @@ private:
     Movement get_movement(Direction target_dir, Direction current_dir, bool search_mode);
 
     float get_torricelli_distance(float final_speed, float initial_speed, float acceleration);
+    float get_s_curve_brake_distance(float initial_speed, float final_speed, float deceleration, float jerk);
+    bool start_accel_ramp_down(float current_speed, float current_accel, float max_speed, float jerk);
+    bool start_brake_ramp_up(float current_speed, float current_accel, float final_speed, float jerk);
     WallBreak process_wall_break();
     void reset_wall_break();
     void reset_movement_variables();
@@ -146,6 +149,7 @@ private:
     float encoder_imu_diff = 0;
 
     float current_angular_acceleration = 0.0f;
+    float current_linear_acceleration = 0.0f;
 
     MiniFSMStates mini_fsm_state = MiniFSMStates::FORWARD_1;
 
