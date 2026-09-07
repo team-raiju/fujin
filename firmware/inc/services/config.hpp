@@ -31,6 +31,10 @@ public:
     static float linear_jerk_ff_ms;
     static float angular_jerk_ff_k;
     static float angular_jerk_ff_ms;
+    static float max_linear_acc_jerk;
+    static float max_linear_brake_jerk;
+    static float wheel_radius_mm;
+    static float coulomb_ff;
 
     static float wall_kp;
     static float wall_ki;

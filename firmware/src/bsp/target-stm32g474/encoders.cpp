@@ -11,15 +11,9 @@ namespace bsp::encoders {
 // Min measured vel is ENCODER_DIST_MM_PULSE / 10 = 0.00776 m/s
 static constexpr uint32_t MAX_TIME_WITHOUT_ENCODER_US = 10000;
 
-static constexpr float WHEEL_RADIUS_MM = (12.75);
-static constexpr float WHEEL_RADIUS_M = (WHEEL_RADIUS_MM / 1000.0);
-static constexpr float WHEEL_PERIMETER_MM = (M_TWOPI * WHEEL_RADIUS_MM);
-
 static constexpr float WHEEL_TO_ENCODER_RATIO = (1.0);
 static constexpr float ENCODER_PPR = (1024.0);
 static constexpr float PULSES_PER_WHEEL_ROTATION = (WHEEL_TO_ENCODER_RATIO * ENCODER_PPR);
-
-static constexpr float ENCODER_DIST_MM_PULSE = (WHEEL_PERIMETER_MM / PULSES_PER_WHEEL_ROTATION);
 
 
 static float linear_velocity_m_s;
@@ -145,6 +139,9 @@ void update_velocities(float target_accel_m_s2) {
     uint32_t delta_time_tick_left = bsp::get_tick_us() - left_encoder.last_update_tick_time;
     uint32_t delta_time_tick_right = bsp::get_tick_us() - right_encoder.last_update_tick_time;
 
+    float encoder_dist_mm_pulse = get_encoder_dist_mm_pulse();
+    float wheel_radius_m = services::Config::wheel_radius_mm / 1000.0f;
+
     /* Left wheel */
     if (delta_time_tick_left > MAX_TIME_WITHOUT_ENCODER_US) {
         left_encoder.linear_vel_m_s = 0;
@@ -153,7 +150,7 @@ void update_velocities(float target_accel_m_s2) {
         if (ticks == 0) { // No tick detected in the last delta_vel_time (e.g 1ms)
             left_encoder.linear_vel_m_s = 0;
         } else {
-            left_encoder.linear_vel_m_s = ((ticks * ENCODER_DIST_MM_PULSE) / (float)delta_vel_time) * MM_PER_US_TO_M_PER_S;
+            left_encoder.linear_vel_m_s = ((ticks * encoder_dist_mm_pulse) / (float)delta_vel_time) * MM_PER_US_TO_M_PER_S;
         }
         
     }
@@ -166,13 +163,13 @@ void update_velocities(float target_accel_m_s2) {
         if (ticks == 0) { // No tick detected in the last delta_vel_time (e.g 1ms)
             right_encoder.linear_vel_m_s = 0;
         } else {
-            right_encoder.linear_vel_m_s = ((ticks * ENCODER_DIST_MM_PULSE) / (float)delta_vel_time) * MM_PER_US_TO_M_PER_S;
+            right_encoder.linear_vel_m_s = ((ticks * encoder_dist_mm_pulse) / (float)delta_vel_time) * MM_PER_US_TO_M_PER_S;
         }
 
     }
 
-    set_left_ang_vel_rad_s(left_encoder.linear_vel_m_s / WHEEL_RADIUS_M);
-    set_right_ang_vel_rad_s(right_encoder.linear_vel_m_s / WHEEL_RADIUS_M);
+    set_left_ang_vel_rad_s(left_encoder.linear_vel_m_s / wheel_radius_m);
+    set_right_ang_vel_rad_s(right_encoder.linear_vel_m_s / wheel_radius_m);
 
     linear_velocity_m_s = (left_encoder.linear_vel_m_s + right_encoder.linear_vel_m_s) / 2.0;
 
@@ -206,7 +203,8 @@ float get_left_filtered_ang_vel_rad_s() {
 }
 
 float get_encoder_dist_mm_pulse() {
-    return ENCODER_DIST_MM_PULSE;
+    float wheel_perimeter_mm = (M_TWOPI * services::Config::wheel_radius_mm);
+    return (wheel_perimeter_mm / PULSES_PER_WHEEL_ROTATION);
 }
 
 }

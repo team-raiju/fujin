@@ -100,6 +100,9 @@ void Navigation::reset(navigation_mode_t mode) {
             services::Config::start_wall_break_mm_left,
             services::Config::start_wall_break_mm_right,
             services::Config::enable_wall_break_correction,
+            services::Config::max_linear_acc_jerk,
+            services::Config::max_linear_brake_jerk,
+            services::Config::coulomb_ff,
         };
         break;
     case SLOW:
@@ -324,8 +327,8 @@ bool Navigation::step() {
         float deceleration = forward_params[current_movement].deceleration;
         float control_linear_speed = control->get_target_linear_speed();
 
-        float acc_jerk = 100.0f;
-        float brake_jerk = 100.0f;
+        float max_linear_acc_jerk = general_params.max_linear_acc_jerk;
+        float max_linear_brake_jerk = general_params.max_linear_brake_jerk;
 
         if (general_params.enable_wall_break_correction) {
 
@@ -359,18 +362,18 @@ bool Navigation::step() {
         float accel_margin = 20.0f; // Only accelerates after a accel_margin
 
         float required_brake_distance = break_margin;
-        if (current_linear_acceleration > 0.0f && brake_jerk > 0.0f) {
-            float t_ramp = current_linear_acceleration / brake_jerk;
-            float delta_v = (current_linear_acceleration * current_linear_acceleration) / (2.0f * brake_jerk);
+        if (current_linear_acceleration > 0.0f && max_linear_brake_jerk > 0.0f) {
+            float t_ramp = current_linear_acceleration / max_linear_brake_jerk;
+            float delta_v = (current_linear_acceleration * current_linear_acceleration) / (2.0f * max_linear_brake_jerk);
             float v_peak = control_linear_speed + delta_v;
             float d_ramp_m = (control_linear_speed * t_ramp) +
                              (current_linear_acceleration * current_linear_acceleration * current_linear_acceleration) /
-                                 (3.0f * brake_jerk * brake_jerk);
+                                 (3.0f * max_linear_brake_jerk * max_linear_brake_jerk);
             required_brake_distance +=
-                1000.0f * (d_ramp_m + get_s_curve_brake_distance(v_peak, forward_end_speed, deceleration, brake_jerk));
+                1000.0f * (d_ramp_m + get_s_curve_brake_distance(v_peak, forward_end_speed, deceleration, max_linear_brake_jerk));
         } else {
             required_brake_distance +=
-                1000.0f * get_s_curve_brake_distance(control_linear_speed, forward_end_speed, deceleration, brake_jerk);
+                1000.0f * get_s_curve_brake_distance(control_linear_speed, forward_end_speed, deceleration, max_linear_brake_jerk);
         }
 
         if (!is_braking && (std::abs(traveled_dist_mm) < (target_travel_mm - required_brake_distance))) {
@@ -379,13 +382,13 @@ bool Navigation::step() {
                     current_linear_acceleration = 0.0f;
                     control_linear_speed = max_speed;
                 } else if (start_accel_ramp_down(control_linear_speed, current_linear_acceleration, max_speed,
-                                                 acc_jerk)) {
-                    current_linear_acceleration -= (acc_jerk / Config::CONTROL_FREQUENCY_HZ);
+                                                 max_linear_acc_jerk)) {
+                    current_linear_acceleration -= (max_linear_acc_jerk / Config::CONTROL_FREQUENCY_HZ);
                     current_linear_acceleration = std::max(current_linear_acceleration, 0.0f);
                     control_linear_speed += current_linear_acceleration / Config::CONTROL_FREQUENCY_HZ;
                     control_linear_speed = std::min(control_linear_speed, max_speed);
                 } else {
-                    current_linear_acceleration += (acc_jerk / Config::CONTROL_FREQUENCY_HZ);
+                    current_linear_acceleration += (max_linear_acc_jerk / Config::CONTROL_FREQUENCY_HZ);
                     current_linear_acceleration = std::min(current_linear_acceleration, max_acceleration);
                     control_linear_speed += current_linear_acceleration / Config::CONTROL_FREQUENCY_HZ;
                     control_linear_speed = std::min(control_linear_speed, max_speed);
@@ -395,11 +398,11 @@ bool Navigation::step() {
             is_braking = true;
             if (control_linear_speed > forward_end_speed) {
                 if (start_brake_ramp_up(control_linear_speed, current_linear_acceleration, forward_end_speed,
-                                        brake_jerk)) {
-                    current_linear_acceleration += (brake_jerk / Config::CONTROL_FREQUENCY_HZ);
+                                        max_linear_brake_jerk)) {
+                    current_linear_acceleration += (max_linear_brake_jerk / Config::CONTROL_FREQUENCY_HZ);
                     current_linear_acceleration = std::min(current_linear_acceleration, 0.0f);
                 } else {
-                    current_linear_acceleration -= (brake_jerk / Config::CONTROL_FREQUENCY_HZ);
+                    current_linear_acceleration -= (max_linear_brake_jerk / Config::CONTROL_FREQUENCY_HZ);
                     current_linear_acceleration = std::max(current_linear_acceleration, -deceleration);
                 }
 

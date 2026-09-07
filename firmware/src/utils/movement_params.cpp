@@ -269,17 +269,20 @@ std::map<Movement, ForwardParams> forward_params_custom = {
 
 const GeneralParams general_params_search_slow = {
     0.0,                      // Fan speed
-    0.0480,  0.00021, 0.0000, // Angular P,I,D
-    0.00044, 0.0035,          // Angular acc, velocity feed-forward
-    0.0,     0.0,     0.0,    // Linear velocity acc, brake, velocity feed-forward
+    0.0420,  0.00021, 0.0500, // Angular P,I,D
+    0.0004,  0.004,           // Angular acc, velocity feed-forward
+    0.03125, 0.018,   0.0,    // Linear velocity acc, brake, velocity feed-forward
     0.0,     0.0,             // Linear jerk feed-forward k, Linear jerk limit ms
     0.0,     0.0,             // Angular jerk feed-forward k, Angular jerk limit ms
     0.0006,  0.0000,  0.0020, // Wall P,I,D
-    3.0000,  0.0180,  0.0000, // Linear velocity P,I,D
+    2.5000,  0.0100,  0.0000, // Linear velocity P,I,D
     0.0000,  0.0000,  0.0000, // Diagonal walls P,I,D
     45.0,                     // Start wall break mm left
     57.0,                     // Start wall break mm right
-    1.0                       // Enable wall break correction
+    1.0,                      // Enable wall break correction
+    40.0,                    // Max linear acceleration jerk
+    40.0,                    // Max linear brake jerk
+    0.13                      // Coulomb ff
 };
 
 const GeneralParams general_params_search_medium = {
@@ -294,7 +297,10 @@ const GeneralParams general_params_search_medium = {
     0.0000,  0.0000, 0.0000, // Diagonal walls P,I,D
     55.0,                    // Start wall break mm left
     67.0,                    // Start wall break mm right
-    1.0                      // Enable wall break correction
+    1.0,                     // Enable wall break correction
+    100.0,                   // Max linear acceleration jerk
+    100.0,                   // Max linear brake jerk
+    0.13                     // Coulomb ff
 };
 
 const GeneralParams general_params_search_fast = {
@@ -309,22 +315,28 @@ const GeneralParams general_params_search_fast = {
     0.0000,  0.0000, 0.0000, // Diagonal walls P,I,D
     55.0,                    // Start wall break mm left
     67.0,                    // Start wall break mm right
-    1.0                      // Enable wall break correction
+    1.0,                     // Enable wall break correction
+    100.0,                   // Max linear acceleration jerk
+    100.0,                   // Max linear brake jerk
+    0.13                     // Coulomb ff
 };
 
 const GeneralParams general_params_slow = {
     0.0,                      // Fan speed
-    0.0480,  0.00021, 0.0000, // Angular P,I,D
-    0.00040, 0.004,           // Angular acc, velocity feed-forward
-    0.0,     0.0,     0.0,    // Linear velocity acc, brake, velocity feed-forward
+    0.0420,  0.00021, 0.0500, // Angular P,I,D
+    0.0004,  0.004,           // Angular acc, velocity feed-forward
+    0.03125, 0.018,   0.0,    // Linear velocity acc, brake, velocity feed-forward
     0.0,     0.0,             // Linear jerk feed-forward k, Linear jerk limit ms
     0.0,     0.0,             // Angular jerk feed-forward k, Angular jerk limit ms
     0.0015,  0.0000,  0.0050, // Wall P,I,D
-    5.0000,  0.0300,  0.0000, // Linear velocity P,I,D
+    2.5000,  0.0100,  0.0000, // Linear velocity P,I,D
     0.0045,  0.0000,  0.0090, // Diagonal walls P,I,D
     53.0,                     // Start wall break mm left
     75.0,                     // Start wall break mm right
-    1.0                       // Enable wall break correction
+    1.0,                      // Enable wall break correction
+    40.0,                    // Max linear acceleration jerk
+    40.0,                    // Max linear brake jerk
+    0.13                      // Coulomb ff
 };
 
 const GeneralParams general_params_medium = {
@@ -339,7 +351,10 @@ const GeneralParams general_params_medium = {
     0.0010,  0.0000, 0.0040, // Diagonal walls P,I,D
     55.0,                    // Start wall break mm left
     72.0,                    // Start wall break mm right
-    1.0                      // Enable wall break correction
+    1.0,                     // Enable wall break correction
+    100.0,                   // Max linear acceleration jerk
+    100.0,                   // Max linear brake jerk
+    0.13                     // Coulomb ff
 };
 
 const GeneralParams general_params_fast = {
@@ -354,7 +369,10 @@ const GeneralParams general_params_fast = {
     0.0010,  0.0000, 0.0040, // Diagonal walls P,I,D
     55.0,                    // Start wall break mm left
     72.0,                    // Start wall break mm right
-    1.0                      // Enable wall break correction
+    1.0,                     // Enable wall break correction
+    100.0,                   // Max linear acceleration jerk
+    100.0,                   // Max linear brake jerk
+    0.13                     // Coulomb ff
 };
 
 const GeneralParams general_params_super = {
@@ -369,5 +387,8 @@ const GeneralParams general_params_super = {
     0.0010,  0.0000, 0.0040, // Diagonal walls P,I,D
     55.0,                    // Start wall break mm left
     72.0,                    // Start wall break mm right
-    1.0                      // Enable wall break correction
+    1.0,                     // Enable wall break correction
+    100.0,                   // Max linear acceleration jerk
+    100.0,                   // Max linear brake jerk
+    0.13                     // Coulomb ff
 };

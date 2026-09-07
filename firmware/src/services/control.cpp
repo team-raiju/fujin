@@ -47,6 +47,9 @@ void Control::init(void) {
         services::Config::start_wall_break_mm_left,
         services::Config::start_wall_break_mm_right,
         services::Config::enable_wall_break_correction,
+        services::Config::max_linear_acc_jerk,
+        services::Config::max_linear_brake_jerk,
+        services::Config::coulomb_ff,
     };
     reset(general_params);
 }
@@ -200,7 +203,7 @@ void Control::update() {
         // Coulomb ff
         if (std::abs(target_linear_speed_m_s) > 0.001f) {
             float direction = (target_linear_speed_m_s > 0.0f) ? 1.0f : -1.0f;
-            linear_ff += 0.13 * direction;
+            linear_ff += params.coulomb_ff * direction;
         }
 
         linear_ff += target_linear_speed_m_s * params.linear_vel_feed_forward_k;
