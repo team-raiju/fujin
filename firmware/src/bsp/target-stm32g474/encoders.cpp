@@ -3,6 +3,7 @@
 #include "bsp/encoders.hpp"
 #include "bsp/timers.hpp"
 #include "pin_mapping.h"
+#include "services/config.hpp"
 
 namespace bsp::encoders {
 
@@ -33,6 +34,32 @@ static uint32_t delta_vel_time;
 
 static EncoderData left_encoder;
 static EncoderData right_encoder;
+
+static float estimated_vel_m_s = 0.0f;
+static float estimated_accel_m_s2 = 0.0f;
+
+
+/// @section Private implementation
+
+
+// An hybrid alpha beta + ema filter
+static inline float update_velocity_filter(float raw_vel_m_s) {
+    constexpr float alpha_vel_gain = 0.030f;
+    constexpr float beta_acc_gain = 0.5000f;        // 0.00025 / CONTROL_PERIOD_S
+    constexpr float smooth_factor = 0.30f;
+
+    float predicted_vel = estimated_vel_m_s + estimated_accel_m_s2 * services::Config::CONTROL_PERIOD_S;
+    float vel_estimated_error = raw_vel_m_s - predicted_vel;
+
+    estimated_vel_m_s = predicted_vel + alpha_vel_gain * vel_estimated_error;
+    estimated_accel_m_s2 += beta_acc_gain * vel_estimated_error;
+
+    // Post filter (EMA) 
+    // filtered_velocity_m_s = (smooth_factor * estimated_vel_m_s) + (1 - smooth_factor) * filtered_velocity_m_s => equivalent to;
+    filtered_velocity_m_s += smooth_factor * (estimated_vel_m_s - filtered_velocity_m_s);
+    return filtered_velocity_m_s;
+}
+
 
 /// @section Interface implementation
 
@@ -85,6 +112,10 @@ void reset_velocities() {
     left_filtered_ang_vel_rad_s = 0;
     last_update_vel_time = 0;
     delta_vel_time = MAX_TIME_WITHOUT_ENCODER_US + 1;
+
+    estimated_vel_m_s = 0.0f;
+    estimated_accel_m_s2 = 0.0f;
+
 }
 
 void set_right_ang_vel_rad_s(float speed) {
@@ -140,16 +171,21 @@ void update_velocities() {
 
     linear_velocity_m_s = (left_encoder.linear_vel_m_s + right_encoder.linear_vel_m_s) / 2.0;
 
-    // Butterworth filter - https://www.meme.net.au/butterworth.html
-    // filtered_velocity_m_s = (0.112157918)*(linear_velocity_m_s + last_velocity_m_s) +
-    // (0.775684163)*(filtered_velocity_m_s); // Low pass 40hz filtered_velocity_m_s =
-    // (0.072960747)*(linear_velocity_m_s + last_velocity_m_s) + (0.854078506)*(filtered_velocity_m_s); // Low pass 25hz
-    filtered_velocity_m_s = linear_velocity_m_s * 0.051 + filtered_velocity_m_s * 0.949;
+    // filtered_velocity_m_s = linear_velocity_m_s * 0.051 + filtered_velocity_m_s * 0.949; // Simple Filter
+    filtered_velocity_m_s = update_velocity_filter(linear_velocity_m_s);
     last_velocity_m_s = linear_velocity_m_s;
 }
 
 float get_linear_velocity_m_s() {
     return linear_velocity_m_s;
+}
+
+float get_left_linear_velocity_m_s() {
+    return left_encoder.linear_vel_m_s;
+}
+
+float get_right_linear_velocity_m_s() {
+    return right_encoder.linear_vel_m_s;
 }
 
 float get_filtered_velocity_m_s() {

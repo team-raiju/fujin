@@ -24,4 +24,12 @@ float get_linear_velocity_m_s() {
     return 0;
 }
 
+float get_left_linear_velocity_m_s() {
+    return 0;
+}
+
+float get_right_linear_velocity_m_s() {
+    return 0;
+}
+
 }
