@@ -23,6 +23,7 @@ float get_angle();
 float get_incremental_angle();
 void reset_angle();
 float get_rad_per_s();
+float get_raw_rad_per_s();
 
 float get_z_acceleration();
 

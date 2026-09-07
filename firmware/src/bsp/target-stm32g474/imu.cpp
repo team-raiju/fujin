@@ -34,6 +34,7 @@ static float init_z_gbias = -0.290;
 
 // Angular Velocity in rad/s
 static float ω;
+static float raw_ω;
 
 // Last Angular Velocity in rad/s
 static float last_ω;
@@ -207,7 +208,9 @@ ImuResult update() {
         α = (ω - last_ω) / δt;
     }
 
-    ω = ω * 0.7 + last_ω * 0.3;
+    raw_ω = ω;
+
+    ω = ω * 0.2 + last_ω * 0.8;
     last_ω = ω;
 
     φ += ω * δt;
@@ -247,10 +250,15 @@ void reset_angle() {
 void reset() {
     reset_angle();
     last_ω = 0;
+    raw_ω = 0;
 }
 
 float get_rad_per_s() {
     return ω;
+}
+
+float get_raw_rad_per_s() {
+    return raw_ω;
 }
 
 float get_z_acceleration() {
