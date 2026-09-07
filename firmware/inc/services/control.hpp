@@ -29,6 +29,8 @@ class Control {
         
         float get_target_linear_speed() const { return target_linear_speed_m_s; }
         float get_target_angular_speed() const { return target_angular_speed_rad_s; }
+        float get_target_linear_acceleration() const { return target_linear_acceleration; }
+        float get_target_angular_acceleration() const { return target_angular_acceleration; }
         bool get_wall_pid_enabled() const { return wall_pid_enabled; }
         bool get_diagonal_pid_enabled() const { return diagonal_pid_enabled; }
         int16_t get_pwm_duty_l() const { return pwm_duty_l; }
@@ -61,11 +63,13 @@ class Control {
 
         float target_linear_speed_m_s;
         float last_target_linear_speed_m_s;
+        float target_linear_acceleration = 0.0f;
         float last_target_linear_acceleration = 0.0f;
         float jerk_ff_value = 0.0f;
         uint32_t jerk_ff_counter = 0;
         float target_angular_speed_rad_s;
         float last_target_angular_speed_rad_s;
+        float target_angular_acceleration = 0.0f;
         float last_target_angular_acceleration = 0.0f;
         float angular_jerk_ff_value = 0.0f;
         uint32_t angular_jerk_ff_counter = 0;

@@ -34,7 +34,7 @@ EncoderData get_data(EncoderSide side);
 
 void update_ticks();
 void reset_velocities();
-void update_velocities();
+void update_velocities(float target_accel_m_s2 = 0.0f);
 
 void set_right_ang_vel_rad_s(float speed);
 void set_left_ang_vel_rad_s(float speed);

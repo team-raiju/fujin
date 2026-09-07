@@ -20,6 +20,10 @@ void set_linear_velocity_m_s(float speed) {
     (void)speed;
 }
 
+void update_velocities(float target_accel_m_s2) {
+    (void)target_accel_m_s2;
+}
+
 float get_linear_velocity_m_s() {
     return 0;
 }

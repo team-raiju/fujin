@@ -86,9 +86,11 @@ void Control::reset(GeneralParams general_params) {
     last_target_angular_speed_rad_s = 0;
     target_linear_speed_m_s = 0;
     last_target_linear_speed_m_s = 0;
+    target_linear_acceleration = 0.0f;
     last_target_linear_acceleration = 0.0f;
     jerk_ff_value = 0.0f;
     jerk_ff_counter = 0;
+    target_angular_acceleration = 0.0f;
     last_target_angular_acceleration = 0.0f;
     angular_jerk_ff_value = 0.0f;
     angular_jerk_ff_counter = 0;
@@ -107,9 +109,11 @@ void Control::update() {
         bsp::motors::set(0, 0);
         last_target_angular_speed_rad_s = target_angular_speed_rad_s;
         last_target_linear_speed_m_s = target_linear_speed_m_s;
+        target_linear_acceleration = 0.0f;
         last_target_linear_acceleration = 0.0f;
         jerk_ff_value = 0.0f;
         jerk_ff_counter = 0;
+        target_angular_acceleration = 0.0f;
         last_target_angular_acceleration = 0.0f;
         angular_jerk_ff_value = 0.0f;
         angular_jerk_ff_counter = 0;
@@ -131,7 +135,7 @@ void Control::update() {
         float rotation_ratio = -angular_vel_pid.calculate(target_angular_speed_rad_s, bsp::imu::get_rad_per_s());
 
         // Angular Feed-Foward
-        float target_angular_acceleration =
+        target_angular_acceleration =
             (target_angular_speed_rad_s - last_target_angular_speed_rad_s) * Config::CONTROL_FREQUENCY_HZ;
 
         float angular_accel_variation = target_angular_acceleration - last_target_angular_acceleration;
@@ -162,7 +166,7 @@ void Control::update() {
         last_target_angular_speed_rad_s = target_angular_speed_rad_s;
 
         // Linear Feed-Foward
-        float target_linear_acceleration =
+        target_linear_acceleration =
             (target_linear_speed_m_s - last_target_linear_speed_m_s) * Config::CONTROL_FREQUENCY_HZ;
 
         float accel_variation = target_linear_acceleration - last_target_linear_acceleration;

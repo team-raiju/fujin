@@ -263,7 +263,8 @@ Navigation::WallBreak Navigation::process_wall_break() {
 void Navigation::update(void) {
     bsp::imu::update();
     bsp::encoders::update_ticks();
-    bsp::encoders::update_velocities();
+    float target_linear_accel = control ? control->get_target_linear_acceleration() : 0.0f;
+    bsp::encoders::update_velocities(target_linear_accel);
 
     bsp::encoders::EncoderData left_encoder = bsp::encoders::get_data(bsp::encoders::EncoderSide::LEFT);
     bsp::encoders::EncoderData right_encoder = bsp::encoders::get_data(bsp::encoders::EncoderSide::RIGHT);

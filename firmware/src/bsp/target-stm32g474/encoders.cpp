@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "st/hal.h"
 
 #include "bsp/encoders.hpp"
@@ -36,23 +37,27 @@ static EncoderData left_encoder;
 static EncoderData right_encoder;
 
 static float estimated_vel_m_s = 0.0f;
-static float estimated_accel_m_s2 = 0.0f;
+static float accel_bias_m_s2 = 0.0f;
 
 
 /// @section Private implementation
 
 
-// An hybrid alpha beta + ema filter
-static inline float update_velocity_filter(float raw_vel_m_s) {
+// Hybrid alpha-beta filter with target acceleration feedforward + EMA post-filter
+static inline float update_velocity_filter(float raw_vel_m_s, float target_accel_m_s2) {
     constexpr float alpha_vel_gain = 0.030f;
-    constexpr float beta_acc_gain = 0.5000f;        // 0.00025 / CONTROL_PERIOD_S
+    constexpr float beta_acc_gain = 0.2000f;
     constexpr float smooth_factor = 0.30f;
+    constexpr float bias_decay = 0.995f;
+    constexpr float max_accel_bias = 10.0f;
 
-    float predicted_vel = estimated_vel_m_s + estimated_accel_m_s2 * services::Config::CONTROL_PERIOD_S;
+    float predicted_accel = target_accel_m_s2 + accel_bias_m_s2;
+    float predicted_vel = estimated_vel_m_s + predicted_accel * services::Config::CONTROL_PERIOD_S;
     float vel_estimated_error = raw_vel_m_s - predicted_vel;
 
     estimated_vel_m_s = predicted_vel + alpha_vel_gain * vel_estimated_error;
-    estimated_accel_m_s2 += beta_acc_gain * vel_estimated_error;
+    accel_bias_m_s2 = std::clamp((accel_bias_m_s2 + beta_acc_gain * vel_estimated_error) * bias_decay,
+                                 -max_accel_bias, max_accel_bias);
 
     // Post filter (EMA) 
     // filtered_velocity_m_s = (smooth_factor * estimated_vel_m_s) + (1 - smooth_factor) * filtered_velocity_m_s => equivalent to;
@@ -114,7 +119,7 @@ void reset_velocities() {
     delta_vel_time = MAX_TIME_WITHOUT_ENCODER_US + 1;
 
     estimated_vel_m_s = 0.0f;
-    estimated_accel_m_s2 = 0.0f;
+    accel_bias_m_s2 = 0.0f;
 
 }
 
@@ -128,7 +133,7 @@ void set_left_ang_vel_rad_s(float speed) {
     left_filtered_ang_vel_rad_s = speed * 0.1 + left_filtered_ang_vel_rad_s * 0.9;
 }
 
-void update_velocities() {
+void update_velocities(float target_accel_m_s2) {
 
     delta_vel_time = bsp::get_tick_us() - last_update_vel_time;
     last_update_vel_time = bsp::get_tick_us();
@@ -172,7 +177,7 @@ void update_velocities() {
     linear_velocity_m_s = (left_encoder.linear_vel_m_s + right_encoder.linear_vel_m_s) / 2.0;
 
     // filtered_velocity_m_s = linear_velocity_m_s * 0.051 + filtered_velocity_m_s * 0.949; // Simple Filter
-    filtered_velocity_m_s = update_velocity_filter(linear_velocity_m_s);
+    filtered_velocity_m_s = update_velocity_filter(linear_velocity_m_s, target_accel_m_s2);
     last_velocity_m_s = linear_velocity_m_s;
 }
 
