@@ -332,10 +332,10 @@ void Run::enter() {
     
     logger->init();
     
-    maze->read_maze_from_memory(map_backup);
-    maze->print(maze->ORIGIN);
-    target_directions = maze->directions_to_goal();
-    maze->print(maze->ORIGIN);
+    //maze->read_maze_from_memory(map_backup);
+    //maze->print(maze->ORIGIN);
+    //target_directions = maze->directions_to_goal();
+    //maze->print(maze->ORIGIN);
 
     services::Control::instance()->start_fan();
     bsp::delay_ms(200);
@@ -414,7 +414,7 @@ State* Run::react(Timeout const&) {
         navigation->set_movement(movement, prev_movement, next_movement, cells);
     }
 
-    if ((bsp::imu::is_imu_emergency() || services::Control::instance()->is_emergency()) && move_count > 1) {
+    if ((bsp::imu::is_imu_emergency() || services::Control::instance()->is_emergency()) && move_count >= 1) {
         emergency = true;
         soft_timer::stop();
         bsp::motors::set(0, 0);

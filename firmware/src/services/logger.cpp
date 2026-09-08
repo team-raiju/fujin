@@ -6,6 +6,7 @@
 #include "bsp/analog_sensors.hpp"
 #include "bsp/ble.hpp"
 #include "bsp/eeprom.hpp"
+#include "bsp/leds.hpp"
 #include "bsp/encoders.hpp"
 #include "bsp/imu.hpp"
 #include "bsp/timers.hpp"
@@ -19,6 +20,28 @@
 /// @section Service implementation
 
 namespace services {
+
+namespace {
+
+constexpr uint32_t LED_START_PERIOD_MS = 1000;
+constexpr uint32_t LED_END_PERIOD_MS = 50;
+
+void update_led_progress(float progress, uint32_t& last_toggle_time, bool& led_state) {
+    progress = std::clamp(progress, 0.0f, 1.0f);
+
+    uint32_t current_period_ms = LED_START_PERIOD_MS - static_cast<uint32_t>((LED_START_PERIOD_MS - LED_END_PERIOD_MS) * progress);
+    uint32_t half_period_ms = std::max<uint32_t>(1, current_period_ms / 2);
+
+    uint32_t now = bsp::get_tick_ms();
+    if (now - last_toggle_time >= half_period_ms) {
+        last_toggle_time = now;
+        led_state = !led_state;
+        bsp::leds::stripe_set(led_state ? bsp::leds::Color::Red : bsp::leds::Color::Black);
+    }
+}
+
+} // namespace
+
 
 #if CONTROL_LOG_MODE
 const Logger::ParamInfo paramInfoArray[] = {
@@ -148,6 +171,9 @@ void Logger::update() {
 
 void Logger::print_log() {
 
+    uint32_t last_toggle_time = bsp::get_tick_ms();
+    bool led_state = true;
+
     // Print current params
     services::Config::print_parameters();
 #if CONTROL_LOG_MODE
@@ -164,6 +190,9 @@ void Logger::print_log() {
         if (i + sizeof(read_logdata.data) > sizeof(ram_logger)) {
             break;
         }
+
+        float progress = (saved_size > 0) ? (static_cast<float>(i) / static_cast<float>(saved_size)) : 1.0f;
+        update_led_progress(progress, last_toggle_time, led_state);
 
         memcpy(read_logdata.data, ram_logger + i, sizeof(read_logdata.data));
         uint32_t idx = i / sizeof(LogData);

@@ -91,7 +91,7 @@ def plot_single(data_dict, title_suffix=""):
     """Generates the system analysis visualizations for a single data set."""
     t = data_dict['time']
     
-    fig, axs = plt.subplots(3, 2, figsize=(15, 12))
+    fig, axs = plt.subplots(3, 2, figsize=(15, 12), sharex=True)
     
     if CONTROL_LOG_MODE:
         fig.suptitle(f'Motion Control Performance {title_suffix}', fontsize=16)
@@ -183,6 +183,7 @@ def plot_single(data_dict, title_suffix=""):
 
     for ax in axs.flat:
         ax.set_xlabel('Time (ms)')
+        ax.tick_params(labelbottom=True)
         ax.legend()
         ax.grid(True)
 
@@ -298,9 +299,15 @@ def plot_comparison(file1, file2, offset=0.0):
     axs[2, 0].set_title('PWM Signals Comparison')
     axs[2, 0].set_ylabel('Duty Cycle (0-1000)')
 
+    first_time_ax = axs[0, 0]
+    for ax in axs.flat[1:]:
+        if not (ax == axs[1, 1] and not CONTROL_LOG_MODE):
+            ax.sharex(first_time_ax)
+
     for ax in axs.flat:
         if not (ax == axs[1, 1] and not CONTROL_LOG_MODE):  # skip setting time label on spatial odometry plot
             ax.set_xlabel('Time (ms)')
+            ax.tick_params(labelbottom=True)
         ax.legend(fontsize='small')
         ax.grid(True)
 

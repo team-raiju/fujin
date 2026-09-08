@@ -59,8 +59,8 @@ const std::map<Movement, ForwardParams> forward_params_search_fast = {
 const std::map<Movement, TurnParams> turn_params_slow = {
     {Movement::TURN_RIGHT_45, {-50.0, -86.0, 0.5, 100.00, 7.854, T(0), T(0), -1, T(0), T(0), 0}},
     {Movement::TURN_LEFT_45, {-50.0, -86.0, 0.5, 100.00, 7.854, T(0), T(0), 1, T(0), T(0), 0}},
-    {Movement::TURN_RIGHT_90, {0.0, -41.0, 0.5, 104.72, 10.47, T(0), T(0), -1, T(0), T(0), 0}},
-    {Movement::TURN_LEFT_90, {0.0, -41.0, 0.5, 104.72, 10.47, T(0), T(0), 1, T(0), T(0), 0}},
+    {Movement::TURN_RIGHT_90, {0.0, -41.0, 0.5, 150.0, 10.47, T(150), T(250), -1, T(70), T(220), 5000}},
+    {Movement::TURN_LEFT_90, {0.0, -41.0, 0.5, 150.0, 10.47, T(150), T(250), 1, T(70), T(220), 5000}},
     {Movement::TURN_RIGHT_180, {0.0, 0.0, 0.5, 122.17, 5.65, T(0), T(0), -1, T(0), T(0), 0}},
     {Movement::TURN_LEFT_180, {0.0, 0.0, 0.5, 122.17, 5.45, T(0), T(0), 1, T(0), T(0), 0}},
     {Movement::TURN_RIGHT_135, {-15.0, -76.0, 0.5, 100.00, 7.5049, T(0), T(0), -1, T(0), T(0), 0}},
