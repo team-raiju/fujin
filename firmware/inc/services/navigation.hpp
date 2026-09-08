@@ -103,6 +103,7 @@ private:
     float get_s_curve_brake_distance(float initial_speed, float final_speed, float deceleration, float jerk);
     bool start_accel_ramp_down(float current_speed, float current_accel, float max_speed, float jerk);
     bool start_brake_ramp_up(float current_speed, float current_accel, float final_speed, float jerk);
+    float get_effective_max_acceleration(float current_speed, float base_max_accel);
     WallBreak process_wall_break();
     void reset_wall_break();
     void reset_movement_variables();

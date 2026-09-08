@@ -193,6 +193,22 @@ bool Navigation::start_brake_ramp_up(float current_speed, float current_accel, f
     return pred_speed <= final_speed;
 }
 
+float Navigation::get_effective_max_acceleration(float current_speed, float base_max_accel) {
+    if (current_speed > 7.0f) {
+        return 0.50f * base_max_accel;
+    } else if (current_speed > 6.5f) {
+        return 0.60f * base_max_accel;
+    } else if (current_speed > 6.0f) {
+        return 0.70f * base_max_accel;
+    } else if (current_speed > 5.5f) {
+        return 0.80f * base_max_accel;
+    } else if (current_speed > 5.0f) {
+        return 0.85f * base_max_accel;
+    } else {
+        return base_max_accel;
+    }
+}
+
 void Navigation::reset_wall_break() {
     wall_right_counter_on = 0;
     wall_left_counter_on = 0;
@@ -388,8 +404,14 @@ bool Navigation::step() {
                     control_linear_speed += current_linear_acceleration / Config::CONTROL_FREQUENCY_HZ;
                     control_linear_speed = std::min(control_linear_speed, max_speed);
                 } else {
-                    current_linear_acceleration += (max_linear_acc_jerk / Config::CONTROL_FREQUENCY_HZ);
-                    current_linear_acceleration = std::min(current_linear_acceleration, max_acceleration);
+                    float eff_max_accel = get_effective_max_acceleration(control_linear_speed, max_acceleration);
+                    if (current_linear_acceleration < eff_max_accel) {
+                        current_linear_acceleration += (max_linear_acc_jerk / Config::CONTROL_FREQUENCY_HZ);
+                        current_linear_acceleration = std::min(current_linear_acceleration, eff_max_accel);
+                    } else if (current_linear_acceleration > eff_max_accel) {
+                        current_linear_acceleration -= (max_linear_acc_jerk / Config::CONTROL_FREQUENCY_HZ);
+                        current_linear_acceleration = std::max(current_linear_acceleration, eff_max_accel);
+                    }
                     control_linear_speed += current_linear_acceleration / Config::CONTROL_FREQUENCY_HZ;
                     control_linear_speed = std::min(control_linear_speed, max_speed);
                 }

@@ -22,8 +22,8 @@ CONTROL_FREQUENCY_HZ = 2000.0  # [Hz] (matches Config::CONTROL_FREQUENCY_HZ)
 CONTROL_PERIOD_S = 1.0 / CONTROL_FREQUENCY_HZ
 
 # Jerk parameters for S-curve acceleration and braking
-ACC_JERK = 1000.0    # [m/s^3] (acc_jerk in navigation.cpp)
-BRAKE_JERK = 1000.0  # [m/s^3] (brake_jerk in navigation.cpp)
+ACC_JERK = 625.0    # [m/s^3] (acc_jerk in navigation.cpp)
+BRAKE_JERK = 625.0  # [m/s^3] (brake_jerk in navigation.cpp)
 
 # Margins
 BREAK_MARGIN = 20.0  # [mm] Final velocity reached on target_travel_mm - break_margin
@@ -82,14 +82,14 @@ class TurnParams:
 FORWARD_PARAMS = {
     Movement.START: ForwardParams(
         max_speed=0.5,
-        acceleration=2.0,
-        deceleration=2.0,
+        acceleration=12.0,
+        deceleration=12.0,
         target_travel_mm=HALF_CELL_SIZE_MM + ROBOT_DIST_FROM_CENTER_START_MM_FAST,
     ),
     Movement.FORWARD: ForwardParams(
-        max_speed=2.0,
-        acceleration=10.0,
-        deceleration=10.0,
+        max_speed=7.5,
+        acceleration=35.0,
+        deceleration=35.0,
         target_travel_mm=CELL_SIZE_MM,
     ),
     Movement.TURN_RIGHT_90: ForwardParams(
@@ -100,8 +100,8 @@ FORWARD_PARAMS = {
     ),
     Movement.STOP: ForwardParams(
         max_speed=0.5,
-        acceleration=2.0,
-        deceleration=2.0,
+        acceleration=20.0,
+        deceleration=20.0,
         target_travel_mm=(HALF_CELL_SIZE_MM - 10.0),
     ),
 }
@@ -163,6 +163,18 @@ def start_brake_ramp_up(current_speed: float, current_accel: float, final_speed:
     return pred_speed <= final_speed
 
 
+def get_effective_max_acceleration(current_speed: float, base_max_accel: float) -> float:
+    """Motor torque derating: reduces maximum achievable acceleration at higher speeds due to Back-EMF."""
+    if current_speed > 7.0:
+        return 0.50 * base_max_accel
+    elif current_speed > 6.0:
+        return 0.70 * base_max_accel
+    elif current_speed > 5.0:
+        return 0.85 * base_max_accel
+    else:
+        return base_max_accel
+
+
 # ==============================================================================
 # SIMULATION ENGINE
 # ==============================================================================
@@ -182,10 +194,21 @@ def run_simulation(movement_sequence):
 
     transitions = []  # list of tuples: (time_s, total_dist_mm, label, speed_m_s)
 
+    parsed_sequence = []
+    for item in movement_sequence:
+        move, cnt = item if isinstance(item, tuple) else (item, 1)
+        if parsed_sequence and parsed_sequence[-1][0] == move and move in [Movement.FORWARD, Movement.DIAGONAL]:
+            parsed_sequence[-1] = (move, parsed_sequence[-1][1] + cnt)
+        else:
+            parsed_sequence.append((move, cnt))
     for i, movement in enumerate(movement_sequence):
         prev_movement = movement_sequence[i - 1] if i > 0 else Movement.START
         next_movement = movement_sequence[i + 1] if i < len(movement_sequence) - 1 else Movement.STOP
         count = 1
+
+    for i, (movement, count) in enumerate(parsed_sequence):
+        prev_movement = parsed_sequence[i - 1][0] if i > 0 else Movement.START
+        next_movement = parsed_sequence[i + 1][0] if i < len(parsed_sequence) - 1 else Movement.STOP
 
         # Setup movement params (matching Navigation::set_movement)
         complete_prev_move_travel = -1.0 * TURN_PARAMS[prev_movement].end
@@ -218,6 +241,8 @@ def run_simulation(movement_sequence):
         mini_fsm_state = MiniFSMStates.FORWARD_1
         turn_tick_counter = 0
 
+        label = f"{movement.name} x{count}" if count > 1 else movement.name
+        transitions.append((total_time_s, total_traveled_dist_mm, label, control_linear_speed))
         transitions.append((total_time_s, total_traveled_dist_mm, movement.name, control_linear_speed))
 
         max_ticks_safety = int(30 * CONTROL_FREQUENCY_HZ)
@@ -275,8 +300,14 @@ def run_simulation(movement_sequence):
                             control_linear_speed += current_linear_acceleration / CONTROL_FREQUENCY_HZ
                             control_linear_speed = min(control_linear_speed, max_speed)
                         else:
-                            current_linear_acceleration += (acc_jerk / CONTROL_FREQUENCY_HZ)
-                            current_linear_acceleration = min(current_linear_acceleration, max_acceleration)
+                            eff_max_accel = get_effective_max_acceleration(control_linear_speed, max_acceleration)
+                            if current_linear_acceleration < eff_max_accel:
+                                current_linear_acceleration += (acc_jerk / CONTROL_FREQUENCY_HZ)
+                                current_linear_acceleration = min(current_linear_acceleration, eff_max_accel)
+                            elif current_linear_acceleration > eff_max_accel:
+                                current_linear_acceleration -= (acc_jerk / CONTROL_FREQUENCY_HZ)
+                                current_linear_acceleration = max(current_linear_acceleration, eff_max_accel)
+
                             control_linear_speed += current_linear_acceleration / CONTROL_FREQUENCY_HZ
                             control_linear_speed = min(control_linear_speed, max_speed)
                 elif abs(traveled_dist_mm) > accel_margin:
@@ -428,13 +459,13 @@ def plot_results(data, show_plot=True, save_path="s_curve_linear_velocity_profil
 if __name__ == "__main__":
     sequence = [
         Movement.START,
-        Movement.FORWARD,
-        Movement.TURN_RIGHT_90,
+        *([Movement.FORWARD] * 20),
         Movement.FORWARD,
         Movement.STOP,
     ]
 
     print("Running S-Curve simulation for sequence:")
+    print(" -> ".join([m.name if not isinstance(m, tuple) else f"{m[0].name} x{m[1]}" for m in sequence]))
     print(" -> ".join([m.name for m in sequence]))
 
     data = run_simulation(sequence)

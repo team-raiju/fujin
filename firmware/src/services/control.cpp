@@ -124,7 +124,7 @@ void Control::update() {
         float mean_velocity_m_s = bsp::encoders::get_filtered_velocity_m_s();
         auto angular_speed_error_raw = std::abs(target_angular_speed_rad_s - bsp::imu::get_rad_per_s());
         auto linear_speed_error = std::abs(target_linear_speed_m_s - mean_velocity_m_s);
-        emergency = ((linear_speed_error > 0.4) || (angular_speed_error_raw > 6.0));
+        emergency = ((linear_speed_error > 0.5) || (angular_speed_error_raw > 6.0));
 
         if (wall_pid_enabled) {
             target_angular_speed_rad_s += walls_pid.calculate(0.0, bsp::analog_sensors::ir_side_wall_error());
