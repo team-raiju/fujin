@@ -45,12 +45,12 @@ public:
             uint16_t velocity_ms : 15;
             uint16_t target_velocity_ms : 15;
 
-            uint16_t angular_speed_rad_s : 15;
-            uint16_t target_rad_s : 15;
+            uint16_t angular_speed_rad_s : 16;
+            uint16_t target_rad_s : 16;
 
             uint16_t pwm_left : 10;
             uint16_t pwm_right : 10;
-            uint16_t encoder_imu_diff : 12;
+            uint16_t encoder_imu_diff : 10;
 
 #if CONTROL_LOG_MODE
             uint16_t vel_p : 12;

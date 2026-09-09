@@ -106,7 +106,7 @@ private:
     float get_effective_max_acceleration(float current_speed, float base_max_accel);
     WallBreak process_wall_break();
     void reset_wall_break();
-    void reset_movement_variables();
+    void reset_movement_variables(bool reset_linear_accel = true);
 
     std::vector<std::pair<Movement, uint8_t>> get_default_target_movements(std::vector<Direction> target_directions);
 

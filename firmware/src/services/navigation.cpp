@@ -42,7 +42,7 @@ void Navigation::init() {
 
 void Navigation::reset(navigation_mode_t mode) {
 
-    reset_movement_variables();
+    reset_movement_variables(true);
     encoder_left_counter = 0;
     encoder_right_counter = 0;
     current_cell = {0, 0};
@@ -135,11 +135,13 @@ void Navigation::reset(navigation_mode_t mode) {
     forward_end_speed = forward_params[Movement::START].max_speed;
 }
 
-void Navigation::reset_movement_variables() {
+void Navigation::reset_movement_variables(bool reset_linear_accel) {
     bsp::imu::reset_angle();
     mini_fsm_state = MiniFSMStates::FORWARD_1;
     current_angular_acceleration = 0.0f;
-    current_linear_acceleration = 0.0f;
+    if (reset_linear_accel) {
+        current_linear_acceleration = 0.0f;
+    }
 
     traveled_dist_mm = 0;
     current_position_mm = {0, 0};
@@ -195,15 +197,15 @@ bool Navigation::start_brake_ramp_up(float current_speed, float current_accel, f
 
 float Navigation::get_effective_max_acceleration(float current_speed, float base_max_accel) {
     if (current_speed > 7.0f) {
-        return 0.50f * base_max_accel;
+        return 17.0f;
     } else if (current_speed > 6.5f) {
-        return 0.60f * base_max_accel;
+        return 22.0f;
     } else if (current_speed > 6.0f) {
-        return 0.70f * base_max_accel;
+        return 25.0f;
     } else if (current_speed > 5.5f) {
-        return 0.80f * base_max_accel;
+        return 30.0f;
     } else if (current_speed > 5.0f) {
-        return 0.85f * base_max_accel;
+        return 35.0f;
     } else {
         return base_max_accel;
     }
@@ -338,7 +340,9 @@ bool Navigation::step() {
             forward_end_speed = 0.0;
         }
 
-        float max_speed = forward_params[current_movement].max_speed;
+        bool seamless_start =
+            (current_movement == Movement::START && forward_end_speed > forward_params[Movement::START].max_speed);
+        float max_speed = seamless_start ? forward_end_speed : forward_params[current_movement].max_speed;
         float max_acceleration = forward_params[current_movement].acceleration;
         float deceleration = forward_params[current_movement].deceleration;
         float control_linear_speed = control->get_target_linear_speed();
@@ -378,7 +382,9 @@ bool Navigation::step() {
         float accel_margin = 20.0f; // Only accelerates after a accel_margin
 
         float required_brake_distance = break_margin;
-        if (current_linear_acceleration > 0.0f && max_linear_brake_jerk > 0.0f) {
+        if (seamless_start) {
+            required_brake_distance = 0.0f;
+        } else if (current_linear_acceleration > 0.0f && max_linear_brake_jerk > 0.0f) {
             float t_ramp = current_linear_acceleration / max_linear_brake_jerk;
             float delta_v = (current_linear_acceleration * current_linear_acceleration) / (2.0f * max_linear_brake_jerk);
             float v_peak = control_linear_speed + delta_v;
@@ -388,14 +394,21 @@ bool Navigation::step() {
             required_brake_distance +=
                 1000.0f * (d_ramp_m + get_s_curve_brake_distance(v_peak, forward_end_speed, deceleration, max_linear_brake_jerk));
         } else {
-            required_brake_distance +=
-                1000.0f * get_s_curve_brake_distance(control_linear_speed, forward_end_speed, deceleration, max_linear_brake_jerk);
+            required_brake_distance += 
+                    1000.0f * get_s_curve_brake_distance(control_linear_speed, forward_end_speed, deceleration, max_linear_brake_jerk);
         }
 
-        if (!is_braking && (std::abs(traveled_dist_mm) < (target_travel_mm - required_brake_distance))) {
-            if (control_linear_speed < 1.0 || std::abs(traveled_dist_mm) > accel_margin) {
+        bool requires_turn_margin = (previous_movement != Movement::START) && (control_linear_speed >= 1.0f);
+
+        if (!is_braking && (seamless_start || (std::abs(traveled_dist_mm) < (target_travel_mm - required_brake_distance)))) {
+            if (!requires_turn_margin || std::abs(traveled_dist_mm) > accel_margin) {
                 if (control_linear_speed >= max_speed) {
-                    current_linear_acceleration = 0.0f;
+                    if (current_linear_acceleration > 0.0f) {
+                        current_linear_acceleration -= (max_linear_acc_jerk / Config::CONTROL_FREQUENCY_HZ);
+                        current_linear_acceleration = std::max(current_linear_acceleration, 0.0f);
+                    } else {
+                        current_linear_acceleration = 0.0f;
+                    }
                     control_linear_speed = max_speed;
                 } else if (start_accel_ramp_down(control_linear_speed, current_linear_acceleration, max_speed,
                                                  max_linear_acc_jerk)) {
@@ -416,7 +429,7 @@ bool Navigation::step() {
                     control_linear_speed = std::min(control_linear_speed, max_speed);
                 }
             }
-        } else if (std::abs(traveled_dist_mm) > accel_margin) {
+        } else if (!seamless_start && std::abs(traveled_dist_mm) > accel_margin) {
             is_braking = true;
             if (control_linear_speed > forward_end_speed) {
                 if (start_brake_ramp_up(control_linear_speed, current_linear_acceleration, forward_end_speed,
@@ -721,7 +734,9 @@ void Navigation::set_movement(Direction dir) {
 
     target_direction = dir;
     current_movement = get_movement(dir, current_direction, true);
-    reset_movement_variables();
+
+    bool continuous_start_to_forward = (previous_movement == Movement::START && current_movement == Movement::FORWARD);
+    reset_movement_variables(!continuous_start_to_forward);
 
     target_travel_mm = forward_params[current_movement].target_travel_mm;
 
@@ -781,7 +796,9 @@ void Navigation::set_movement(Movement movement, Movement prev_movement, Movemen
     complete_prev_move_travel = -1 * turn_params[prev_movement].end;
     previous_movement = prev_movement;
     current_movement = movement;
-    reset_movement_variables();
+
+    bool continuous_start_to_forward = (prev_movement == Movement::START && movement == Movement::FORWARD);
+    reset_movement_variables(!continuous_start_to_forward);
 
     if (movement == Movement::FORWARD || movement == Movement::DIAGONAL) {
         if (waiting_for_fast_param) {
@@ -826,7 +843,11 @@ void Navigation::set_movement(Movement movement, Movement prev_movement, Movemen
         forward_end_speed = 0;
         bsp::leds::stripe_set(Color::Blue);
     } else if (movement == Movement::START) {
-        forward_end_speed = forward_params[Movement::START].max_speed;
+        if (next_movement == Movement::FORWARD) {
+            forward_end_speed = forward_params[Movement::FORWARD].max_speed;
+        } else {
+            forward_end_speed = forward_params[Movement::START].max_speed;
+        }
     } else if (next_movement == Movement::FORWARD || next_movement == Movement::DIAGONAL) {
         forward_end_speed = forward_params[next_movement].max_speed;
     } else if (next_movement == Movement::STOP) {
