@@ -84,10 +84,6 @@ void Navigation::reset(navigation_mode_t mode) {
             services::Config::linear_vel_acc_feed_forward_k,
             services::Config::linear_vel_brake_feed_forward_k,
             services::Config::linear_vel_feed_forward_k,
-            services::Config::linear_jerk_ff_k,
-            services::Config::linear_jerk_ff_ms,
-            services::Config::angular_jerk_ff_k,
-            services::Config::angular_jerk_ff_ms,
             services::Config::wall_kp,
             services::Config::wall_ki,
             services::Config::wall_kd,
@@ -103,6 +99,7 @@ void Navigation::reset(navigation_mode_t mode) {
             services::Config::max_linear_acc_jerk,
             services::Config::max_linear_brake_jerk,
             services::Config::coulomb_ff,
+            services::Config::angular_coulomb_ff,
         };
         break;
     case SLOW:

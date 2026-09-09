@@ -31,10 +31,6 @@ void Control::init(void) {
         services::Config::linear_vel_acc_feed_forward_k,
         services::Config::linear_vel_brake_feed_forward_k,
         services::Config::linear_vel_feed_forward_k,
-        services::Config::linear_jerk_ff_k,
-        services::Config::linear_jerk_ff_ms,
-        services::Config::angular_jerk_ff_k,
-        services::Config::angular_jerk_ff_ms,
         services::Config::wall_kp,
         services::Config::wall_ki,
         services::Config::wall_kd,
@@ -50,6 +46,7 @@ void Control::init(void) {
         services::Config::max_linear_acc_jerk,
         services::Config::max_linear_brake_jerk,
         services::Config::coulomb_ff,
+        services::Config::angular_coulomb_ff,
     };
     reset(general_params);
 }
@@ -91,12 +88,8 @@ void Control::reset(GeneralParams general_params) {
     last_target_linear_speed_m_s = 0;
     target_linear_acceleration = 0.0f;
     last_target_linear_acceleration = 0.0f;
-    jerk_ff_value = 0.0f;
-    jerk_ff_counter = 0;
     target_angular_acceleration = 0.0f;
     last_target_angular_acceleration = 0.0f;
-    angular_jerk_ff_value = 0.0f;
-    angular_jerk_ff_counter = 0;
     rotation_ff = 0.0f;
     fan_pwm = 0.0f;
 
@@ -114,12 +107,8 @@ void Control::update() {
         last_target_linear_speed_m_s = target_linear_speed_m_s;
         target_linear_acceleration = 0.0f;
         last_target_linear_acceleration = 0.0f;
-        jerk_ff_value = 0.0f;
-        jerk_ff_counter = 0;
         target_angular_acceleration = 0.0f;
         last_target_angular_acceleration = 0.0f;
-        angular_jerk_ff_value = 0.0f;
-        angular_jerk_ff_counter = 0;
     } else {
         float mean_velocity_m_s = bsp::encoders::get_filtered_velocity_m_s();
         auto angular_speed_error_raw = std::abs(target_angular_speed_rad_s - bsp::imu::get_rad_per_s());
@@ -141,57 +130,18 @@ void Control::update() {
         target_angular_acceleration =
             (target_angular_speed_rad_s - last_target_angular_speed_rad_s) * Config::CONTROL_FREQUENCY_HZ;
 
-        float angular_accel_variation = target_angular_acceleration - last_target_angular_acceleration;
-        if (std::abs(angular_accel_variation) > 800.0f) {
-            if (angular_jerk_ff_counter == 0) {
-                angular_jerk_ff_value = angular_accel_variation * params.angular_jerk_ff_k;
-                angular_jerk_ff_counter = Config::ms_to_ticks(params.angular_jerk_ff_ms);
-                if (angular_jerk_ff_counter == 0) {
-                    angular_jerk_ff_value = 0.0f;
-                }
-            } else {
-                angular_jerk_ff_value = 0.0f;
-                angular_jerk_ff_counter = 0;
-            }
-        } else {
-            if (angular_jerk_ff_counter > 0) {
-                angular_jerk_ff_counter--;
-                if (angular_jerk_ff_counter == 0) {
-                    angular_jerk_ff_value = 0.0f;
-                }
-            }
-        }
         last_target_angular_acceleration = target_angular_acceleration;
 
         rotation_ff = target_angular_acceleration * params.angular_acc_feed_forward_k;
         rotation_ff += target_angular_speed_rad_s * params.angular_vel_feed_forward_k;
-        rotation_ff += angular_jerk_ff_value;
+        rotation_ff += params.angular_coulomb_ff;
+        
         last_target_angular_speed_rad_s = target_angular_speed_rad_s;
 
         // Linear Feed-Foward
         target_linear_acceleration =
             (target_linear_speed_m_s - last_target_linear_speed_m_s) * Config::CONTROL_FREQUENCY_HZ;
 
-        float accel_variation = target_linear_acceleration - last_target_linear_acceleration;
-        if (std::abs(accel_variation) > 10.0f && std::abs(target_linear_speed_m_s) > 0.5) {
-            if (jerk_ff_counter == 0) {
-                jerk_ff_value = accel_variation * params.linear_jerk_ff_k;
-                jerk_ff_counter = Config::ms_to_ticks(params.linear_jerk_ff_ms);
-                if (jerk_ff_counter == 0) {
-                    jerk_ff_value = 0.0f;
-                }
-            } else {
-                jerk_ff_value = 0.0f;
-                jerk_ff_counter = 0.0f;
-            }
-        } else {
-            if (jerk_ff_counter > 0) {
-                jerk_ff_counter--;
-                if (jerk_ff_counter == 0) {
-                    jerk_ff_value = 0.0f;
-                }
-            }
-        }
         last_target_linear_acceleration = target_linear_acceleration;
 
         if (target_linear_acceleration >= 0.0f) {
@@ -207,7 +157,6 @@ void Control::update() {
         }
 
         linear_ff += target_linear_speed_m_s * params.linear_vel_feed_forward_k;
-        linear_ff += jerk_ff_value;
         last_target_linear_speed_m_s = target_linear_speed_m_s;
 
         // Control

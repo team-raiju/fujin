@@ -22,14 +22,11 @@ float Config::angular_vel_feed_forward_k = 0.0031;
 float Config::linear_vel_acc_feed_forward_k = 0.0;
 float Config::linear_vel_brake_feed_forward_k = 0.0;
 float Config::linear_vel_feed_forward_k = 0.0;
-float Config::linear_jerk_ff_k = 0.001;
-float Config::linear_jerk_ff_ms = 5.0;
-float Config::angular_jerk_ff_k = 0.00042;
-float Config::angular_jerk_ff_ms = 5.0;
 float Config::max_linear_acc_jerk = 100.0;
 float Config::max_linear_brake_jerk = 100.0;
 float Config::wheel_radius_mm = 12.75;
 float Config::coulomb_ff = 0.13;
+float Config::angular_coulomb_ff = 0.0;
 
 float Config::wall_kp = 0.0025;
 float Config::wall_ki = 0.0;
@@ -107,14 +104,11 @@ static std::pair<float*, bsp::eeprom::param_addresses_t> params[] = {
     {&Config::linear_vel_acc_feed_forward_k, bsp::eeprom::ADDR_LINEAR_VEL_ACC_FEED_FORWARD_K},
     {&Config::linear_vel_brake_feed_forward_k, bsp::eeprom::ADDR_LINEAR_VEL_BRAKE_FEED_FORWARD_K},
     {&Config::linear_vel_feed_forward_k, bsp::eeprom::ADDR_LINEAR_VEL_FEED_FORWARD_K},
-    {&Config::linear_jerk_ff_k, bsp::eeprom::ADDR_LINEAR_JERK_FEED_FORWARD_K},
-    {&Config::linear_jerk_ff_ms, bsp::eeprom::ADDR_LINEAR_JERK_FEED_FORWARD_LIMIT},
-    {&Config::angular_jerk_ff_k, bsp::eeprom::ADDR_ANGULAR_JERK_FEED_FORWARD_K},
-    {&Config::angular_jerk_ff_ms, bsp::eeprom::ADDR_ANGULAR_JERK_FEED_FORWARD_LIMIT},
     {&Config::max_linear_acc_jerk, bsp::eeprom::ADDR_MAX_LINEAR_ACC_JERK},
     {&Config::max_linear_brake_jerk, bsp::eeprom::ADDR_MAX_LINEAR_BRAKE_JERK},
     {&Config::wheel_radius_mm, bsp::eeprom::ADDR_WHEEL_RADIUS_MM},
     {&Config::coulomb_ff, bsp::eeprom::ADDR_COULOMB_FF},
+    {&Config::angular_coulomb_ff, bsp::eeprom::ADDR_ANGULAR_COULOMB_FF},
 };
 
 static const std::map<Movement, uint16_t> turn_address_map = {
@@ -275,14 +269,6 @@ void Config::print_parameters() {
     bsp::delay_ms(5);
     std::printf("    linear_vel_feed_forward_k = %f,\r\n", Config::linear_vel_feed_forward_k);
     bsp::delay_ms(5);
-    std::printf("    linear_jerk_ff_k = %f,\r\n", Config::linear_jerk_ff_k);
-    bsp::delay_ms(5);
-    std::printf("    linear_jerk_ff_ms = %f,\r\n", Config::linear_jerk_ff_ms);
-    bsp::delay_ms(5);
-    std::printf("    angular_jerk_ff_k = %f,\r\n", Config::angular_jerk_ff_k);
-    bsp::delay_ms(5);
-    std::printf("    angular_jerk_ff_ms = %f,\r\n", Config::angular_jerk_ff_ms);
-    bsp::delay_ms(5);
     std::printf("    wall_kp = %f,\r\n", Config::wall_kp);
     bsp::delay_ms(5);
     std::printf("    wall_ki = %f,\r\n", Config::wall_ki);
@@ -314,6 +300,8 @@ void Config::print_parameters() {
     std::printf("    wheel_radius_mm = %f,\r\n", Config::wheel_radius_mm);
     bsp::delay_ms(5);
     std::printf("    coulomb_ff = %f,\r\n", Config::coulomb_ff);
+    bsp::delay_ms(5);
+    std::printf("    angular_coulomb_ff = %f,\r\n", Config::angular_coulomb_ff);
     bsp::delay_ms(5);
     std::printf("};\r\n");
     bsp::delay_ms(5);

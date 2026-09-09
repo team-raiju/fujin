@@ -88,10 +88,6 @@ struct GeneralParams {
     float linear_vel_acc_feed_forward_k;
     float linear_vel_brake_feed_forward_k;
     float linear_vel_feed_forward_k;
-    float linear_jerk_ff_k;
-    float linear_jerk_ff_ms;
-    float angular_jerk_ff_k;
-    float angular_jerk_ff_ms;
 
     float wall_kp;
     float wall_ki;
@@ -111,27 +107,30 @@ struct GeneralParams {
     float max_linear_acc_jerk;
     float max_linear_brake_jerk;
     float coulomb_ff;
+    float angular_coulomb_ff;
 
     GeneralParams()
         : fan_speed(0), angular_kp(0), angular_ki(0), angular_kd(0), angular_acc_feed_forward_k(0),
           angular_vel_feed_forward_k(0), linear_vel_acc_feed_forward_k(0), linear_vel_brake_feed_forward_k(0),
-          linear_vel_feed_forward_k(0), linear_jerk_ff_k(0), linear_jerk_ff_ms(0), angular_jerk_ff_k(0), angular_jerk_ff_ms(0),
+          linear_vel_feed_forward_k(0),
           wall_kp(0), wall_ki(0), wall_kd(0),
           linear_vel_kp(0), linear_vel_ki(0), linear_vel_kd(0), diagonal_walls_kp(0), diagonal_walls_ki(0),
           diagonal_walls_kd(0), start_wall_break_mm_left(0), start_wall_break_mm_right(0),
-          enable_wall_break_correction(0), max_linear_acc_jerk(0), max_linear_brake_jerk(0), coulomb_ff() {}
+          enable_wall_break_correction(0), max_linear_acc_jerk(0), max_linear_brake_jerk(0), coulomb_ff(0),
+          angular_coulomb_ff(0) {}
 
-    GeneralParams(float fan, float akp, float aki, float akd, float aaff, float avff, float lvaff, float lvbff, float lvff, float ljffk, float ljffms, float ajffk, float ajffms, float wkp, float wki,
+    GeneralParams(float fan, float akp, float aki, float akd, float aaff, float avff, float lvaff, float lvbff, float lvff, float wkp, float wki,
                   float wkd, float lvkp, float lvki, float lvkd, float dwkp, float dwki, float dwkd, float swbcl,
-                  float swbcr, float ewbc, float mlaj, float mlbj, float c_ff )
+                  float swbcr, float ewbc, float mlaj, float mlbj, float c_ff, float angular_c_ff )
         : fan_speed(fan), angular_kp(akp), angular_ki(aki), angular_kd(akd), angular_acc_feed_forward_k(aaff),
           angular_vel_feed_forward_k(avff), linear_vel_acc_feed_forward_k(lvaff), linear_vel_brake_feed_forward_k(lvbff),
-          linear_vel_feed_forward_k(lvff), linear_jerk_ff_k(ljffk), linear_jerk_ff_ms(ljffms), angular_jerk_ff_k(ajffk), angular_jerk_ff_ms(ajffms),
+          linear_vel_feed_forward_k(lvff),
           wall_kp(wkp), wall_ki(wki),
           wall_kd(wkd), linear_vel_kp(lvkp), linear_vel_ki(lvki), linear_vel_kd(lvkd), diagonal_walls_kp(dwkp),
           diagonal_walls_ki(dwki), diagonal_walls_kd(dwkd), start_wall_break_mm_left(swbcl),
           start_wall_break_mm_right(swbcr), enable_wall_break_correction(ewbc),
-          max_linear_acc_jerk(mlaj), max_linear_brake_jerk(mlbj), coulomb_ff(c_ff) {}
+          max_linear_acc_jerk(mlaj), max_linear_brake_jerk(mlbj), coulomb_ff(c_ff),
+          angular_coulomb_ff(angular_c_ff) {}
 };
 
 extern const std::map<Movement, TurnParams> turn_params_search_slow;

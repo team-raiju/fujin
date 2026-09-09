@@ -1,5 +1,5 @@
-#include "services/config.hpp"
 #include "utils/movement_params.hpp"
+#include "services/config.hpp"
 
 #define T(ms) services::Config::ms_to_ticks(ms)
 
@@ -272,17 +272,16 @@ const GeneralParams general_params_search_slow = {
     0.0420,  0.00021, 0.0500, // Angular P,I,D
     0.0004,  0.004,           // Angular acc, velocity feed-forward
     0.03125, 0.018,   0.0,    // Linear velocity acc, brake, velocity feed-forward
-    0.0,     0.0,             // Linear jerk feed-forward k, Linear jerk limit ms
-    0.0,     0.0,             // Angular jerk feed-forward k, Angular jerk limit ms
     0.0006,  0.0000,  0.0020, // Wall P,I,D
     2.5000,  0.0100,  0.0000, // Linear velocity P,I,D
     0.0000,  0.0000,  0.0000, // Diagonal walls P,I,D
     45.0,                     // Start wall break mm left
     57.0,                     // Start wall break mm right
     1.0,                      // Enable wall break correction
-    40.0,                    // Max linear acceleration jerk
-    40.0,                    // Max linear brake jerk
-    0.13                      // Coulomb ff
+    40.0,                     // Max linear acceleration jerk
+    40.0,                     // Max linear brake jerk
+    0.13,                     // Coulomb ff
+    0.0                       // Angular Coulomb ff
 };
 
 const GeneralParams general_params_search_medium = {
@@ -290,8 +289,6 @@ const GeneralParams general_params_search_medium = {
     0.0550,  0.0045, 0.0000, // Angular P,I,D
     0.00000, 0.0000,         // Angular acc, velocity feed-forward
     0.0,     0.0,    0.0,    // Linear velocity acc, brake, velocity feed-forward
-    0.0,     0.0,            // Linear jerk feed-forward k, Linear jerk limit ms
-    0.0,     0.0,            // Angular jerk feed-forward k, Angular jerk limit ms
     0.0020,  0.0000, 0.0080, // Wall P,I,D
     8.0000,  0.0500, 0.0000, // Linear velocity P,I,D
     0.0000,  0.0000, 0.0000, // Diagonal walls P,I,D
@@ -300,7 +297,8 @@ const GeneralParams general_params_search_medium = {
     1.0,                     // Enable wall break correction
     100.0,                   // Max linear acceleration jerk
     100.0,                   // Max linear brake jerk
-    0.13                     // Coulomb ff
+    0.13,                    // Coulomb ff
+    0.0                      // Angular Coulomb ff
 };
 
 const GeneralParams general_params_search_fast = {
@@ -308,8 +306,6 @@ const GeneralParams general_params_search_fast = {
     0.0850,  0.0055, 0.0000, // Angular P,I,D
     0.00000, 0.0000,         // Angular acc, velocity feed-forward
     0.0,     0.0,    0.0,    // Linear velocity acc, brake, velocity feed-forward
-    0.0,     0.0,            // Linear jerk feed-forward k, Linear jerk limit ms
-    0.0,     0.0,            // Angular jerk feed-forward k, Angular jerk limit ms
     0.0020,  0.0000, 0.0080, // Wall P,I,D
     8.0000,  0.0500, 0.0000, // Linear velocity P,I,D
     0.0000,  0.0000, 0.0000, // Diagonal walls P,I,D
@@ -318,7 +314,8 @@ const GeneralParams general_params_search_fast = {
     1.0,                     // Enable wall break correction
     100.0,                   // Max linear acceleration jerk
     100.0,                   // Max linear brake jerk
-    0.13                     // Coulomb ff
+    0.13,                    // Coulomb ff
+    0.0                      // Angular Coulomb ff
 };
 
 const GeneralParams general_params_slow = {
@@ -326,17 +323,16 @@ const GeneralParams general_params_slow = {
     0.0420,  0.00021, 0.0500, // Angular P,I,D
     0.0004,  0.004,           // Angular acc, velocity feed-forward
     0.03125, 0.018,   0.0,    // Linear velocity acc, brake, velocity feed-forward
-    0.0,     0.0,             // Linear jerk feed-forward k, Linear jerk limit ms
-    0.0,     0.0,             // Angular jerk feed-forward k, Angular jerk limit ms
     0.0015,  0.0000,  0.0050, // Wall P,I,D
     2.5000,  0.0100,  0.0000, // Linear velocity P,I,D
     0.0045,  0.0000,  0.0090, // Diagonal walls P,I,D
     53.0,                     // Start wall break mm left
     75.0,                     // Start wall break mm right
     1.0,                      // Enable wall break correction
-    40.0,                    // Max linear acceleration jerk
-    40.0,                    // Max linear brake jerk
-    0.13                      // Coulomb ff
+    40.0,                     // Max linear acceleration jerk
+    40.0,                     // Max linear brake jerk
+    0.13,                     // Coulomb ff
+    0.0                       // Angular Coulomb ff
 };
 
 const GeneralParams general_params_medium = {
@@ -344,8 +340,6 @@ const GeneralParams general_params_medium = {
     0.0950,  0.0005, 0.0000, // Angular P,I,D
     0.00055, 0.006,          // Angular acc, velocity feed-forward
     0.0,     0.02,   0.0,    // Linear velocity acc, brake, velocity feed-forward
-    0.03,    8.0,            // Linear jerk feed-forward k, Linear jerk limit ms
-    0.0,     0.0,            // Angular jerk feed-forward k, Angular jerk limit ms
     0.0020,  0.0000, 0.0080, // Wall P,I,D
     9.2500,  0.0720, 0.0000, // Linear velocity P,I,D
     0.0010,  0.0000, 0.0040, // Diagonal walls P,I,D
@@ -354,7 +348,8 @@ const GeneralParams general_params_medium = {
     1.0,                     // Enable wall break correction
     100.0,                   // Max linear acceleration jerk
     100.0,                   // Max linear brake jerk
-    0.13                     // Coulomb ff
+    0.13,                    // Coulomb ff
+    0.0                      // Angular Coulomb ff
 };
 
 const GeneralParams general_params_fast = {
@@ -362,8 +357,6 @@ const GeneralParams general_params_fast = {
     0.0950,  0.0005, 0.0000, // Angular P,I,D
     0.00055, 0.006,          // Angular acc, velocity feed-forward
     0.0,     0.02,   0.0,    // Linear velocity acc, brake, velocity feed-forward
-    0.03,    8.0,            // Linear jerk feed-forward k, Linear jerk limit ms
-    0.0,     0.0,            // Angular jerk feed-forward k, Angular jerk limit ms
     0.0020,  0.0000, 0.0080, // Wall P,I,D
     9.2500,  0.0720, 0.0000, // Linear velocity P,I,D
     0.0010,  0.0000, 0.0040, // Diagonal walls P,I,D
@@ -372,7 +365,8 @@ const GeneralParams general_params_fast = {
     1.0,                     // Enable wall break correction
     100.0,                   // Max linear acceleration jerk
     100.0,                   // Max linear brake jerk
-    0.13                     // Coulomb ff
+    0.13,                    // Coulomb ff
+    0.0                      // Angular Coulomb ff
 };
 
 const GeneralParams general_params_super = {
@@ -380,8 +374,6 @@ const GeneralParams general_params_super = {
     0.0950,  0.0005, 0.0000, // Angular P,I,D
     0.00059, 0.006,          // Angular acc, velocity feed-forward
     0.0,     0.02,   0.0,    // Linear velocity acc, brake, velocity feed-forward
-    0.03,    8.0,            // Linear jerk feed-forward k, Linear jerk limit ms
-    0.00042, 5.0,            // Angular jerk feed-forward k, Angular jerk limit ms
     0.0025,  0.0000, 0.0100, // Wall P,I,D
     9.2500,  0.0720, 0.0000, // Linear velocity P,I,D
     0.0010,  0.0000, 0.0040, // Diagonal walls P,I,D
@@ -390,5 +382,6 @@ const GeneralParams general_params_super = {
     1.0,                     // Enable wall break correction
     100.0,                   // Max linear acceleration jerk
     100.0,                   // Max linear brake jerk
-    0.13                     // Coulomb ff
+    0.13,                    // Coulomb ff
+    0.0                      // Angular Coulomb ff
 };

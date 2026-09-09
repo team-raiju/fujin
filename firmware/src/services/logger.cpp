@@ -239,6 +239,8 @@ void Logger::print_log() {
 
         bsp::delay_ms(3);
     }
+
+    bsp::leds::stripe_set(bsp::leds::Color::Black);
 }
 
 void Logger::send_log_ble() {
