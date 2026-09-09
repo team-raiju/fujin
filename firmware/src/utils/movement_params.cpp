@@ -270,8 +270,8 @@ std::map<Movement, ForwardParams> forward_params_custom = {
 const GeneralParams general_params_search_slow = {
     0.0,                      // Fan speed
     0.0420,  0.00021, 0.0500, // Angular P,I,D
-    0.0004,  0.004,           // Angular acc, velocity feed-forward
-    0.03125, 0.018,   0.0,    // Linear velocity acc, brake, velocity feed-forward
+    0.0004,  0.004,           // Angular acc ff, Angular velocity ff
+    0.03125, 0.018,   0.0,    // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
     0.0006,  0.0000,  0.0020, // Wall P,I,D
     2.5000,  0.0100,  0.0000, // Linear velocity P,I,D
     0.0000,  0.0000,  0.0000, // Diagonal walls P,I,D
@@ -287,8 +287,8 @@ const GeneralParams general_params_search_slow = {
 const GeneralParams general_params_search_medium = {
     150.0,                   // Fan speed
     0.0550,  0.0045, 0.0000, // Angular P,I,D
-    0.00000, 0.0000,         // Angular acc, velocity feed-forward
-    0.0,     0.0,    0.0,    // Linear velocity acc, brake, velocity feed-forward
+    0.00000, 0.0000,         // Angular acc ff, Angular velocity ff
+    0.0,     0.0,    0.0,    // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
     0.0020,  0.0000, 0.0080, // Wall P,I,D
     8.0000,  0.0500, 0.0000, // Linear velocity P,I,D
     0.0000,  0.0000, 0.0000, // Diagonal walls P,I,D
@@ -304,8 +304,8 @@ const GeneralParams general_params_search_medium = {
 const GeneralParams general_params_search_fast = {
     220.0,                   // Fan speed
     0.0850,  0.0055, 0.0000, // Angular P,I,D
-    0.00000, 0.0000,         // Angular acc, velocity feed-forward
-    0.0,     0.0,    0.0,    // Linear velocity acc, brake, velocity feed-forward
+    0.00000, 0.0000,         // Angular acc ff, Angular velocity ff
+    0.0,     0.0,    0.0,    // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
     0.0020,  0.0000, 0.0080, // Wall P,I,D
     8.0000,  0.0500, 0.0000, // Linear velocity P,I,D
     0.0000,  0.0000, 0.0000, // Diagonal walls P,I,D
@@ -321,8 +321,8 @@ const GeneralParams general_params_search_fast = {
 const GeneralParams general_params_slow = {
     0.0,                      // Fan speed
     0.0420,  0.00021, 0.0500, // Angular P,I,D
-    0.0004,  0.004,           // Angular acc, velocity feed-forward
-    0.03125, 0.018,   0.0,    // Linear velocity acc, brake, velocity feed-forward
+    0.0004,  0.004,           // Angular acc ff, Angular velocity ff
+    0.03125, 0.018,   0.0,    // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
     0.0015,  0.0000,  0.0050, // Wall P,I,D
     2.5000,  0.0100,  0.0000, // Linear velocity P,I,D
     0.0045,  0.0000,  0.0090, // Diagonal walls P,I,D
@@ -338,8 +338,8 @@ const GeneralParams general_params_slow = {
 const GeneralParams general_params_medium = {
     600.0,                   // Fan speed
     0.0950,  0.0005, 0.0000, // Angular P,I,D
-    0.00055, 0.006,          // Angular acc, velocity feed-forward
-    0.0,     0.02,   0.0,    // Linear velocity acc, brake, velocity feed-forward
+    0.00055, 0.006,          // Angular acc ff, Angular velocity ff
+    0.0,     0.02,   0.0,    // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
     0.0020,  0.0000, 0.0080, // Wall P,I,D
     9.2500,  0.0720, 0.0000, // Linear velocity P,I,D
     0.0010,  0.0000, 0.0040, // Diagonal walls P,I,D
@@ -355,8 +355,8 @@ const GeneralParams general_params_medium = {
 const GeneralParams general_params_fast = {
     600.0,                   // Fan speed
     0.0950,  0.0005, 0.0000, // Angular P,I,D
-    0.00055, 0.006,          // Angular acc, velocity feed-forward
-    0.0,     0.02,   0.0,    // Linear velocity acc, brake, velocity feed-forward
+    0.00055, 0.006,          // Angular acc ff, Angular velocity ff
+    0.0,     0.02,   0.0,    // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
     0.0020,  0.0000, 0.0080, // Wall P,I,D
     9.2500,  0.0720, 0.0000, // Linear velocity P,I,D
     0.0010,  0.0000, 0.0040, // Diagonal walls P,I,D
@@ -372,8 +372,8 @@ const GeneralParams general_params_fast = {
 const GeneralParams general_params_super = {
     675.0,                   // Fan speed
     0.0950,  0.0005, 0.0000, // Angular P,I,D
-    0.00059, 0.006,          // Angular acc, velocity feed-forward
-    0.0,     0.02,   0.0,    // Linear velocity acc, brake, velocity feed-forward
+    0.00059, 0.006,          // Angular acc ff, Angular velocity ff
+    0.0,     0.02,   0.0,    // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
     0.0025,  0.0000, 0.0100, // Wall P,I,D
     9.2500,  0.0720, 0.0000, // Linear velocity P,I,D
     0.0010,  0.0000, 0.0040, // Diagonal walls P,I,D
