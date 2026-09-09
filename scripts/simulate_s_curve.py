@@ -189,6 +189,7 @@ def run_simulation(movement_sequence):
     braking_log = []
 
     control_linear_speed = 0.0        # m/s
+    current_linear_acceleration = 0.0 # m/s^2
     total_traveled_dist_mm = 0.0      # mm
     total_time_s = 0.0                # s
 
@@ -201,11 +202,8 @@ def run_simulation(movement_sequence):
             parsed_sequence[-1] = (move, parsed_sequence[-1][1] + cnt)
         else:
             parsed_sequence.append((move, cnt))
-    for i, movement in enumerate(movement_sequence):
-        prev_movement = movement_sequence[i - 1] if i > 0 else Movement.START
-        next_movement = movement_sequence[i + 1] if i < len(movement_sequence) - 1 else Movement.STOP
-        count = 1
 
+    prev_was_seamless = False
     for i, (movement, count) in enumerate(parsed_sequence):
         prev_movement = parsed_sequence[i - 1][0] if i > 0 else Movement.START
         next_movement = parsed_sequence[i + 1][0] if i < len(parsed_sequence) - 1 else Movement.STOP
@@ -222,11 +220,19 @@ def run_simulation(movement_sequence):
         else:
             target_travel_mm = complete_prev_move_travel + FORWARD_PARAMS[movement].target_travel_mm
 
+        # Seamless START -> FORWARD optimization check
+        seamless_to_forward = False
+        if movement == Movement.START and next_movement in [Movement.FORWARD, Movement.DIAGONAL]:
+            d_accel_m = get_s_curve_brake_distance(FORWARD_PARAMS[Movement.START].max_speed, 0.0, FORWARD_PARAMS[Movement.START].acceleration, ACC_JERK)
+            d_accel_mm = d_accel_m * 1000.0
+            start_cruises = (target_travel_mm - d_accel_mm) > 15.0
+            seamless_to_forward = not start_cruises
+
         # Determine forward_end_speed (matching Navigation::set_movement lines 785-796)
         if movement == Movement.STOP:
             forward_end_speed = 0.0
         elif movement == Movement.START:
-            forward_end_speed = FORWARD_PARAMS[Movement.START].max_speed
+            forward_end_speed = FORWARD_PARAMS[next_movement].max_speed if seamless_to_forward else FORWARD_PARAMS[Movement.START].max_speed
         elif next_movement in [Movement.FORWARD, Movement.DIAGONAL]:
             forward_end_speed = FORWARD_PARAMS[next_movement].max_speed
         elif next_movement == Movement.STOP:
@@ -234,8 +240,10 @@ def run_simulation(movement_sequence):
         else:
             forward_end_speed = TURN_PARAMS[next_movement].turn_linear_speed
 
+        is_post_straight_start = prev_was_seamless
+        prev_was_seamless = seamless_to_forward
+
         traveled_dist_mm = 0.0
-        current_linear_acceleration = 0.0
         is_braking = False
         is_finished = False
         mini_fsm_state = MiniFSMStates.FORWARD_1
@@ -266,7 +274,7 @@ def run_simulation(movement_sequence):
                 if movement == Movement.STOP:
                     forward_end_speed = 0.0
 
-                max_speed = FORWARD_PARAMS[movement].max_speed
+                max_speed = FORWARD_PARAMS[next_movement].max_speed if seamless_to_forward else FORWARD_PARAMS[movement].max_speed
                 max_acceleration = FORWARD_PARAMS[movement].acceleration
                 deceleration = FORWARD_PARAMS[movement].deceleration
 
@@ -285,20 +293,22 @@ def run_simulation(movement_sequence):
                     v_peak = control_linear_speed
                     d_ramp_m = 0.0
 
-                required_brake_distance = (1000.0 * (d_ramp_m + get_s_curve_brake_distance(
+                required_brake_distance = 0.0 if seamless_to_forward else ((1000.0 * (d_ramp_m + get_s_curve_brake_distance(
                     v_peak, forward_end_speed, deceleration, brake_jerk
-                ))) + break_margin
+                ))) + break_margin)
 
+                can_accelerate = is_post_straight_start or control_linear_speed < 1.0 or abs(traveled_dist_mm) > accel_margin
                 if not is_braking and (abs(traveled_dist_mm) < (target_travel_mm - required_brake_distance)):
-                    if control_linear_speed < 1.0 or abs(traveled_dist_mm) > accel_margin:
-                        if control_linear_speed >= max_speed:
+                    if can_accelerate:
+                        if control_linear_speed >= max_speed and current_linear_acceleration <= 0.0:
                             current_linear_acceleration = 0.0
                             control_linear_speed = max_speed
-                        elif start_accel_ramp_down(control_linear_speed, current_linear_acceleration, max_speed, acc_jerk):
+                        elif control_linear_speed >= max_speed or start_accel_ramp_down(control_linear_speed, current_linear_acceleration, max_speed, acc_jerk):
                             current_linear_acceleration -= (acc_jerk / CONTROL_FREQUENCY_HZ)
                             current_linear_acceleration = max(current_linear_acceleration, 0.0)
                             control_linear_speed += current_linear_acceleration / CONTROL_FREQUENCY_HZ
-                            control_linear_speed = min(control_linear_speed, max_speed)
+                            if current_linear_acceleration == 0.0:
+                                control_linear_speed = max_speed
                         else:
                             eff_max_accel = get_effective_max_acceleration(control_linear_speed, max_acceleration)
                             if current_linear_acceleration < eff_max_accel:
@@ -312,8 +322,8 @@ def run_simulation(movement_sequence):
                             control_linear_speed = min(control_linear_speed, max_speed)
                 elif abs(traveled_dist_mm) > accel_margin:
                     is_braking = True
-                    if control_linear_speed > forward_end_speed:
-                        if start_brake_ramp_up(control_linear_speed, current_linear_acceleration, forward_end_speed, brake_jerk):
+                    if control_linear_speed > forward_end_speed or current_linear_acceleration < 0.0:
+                        if start_brake_ramp_up(control_linear_speed, current_linear_acceleration, forward_end_speed, brake_jerk) or control_linear_speed <= forward_end_speed:
                             current_linear_acceleration += (brake_jerk / CONTROL_FREQUENCY_HZ)
                             current_linear_acceleration = min(current_linear_acceleration, 0.0)
                         else:
@@ -321,12 +331,17 @@ def run_simulation(movement_sequence):
                             current_linear_acceleration = max(current_linear_acceleration, -deceleration)
 
                         control_linear_speed += current_linear_acceleration / CONTROL_FREQUENCY_HZ
-                        control_linear_speed = max(control_linear_speed, forward_end_speed)
+                        if current_linear_acceleration == 0.0 and control_linear_speed < forward_end_speed:
+                            control_linear_speed = forward_end_speed
                         if forward_end_speed > 0.0:
                             control_linear_speed = max(control_linear_speed, MIN_MOVE_SPEED)
+                    elif current_linear_acceleration > 0.0:
+                        current_linear_acceleration -= (brake_jerk / CONTROL_FREQUENCY_HZ)
+                        current_linear_acceleration = max(current_linear_acceleration, 0.0)
+                        control_linear_speed += current_linear_acceleration / CONTROL_FREQUENCY_HZ
                     else:
                         current_linear_acceleration = 0.0
-                        control_linear_speed = min(control_linear_speed, forward_end_speed)
+                        control_linear_speed = forward_end_speed
                         if forward_end_speed > 0.0:
                             control_linear_speed = max(control_linear_speed, MIN_MOVE_SPEED)
 

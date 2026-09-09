@@ -425,3 +425,436 @@ function simulateArc(p) {
     }
   };
 }
+
+/* =========================================================
+   LINEAR MOTION SIMULATIONS (TRAPEZOIDAL & JERK S-CURVE)
+   Based on simulate_s_curve.py and firmware/src/services/navigation.cpp
+   ========================================================= */
+
+function getTorricelliDistance(finalSpeed, initialSpeed, acceleration) {
+  if (acceleration === 0.0) return 0.0;
+  return (finalSpeed * finalSpeed - initialSpeed * initialSpeed) / (2.0 * acceleration);
+}
+
+function getSCurveBrakeDistance(initialSpeed, finalSpeed, deceleration, jerk) {
+  if (initialSpeed <= finalSpeed || deceleration <= 0.0 || jerk <= 0.0) {
+    return 0.0;
+  }
+  const deltaV = initialSpeed - finalSpeed;
+  const vThreshold = (deceleration * deceleration) / jerk;
+
+  if (deltaV >= vThreshold) {
+    return ((initialSpeed * initialSpeed - finalSpeed * finalSpeed) / (2.0 * deceleration)) +
+           (((initialSpeed + finalSpeed) * deceleration) / (2.0 * jerk));
+  } else {
+    return (initialSpeed + finalSpeed) * Math.sqrt(deltaV / jerk);
+  }
+}
+
+function startAccelRampDown(currentSpeed, currentAccel, maxSpeed, jerk) {
+  if (currentAccel <= 0.0 || jerk <= 0.0) return false;
+  const predSpeed = currentSpeed + (currentAccel * currentAccel) / (2.0 * jerk);
+  return predSpeed >= maxSpeed;
+}
+
+function startBrakeRampUp(currentSpeed, currentAccel, finalSpeed, jerk) {
+  if (currentAccel > 0.0 || jerk <= 0.0) return false;
+  const predSpeed = currentSpeed - (currentAccel * currentAccel) / (2.0 * jerk);
+  return predSpeed <= finalSpeed;
+}
+
+function getEffectiveMaxAcceleration(currentSpeed, baseMaxAccel) {
+  if (currentSpeed > 7.0) return 0.50 * baseMaxAccel;
+  if (currentSpeed > 6.0) return 0.70 * baseMaxAccel;
+  if (currentSpeed > 5.0) return 0.85 * baseMaxAccel;
+  return baseMaxAccel;
+}
+
+/**
+ * Builds the movement sequence array: START -> FORWARD (0..16 cells) -> STOP
+ */
+function buildLinearMovementSequence(p, profileKey) {
+  const isSCurve = (profileKey === 'sCurve');
+  const maxSpeed = isSCurve ? (p.sCurveMaxSpeed ?? 7.5) : (p.trapMaxSpeed ?? 7.5);
+  const accel = isSCurve ? (p.sCurveAccel ?? 35.0) : (p.trapAccel ?? 35.0);
+  const decel = isSCurve ? (p.sCurveDecel ?? 35.0) : (p.trapDecel ?? 35.0);
+
+  const cellSizeMm = p.cellSizeMm ?? 180.0;
+  const startDistMm = p.startDistMm ?? 111.0;
+  const stopDistMm = p.stopDistMm ?? 80.0;
+  const startMaxSpeed = p.startMaxSpeed ?? 0.5;
+  const startAccel = p.startAccel ?? 12.0;
+  const startDecel = p.startDecel ?? 12.0;
+  const stopMaxSpeed = p.stopMaxSpeed ?? 0.5;
+  const stopAccel = p.stopAccel ?? 20.0;
+  const stopDecel = p.stopDecel ?? 20.0;
+  const forwardCells = Math.max(0, Math.min(16, Math.round(p.forwardCells ?? 5)));
+  const accJerk = p.sCurveJerkAcc ?? 625.0;
+
+  // Calculate distance to accelerate from 0 to startMaxSpeed and ramp accel back to 0:
+  let dAccelToZeroMm = 0.0;
+  if (isSCurve) {
+    dAccelToZeroMm = 1000.0 * getSCurveBrakeDistance(startMaxSpeed, 0.0, startAccel, accJerk);
+  } else {
+    dAccelToZeroMm = 1000.0 * ((startMaxSpeed * startMaxSpeed) / (2.0 * startAccel));
+  }
+
+  // If next move is FORWARD and START has no significant cruise phase at startMaxSpeed:
+  const cruiseMarginMm = 15.0;
+  const startCruises = (startDistMm - dAccelToZeroMm) > cruiseMarginMm;
+  const seamlessToForward = (forwardCells > 0) && !startCruises;
+
+  const seq = [];
+
+  // 1. START movement
+  seq.push({
+    name: 'START',
+    count: 1,
+    targetTravelMm: startDistMm,
+    maxSpeed: seamlessToForward ? maxSpeed : startMaxSpeed,
+    accel: startAccel,
+    decel: startDecel,
+    endSpeed: seamlessToForward ? maxSpeed : startMaxSpeed,
+    seamlessToForward
+  });
+
+  // 2. FORWARD movement (if forwardCells > 0)
+  if (forwardCells > 0) {
+    seq.push({
+      name: 'FORWARD',
+      count: forwardCells,
+      targetTravelMm: cellSizeMm * forwardCells,
+      maxSpeed: maxSpeed,
+      accel: accel,
+      decel: decel,
+      endSpeed: stopMaxSpeed
+    });
+  }
+
+  // 3. STOP movement
+  seq.push({
+    name: 'STOP',
+    count: 1,
+    targetTravelMm: stopDistMm,
+    maxSpeed: stopMaxSpeed,
+    accel: stopAccel,
+    decel: stopDecel,
+    endSpeed: 0.0
+  });
+
+  return seq;
+}
+
+function simulateLinearSCurve(p) {
+  const frequency = p.simFrequency ?? 2000.0;
+  const dt = 1.0 / frequency;
+  const dtMs = dt * 1000.0;
+  const accJerk = p.sCurveJerkAcc ?? 625.0;
+  const brakeJerk = p.sCurveJerkBrake ?? 625.0;
+  const brakeMarginMm = p.brakeMarginMm ?? 20.0;
+  const accelMarginMm = p.accelMarginMm ?? 20.0;
+  const minMoveSpeed = p.minMoveSpeed ?? 0.2;
+  const useDerating = p.useDerating ?? true;
+
+  const sequence = buildLinearMovementSequence(p, 'sCurve');
+
+  const times = [];
+  const distances = [];
+  const speeds = [];
+  const accels = [];
+  const jerks = [];
+  const transitions = [];
+
+  let controlLinearSpeed = 0.0;
+  let totalTraveledDistMm = 0.0;
+  let totalTimeS = 0.0;
+  let currentLinearAccel = 0.0;
+  let cruiseTimeS = 0.0;
+  let cruiseDistMm = 0.0;
+  let prevAccel = 0.0;
+
+  for (let i = 0; i < sequence.length; i++) {
+    const move = sequence[i];
+    let traveledDistMm = 0.0;
+    let isBraking = false;
+    let isFinished = false;
+
+    const label = move.count > 1 ? `${move.name} x${move.count}` : move.name;
+    transitions.push({
+      timeMs: totalTimeS * 1000.0,
+      distMm: totalTraveledDistMm,
+      label,
+      speed: controlLinearSpeed
+    });
+
+    const maxTicks = Math.round(30 * frequency);
+    let ticks = 0;
+
+    while (!isFinished && ticks < maxTicks) {
+      ticks++;
+
+      // Log current state
+      const tMs = totalTimeS * 1000.0;
+      times.push(tMs);
+      distances.push(totalTraveledDistMm);
+      speeds.push(controlLinearSpeed);
+      accels.push(currentLinearAccel);
+
+      const currentJerk = (currentLinearAccel - prevAccel) * frequency;
+      jerks.push(currentJerk);
+      prevAccel = currentLinearAccel;
+
+      // Calculate brake distance including ramp-down of positive acceleration to 0
+      let dRampM = 0.0;
+      let vPeak = controlLinearSpeed;
+      if (currentLinearAccel > 0.0 && brakeJerk > 0.0) {
+        const tRamp = currentLinearAccel / brakeJerk;
+        const deltaV = (currentLinearAccel * currentLinearAccel) / (2.0 * brakeJerk);
+        vPeak = controlLinearSpeed + deltaV;
+        dRampM = (controlLinearSpeed * tRamp) + Math.pow(currentLinearAccel, 3) / (3.0 * brakeJerk * brakeJerk);
+      }
+
+      const reqBrakeDist = move.seamlessToForward ? 0.0 : ((1000.0 * (dRampM + getSCurveBrakeDistance(
+        vPeak, move.endSpeed, move.decel, brakeJerk
+      ))) + brakeMarginMm);
+
+      const isPostStraightStart = (i > 0 && sequence[i - 1].seamlessToForward);
+      const canAccelerate = isPostStraightStart || controlLinearSpeed < 1.0 || Math.abs(traveledDistMm) > accelMarginMm;
+
+      if (!isBraking && (Math.abs(traveledDistMm) < (move.targetTravelMm - reqBrakeDist))) {
+        if (canAccelerate) {
+          if (controlLinearSpeed >= move.maxSpeed && currentLinearAccel <= 0.0) {
+            currentLinearAccel = 0.0;
+            controlLinearSpeed = move.maxSpeed;
+            cruiseTimeS += dt;
+            cruiseDistMm += (controlLinearSpeed * 1000.0) / frequency;
+          } else if (controlLinearSpeed >= move.maxSpeed || startAccelRampDown(controlLinearSpeed, currentLinearAccel, move.maxSpeed, accJerk)) {
+            currentLinearAccel -= (accJerk / frequency);
+            currentLinearAccel = Math.max(currentLinearAccel, 0.0);
+            controlLinearSpeed += currentLinearAccel / frequency;
+            if (currentLinearAccel === 0.0) {
+              controlLinearSpeed = move.maxSpeed;
+            }
+          } else {
+            const effMaxAccel = useDerating ? getEffectiveMaxAcceleration(controlLinearSpeed, move.accel) : move.accel;
+            if (currentLinearAccel < effMaxAccel) {
+              currentLinearAccel += (accJerk / frequency);
+              currentLinearAccel = Math.min(currentLinearAccel, effMaxAccel);
+            } else if (currentLinearAccel > effMaxAccel) {
+              currentLinearAccel -= (accJerk / frequency);
+              currentLinearAccel = Math.max(currentLinearAccel, effMaxAccel);
+            }
+            controlLinearSpeed += currentLinearAccel / frequency;
+            controlLinearSpeed = Math.min(controlLinearSpeed, move.maxSpeed);
+          }
+        }
+      } else if (Math.abs(traveledDistMm) > accelMarginMm) {
+        isBraking = true;
+        if (controlLinearSpeed > move.endSpeed || currentLinearAccel < 0.0) {
+          if (startBrakeRampUp(controlLinearSpeed, currentLinearAccel, move.endSpeed, brakeJerk) || controlLinearSpeed <= move.endSpeed) {
+            currentLinearAccel += (brakeJerk / frequency);
+            currentLinearAccel = Math.min(currentLinearAccel, 0.0);
+          } else {
+            currentLinearAccel -= (brakeJerk / frequency);
+            currentLinearAccel = Math.max(currentLinearAccel, -move.decel);
+          }
+
+          controlLinearSpeed += currentLinearAccel / frequency;
+          if (currentLinearAccel === 0.0 && controlLinearSpeed < move.endSpeed) {
+            controlLinearSpeed = move.endSpeed;
+          }
+          if (move.endSpeed > 0.0) {
+            controlLinearSpeed = Math.max(controlLinearSpeed, minMoveSpeed);
+          }
+        } else if (currentLinearAccel > 0.0) {
+          currentLinearAccel -= (brakeJerk / frequency);
+          currentLinearAccel = Math.max(currentLinearAccel, 0.0);
+          controlLinearSpeed += currentLinearAccel / frequency;
+        } else {
+          currentLinearAccel = 0.0;
+          controlLinearSpeed = move.endSpeed;
+          if (move.endSpeed > 0.0) {
+            controlLinearSpeed = Math.max(controlLinearSpeed, minMoveSpeed);
+          }
+        }
+      }
+
+      if ((Math.abs(traveledDistMm) >= move.targetTravelMm) ||
+          (move.name === 'STOP' && isBraking && controlLinearSpeed <= 0.0)) {
+        isFinished = true;
+      }
+
+      const deltaXMm = (controlLinearSpeed * 1000.0) / frequency;
+      traveledDistMm += deltaXMm;
+      totalTraveledDistMm += deltaXMm;
+      totalTimeS += dt;
+    }
+  }
+
+  const peakSpeed = speeds.length > 0 ? Math.max(...speeds) : 0;
+  const peakAccel = accels.length > 0 ? Math.max(...accels) : 0;
+  const peakDecel = accels.length > 0 ? Math.abs(Math.min(...accels)) : 0;
+  const peakJerk = jerks.length > 0 ? Math.max(...jerks.map(Math.abs)) : 0;
+
+  return {
+    times,
+    distances,
+    speeds,
+    accels,
+    jerks,
+    transitions,
+    results: {
+      totalTimeMs: Math.round(totalTimeS * 10000) / 10,
+      totalDistMm: Math.round(totalTraveledDistMm * 100) / 100,
+      peakSpeed: Math.round(peakSpeed * 1000) / 1000,
+      peakAccel: Math.round(peakAccel * 100) / 100,
+      peakDecel: Math.round(peakDecel * 100) / 100,
+      peakJerk: Math.round(peakJerk * 10) / 10,
+      cruiseTimeMs: Math.round(cruiseTimeS * 10000) / 10,
+      cruiseDistMm: Math.round(cruiseDistMm * 10) / 10
+    }
+  };
+}
+
+function simulateLinearTrapezoidal(p) {
+  const frequency = p.simFrequency ?? 2000.0;
+  const dt = 1.0 / frequency;
+  const brakeMarginMm = p.brakeMarginMm ?? 20.0;
+  const accelMarginMm = p.accelMarginMm ?? 20.0;
+  const minMoveSpeed = p.minMoveSpeed ?? 0.2;
+  const useDerating = p.useDerating ?? true;
+
+  const sequence = buildLinearMovementSequence(p, 'trap');
+
+  const times = [];
+  const distances = [];
+  const speeds = [];
+  const accels = [];
+  const jerks = [];
+  const transitions = [];
+
+  let controlLinearSpeed = 0.0;
+  let totalTraveledDistMm = 0.0;
+  let totalTimeS = 0.0;
+  let currentLinearAccel = 0.0;
+  let cruiseTimeS = 0.0;
+  let cruiseDistMm = 0.0;
+  let prevAccel = 0.0;
+
+  for (let i = 0; i < sequence.length; i++) {
+    const move = sequence[i];
+    let traveledDistMm = 0.0;
+    let isBraking = false;
+    let isFinished = false;
+
+    const label = move.count > 1 ? `${move.name} x${move.count}` : move.name;
+    transitions.push({
+      timeMs: totalTimeS * 1000.0,
+      distMm: totalTraveledDistMm,
+      label,
+      speed: controlLinearSpeed
+    });
+
+    const maxTicks = Math.round(30 * frequency);
+    let ticks = 0;
+
+    while (!isFinished && ticks < maxTicks) {
+      ticks++;
+
+      const tMs = totalTimeS * 1000.0;
+      times.push(tMs);
+      distances.push(totalTraveledDistMm);
+      speeds.push(controlLinearSpeed);
+      accels.push(currentLinearAccel);
+
+      const currentJerk = (currentLinearAccel - prevAccel) * frequency;
+      jerks.push(currentJerk);
+      prevAccel = currentLinearAccel;
+
+      // Torricelli brake distance
+      let reqBrakeDist = brakeMarginMm;
+      if (controlLinearSpeed > move.endSpeed && move.decel > 0.0) {
+        reqBrakeDist += 1000.0 * getTorricelliDistance(move.endSpeed, controlLinearSpeed, -move.decel);
+      }
+      if (move.seamlessToForward) {
+        reqBrakeDist = 0.0;
+      }
+
+      const isPostStraightStart = (i > 0 && sequence[i - 1].seamlessToForward);
+      const canAccelerate = isPostStraightStart || controlLinearSpeed < 1.0 || Math.abs(traveledDistMm) > accelMarginMm;
+
+      if (!isBraking && (Math.abs(traveledDistMm) < (move.targetTravelMm - reqBrakeDist))) {
+        if (canAccelerate) {
+          if (controlLinearSpeed >= move.maxSpeed) {
+            currentLinearAccel = 0.0;
+            controlLinearSpeed = move.maxSpeed;
+            cruiseTimeS += dt;
+            cruiseDistMm += (controlLinearSpeed * 1000.0) / frequency;
+          } else {
+            const effMaxAccel = useDerating ? getEffectiveMaxAcceleration(controlLinearSpeed, move.accel) : move.accel;
+            currentLinearAccel = effMaxAccel;
+            controlLinearSpeed += effMaxAccel / frequency;
+            if (controlLinearSpeed >= move.maxSpeed) {
+              controlLinearSpeed = move.maxSpeed;
+              currentLinearAccel = 0.0;
+            }
+          }
+        }
+      } else if (Math.abs(traveledDistMm) > accelMarginMm) {
+        isBraking = true;
+        if (controlLinearSpeed > move.endSpeed) {
+          currentLinearAccel = -move.decel;
+          controlLinearSpeed -= move.decel / frequency;
+          if (controlLinearSpeed <= move.endSpeed) {
+            controlLinearSpeed = move.endSpeed;
+            currentLinearAccel = 0.0;
+          }
+          if (move.endSpeed > 0.0) {
+            controlLinearSpeed = Math.max(controlLinearSpeed, minMoveSpeed);
+          }
+        } else {
+          currentLinearAccel = 0.0;
+          controlLinearSpeed = Math.min(controlLinearSpeed, move.endSpeed);
+          if (move.endSpeed > 0.0) {
+            controlLinearSpeed = Math.max(controlLinearSpeed, minMoveSpeed);
+          }
+        }
+      }
+
+      if ((Math.abs(traveledDistMm) >= move.targetTravelMm) ||
+          (move.name === 'STOP' && isBraking && controlLinearSpeed <= 0.0)) {
+        isFinished = true;
+      }
+
+      const deltaXMm = (controlLinearSpeed * 1000.0) / frequency;
+      traveledDistMm += deltaXMm;
+      totalTraveledDistMm += deltaXMm;
+      totalTimeS += dt;
+    }
+  }
+
+  const peakSpeed = speeds.length > 0 ? Math.max(...speeds) : 0;
+  const peakAccel = accels.length > 0 ? Math.max(...accels) : 0;
+  const peakDecel = accels.length > 0 ? Math.abs(Math.min(...accels)) : 0;
+  const peakJerk = jerks.length > 0 ? Math.max(...jerks.map(Math.abs)) : 0;
+
+  return {
+    times,
+    distances,
+    speeds,
+    accels,
+    jerks,
+    transitions,
+    results: {
+      totalTimeMs: Math.round(totalTimeS * 10000) / 10,
+      totalDistMm: Math.round(totalTraveledDistMm * 100) / 100,
+      peakSpeed: Math.round(peakSpeed * 1000) / 1000,
+      peakAccel: Math.round(peakAccel * 100) / 100,
+      peakDecel: Math.round(peakDecel * 100) / 100,
+      peakJerk: Math.round(peakJerk * 10) / 10,
+      cruiseTimeMs: Math.round(cruiseTimeS * 10000) / 10,
+      cruiseDistMm: Math.round(cruiseDistMm * 10) / 10
+    }
+  };
+}
+

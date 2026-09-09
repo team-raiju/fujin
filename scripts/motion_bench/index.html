@@ -15,12 +15,19 @@
     <header class="topbar">
       <div class="brand">
         <h1>MOTION&nbsp;BENCH</h1>
-        <span class="tag">TURN PROFILE COMPARATOR</span>
+        <span class="tag">PROFILE COMPARATOR</span>
       </div>
-      <div class="sub">micromouse · 90&#176; corner · angular motion planner</div>
+      <nav class="tabs-nav">
+        <button class="tab-btn active" data-tab="angular">TURN PROFILE</button>
+        <button class="tab-btn" data-tab="linear">LINEAR PROFILE</button>
+      </nav>
+      <div class="sub">micromouse · motion planner · lab</div>
     </header>
 
-    <aside id="sidebar">
+    <!-- TAB 1: ANGULAR / TURN PROFILE -->
+    <div id="tab-angular" class="tab-view active">
+      <aside id="sidebar" class="sidebar">
+
       <div class="channels">
         <div class="channel-row active" data-ch="trap">
           <div class="led"></div>
@@ -250,10 +257,221 @@
         <div id="traj-legend"></div>
       </section>
     </main>
-  </div>
+  </div><!-- /#tab-angular -->
 
-  <script src="simulations.js"></script>
-  <script src="ui.js"></script>
+  <!-- TAB 2: LINEAR PROFILE -->
+  <div id="tab-linear" class="tab-view">
+    <aside id="sidebar-linear" class="sidebar">
+      <div class="channels">
+        <div class="channel-row active" data-ch="lin-trap">
+          <div class="led"></div>
+          <div class="ch-label">TRAPEZOIDAL</div>
+          <div class="ch-num">CH1</div>
+          <input type="checkbox" id="chk-lin-trap" checked>
+        </div>
+        <div class="channel-row active" data-ch="lin-scurve">
+          <div class="led"></div>
+          <div class="ch-label">JERK S-CURVE</div>
+          <div class="ch-num">CH2</div>
+          <input type="checkbox" id="chk-lin-scurve" checked>
+        </div>
+      </div>
+
+      <div class="group on" data-owner="lin-common">
+        <div class="group-title">Sequence &amp; Maze</div>
+        <div class="field">
+          <label><span>Forward cells</span><span class="val mono" id="v-linForwardCells">5</span></label>
+          <div class="field-input-row">
+            <input type="range" id="r-linForwardCells" min="0" max="16" step="1" value="5">
+            <input type="number" id="n-linForwardCells" min="0" max="16" step="1" value="5">
+          </div>
+        </div>
+        <div class="field">
+          <label><span>Cell size (mm)</span><span class="val mono" id="v-linCellSize">180</span></label>
+          <div class="field-input-row">
+            <input type="range" id="r-linCellSize" min="90" max="360" step="10" value="180">
+            <input type="number" id="n-linCellSize" min="90" max="360" step="any" value="180">
+          </div>
+        </div>
+        <div class="field">
+          <label><span>Start travel (mm)</span><span class="val mono" id="v-linStartDist">111</span></label>
+          <div class="field-input-row">
+            <input type="range" id="r-linStartDist" min="0" max="300" step="1" value="111">
+            <input type="number" id="n-linStartDist" min="0" max="300" step="any" value="111">
+          </div>
+        </div>
+        <div class="field">
+          <label><span>Stop travel (mm)</span><span class="val mono" id="v-linStopDist">80</span></label>
+          <div class="field-input-row">
+            <input type="range" id="r-linStopDist" min="0" max="300" step="1" value="80">
+            <input type="number" id="n-linStopDist" min="0" max="300" step="any" value="80">
+          </div>
+        </div>
+        <div class="field">
+          <label><span>Control loop rate</span></label>
+          <div class="field-input-row">
+            <select id="s-linFrequency">
+              <option value="2000" selected>2000 Hz (0.5 ms)</option>
+              <option value="1000">1000 Hz (1.0 ms)</option>
+              <option value="500">500 Hz (2.0 ms)</option>
+            </select>
+          </div>
+        </div>
+        <div class="field" style="margin-top: 6px;">
+          <label style="cursor: pointer; display: flex; align-items: center; justify-content: flex-start; gap: 8px;">
+            <input type="checkbox" id="chk-linDerating" checked style="accent-color: var(--line-bright); cursor: pointer;">
+            <span>Motor derating (Back-EMF)</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="group on" data-owner="lin-trap">
+        <div class="group-title">Trapezoidal &mdash; CH1</div>
+        <div class="field">
+          <label><span>Max linear speed (m/s)</span><span class="val mono" id="v-linTrapSpeed">7.500</span></label>
+          <div class="field-input-row">
+            <input type="range" id="r-linTrapSpeed" min="0.5" max="10.0" step="0.1" value="7.5">
+            <input type="number" id="n-linTrapSpeed" min="0.5" max="10.0" step="any" value="7.5">
+          </div>
+        </div>
+        <div class="field">
+          <label><span>Max acceleration (m/s&sup2;)</span><span class="val mono" id="v-linTrapAccel">35.000</span></label>
+          <div class="field-input-row">
+            <input type="range" id="r-linTrapAccel" min="1.0" max="60.0" step="0.5" value="35.0">
+            <input type="number" id="n-linTrapAccel" min="1.0" max="60.0" step="any" value="35.0">
+          </div>
+        </div>
+        <div class="field">
+          <label><span>Max deceleration (m/s&sup2;)</span><span class="val mono" id="v-linTrapDecel">35.000</span></label>
+          <div class="field-input-row">
+            <input type="range" id="r-linTrapDecel" min="1.0" max="60.0" step="0.5" value="35.0">
+            <input type="number" id="n-linTrapDecel" min="1.0" max="60.0" step="any" value="35.0">
+          </div>
+        </div>
+      </div>
+
+      <div class="group on" data-owner="lin-scurve">
+        <div class="group-title">Jerk S-Curve &mdash; CH2</div>
+        <div class="field">
+          <label><span>Max linear speed (m/s)</span><span class="val mono" id="v-linSCurveSpeed">7.500</span></label>
+          <div class="field-input-row">
+            <input type="range" id="r-linSCurveSpeed" min="0.5" max="10.0" step="0.1" value="7.5">
+            <input type="number" id="n-linSCurveSpeed" min="0.5" max="10.0" step="any" value="7.5">
+          </div>
+        </div>
+        <div class="field">
+          <label><span>Max acceleration (m/s&sup2;)</span><span class="val mono" id="v-linSCurveAccel">35.000</span></label>
+          <div class="field-input-row">
+            <input type="range" id="r-linSCurveAccel" min="1.0" max="60.0" step="0.5" value="35.0">
+            <input type="number" id="n-linSCurveAccel" min="1.0" max="60.0" step="any" value="35.0">
+          </div>
+        </div>
+        <div class="field">
+          <label><span>Max deceleration (m/s&sup2;)</span><span class="val mono" id="v-linSCurveDecel">35.000</span></label>
+          <div class="field-input-row">
+            <input type="range" id="r-linSCurveDecel" min="1.0" max="60.0" step="0.5" value="35.0">
+            <input type="number" id="n-linSCurveDecel" min="1.0" max="60.0" step="any" value="35.0">
+          </div>
+        </div>
+        <div class="field">
+          <label><span>Accel jerk (m/s&sup3;)</span><span class="val mono" id="v-linSCurveJerkAcc">625</span></label>
+          <div class="field-input-row">
+            <input type="range" id="r-linSCurveJerkAcc" min="50" max="5000" step="25" value="625">
+            <input type="number" id="n-linSCurveJerkAcc" min="50" max="5000" step="any" value="625">
+          </div>
+        </div>
+        <div class="field">
+          <label><span>Brake jerk (m/s&sup3;)</span><span class="val mono" id="v-linSCurveJerkBrake">625</span></label>
+          <div class="field-input-row">
+            <input type="range" id="r-linSCurveJerkBrake" min="50" max="5000" step="25" value="625">
+            <input type="number" id="n-linSCurveJerkBrake" min="50" max="5000" step="any" value="625">
+          </div>
+        </div>
+        <div class="field">
+          <label><span>Brake margin (mm)</span><span class="val mono" id="v-linBrakeMargin">20</span></label>
+          <div class="field-input-row">
+            <input type="range" id="r-linBrakeMargin" min="0" max="100" step="1" value="20">
+            <input type="number" id="n-linBrakeMargin" min="0" max="100" step="any" value="20">
+          </div>
+        </div>
+        <div class="field">
+          <label><span>Accel margin (mm)</span><span class="val mono" id="v-linAccelMargin">20</span></label>
+          <div class="field-input-row">
+            <input type="range" id="r-linAccelMargin" min="0" max="100" step="1" value="20">
+            <input type="number" id="n-linAccelMargin" min="0" max="100" step="any" value="20">
+          </div>
+        </div>
+      </div>
+
+      <div class="group" data-owner="lin-limits">
+        <div class="group-title">Start &amp; Stop Limits</div>
+        <div class="field">
+          <label><span>Start max speed</span><span class="val mono" id="v-linStartSpeed">0.500</span></label>
+          <div class="field-input-row">
+            <input type="range" id="r-linStartSpeed" min="0.1" max="4.0" step="0.05" value="0.5">
+            <input type="number" id="n-linStartSpeed" min="0.1" max="4.0" step="any" value="0.5">
+          </div>
+        </div>
+        <div class="field">
+          <label><span>Start accel (m/s&sup2;)</span><span class="val mono" id="v-linStartAccel">12.0</span></label>
+          <div class="field-input-row">
+            <input type="range" id="r-linStartAccel" min="1.0" max="40.0" step="1.0" value="12.0">
+            <input type="number" id="n-linStartAccel" min="1.0" max="40.0" step="any" value="12.0">
+          </div>
+        </div>
+        <div class="field">
+          <label><span>Stop decel (m/s&sup2;)</span><span class="val mono" id="v-linStopDecel">20.0</span></label>
+          <div class="field-input-row">
+            <input type="range" id="r-linStopDecel" min="1.0" max="40.0" step="1.0" value="20.0">
+            <input type="number" id="n-linStopDecel" min="1.0" max="40.0" step="any" value="20.0">
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <main id="main-linear">
+      <section class="panel">
+        <div class="panel-title">Linear Readouts &amp; Performance</div>
+        <div id="lin-readouts"></div>
+        <div id="lin-empty-readouts" style="display:none;">No channel selected &mdash; toggle CH1 (Trapezoidal) / CH2 (Jerk S-Curve) to see results.</div>
+        <div id="lin-comparison-banner"></div>
+      </section>
+
+      <section class="charts-row">
+        <div class="panel">
+          <div class="panel-title">Linear Velocity &middot; m/s vs ms</div>
+          <div class="chart-wrap"><canvas id="chart-lin-speed-time"></canvas></div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Linear Velocity &middot; m/s vs Distance mm</div>
+          <div class="chart-wrap"><canvas id="chart-lin-speed-dist"></canvas></div>
+        </div>
+      </section>
+
+      <section class="charts-row">
+        <div class="panel">
+          <div class="panel-title">Linear Acceleration &middot; m/s&sup2; vs ms</div>
+          <div class="chart-wrap"><canvas id="chart-lin-accel-time"></canvas></div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Linear Jerk &middot; m/s&sup3; vs ms</div>
+          <div class="chart-wrap"><canvas id="chart-lin-jerk-time"></canvas></div>
+        </div>
+      </section>
+
+      <section class="panel" id="lin-track-panel">
+        <div>
+          <div class="panel-title">Movement Sequence Track &amp; Transitions &middot; mm</div>
+          <div id="lin-track-wrap"></div>
+        </div>
+        <div id="lin-track-legend"></div>
+      </section>
+    </main>
+  </div><!-- /#tab-linear -->
+</div><!-- /#app -->
+
+<script src="simulations.js"></script>
+<script src="ui.js"></script>
 </body>
 
 </html>
