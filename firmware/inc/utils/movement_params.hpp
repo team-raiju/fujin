@@ -26,7 +26,8 @@ static constexpr float ROBOT_DIST_FROM_CENTER_START_MM = 19.0;  // Actually 15.5
  * @param sign The direction sign of the turn (positive = LEFT or negative = RIGHT).
  * @param time_to_decrease_jerk_1 Time to decrease jerk 1 in [control ticks]
  * @param time_to_decrease_jerk_2 Time to decrease jerk 2 in [control ticks]
- * @param hardcoded_jerk Jerk limit value
+ * @param accel_ramp_up_jerk Jerk limit while angular acceleration ramps up
+ * @param accel_ramp_down_jerk Jerk limit while angular acceleration ramps down
  *
  */
 struct TurnParams {
@@ -40,18 +41,20 @@ struct TurnParams {
     int sign;
     uint16_t time_to_decrease_jerk_1;
     uint16_t time_to_decrease_jerk_2;
-    float jerk;
+    float accel_ramp_up_jerk;
+    float accel_ramp_down_jerk;
 
     constexpr TurnParams()
         : start(0), end(0), turn_linear_speed(0), angular_accel(0), max_angular_speed(0),
           t_start_deccel(0), t_stop(0), sign(0), time_to_decrease_jerk_1(0), time_to_decrease_jerk_2(0),
-          jerk(0) {}
+          accel_ramp_up_jerk(0), accel_ramp_down_jerk(0) {}
 
     constexpr TurnParams(float s, float e, float ls, float aa, float mas, uint16_t tsd, uint16_t ts,
-                         int sg, uint16_t j1 = 0, uint16_t j2 = 0, float j = 0.0f) noexcept
+                         int sg, uint16_t t_j1 = 0, uint16_t t_j2 = 0, float ramp_up_jerk = 0.0f,
+                         float ramp_down_jerk = 0.0f) noexcept
         : start(s), end(e), turn_linear_speed(ls), angular_accel(aa), max_angular_speed(mas),
-          t_start_deccel(tsd), t_stop(ts), sign(sg), time_to_decrease_jerk_1(j1), time_to_decrease_jerk_2(j2),
-          jerk(j) {}
+          t_start_deccel(tsd), t_stop(ts), sign(sg), time_to_decrease_jerk_1(t_j1), time_to_decrease_jerk_2(t_j2),
+          accel_ramp_up_jerk(ramp_up_jerk), accel_ramp_down_jerk(ramp_down_jerk) {}
 };
 
 /**

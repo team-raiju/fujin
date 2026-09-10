@@ -56,7 +56,8 @@ enum TurnParamID : uint8_t {
     SIGN = 0x07,
     TIME_TO_DECREASE_JERK_1 = 0x08,
     TIME_TO_DECREASE_JERK_2 = 0x09,
-    JERK = 0x0A,
+    ACCEL_RAMP_UP_JERK = 0x0A,
+    ACCEL_RAMP_DOWN_JERK = 0x0B,
 };
 
 /// @brief callback function for BLE received data

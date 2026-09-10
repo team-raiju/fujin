@@ -389,8 +389,11 @@ int Config::parse_movement_packet(uint8_t packet[bsp::ble::max_packet_size]) {
         case bsp::ble::TurnParamID::TIME_TO_DECREASE_JERK_2:
             turn_params_custom[movement_id].time_to_decrease_jerk_2 = Config::ms_to_ticks(value);
             break;
-        case bsp::ble::TurnParamID::JERK:
-            turn_params_custom[movement_id].jerk = value;
+        case bsp::ble::TurnParamID::ACCEL_RAMP_UP_JERK:
+            turn_params_custom[movement_id].accel_ramp_up_jerk = value;
+            break;
+        case bsp::ble::TurnParamID::ACCEL_RAMP_DOWN_JERK:
+            turn_params_custom[movement_id].accel_ramp_down_jerk = value;
             break;
         default:
             return -1;
@@ -451,7 +454,10 @@ void Config::send_movement_parameters() {
                    Config::ticks_to_ms(params.time_to_decrease_jerk_1));
         send_param(1, movement_id, static_cast<uint8_t>(bsp::ble::TurnParamID::TIME_TO_DECREASE_JERK_2),
                    Config::ticks_to_ms(params.time_to_decrease_jerk_2));
-        send_param(1, movement_id, static_cast<uint8_t>(bsp::ble::TurnParamID::JERK), params.jerk);
+        send_param(1, movement_id, static_cast<uint8_t>(bsp::ble::TurnParamID::ACCEL_RAMP_UP_JERK),
+               params.accel_ramp_up_jerk);
+        send_param(1, movement_id, static_cast<uint8_t>(bsp::ble::TurnParamID::ACCEL_RAMP_DOWN_JERK),
+               params.accel_ramp_down_jerk);
     }
 }
 
