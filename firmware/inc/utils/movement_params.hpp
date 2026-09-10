@@ -1,5 +1,6 @@
 #pragma once
 #include "types.hpp"
+#include <array>
 #include <cstdint>
 #include <map>
 
@@ -136,22 +137,22 @@ struct GeneralParams {
           angular_coulomb_ff(angular_c_ff) {}
 };
 
-extern const std::map<Movement, TurnParams> turn_params_search_slow;
-extern const std::map<Movement, ForwardParams> forward_params_search_slow;
-extern const std::map<Movement, TurnParams> turn_params_search_medium;
-extern const std::map<Movement, ForwardParams> forward_params_search_medium;
-extern const std::map<Movement, TurnParams> turn_params_search_fast;
-extern const std::map<Movement, ForwardParams> forward_params_search_fast;
-extern const std::map<Movement, TurnParams> turn_params_slow;
-extern const std::map<Movement, ForwardParams> forward_params_slow;
-extern const std::map<Movement, TurnParams> turn_params_medium;
-extern const std::map<Movement, ForwardParams> forward_params_medium;
-extern const std::map<Movement, TurnParams> turn_params_fast;
-extern const std::map<Movement, ForwardParams> forward_params_fast;
-extern const std::map<Movement, TurnParams> turn_params_super;
-extern const std::map<Movement, ForwardParams> forward_params_super;
-extern std::map<Movement, TurnParams> turn_params_custom;
-extern std::map<Movement, ForwardParams> forward_params_custom;
+extern const std::array<TurnParams, MOVEMENT_COUNT> turn_params_search_slow;
+extern const std::array<ForwardParams, MOVEMENT_COUNT> forward_params_search_slow;
+extern const std::array<TurnParams, MOVEMENT_COUNT> turn_params_search_medium;
+extern const std::array<ForwardParams, MOVEMENT_COUNT> forward_params_search_medium;
+extern const std::array<TurnParams, MOVEMENT_COUNT> turn_params_search_fast;
+extern const std::array<ForwardParams, MOVEMENT_COUNT> forward_params_search_fast;
+extern const std::array<TurnParams, MOVEMENT_COUNT> turn_params_slow;
+extern const std::array<ForwardParams, MOVEMENT_COUNT> forward_params_slow;
+extern const std::array<TurnParams, MOVEMENT_COUNT> turn_params_medium;
+extern const std::array<ForwardParams, MOVEMENT_COUNT> forward_params_medium;
+extern const std::array<TurnParams, MOVEMENT_COUNT> turn_params_fast;
+extern const std::array<ForwardParams, MOVEMENT_COUNT> forward_params_fast;
+extern const std::array<TurnParams, MOVEMENT_COUNT> turn_params_super;
+extern const std::array<ForwardParams, MOVEMENT_COUNT> forward_params_super;
+extern std::array<TurnParams, MOVEMENT_COUNT> turn_params_custom;
+extern std::array<ForwardParams, MOVEMENT_COUNT> forward_params_custom;
 extern const GeneralParams general_params_search_slow;
 extern const GeneralParams general_params_search_medium;
 extern const GeneralParams general_params_search_fast;

@@ -343,6 +343,18 @@ void Run::enter() {
     
     target_movements = navigation->get_movements_to_goal(target_directions, move_mode);
 
+    if (target_movements.size() < 2) {
+        emergency = true;
+        soft_timer::stop();
+        bsp::motors::set(0, 0);
+        bsp::fan::set(0);
+        bsp::leds::stripe_set(Color::Orange);
+        bsp::buzzer::start();
+        bsp::delay_ms(500);
+        bsp::buzzer::stop();
+        return;
+    }
+
     move_count = 0;
     emergency = false;
 
@@ -350,7 +362,7 @@ void Run::enter() {
     auto prev_movement = target_movements[0].first;
     auto next_movement = target_movements[1].first;
 
-    navigation->set_movement(movement, prev_movement, next_movement, 1);
+    navigation->set_movement(movement, prev_movement, next_movement, target_movements[0].second);
 }
 
 State* Run::react(ButtonPressed const& event) {
@@ -380,6 +392,10 @@ State* Run::react(BleCommand const&) {
 State* Run::react(Timeout const&) {
     using bsp::analog_sensors::ir_reading_wall;
     using bsp::analog_sensors::SensingDirection;
+
+    if (emergency || target_movements.size() < 2) {
+        return &State::get<Idle>();
+    }
 
     if (indicate_read && bsp::get_tick_ms() - last_indication > 75) {
         bsp::leds::stripe_set(Color::Black);

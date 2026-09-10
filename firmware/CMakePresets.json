@@ -13,6 +13,7 @@
         {
             "name": "STM32G474",
             "inherits": "default",
+            "toolchainFile": "${sourceDir}/cmake/arm-none-eabi.cmake",
             "cacheVariables": {
                 "PC_BUILD": "false",
                 "TARGET": "STM32G474",
@@ -22,6 +23,7 @@
         {
             "name": "STM32G474-Debug",
             "inherits": "default",
+            "toolchainFile": "${sourceDir}/cmake/arm-none-eabi.cmake",
             "cacheVariables": {
                 "PC_BUILD": "false",
                 "TARGET": "STM32G474",

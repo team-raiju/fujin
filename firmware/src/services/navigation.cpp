@@ -16,8 +16,8 @@
 
 /// @section Constants
 
-static std::map<Movement, TurnParams> turn_params;
-static std::map<Movement, ForwardParams> forward_params;
+static std::array<TurnParams, MOVEMENT_COUNT> turn_params;
+static std::array<ForwardParams, MOVEMENT_COUNT> forward_params;
 static GeneralParams general_params;
 
 using bsp::leds::Color;
@@ -41,7 +41,6 @@ void Navigation::init() {
 }
 
 void Navigation::reset(navigation_mode_t mode) {
-
     reset_movement_variables(true);
     encoder_left_counter = 0;
     encoder_right_counter = 0;
@@ -220,7 +219,6 @@ void Navigation::reset_wall_break() {
 }
 
 Navigation::WallBreak Navigation::process_wall_break() {
-
     if ((traveled_dist_mm - wall_break_last_dist) >= 180.0f && (traveled_dist_mm - wall_break_last_dist) < 187.5f) {
         bsp::leds::stripe_set(Color::Black);
     }
@@ -348,10 +346,8 @@ bool Navigation::step() {
         float max_linear_brake_jerk = general_params.max_linear_brake_jerk;
 
         if (general_params.enable_wall_break_correction) {
-
             WallBreak wall_break = process_wall_break();
             if (wall_break != WallBreak::NONE) {
-
                 float current_movement_traveled = traveled_dist_mm - complete_prev_move_travel;
                 int cells_traveled = static_cast<int>(current_movement_traveled / CELL_SIZE_MM);
 
@@ -383,21 +379,24 @@ bool Navigation::step() {
             required_brake_distance = 0.0f;
         } else if (current_linear_acceleration > 0.0f && max_linear_brake_jerk > 0.0f) {
             float t_ramp = current_linear_acceleration / max_linear_brake_jerk;
-            float delta_v = (current_linear_acceleration * current_linear_acceleration) / (2.0f * max_linear_brake_jerk);
+            float delta_v =
+                (current_linear_acceleration * current_linear_acceleration) / (2.0f * max_linear_brake_jerk);
             float v_peak = control_linear_speed + delta_v;
             float d_ramp_m = (control_linear_speed * t_ramp) +
                              (current_linear_acceleration * current_linear_acceleration * current_linear_acceleration) /
                                  (3.0f * max_linear_brake_jerk * max_linear_brake_jerk);
             required_brake_distance +=
-                1000.0f * (d_ramp_m + get_s_curve_brake_distance(v_peak, forward_end_speed, deceleration, max_linear_brake_jerk));
+                1000.0f *
+                (d_ramp_m + get_s_curve_brake_distance(v_peak, forward_end_speed, deceleration, max_linear_brake_jerk));
         } else {
-            required_brake_distance += 
-                    1000.0f * get_s_curve_brake_distance(control_linear_speed, forward_end_speed, deceleration, max_linear_brake_jerk);
+            required_brake_distance += 1000.0f * get_s_curve_brake_distance(control_linear_speed, forward_end_speed,
+                                                                            deceleration, max_linear_brake_jerk);
         }
 
         bool requires_turn_margin = (previous_movement != Movement::START) && (control_linear_speed >= 1.0f);
+        bool traveled_break_distance = (std::abs(traveled_dist_mm) < (target_travel_mm - required_brake_distance));
 
-        if (!is_braking && (seamless_start || (std::abs(traveled_dist_mm) < (target_travel_mm - required_brake_distance)))) {
+        if (!is_braking && (seamless_start || traveled_break_distance)) {
             if (!requires_turn_margin || std::abs(traveled_dist_mm) > accel_margin) {
                 if (control_linear_speed >= max_speed) {
                     if (current_linear_acceleration > 0.0f) {
@@ -699,6 +698,8 @@ bool Navigation::step() {
 
         break;
     }
+    default:
+        break;
     }
 
     if (is_finished) {
@@ -727,7 +728,6 @@ float Navigation::get_robot_travelled_dist_mm() {
 }
 
 void Navigation::set_movement(Direction dir) {
-
     previous_movement = current_movement;
 
     target_direction = dir;
@@ -790,7 +790,6 @@ void Navigation::update_cell_position_and_dir() {
 }
 
 void Navigation::set_movement(Movement movement, Movement prev_movement, Movement next_movement, uint8_t count) {
-
     complete_prev_move_travel = -1 * turn_params[prev_movement].end;
     previous_movement = prev_movement;
     current_movement = movement;
@@ -857,7 +856,6 @@ void Navigation::set_movement(Movement movement, Movement prev_movement, Movemen
 
 std::vector<std::pair<Movement, uint8_t>> Navigation::get_movements_to_goal(std::vector<Direction> target_directions,
                                                                             target_movement_mode_t mode) {
-
     std::vector<std::pair<Movement, uint8_t>> movements;
 
     switch (mode) {
@@ -881,7 +879,6 @@ std::vector<std::pair<Movement, uint8_t>> Navigation::get_movements_to_goal(std:
 
 std::vector<std::pair<Movement, uint8_t>>
 Navigation::get_default_target_movements(std::vector<Direction> target_directions) {
-
     std::vector<std::pair<Movement, uint8_t>> default_target_movements = {};
 
     Direction robot_direction = Direction::NORTH;
@@ -901,7 +898,6 @@ Navigation::get_default_target_movements(std::vector<Direction> target_direction
 
 std::vector<std::pair<Movement, uint8_t>>
 Navigation::get_smooth_movements(std::vector<std::pair<Movement, uint8_t>> default_target_movements) {
-
     std::vector<std::pair<Movement, uint8_t>> smooth_movements = {};
 
     smooth_movements.push_back(default_target_movements[0]);
@@ -951,7 +947,6 @@ Navigation::get_diagonal_movements(std::vector<std::pair<Movement, uint8_t>> def
 
     // Process the flat list of moves through the state machine
     for (const auto& move : flat_moves) {
-
         switch (state) {
         case PathState::Start:
             if (move == Movement::START) {

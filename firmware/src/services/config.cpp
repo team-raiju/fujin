@@ -328,7 +328,7 @@ int Config::parse_movement_packet(uint8_t packet[bsp::ble::max_packet_size]) {
 
     // Param type 0: ForwardParams
     if (param_type == 0) {
-        if (forward_params_custom.find(movement_id) == forward_params_custom.end()) {
+        if (forward_address_map.find(movement_id) == forward_address_map.end()) {
             return -1;
         }
 
@@ -354,7 +354,7 @@ int Config::parse_movement_packet(uint8_t packet[bsp::ble::max_packet_size]) {
 
     // Param type 1: TurnParams
     if (param_type == 1) {
-        if (turn_params_custom.find(movement_id) == turn_params_custom.end()) {
+        if (turn_address_map.find(movement_id) == turn_address_map.end()) {
             return -1;
         }
 
@@ -425,9 +425,9 @@ void Config::send_movement_parameters() {
         bsp::delay_ms(20);
     };
 
-    for (const auto& pair : forward_params_custom) {
+    for (const auto& pair : forward_address_map) {
         const auto& movement_id = pair.first;
-        const auto& params = pair.second;
+        const auto& params = forward_params_custom[movement_id];
         send_param(0, movement_id, static_cast<uint8_t>(bsp::ble::ForwardParamID::MAX_SPEED), params.max_speed);
         send_param(0, movement_id, static_cast<uint8_t>(bsp::ble::ForwardParamID::ACCELERATION), params.acceleration);
         send_param(0, movement_id, static_cast<uint8_t>(bsp::ble::ForwardParamID::DECELERATION), params.deceleration);
@@ -435,9 +435,9 @@ void Config::send_movement_parameters() {
                    params.target_travel_mm);
     }
 
-    for (const auto& pair : turn_params_custom) {
+    for (const auto& pair : turn_address_map) {
         const auto& movement_id = pair.first;
-        const auto& params = pair.second;
+        const auto& params = turn_params_custom[movement_id];
         send_param(1, movement_id, static_cast<uint8_t>(bsp::ble::TurnParamID::START), params.start);
         send_param(1, movement_id, static_cast<uint8_t>(bsp::ble::TurnParamID::END), params.end);
         send_param(1, movement_id, static_cast<uint8_t>(bsp::ble::TurnParamID::TURN_LINEAR_SPEED),

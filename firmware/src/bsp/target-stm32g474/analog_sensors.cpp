@@ -57,6 +57,7 @@ static uint32_t current_reading[2];
 static bool modulation_enabled;
 static uint32_t ir_window[4][IR_AVG_WINDOW];
 static size_t window_idx[4];
+static uint32_t ir_sum[4];
 
 /// @section Interface implementation
 
@@ -277,7 +278,7 @@ void adc1_callback(uint32_t* data) {
             } else {
                 ir_readings_on[i] = aux_readings[i];
                 uint32_t reading = std::max(ir_readings_on[i] - ir_readings_off[i], 0L);
-                ir_readings[i] = moving_average(ir_window[i], IR_AVG_WINDOW, &window_idx[i], reading);
+                ir_readings[i] = moving_average(ir_window[i], IR_AVG_WINDOW, &window_idx[i], &ir_sum[i], reading);
             }
         } else {
             ir_readings[0] = aux_readings[0];

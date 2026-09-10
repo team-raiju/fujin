@@ -4,12 +4,12 @@
 #include "bsp/ble.hpp"
 #include "bsp/buzzer.hpp"
 #include "bsp/core.hpp"
+#include "bsp/imu.hpp"
 #include "bsp/leds.hpp"
 #include "bsp/timers.hpp"
 #include "fsm/fsm.hpp"
 #include "fsm/state.hpp"
 #include "services/config.hpp"
-#include "bsp/imu.hpp"
 
 void startup() {
     bsp::buzzer::set_frequency(2000);
@@ -32,7 +32,6 @@ void startup() {
 }
 
 int main() {
-
     bsp::init();
 
     startup();

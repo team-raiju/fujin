@@ -80,7 +80,7 @@ void flood_fill(Grid<width, height>& grid, Point const& target, bool search_mode
         }
     }
 
-    RingBuffer<Point, 32> to_visit;
+    RingBuffer<Point, 128> to_visit;
 
     grid[target.x][target.y].distance = 0;
     to_visit.put(target);
