@@ -40,6 +40,14 @@ void Navigation::init() {
     }
 }
 
+const std::array<ForwardParams, MOVEMENT_COUNT>& Navigation::get_forward_params() const {
+    return forward_params;
+}
+
+const std::array<TurnParams, MOVEMENT_COUNT>& Navigation::get_turn_params() const {
+    return turn_params;
+}
+
 void Navigation::reset(navigation_mode_t mode) {
     reset_movement_variables(true);
     encoder_left_counter = 0;

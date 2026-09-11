@@ -333,8 +333,11 @@ void Run::enter() {
     logger->init();
     
     maze->read_maze_from_memory(map_backup);
-    maze->print(maze->ORIGIN);
-    target_directions = maze->directions_to_goal();
+    float estimated_time_s = 0.0f;
+    target_directions = maze->directions_to_goal(true, &estimated_time_s);
+    std::printf("Time-based path: %u directions, est. time: %.3f s\r\n",
+                static_cast<unsigned int>(target_directions.size()),
+                static_cast<double>(estimated_time_s));
     maze->print(maze->ORIGIN);
 
     services::Control::instance()->start_fan();

@@ -37,6 +37,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     src/fsm/states/calib.cpp
 
     src/algorithms/pid.cpp
+    src/algorithms/time_flood_fill.cpp
 
     src/utils/soft_timer.cpp
     src/utils/movement_params.cpp

@@ -301,7 +301,7 @@ State* CalibrationMotors::react(Timeout const&) {
 
     if (loop_counter % 100 == 0) {
         // std::printf("Vel: %f m/s; Dist: %f mm\r\n", bsp::encoders::get_linear_velocity_m_s(), distance_traveled_mm);
-        std::printf("ticks: (%ld, %ld)\r\n", left_encoder.ticks, right_encoder.ticks);
+        std::printf("ticks: (%ld, %ld)\r\n", static_cast<long>(left_encoder.ticks), static_cast<long>(right_encoder.ticks));
     }
 
     return nullptr;

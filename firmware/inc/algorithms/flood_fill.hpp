@@ -23,7 +23,7 @@ struct Cell {
     uint8_t walls;
     uint8_t known_walls;
 
-    bool visited() { return known_walls == 0b1111; }
+    bool visited() const { return known_walls == 0b1111; }
 
     Cell* north;
     Cell* east;

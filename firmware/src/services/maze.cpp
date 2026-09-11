@@ -6,9 +6,11 @@
 #include <queue>
 #include <utility>
 
+#include "algorithms/time_flood_fill.hpp"
 #include "bsp/eeprom.hpp"
 #include "bsp/timers.hpp"
 #include "services/maze.hpp"
+#include "services/navigation.hpp"
 #include "utils/RingBuffer.hpp"
 #include "utils/math.hpp"
 
@@ -197,7 +199,22 @@ Point Maze::closest_unvisited(Point const& current_position) {
     return closest_point;
 }
 
-std::vector<Direction> Maze::directions_to_goal() {
+std::vector<Direction> Maze::directions_to_goal(bool time_based, float* out_time_s) {
+    if (time_based) {
+        auto nav = services::Navigation::instance();
+        Point start_pos = {ORIGIN.x, ORIGIN.y + 1};
+        auto path = algorithm::TimeFloodFill::find_fastest_path(
+            map,
+            start_pos,
+            GOAL_POSITIONS,
+            nav->get_forward_params(),
+            nav->get_turn_params(),
+            out_time_s);
+        if (!path.empty()) {
+            return path;
+        }
+    }
+
     std::vector<Direction> target_directions = {};
     Point pos = {ORIGIN.x, ORIGIN.y + 1}; // start from the cell (0,1)
 

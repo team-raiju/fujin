@@ -1,26 +1,19 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <string>
 #include <vector>
 
 #include "algorithms/pid.hpp"
 #include "services/control.hpp"
+#include "utils/movement_params.hpp"
 
 namespace services {
 
 class Navigation {
 public:
-    enum navigation_mode_t {
-        SEARCH_SLOW,
-        SEARCH_MEDIUM,
-        SEARCH_FAST,
-        CUSTOM,
-        SLOW,
-        MEDIUM,
-        FAST,
-        SUPER
-    };
+    enum navigation_mode_t { SEARCH_SLOW, SEARCH_MEDIUM, SEARCH_FAST, CUSTOM, SLOW, MEDIUM, FAST, SUPER };
 
     enum target_movement_mode_t {
         NORMAL,
@@ -63,6 +56,8 @@ public:
 
     float get_encoder_imu_diff() const { return encoder_imu_diff; };
 
+    const std::array<ForwardParams, MOVEMENT_COUNT>& get_forward_params() const;
+    const std::array<TurnParams, MOVEMENT_COUNT>& get_turn_params() const;
 
 private:
     enum class PathState {
@@ -158,7 +153,6 @@ private:
 
     bool waiting_for_fast_param = false;
     navigation_mode_t selected_mode;
-
 };
 
 }
