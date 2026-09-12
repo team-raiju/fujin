@@ -337,51 +337,51 @@ const GeneralParams general_params_slow = {
 
 const GeneralParams general_params_medium = {
     600.0,                   // Fan speed
-    0.0950,  0.0005, 0.0000, // Angular P,I,D
-    0.00055, 0.00055, 0.006,  // Angular acc ff, Angular brake ff, Angular velocity ff
-    0.0,     0.02,   0.0,    // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
-    0.0020,  0.0000, 0.0080, // Wall P,I,D
-    9.2500,  0.0720, 0.0000, // Linear velocity P,I,D
+    0.0900,  0.0005, 0.0500, // Angular P,I,D
+    0.0006,  0.0006, 0.0056, // Angular acc ff, Angular brake ff, Angular velocity ff
+    0.033,   0.025,  0.1410, // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
+    0.0025,  0.0000, 0.0100, // Wall P,I,D
+    2.500,   0.0100, 0.0000, // Linear velocity P,I,D
     0.0010,  0.0000, 0.0040, // Diagonal walls P,I,D
     55.0,                    // Start wall break mm left
     72.0,                    // Start wall break mm right
     1.0,                     // Enable wall break correction
-    100.0,                   // Max linear acceleration jerk
-    100.0,                   // Max linear brake jerk
-    0.13,                    // Coulomb ff
-    0.0                      // Angular Coulomb ff
+    625.0,                   // Max linear acceleration jerk
+    625.0,                   // Max linear brake jerk
+    0.18,                    // Coulomb ff
+    0.07                     // Angular Coulomb ff
 };
 
 const GeneralParams general_params_fast = {
     600.0,                   // Fan speed
-    0.0950,  0.0005, 0.0000, // Angular P,I,D
-    0.00055, 0.00055, 0.006,  // Angular acc ff, Angular brake ff, Angular velocity ff
-    0.0,     0.02,   0.0,    // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
-    0.0020,  0.0000, 0.0080, // Wall P,I,D
-    9.2500,  0.0720, 0.0000, // Linear velocity P,I,D
+    0.0900,  0.0005, 0.0500, // Angular P,I,D
+    0.0006,  0.0006, 0.0056, // Angular acc ff, Angular brake ff, Angular velocity ff
+    0.033,   0.025,  0.1410, // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
+    0.0025,  0.0000, 0.0100, // Wall P,I,D
+    2.500,   0.0100, 0.0000, // Linear velocity P,I,D
     0.0010,  0.0000, 0.0040, // Diagonal walls P,I,D
     55.0,                    // Start wall break mm left
     72.0,                    // Start wall break mm right
     1.0,                     // Enable wall break correction
-    100.0,                   // Max linear acceleration jerk
-    100.0,                   // Max linear brake jerk
-    0.13,                    // Coulomb ff
-    0.0                      // Angular Coulomb ff
+    625.0,                   // Max linear acceleration jerk
+    625.0,                   // Max linear brake jerk
+    0.18,                    // Coulomb ff
+    0.07                     // Angular Coulomb ff
 };
 
 const GeneralParams general_params_super = {
-    675.0,                   // Fan speed
-    0.0950,  0.0005, 0.0000, // Angular P,I,D
-    0.00059, 0.00059, 0.006,  // Angular acc ff, Angular brake ff, Angular velocity ff
-    0.0,     0.02,   0.0,    // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
+    600.0,                   // Fan speed
+    0.0900,  0.0005, 0.0500, // Angular P,I,D
+    0.0006,  0.0006, 0.0056, // Angular acc ff, Angular brake ff, Angular velocity ff
+    0.033,   0.025,  0.1410, // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
     0.0025,  0.0000, 0.0100, // Wall P,I,D
-    9.2500,  0.0720, 0.0000, // Linear velocity P,I,D
+    2.500,   0.0100, 0.0000, // Linear velocity P,I,D
     0.0010,  0.0000, 0.0040, // Diagonal walls P,I,D
     55.0,                    // Start wall break mm left
     72.0,                    // Start wall break mm right
     1.0,                     // Enable wall break correction
-    100.0,                   // Max linear acceleration jerk
-    100.0,                   // Max linear brake jerk
-    0.13,                    // Coulomb ff
-    0.0                      // Angular Coulomb ff
+    625.0,                   // Max linear acceleration jerk
+    625.0,                   // Max linear brake jerk
+    0.18,                    // Coulomb ff
+    0.07                     // Angular Coulomb ff
 };
