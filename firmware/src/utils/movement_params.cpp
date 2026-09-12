@@ -139,8 +139,8 @@ const std::map<Movement, ForwardParams> forward_params_medium = {
 const std::map<Movement, TurnParams> turn_params_fast = {
     {Movement::TURN_RIGHT_45, {-64.0, -82.0, 1.5, 785.40, 20.07, T(38), T(73), -1, T(0), T(0), 0, 0}},
     {Movement::TURN_LEFT_45, {-64.0, -82.0, 1.5, 785.40, 20.07, T(38), T(73), 1, T(0), T(0), 0, 0}},
-    {Movement::TURN_RIGHT_90, {0.0, -11.0, 1.3, 785.40, 26.18, T(60), T(108), -1, T(0), T(0), 0, 0}},
-    {Movement::TURN_LEFT_90, {0.0, -12.5, 1.3, 785.40, 26.18, T(60), T(108), 1, T(0), T(0), 0, 0}},
+    {Movement::TURN_RIGHT_90, {0.0, -11.0, 2.5, 1300, 30, T(49.5), T(89.5), -1, T(18.5), T(76.5), 100000, 60000}},
+    {Movement::TURN_LEFT_90, {0.0, -12.5, 2.5, 1300, 30, T(49.5), T(89.5), 1, T(18.5), T(76.5), 100000, 60000}},
     {Movement::TURN_RIGHT_135, {-46.0, -46.0, 1.5, 436.33, 20.07, T(116), T(167), -1, T(0), T(0), 0, 0}},
     {Movement::TURN_LEFT_135, {-46.0, -50.0, 1.5, 436.33, 20.07, T(116), T(167), 1, T(0), T(0), 0, 0}},
     {Movement::TURN_RIGHT_180, {-10.0, -11.0, 1.3, 523.6, 14.25, T(217), T(242), -1, T(0), T(0), 0, 0}},
@@ -163,8 +163,8 @@ const std::map<Movement, ForwardParams> forward_params_fast = {
     {Movement::STOP, {1.0, 2.0, 30.0, (HALF_CELL_SIZE_MM - 10.0)}},
     {Movement::TURN_AROUND, {1.5, 12.0, 20.0, 79.0}},
 
-    {Movement::TURN_RIGHT_90, {1.3, 12.0, 20.0, 5.0}},
-    {Movement::TURN_LEFT_90, {1.3, 12.0, 20.0, 5.0}},
+    {Movement::TURN_RIGHT_90, {2.5, 12.0, 20.0, 5.0}},
+    {Movement::TURN_LEFT_90, {2.5, 12.0, 20.0, 5.0}},
     {Movement::TURN_RIGHT_180, {1.3, 12.0, 20.0, -7.0}},
     {Movement::TURN_LEFT_180, {1.3, 12.0, 20.0, -7.0}},
 
@@ -179,8 +179,8 @@ const std::map<Movement, ForwardParams> forward_params_fast = {
 const std::map<Movement, TurnParams> turn_params_super = {
     {Movement::TURN_RIGHT_45, {-64.0, -82.0, 1.5, 785.40, 20.07, T(38), T(73), -1, T(0), T(0), 0, 0}},
     {Movement::TURN_LEFT_45, {-64.0, -82.0, 1.5, 785.40, 20.07, T(38), T(73), 1, T(0), T(0), 0, 0}},
-    {Movement::TURN_RIGHT_90, {0.0, -11.0, 1.3, 785.40, 26.18, T(60), T(108), -1, T(0), T(0), 0, 0}},
-    {Movement::TURN_LEFT_90, {0.0, -12.5, 1.3, 785.40, 26.18, T(60), T(108), 1, T(0), T(0), 0, 0}},
+    {Movement::TURN_RIGHT_90, {0.0, -11.0, 3.0, 1200, 30.0, T(46), T(92), -1, T(16), T(80), 100000, 40000}},
+    {Movement::TURN_LEFT_90, {0.0, -12.5, 3.0, 1200, 30.0, T(46), T(92), 1, T(16), T(80), 100000, 40000}},
     {Movement::TURN_RIGHT_135, {-46.0, -46.0, 1.5, 436.33, 20.07, T(116), T(167), -1, T(0), T(0), 0, 0}},
     {Movement::TURN_LEFT_135, {-46.0, -50.0, 1.5, 436.33, 20.07, T(116), T(167), 1, T(0), T(0), 0, 0}},
     {Movement::TURN_RIGHT_180, {-10.0, -11.0, 1.3, 523.6, 14.25, T(217), T(242), -1, T(0), T(0), 0, 0}},
@@ -203,8 +203,8 @@ const std::map<Movement, ForwardParams> forward_params_super = {
     {Movement::STOP, {1.0, 2.0, 30.0, (HALF_CELL_SIZE_MM - 10.0)}},
     {Movement::TURN_AROUND, {1.5, 12.0, 20.0, 79.0}},
 
-    {Movement::TURN_RIGHT_90, {1.3, 12.0, 20.0, 5.0}},
-    {Movement::TURN_LEFT_90, {1.3, 12.0, 20.0, 5.0}},
+    {Movement::TURN_RIGHT_90, {3.0, 12.0, 20.0, 5.0}},
+    {Movement::TURN_LEFT_90, {3.0, 12.0, 20.0, 5.0}},
     {Movement::TURN_RIGHT_180, {1.3, 12.0, 20.0, -7.0}},
     {Movement::TURN_LEFT_180, {1.3, 12.0, 20.0, -7.0}},
 
