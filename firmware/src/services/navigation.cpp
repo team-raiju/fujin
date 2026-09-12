@@ -80,6 +80,7 @@ void Navigation::reset(navigation_mode_t mode) {
             services::Config::angular_ki,
             services::Config::angular_kd,
             services::Config::angular_acc_feed_forward_k,
+            services::Config::angular_brake_feed_forward_k,
             services::Config::angular_vel_feed_forward_k,
             services::Config::linear_vel_acc_feed_forward_k,
             services::Config::linear_vel_brake_feed_forward_k,

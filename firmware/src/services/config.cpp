@@ -18,6 +18,7 @@ float Config::angular_kp = 0.105;
 float Config::angular_ki = 0.010;
 float Config::angular_kd = 0.0075;
 float Config::angular_acc_feed_forward_k = 0.00037;
+float Config::angular_brake_feed_forward_k = 0.00037;
 float Config::angular_vel_feed_forward_k = 0.0031;
 float Config::linear_vel_acc_feed_forward_k = 0.0;
 float Config::linear_vel_brake_feed_forward_k = 0.0;
@@ -100,6 +101,7 @@ static std::pair<float*, bsp::eeprom::param_addresses_t> params[] = {
     {&Config::start_wall_break_mm_right, bsp::eeprom::ADDR_START_WALL_BREAK_MM_RIGHT},
     {&Config::enable_wall_break_correction, bsp::eeprom::ADDR_ENABLE_WALL_BREAK_CORRECTION},
     {&Config::angular_acc_feed_forward_k, bsp::eeprom::ADDR_ANGULAR_ACC_FEED_FORWARD_K},
+    {&Config::angular_brake_feed_forward_k, bsp::eeprom::ADDR_ANGULAR_BRAKE_FEED_FORWARD_K},
     {&Config::angular_vel_feed_forward_k, bsp::eeprom::ADDR_ANGULAR_VEL_FEED_FORWARD_K},
     {&Config::linear_vel_acc_feed_forward_k, bsp::eeprom::ADDR_LINEAR_VEL_ACC_FEED_FORWARD_K},
     {&Config::linear_vel_brake_feed_forward_k, bsp::eeprom::ADDR_LINEAR_VEL_BRAKE_FEED_FORWARD_K},
@@ -260,6 +262,8 @@ void Config::print_parameters() {
     std::printf("    angular_kd = %f,\r\n", Config::angular_kd);
     bsp::delay_ms(5);
     std::printf("    angular_acc_feed_forward_k = %f,\r\n", Config::angular_acc_feed_forward_k);
+    bsp::delay_ms(5);
+    std::printf("    angular_brake_feed_forward_k = %f,\r\n", Config::angular_brake_feed_forward_k);
     bsp::delay_ms(5);
     std::printf("    angular_vel_feed_forward_k = %f,\r\n", Config::angular_vel_feed_forward_k);
     bsp::delay_ms(5);

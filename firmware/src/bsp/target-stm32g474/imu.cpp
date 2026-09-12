@@ -210,7 +210,7 @@ ImuResult update() {
 
     raw_ω = ω;
 
-    ω = ω * 0.2 + last_ω * 0.8;
+    ω = ω * 0.3 + last_ω * 0.7;
     last_ω = ω;
 
     φ += ω * δt;

@@ -22,6 +22,7 @@ public:
     static float angular_ki;
     static float angular_kd;
     static float angular_acc_feed_forward_k;
+    static float angular_brake_feed_forward_k;
     static float angular_vel_feed_forward_k;
 
     static float linear_vel_acc_feed_forward_k;

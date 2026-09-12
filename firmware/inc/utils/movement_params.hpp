@@ -86,6 +86,7 @@ struct GeneralParams {
     float angular_ki;
     float angular_kd;
     float angular_acc_feed_forward_k;
+    float angular_brake_feed_forward_k;
     float angular_vel_feed_forward_k;
 
     float linear_vel_acc_feed_forward_k;
@@ -114,18 +115,19 @@ struct GeneralParams {
 
     GeneralParams()
         : fan_speed(0), angular_kp(0), angular_ki(0), angular_kd(0), angular_acc_feed_forward_k(0),
-          angular_vel_feed_forward_k(0), linear_vel_acc_feed_forward_k(0), linear_vel_brake_feed_forward_k(0),
-          linear_vel_feed_forward_k(0),
+          angular_brake_feed_forward_k(0), angular_vel_feed_forward_k(0), linear_vel_acc_feed_forward_k(0),
+          linear_vel_brake_feed_forward_k(0), linear_vel_feed_forward_k(0),
           wall_kp(0), wall_ki(0), wall_kd(0),
           linear_vel_kp(0), linear_vel_ki(0), linear_vel_kd(0), diagonal_walls_kp(0), diagonal_walls_ki(0),
           diagonal_walls_kd(0), start_wall_break_mm_left(0), start_wall_break_mm_right(0),
           enable_wall_break_correction(0), max_linear_acc_jerk(0), max_linear_brake_jerk(0), coulomb_ff(0),
           angular_coulomb_ff(0) {}
 
-    GeneralParams(float fan, float akp, float aki, float akd, float aaff, float avff, float lvaff, float lvbff, float lvff, float wkp, float wki,
+    GeneralParams(float fan, float akp, float aki, float akd, float aaff, float abff, float avff, float lvaff, float lvbff, float lvff, float wkp, float wki,
                   float wkd, float lvkp, float lvki, float lvkd, float dwkp, float dwki, float dwkd, float swbcl,
                   float swbcr, float ewbc, float mlaj, float mlbj, float c_ff, float angular_c_ff )
         : fan_speed(fan), angular_kp(akp), angular_ki(aki), angular_kd(akd), angular_acc_feed_forward_k(aaff),
+          angular_brake_feed_forward_k(abff),
           angular_vel_feed_forward_k(avff), linear_vel_acc_feed_forward_k(lvaff), linear_vel_brake_feed_forward_k(lvbff),
           linear_vel_feed_forward_k(lvff),
           wall_kp(wkp), wall_ki(wki),
