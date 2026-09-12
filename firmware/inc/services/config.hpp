@@ -33,6 +33,7 @@ public:
     static float wheel_radius_mm;
     static float coulomb_ff;
     static float angular_coulomb_ff;
+    static float angular_static_ff;
 
     static float wall_kp;
     static float wall_ki;

@@ -101,6 +101,7 @@ void Navigation::reset(navigation_mode_t mode) {
             services::Config::max_linear_brake_jerk,
             services::Config::coulomb_ff,
             services::Config::angular_coulomb_ff,
+            services::Config::angular_static_ff,
         };
         break;
     case SLOW:

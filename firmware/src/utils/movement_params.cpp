@@ -281,7 +281,8 @@ const GeneralParams general_params_search_slow = {
     40.0,                     // Max linear acceleration jerk
     40.0,                     // Max linear brake jerk
     0.13,                     // Coulomb ff
-    0.0                       // Angular Coulomb ff
+    0.0,                      // Angular Coulomb ff
+    0.0                      // Angular Static ff
 };
 
 const GeneralParams general_params_search_medium = {
@@ -298,7 +299,8 @@ const GeneralParams general_params_search_medium = {
     100.0,                   // Max linear acceleration jerk
     100.0,                   // Max linear brake jerk
     0.13,                    // Coulomb ff
-    0.0                      // Angular Coulomb ff
+    0.0,                     // Angular Coulomb ff
+    0.0                     // Angular Static ff
 };
 
 const GeneralParams general_params_search_fast = {
@@ -315,7 +317,8 @@ const GeneralParams general_params_search_fast = {
     100.0,                   // Max linear acceleration jerk
     100.0,                   // Max linear brake jerk
     0.13,                    // Coulomb ff
-    0.0                      // Angular Coulomb ff
+    0.0,                     // Angular Coulomb ff
+    0.25                     // Angular Static ff
 };
 
 const GeneralParams general_params_slow = {
@@ -332,7 +335,8 @@ const GeneralParams general_params_slow = {
     40.0,                     // Max linear acceleration jerk
     40.0,                     // Max linear brake jerk
     0.13,                     // Coulomb ff
-    0.0                       // Angular Coulomb ff
+    0.0,                      // Angular Coulomb ff
+    0.0                      // Angular Static ff
 };
 
 const GeneralParams general_params_medium = {
@@ -349,7 +353,8 @@ const GeneralParams general_params_medium = {
     625.0,                   // Max linear acceleration jerk
     625.0,                   // Max linear brake jerk
     0.18,                    // Coulomb ff
-    0.07                     // Angular Coulomb ff
+    0.07,                    // Angular Coulomb ff
+    0.25                     // Angular Static ff
 };
 
 const GeneralParams general_params_fast = {
@@ -366,7 +371,8 @@ const GeneralParams general_params_fast = {
     625.0,                   // Max linear acceleration jerk
     625.0,                   // Max linear brake jerk
     0.18,                    // Coulomb ff
-    0.07                     // Angular Coulomb ff
+    0.07,                    // Angular Coulomb ff
+    0.25                     // Angular Static ff
 };
 
 const GeneralParams general_params_super = {
@@ -383,5 +389,6 @@ const GeneralParams general_params_super = {
     625.0,                   // Max linear acceleration jerk
     625.0,                   // Max linear brake jerk
     0.18,                    // Coulomb ff
-    0.07                     // Angular Coulomb ff
+    0.07,                    // Angular Coulomb ff
+    0.25                     // Angular Static ff
 };

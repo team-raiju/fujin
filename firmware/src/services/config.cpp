@@ -28,6 +28,7 @@ float Config::max_linear_brake_jerk = 100.0;
 float Config::wheel_radius_mm = 12.75;
 float Config::coulomb_ff = 0.13;
 float Config::angular_coulomb_ff = 0.0;
+float Config::angular_static_ff = 0.0;
 
 float Config::wall_kp = 0.0025;
 float Config::wall_ki = 0.0;
@@ -111,6 +112,7 @@ static std::pair<float*, bsp::eeprom::param_addresses_t> params[] = {
     {&Config::wheel_radius_mm, bsp::eeprom::ADDR_WHEEL_RADIUS_MM},
     {&Config::coulomb_ff, bsp::eeprom::ADDR_COULOMB_FF},
     {&Config::angular_coulomb_ff, bsp::eeprom::ADDR_ANGULAR_COULOMB_FF},
+    {&Config::angular_static_ff, bsp::eeprom::ADDR_ANGULAR_STATIC_FF},
 };
 
 static const std::map<Movement, uint16_t> turn_address_map = {
@@ -306,6 +308,8 @@ void Config::print_parameters() {
     std::printf("    coulomb_ff = %f,\r\n", Config::coulomb_ff);
     bsp::delay_ms(5);
     std::printf("    angular_coulomb_ff = %f,\r\n", Config::angular_coulomb_ff);
+    bsp::delay_ms(5);
+    std::printf("    angular_static_ff = %f,\r\n", Config::angular_static_ff);
     bsp::delay_ms(5);
     std::printf("};\r\n");
     bsp::delay_ms(5);

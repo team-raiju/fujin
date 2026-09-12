@@ -48,6 +48,7 @@ void Control::init(void) {
         services::Config::max_linear_brake_jerk,
         services::Config::coulomb_ff,
         services::Config::angular_coulomb_ff,
+        services::Config::angular_static_ff,
     };
     reset(general_params);
 }
@@ -151,7 +152,7 @@ void Control::update() {
 
         // Static friction
         if (is_accelerating && std::abs(bsp::imu::get_rad_per_s()) < 0.4f && std::abs(target_angular_acceleration) > 0.1f) {
-            rotation_ff += 0.25f * dir;
+            rotation_ff += params.angular_static_ff * dir;
         } // Dynamic friction
         else if (std::abs(target_angular_speed_rad_s) > 0.005f) {
             rotation_ff += params.angular_coulomb_ff * dir;

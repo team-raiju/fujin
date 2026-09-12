@@ -112,6 +112,7 @@ struct GeneralParams {
     float max_linear_brake_jerk;
     float coulomb_ff;
     float angular_coulomb_ff;
+    float angular_static_ff;
 
     GeneralParams()
         : fan_speed(0), angular_kp(0), angular_ki(0), angular_kd(0), angular_acc_feed_forward_k(0),
@@ -121,11 +122,11 @@ struct GeneralParams {
           linear_vel_kp(0), linear_vel_ki(0), linear_vel_kd(0), diagonal_walls_kp(0), diagonal_walls_ki(0),
           diagonal_walls_kd(0), start_wall_break_mm_left(0), start_wall_break_mm_right(0),
           enable_wall_break_correction(0), max_linear_acc_jerk(0), max_linear_brake_jerk(0), coulomb_ff(0),
-          angular_coulomb_ff(0) {}
+          angular_coulomb_ff(0), angular_static_ff(0) {}
 
     GeneralParams(float fan, float akp, float aki, float akd, float aaff, float abff, float avff, float lvaff, float lvbff, float lvff, float wkp, float wki,
                   float wkd, float lvkp, float lvki, float lvkd, float dwkp, float dwki, float dwkd, float swbcl,
-                  float swbcr, float ewbc, float mlaj, float mlbj, float c_ff, float angular_c_ff )
+                  float swbcr, float ewbc, float mlaj, float mlbj, float c_ff, float angular_c_ff, float angular_s_ff)
         : fan_speed(fan), angular_kp(akp), angular_ki(aki), angular_kd(akd), angular_acc_feed_forward_k(aaff),
           angular_brake_feed_forward_k(abff),
           angular_vel_feed_forward_k(avff), linear_vel_acc_feed_forward_k(lvaff), linear_vel_brake_feed_forward_k(lvbff),
@@ -135,7 +136,7 @@ struct GeneralParams {
           diagonal_walls_ki(dwki), diagonal_walls_kd(dwkd), start_wall_break_mm_left(swbcl),
           start_wall_break_mm_right(swbcr), enable_wall_break_correction(ewbc),
           max_linear_acc_jerk(mlaj), max_linear_brake_jerk(mlbj), coulomb_ff(c_ff),
-          angular_coulomb_ff(angular_c_ff) {}
+          angular_coulomb_ff(angular_c_ff), angular_static_ff(angular_s_ff) {}
 };
 
 extern const std::map<Movement, TurnParams> turn_params_search_slow;
