@@ -16,15 +16,20 @@ namespace bsp::analog_sensors {
 
 /// @section Constants
 
-/* With these settings and ADC clock =  CLK/4 and sample cycles = 47.5*/
-/* We have 1 sample per 900us*/
+/* With ADC clock = PCLK/4 (42.5 MHz), 5 channels, and 24.5 sample cycles (37 cycles/conv):
+ * - 1 conversion: 37 / 42.5 MHz = 0.87 us
+ * - 1 scan (5 ch): 185 / 42.5 MHz = 4.35 us
+ * - Half-buffer (22 scans): 22 * 4.35 us = ~95.8 us per DMA interrupt (phase duration)
+ * - Full 5-phase modulation cycle (OFF + 4 individual ON): 5 * 95.8 us = ~479 us (~2.09 kHz <= 500 us)
+ * - EMA filter (alpha = 0.5): group delay = 1 * 479 us = ~479 us (90% settling: ~1.59 ms)
+ */
 #define ADC_1_DMA_CHANNELS 5
-#define READINGS_PER_ADC_1 128
+#define READINGS_PER_ADC_1 44
 #define ADC_1_DMA_BUFFER_SIZE (ADC_1_DMA_CHANNELS * READINGS_PER_ADC_1)
 #define ADC_1_DMA_HALF_BUFFER_SIZE (ADC_1_DMA_BUFFER_SIZE / 2)
 
-/* With these settings and ADC clock =  CLK/4 and sample cycles = 47.5*/
-/* We have 1 sample per 45us*/
+/* With these settings and ADC clock = CLK/4 and sample cycles = 24.5*/
+/* We have 1 sample per 28us*/
 #define ADC_2_DMA_CHANNELS 2
 #define READINGS_PER_ADC_2 32
 #define ADC_2_DMA_BUFFER_SIZE (ADC_2_DMA_CHANNELS * READINGS_PER_ADC_2)
@@ -41,7 +46,7 @@ namespace bsp::analog_sensors {
 #define PWR_BAT_VOLTAGE_MULTIPLIER (4.19) // Experimentaly set
 #define PWR_BAT_POSITION_IN_ADC 4
 
-#define IR_AVG_WINDOW 20
+#define IR_EMA_ALPHA 0.5f
 
 /// @section Private variables
 
@@ -55,8 +60,13 @@ static int32_t ir_readings_off[4];
 static uint32_t battery_reading;
 static uint32_t current_reading[2];
 static bool modulation_enabled;
-static uint32_t ir_window[4][IR_AVG_WINDOW];
-static size_t window_idx[4];
+static uint8_t mod_step = 0;
+static constexpr bsp::leds::Emitter sensor_emitters[4] = {
+    bsp::leds::LEFT_SIDE,
+    bsp::leds::LEFT_FRONT,
+    bsp::leds::RIGHT_FRONT,
+    bsp::leds::RIGHT_SIDE,
+};
 
 /// @section Interface implementation
 
@@ -70,12 +80,16 @@ void init(void) {
 }
 
 void start(void) {
+    bsp::leds::ir_emitter_all_off();
+    mod_step = 0;
     HAL_ADC_Start_DMA(&hadc1, adc_1_dma_buffer, ADC_1_DMA_BUFFER_SIZE);
     // HAL_ADC_Start_DMA(&hadc2, adc_2_dma_buffer, ADC_2_DMA_BUFFER_SIZE);
 }
 
 void stop(void) {
     HAL_ADC_Stop_DMA(&hadc1);
+    bsp::leds::ir_emitter_all_off();
+    mod_step = 0;
     // HAL_ADC_Stop_DMA(&hadc2);
 }
 
@@ -244,21 +258,14 @@ bool ir_wall_control_valid(SensingDirection direction) {
 
 void enable_modulation(bool enable) {
     modulation_enabled = enable;
+    mod_step = 0;
+    bsp::leds::ir_emitter_all_off();
 }
 
 /// @section Private functions
 
 void adc1_callback(uint32_t* data) {
-    static bool read_ir_off = true;
     uint32_t aux_readings[ADC_1_DMA_CHANNELS] = {0};
-
-    if (modulation_enabled) {
-        if (read_ir_off) {
-            bsp::leds::ir_emitter_all_on();
-        } else {
-            bsp::leds::ir_emitter_all_off();
-        }
-    }
 
     for (uint16_t i = 0; i < (ADC_1_DMA_HALF_BUFFER_SIZE - 1); i += ADC_1_DMA_CHANNELS) {
         for (uint16_t j = 0; j < ADC_1_DMA_CHANNELS; j++) {
@@ -270,21 +277,44 @@ void adc1_callback(uint32_t* data) {
         aux_readings[j] /= (ADC_1_DMA_HALF_BUFFER_SIZE / ADC_1_DMA_CHANNELS);
     }
 
-    for (int i = 0; i < 4; i++) {
-        if (modulation_enabled) {
-            if (read_ir_off) {
+    if (!modulation_enabled) {
+        bsp::leds::ir_emitter_all_off();
+        mod_step = 0;
+        for (int i = 0; i < 4; i++) {
+            ir_readings[i] = aux_readings[i];
+        }
+    } else {
+        if (mod_step == 0) {
+            // Ambient light reading (all emitters were off during conversion)
+            for (int i = 0; i < 4; i++) {
                 ir_readings_off[i] = aux_readings[i];
-            } else {
-                ir_readings_on[i] = aux_readings[i];
-                uint32_t reading = std::max(ir_readings_on[i] - ir_readings_off[i], 0L);
-                ir_readings[i] = moving_average(ir_window[i], IR_AVG_WINDOW, &window_idx[i], reading);
             }
+            // Turn ON emitter for sensor 0 for the upcoming buffer conversion
+            bsp::leds::ir_emitter_on(sensor_emitters[0]);
+            mod_step = 1;
         } else {
-            ir_readings[0] = aux_readings[0];
+            uint8_t sensor_idx = mod_step - 1; // 0, 1, 2, 3
+
+            // Record reading with only this sensor's emitter turned on
+            ir_readings_on[sensor_idx] = aux_readings[sensor_idx];
+            uint32_t reading = std::max(ir_readings_on[sensor_idx] - ir_readings_off[sensor_idx], 0L);
+            ir_readings[sensor_idx] = static_cast<uint32_t>(
+                IR_EMA_ALPHA * static_cast<float>(reading) + (1.0f - IR_EMA_ALPHA) * static_cast<float>(ir_readings[sensor_idx]));
+
+            // Turn OFF current emitter
+            bsp::leds::ir_emitter_off(sensor_emitters[sensor_idx]);
+
+            if (mod_step < 4) {
+                // Turn ON next sensor's emitter
+                bsp::leds::ir_emitter_on(sensor_emitters[mod_step]);
+                mod_step++;
+            } else {
+                // All emitters are now OFF; next cycle will sample ambient light (step 0)
+                mod_step = 0;
+            }
         }
     }
 
-    read_ir_off = !read_ir_off;
     battery_reading = 0.5 * aux_readings[4] + battery_reading * 0.5;
 }
 
