@@ -165,9 +165,30 @@ static const std::map<Movement, uint16_t> forward_address_map = {
 
 static constexpr uint16_t ir_calib_eeprom_addrs[4][3] = {
     {bsp::eeprom::ADDR_IR_CALIB_A_RIGHT, bsp::eeprom::ADDR_IR_CALIB_B_RIGHT, bsp::eeprom::ADDR_IR_CALIB_C_RIGHT},
-    {bsp::eeprom::ADDR_IR_CALIB_A_FRONT_LEFT, bsp::eeprom::ADDR_IR_CALIB_B_FRONT_LEFT, bsp::eeprom::ADDR_IR_CALIB_C_FRONT_LEFT},
-    {bsp::eeprom::ADDR_IR_CALIB_A_FRONT_RIGHT, bsp::eeprom::ADDR_IR_CALIB_B_FRONT_RIGHT, bsp::eeprom::ADDR_IR_CALIB_C_FRONT_RIGHT},
+    {bsp::eeprom::ADDR_IR_CALIB_A_FRONT_LEFT, bsp::eeprom::ADDR_IR_CALIB_B_FRONT_LEFT,
+     bsp::eeprom::ADDR_IR_CALIB_C_FRONT_LEFT},
+    {bsp::eeprom::ADDR_IR_CALIB_A_FRONT_RIGHT, bsp::eeprom::ADDR_IR_CALIB_B_FRONT_RIGHT,
+     bsp::eeprom::ADDR_IR_CALIB_C_FRONT_RIGHT},
     {bsp::eeprom::ADDR_IR_CALIB_A_LEFT, bsp::eeprom::ADDR_IR_CALIB_B_LEFT, bsp::eeprom::ADDR_IR_CALIB_C_LEFT},
+};
+
+static const uint16_t ir_wall_patterns_eeprom_addrs[8][4] = {
+    {bsp::eeprom::ADDR_IR_WALL_PATTERN_0_L, bsp::eeprom::ADDR_IR_WALL_PATTERN_0_FL,
+     bsp::eeprom::ADDR_IR_WALL_PATTERN_0_FR, bsp::eeprom::ADDR_IR_WALL_PATTERN_0_R},
+    {bsp::eeprom::ADDR_IR_WALL_PATTERN_1_L, bsp::eeprom::ADDR_IR_WALL_PATTERN_1_FL,
+     bsp::eeprom::ADDR_IR_WALL_PATTERN_1_FR, bsp::eeprom::ADDR_IR_WALL_PATTERN_1_R},
+    {bsp::eeprom::ADDR_IR_WALL_PATTERN_2_L, bsp::eeprom::ADDR_IR_WALL_PATTERN_2_FL,
+     bsp::eeprom::ADDR_IR_WALL_PATTERN_2_FR, bsp::eeprom::ADDR_IR_WALL_PATTERN_2_R},
+    {bsp::eeprom::ADDR_IR_WALL_PATTERN_3_L, bsp::eeprom::ADDR_IR_WALL_PATTERN_3_FL,
+     bsp::eeprom::ADDR_IR_WALL_PATTERN_3_FR, bsp::eeprom::ADDR_IR_WALL_PATTERN_3_R},
+    {bsp::eeprom::ADDR_IR_WALL_PATTERN_4_L, bsp::eeprom::ADDR_IR_WALL_PATTERN_4_FL,
+     bsp::eeprom::ADDR_IR_WALL_PATTERN_4_FR, bsp::eeprom::ADDR_IR_WALL_PATTERN_4_R},
+    {bsp::eeprom::ADDR_IR_WALL_PATTERN_5_L, bsp::eeprom::ADDR_IR_WALL_PATTERN_5_FL,
+     bsp::eeprom::ADDR_IR_WALL_PATTERN_5_FR, bsp::eeprom::ADDR_IR_WALL_PATTERN_5_R},
+    {bsp::eeprom::ADDR_IR_WALL_PATTERN_6_L, bsp::eeprom::ADDR_IR_WALL_PATTERN_6_FL,
+     bsp::eeprom::ADDR_IR_WALL_PATTERN_6_FR, bsp::eeprom::ADDR_IR_WALL_PATTERN_6_R},
+    {bsp::eeprom::ADDR_IR_WALL_PATTERN_7_L, bsp::eeprom::ADDR_IR_WALL_PATTERN_7_FL,
+     bsp::eeprom::ADDR_IR_WALL_PATTERN_7_FR, bsp::eeprom::ADDR_IR_WALL_PATTERN_7_R},
 };
 
 union _float {
@@ -201,6 +222,8 @@ void Config::init() {
     load_movement_sequence_from_eeprom();
     bsp::delay_ms(5);
     load_ir_calib_from_eeprom();
+    bsp::delay_ms(5);
+    load_ir_wall_patterns_from_eeprom();
 }
 
 int Config::parse_packet(uint8_t packet[bsp::ble::max_packet_size]) {
@@ -474,9 +497,9 @@ void Config::send_movement_parameters() {
         send_param(1, movement_id, static_cast<uint8_t>(bsp::ble::TurnParamID::TIME_TO_DECREASE_JERK_2),
                    Config::ticks_to_ms(params.time_to_decrease_jerk_2));
         send_param(1, movement_id, static_cast<uint8_t>(bsp::ble::TurnParamID::ACCEL_RAMP_UP_JERK),
-               params.accel_ramp_up_jerk);
+                   params.accel_ramp_up_jerk);
         send_param(1, movement_id, static_cast<uint8_t>(bsp::ble::TurnParamID::ACCEL_RAMP_DOWN_JERK),
-               params.accel_ramp_down_jerk);
+                   params.accel_ramp_down_jerk);
     }
 }
 
@@ -677,13 +700,10 @@ void Config::load_ir_calib_from_eeprom() {
             bsp::eeprom::read_u32(ir_calib_eeprom_addrs[i][2], &fc.u32) == bsp::eeprom::OK) {
 
             if (fa.u32 != 0xFFFFFFFF && fb.u32 != 0xFFFFFFFF && fc.u32 != 0xFFFFFFFF) {
-                if (!std::isnan(fa.value) && !std::isinf(fa.value) && fa.value > 0.0f &&
-                    !std::isnan(fb.value) && !std::isinf(fb.value) &&
-                    !std::isnan(fc.value) && !std::isinf(fc.value)) {
-                    bsp::analog_sensors::set_calib_params(
-                        static_cast<bsp::analog_sensors::SensingDirection>(i),
-                        {fa.value, fb.value, fc.value}
-                    );
+                if (!std::isnan(fa.value) && !std::isinf(fa.value) && fa.value > 0.0f && !std::isnan(fb.value) &&
+                    !std::isinf(fb.value) && !std::isnan(fc.value) && !std::isinf(fc.value)) {
+                    bsp::analog_sensors::set_calib_params(static_cast<bsp::analog_sensors::SensingDirection>(i),
+                                                          {fa.value, fb.value, fc.value});
 
                     std::printf("%s: %f\r\n", bsp::eeprom::param_name(ir_calib_eeprom_addrs[i][0]), fa.value);
                     bsp::delay_ms(2);
@@ -732,6 +752,71 @@ int Config::save_all_ir_calib_to_eeprom() {
         }
     }
     return 0;
+}
+
+void Config::load_ir_wall_patterns_from_eeprom() {
+    for (int i = 0; i < 8; i++) {
+        uint32_t l, fl, fr, r;
+        if (bsp::eeprom::read_u32(ir_wall_patterns_eeprom_addrs[i][0], &l) == bsp::eeprom::OK &&
+            bsp::eeprom::read_u32(ir_wall_patterns_eeprom_addrs[i][1], &fl) == bsp::eeprom::OK &&
+            bsp::eeprom::read_u32(ir_wall_patterns_eeprom_addrs[i][2], &fr) == bsp::eeprom::OK &&
+            bsp::eeprom::read_u32(ir_wall_patterns_eeprom_addrs[i][3], &r) == bsp::eeprom::OK) {
+
+            if (l != 0xFFFFFFFF && fl != 0xFFFFFFFF && fr != 0xFFFFFFFF && r != 0xFFFFFFFF) {
+                bsp::analog_sensors::set_wall_pattern(i, {l, fl, fr, r});
+
+                std::printf("%s: %lu\r\n", bsp::eeprom::param_name(ir_wall_patterns_eeprom_addrs[i][0]), l);
+                bsp::delay_ms(2);
+                std::printf("%s: %lu\r\n", bsp::eeprom::param_name(ir_wall_patterns_eeprom_addrs[i][1]), fl);
+                bsp::delay_ms(2);
+                std::printf("%s: %lu\r\n", bsp::eeprom::param_name(ir_wall_patterns_eeprom_addrs[i][2]), fr);
+                bsp::delay_ms(2);
+                std::printf("%s: %lu\r\n", bsp::eeprom::param_name(ir_wall_patterns_eeprom_addrs[i][3]), r);
+                bsp::delay_ms(2);
+            }
+        }
+        bsp::delay_ms(2);
+    }
+}
+
+int Config::save_ir_wall_pattern_to_eeprom(uint8_t pattern_idx) {
+    if (pattern_idx >= 8) {
+        return -1;
+    }
+    auto pattern = bsp::analog_sensors::get_wall_pattern(pattern_idx);
+
+    if (bsp::eeprom::write_u32(ir_wall_patterns_eeprom_addrs[pattern_idx][0], pattern.L) != bsp::eeprom::OK){
+        return -1;
+    }
+    bsp::delay_ms(5);
+    if (bsp::eeprom::write_u32(ir_wall_patterns_eeprom_addrs[pattern_idx][1], pattern.FL) != bsp::eeprom::OK) {
+        return -1;
+    }
+    bsp::delay_ms(5);
+    if (bsp::eeprom::write_u32(ir_wall_patterns_eeprom_addrs[pattern_idx][2], pattern.FR) != bsp::eeprom::OK){
+        return -1;
+    }
+    bsp::delay_ms(5);
+    if (bsp::eeprom::write_u32(ir_wall_patterns_eeprom_addrs[pattern_idx][3], pattern.R) != bsp::eeprom::OK){
+        return -1;
+    }
+    bsp::delay_ms(5);
+
+    return 0;
+}
+
+int Config::save_all_ir_wall_patterns_to_eeprom() {
+    for (uint8_t i = 0; i < 8; i++) {
+        if (save_ir_wall_pattern_to_eeprom(i) != 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+int Config::reset_ir_wall_patterns_in_eeprom() {
+    bsp::analog_sensors::reset_all_wall_patterns();
+    return save_all_ir_wall_patterns_to_eeprom();
 }
 
 }

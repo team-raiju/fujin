@@ -32,17 +32,12 @@ struct SensingPattern {
     uint32_t FR;
     uint32_t R;
 };
-/// @brief Sensor raw values in every wall combination
-constexpr std::array<SensingPattern, 8> ir_wall_patterns = {{
-    {1119, 850, 1290, 1460}, // F-L-R
-    {960, 820, 1200, 880},   // F-L
-    {500, 700, 1160, 1460},  // F-R
-    {520, 755, 1200, 870},   // F
-    {900, 67, 246, 1460},    // L-R
-    {900, 28, 230, 870},     // L
-    {530, 35, 261, 1300},    // R
-    {180, 66, 238, 800}      // None
-}};
+
+SensingPattern get_wall_pattern(uint8_t index);
+void set_wall_pattern(uint8_t index, const SensingPattern& pattern);
+void reset_wall_pattern(uint8_t index);
+void reset_all_wall_patterns();
+const std::array<SensingPattern, 8>& get_all_wall_patterns();
 
 typedef void (*bsp_analog_ready_callback_t)(void);
 

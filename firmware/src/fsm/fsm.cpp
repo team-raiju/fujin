@@ -57,7 +57,9 @@ void FSM::start() {
         }
 
         if (packet[1] == bsp::ble::BlePacketType::RequestIrCalibParams ||
-            packet[1] == bsp::ble::BlePacketType::CalibrateIrSample) {
+            packet[1] == bsp::ble::BlePacketType::CalibrateIrSample ||
+            packet[1] == bsp::ble::BlePacketType::RequestIrWallPatterns ||
+            packet[1] == bsp::ble::BlePacketType::CalibrateIrWallPattern) {
             BleCommand cmd;
             std::memcpy(cmd.packet, packet, bsp::ble::max_packet_size);
             dispatch(cmd);

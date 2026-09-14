@@ -27,6 +27,8 @@ enum BlePacketType : uint8_t {
     UpdateMoveSequence = 0x0A,
     RequestIrCalibParams = 0x0B,
     CalibrateIrSample = 0x0C,
+    RequestIrWallPatterns = 0x0D,
+    CalibrateIrWallPattern = 0x0E,
 };
 
 enum BleCommands : uint8_t {

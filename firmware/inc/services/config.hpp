@@ -89,6 +89,10 @@ public:
     static void load_ir_calib_from_eeprom();
     static int save_ir_calib_to_eeprom(bsp::analog_sensors::SensingDirection direction);
     static int save_all_ir_calib_to_eeprom();
+    static void load_ir_wall_patterns_from_eeprom();
+    static int save_ir_wall_pattern_to_eeprom(uint8_t pattern_idx);
+    static int save_all_ir_wall_patterns_to_eeprom();
+    static int reset_ir_wall_patterns_in_eeprom();
 };
 
 }

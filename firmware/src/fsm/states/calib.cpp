@@ -140,6 +140,8 @@ void CalibrationIRSensors::enter() {
     soft_timer::start(10, soft_timer::CONTINUOUS);
 
     send_calib_params();
+    bsp::delay_ms(20);
+    send_wall_patterns();
 }
 
 State* CalibrationIRSensors::react(BleCommand const& event) {
@@ -152,6 +154,10 @@ State* CalibrationIRSensors::react(BleCommand const& event) {
         } else {
             handle_calib_sample(event.packet);
         }
+    } else if (event.packet[1] == bsp::ble::BlePacketType::RequestIrWallPatterns) {
+        send_wall_patterns(event.packet[2]);
+    } else if (event.packet[1] == bsp::ble::BlePacketType::CalibrateIrWallPattern) {
+        handle_wall_pattern_calib(event.packet);
     }
     return nullptr;
 }
@@ -316,6 +322,94 @@ void CalibrationIRSensors::handle_calib_sample(const uint8_t packet[bsp::ble::ma
                 bsp::buzzer::beep(60);
                 bsp::delay_ms(60);
             }
+        }
+    }
+}
+
+void CalibrationIRSensors::send_wall_patterns(uint8_t pattern_idx) {
+    uint8_t packet[20] = {0};
+    packet[0] = bsp::ble::header;
+    packet[1] = bsp::ble::BlePacketType::RequestIrWallPatterns;
+
+    uint8_t start = (pattern_idx < 8) ? pattern_idx : 0;
+    uint8_t end = (pattern_idx < 8) ? (pattern_idx + 1) : 8;
+
+    for (uint8_t i = start; i < end; i++) {
+        auto pattern = bsp::analog_sensors::get_wall_pattern(i);
+        packet[2] = i;
+        uint16_t l = static_cast<uint16_t>(pattern.L);
+        uint16_t fl = static_cast<uint16_t>(pattern.FL);
+        uint16_t fr = static_cast<uint16_t>(pattern.FR);
+        uint16_t r = static_cast<uint16_t>(pattern.R);
+
+        std::memcpy(&packet[3], &l, sizeof(uint16_t));
+        std::memcpy(&packet[5], &fl, sizeof(uint16_t));
+        std::memcpy(&packet[7], &fr, sizeof(uint16_t));
+        std::memcpy(&packet[9], &r, sizeof(uint16_t));
+
+        bsp::ble::transmit(packet, sizeof(packet));
+        bsp::delay_ms(5);
+    }
+}
+
+void CalibrationIRSensors::send_wall_pattern_ack(uint8_t pattern_idx, uint8_t status, const bsp::analog_sensors::SensingPattern& pattern) {
+    uint8_t packet[20] = {0};
+    packet[0] = bsp::ble::header;
+    packet[1] = bsp::ble::BlePacketType::CalibrateIrWallPattern;
+    packet[2] = pattern_idx;
+    packet[3] = status;
+
+    uint16_t l = static_cast<uint16_t>(pattern.L);
+    uint16_t fl = static_cast<uint16_t>(pattern.FL);
+    uint16_t fr = static_cast<uint16_t>(pattern.FR);
+    uint16_t r = static_cast<uint16_t>(pattern.R);
+
+    std::memcpy(&packet[4], &l, sizeof(uint16_t));
+    std::memcpy(&packet[6], &fl, sizeof(uint16_t));
+    std::memcpy(&packet[8], &fr, sizeof(uint16_t));
+    std::memcpy(&packet[10], &r, sizeof(uint16_t));
+
+    bsp::ble::transmit(packet, sizeof(packet));
+}
+
+void CalibrationIRSensors::handle_wall_pattern_calib(const uint8_t packet[bsp::ble::max_packet_size]) {
+    uint8_t pattern_idx = packet[2];
+    uint8_t action = packet[3]; // 1 = sample & save, 0 = reset
+
+    if (action == 1) {
+        if (pattern_idx >= 8) {
+            bsp::analog_sensors::SensingPattern empty = {0, 0, 0, 0};
+            send_wall_pattern_ack(pattern_idx, 1, empty);
+            return;
+        }
+
+        uint32_t l = read_averaged_adc(bsp::analog_sensors::LEFT);
+        uint32_t fl = read_averaged_adc(bsp::analog_sensors::FRONT_LEFT);
+        uint32_t fr = read_averaged_adc(bsp::analog_sensors::FRONT_RIGHT);
+        uint32_t r = read_averaged_adc(bsp::analog_sensors::RIGHT);
+
+        bsp::analog_sensors::SensingPattern new_pattern = {l, fl, fr, r};
+        bsp::analog_sensors::set_wall_pattern(pattern_idx, new_pattern);
+        int res = services::Config::save_ir_wall_pattern_to_eeprom(pattern_idx);
+
+        if (res == 0) {
+            bsp::buzzer::beep_double(100, 80, 150);
+            send_wall_pattern_ack(pattern_idx, 0, new_pattern);
+        } else {
+            bsp::buzzer::beep(300);
+            send_wall_pattern_ack(pattern_idx, 1, new_pattern);
+        }
+    } else if (action == 0) {
+        if (pattern_idx == 0xFF) {
+            services::Config::reset_ir_wall_patterns_in_eeprom();
+            bsp::buzzer::beep(100);
+            send_wall_patterns(0xFF);
+        } else if (pattern_idx < 8) {
+            bsp::analog_sensors::reset_wall_pattern(pattern_idx);
+            services::Config::save_ir_wall_pattern_to_eeprom(pattern_idx);
+            bsp::buzzer::beep(100);
+            auto pat = bsp::analog_sensors::get_wall_pattern(pattern_idx);
+            send_wall_pattern_ack(pattern_idx, 0, pat);
         }
     }
 }

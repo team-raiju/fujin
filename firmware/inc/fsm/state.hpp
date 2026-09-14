@@ -252,6 +252,7 @@ public:
     State* react(Timeout const&) override;
 
     static void send_calib_params();
+    static void send_wall_patterns(uint8_t pattern_idx = 0xFF);
 
 private:
     services::Notification* notification;
@@ -261,6 +262,8 @@ private:
     void handle_calib_sample(const uint8_t packet[bsp::ble::max_packet_size]);
     void handle_reset_calib(uint8_t sensor_target);
     void send_calib_ack(uint8_t sensor_idx, uint8_t point_id, float dist, uint32_t raw_adc, uint8_t status);
+    void handle_wall_pattern_calib(const uint8_t packet[bsp::ble::max_packet_size]);
+    void send_wall_pattern_ack(uint8_t pattern_idx, uint8_t status, const bsp::analog_sensors::SensingPattern& pattern);
     uint32_t read_averaged_adc(bsp::analog_sensors::SensingDirection direction);
     bool solve_2point_calib(uint8_t sensor_idx);
 };
