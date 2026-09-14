@@ -329,11 +329,11 @@ bool Navigation::step() {
     case Movement::FORWARD:
     case Movement::DIAGONAL:
     case Movement::STOP: {
-        using bsp::analog_sensors::ir_reading;
+        using bsp::analog_sensors::ir_raw_reading;
 
-        bool front_emergency = ir_reading(SensingDirection::FRONT_LEFT) > 2850 &&
-                               ir_reading(SensingDirection::FRONT_RIGHT) > 2850 &&
-                               ir_reading(SensingDirection::LEFT) > 2470 && ir_reading(SensingDirection::RIGHT) > 2850;
+        bool front_emergency = ir_raw_reading(SensingDirection::FRONT_LEFT) > 2850 &&
+                               ir_raw_reading(SensingDirection::FRONT_RIGHT) > 2850 &&
+                               ir_raw_reading(SensingDirection::LEFT) > 2470 && ir_raw_reading(SensingDirection::RIGHT) > 2850;
 
         if (current_movement == Movement::STOP) {
             forward_end_speed = 0.0;

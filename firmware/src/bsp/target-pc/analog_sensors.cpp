@@ -8,6 +8,7 @@ namespace bsp::analog_sensors {
 static bsp_analog_ready_callback_t reading_ready_callback;
 
 static uint32_t dummy_readings[4];
+static float dummy_distances[4];
 
 /// @section Interface implementation
 
@@ -25,6 +26,10 @@ uint32_t* ir_latest_reading(void) {
     return dummy_readings;
 }
 
+float* ir_latest_distance(void) {
+    return dummy_distances;
+}
+
 uint32_t battery_latest_reading(void) {
     return 0;
 }
@@ -37,7 +42,11 @@ bool ir_reading_wall(SensingDirection) {
     return true;
 }
 
-uint32_t ir_reading(SensingDirection direction) {
+float ir_distance_mm(SensingDirection direction) {
+    return dummy_distances[direction];
+}
+
+uint32_t ir_raw_reading(SensingDirection direction) {
     return dummy_readings[direction];
 }
 

@@ -54,9 +54,10 @@ static uint32_t adc_1_dma_buffer[ADC_1_DMA_BUFFER_SIZE];
 static uint32_t adc_2_dma_buffer[ADC_2_DMA_BUFFER_SIZE];
 static bsp_analog_ready_callback_t reading_ready_callback;
 
-static uint32_t ir_readings[4];
-static int32_t ir_readings_on[4];
-static int32_t ir_readings_off[4];
+static uint32_t ir_raw_readings[4];
+static float ir_distances[4];
+static int32_t ir_raw_readings_on[4];
+static int32_t ir_raw_readings_off[4];
 static uint32_t battery_reading;
 static uint32_t current_reading[2];
 static bool modulation_enabled;
@@ -98,7 +99,11 @@ void register_callback(bsp_analog_ready_callback_t callback) {
 }
 
 uint32_t* ir_latest_reading(void) {
-    return ir_readings;
+    return ir_raw_readings;
+}
+
+float* ir_latest_distance(void) {
+    return ir_distances;
 }
 
 uint32_t battery_latest_reading(void) {
@@ -123,28 +128,32 @@ uint32_t* current_latest_reading(void) {
     return current_reading;
 }
 
-uint32_t ir_reading(SensingDirection direction) {
-    return ir_readings[direction];
+float ir_distance_mm(SensingDirection direction) {
+    return ir_distances[direction];
+}
+
+uint32_t ir_raw_reading(SensingDirection direction) {
+    return ir_raw_readings[direction];
 }
 
 bool ir_reading_wall(SensingDirection direction) {
     switch (direction) {
     case SensingDirection::RIGHT:
-        return ir_readings[direction] > services::Config::ir_wall_detect_th_right;
+        return ir_raw_readings[direction] > services::Config::ir_wall_detect_th_right;
     case SensingDirection::FRONT_LEFT:
-        return ir_readings[direction] > services::Config::ir_wall_detect_th_front_left;
+        return ir_raw_readings[direction] > services::Config::ir_wall_detect_th_front_left;
     case SensingDirection::FRONT_RIGHT:
-        return ir_readings[direction] > services::Config::ir_wall_detect_th_front_right;
+        return ir_raw_readings[direction] > services::Config::ir_wall_detect_th_front_right;
     case SensingDirection::LEFT:
-        return ir_readings[direction] > services::Config::ir_wall_detect_th_left;
+        return ir_raw_readings[direction] > services::Config::ir_wall_detect_th_left;
     default:
         return false;
     }
 }
 
 int32_t ir_side_wall_error() {
-    int32_t left_error = ir_readings[SensingDirection::LEFT] - services::Config::ir_wall_dist_ref_left;
-    int32_t right_error = ir_readings[SensingDirection::RIGHT] - services::Config::ir_wall_dist_ref_right;
+    int32_t left_error = ir_raw_readings[SensingDirection::LEFT] - services::Config::ir_wall_dist_ref_left;
+    int32_t right_error = ir_raw_readings[SensingDirection::RIGHT] - services::Config::ir_wall_dist_ref_right;
 
     int32_t ir_error;
     if (ir_wall_control_valid(SensingDirection::LEFT) && ir_wall_control_valid(SensingDirection::RIGHT)) {
@@ -162,10 +171,10 @@ int32_t ir_side_wall_error() {
 
 SensingStatus ir_get_sensing_status() {
     SensingPattern current_pattern;
-    current_pattern.FL = ir_reading(FRONT_LEFT);
-    current_pattern.FR = ir_reading(FRONT_RIGHT);
-    current_pattern.L = ir_reading(LEFT);
-    current_pattern.R = ir_reading(RIGHT);
+    current_pattern.FL = ir_raw_reading(FRONT_LEFT);
+    current_pattern.FR = ir_raw_reading(FRONT_RIGHT);
+    current_pattern.L = ir_raw_reading(LEFT);
+    current_pattern.R = ir_raw_reading(RIGHT);
 
     // Compares the current value to all references and find the closest match
     uint32_t min_diff = 10000;
@@ -226,14 +235,14 @@ SensingStatus ir_get_sensing_status() {
 }
 
 int32_t ir_diagonal_error() {
-    bool greater_error_left = ir_readings[SensingDirection::FRONT_LEFT] > ir_readings[SensingDirection::FRONT_RIGHT];
+    bool greater_error_left = ir_raw_readings[SensingDirection::FRONT_LEFT] > ir_raw_readings[SensingDirection::FRONT_RIGHT];
 
     int32_t ir_error;
 
     if (greater_error_left && ir_wall_control_valid(SensingDirection::FRONT_LEFT)) {
-        ir_error = ir_readings[SensingDirection::FRONT_LEFT] - services::Config::ir_wall_dist_ref_front_left;
+        ir_error = ir_raw_readings[SensingDirection::FRONT_LEFT] - services::Config::ir_wall_dist_ref_front_left;
     } else if (!greater_error_left && ir_wall_control_valid(SensingDirection::FRONT_RIGHT)) {
-        ir_error = -(ir_readings[SensingDirection::FRONT_RIGHT] - services::Config::ir_wall_dist_ref_front_right);
+        ir_error = -(ir_raw_readings[SensingDirection::FRONT_RIGHT] - services::Config::ir_wall_dist_ref_front_right);
     } else {
         ir_error = 0;
     }
@@ -244,13 +253,13 @@ int32_t ir_diagonal_error() {
 bool ir_wall_control_valid(SensingDirection direction) {
     switch (direction) {
     case SensingDirection::RIGHT:
-        return ir_readings[direction] > services::Config::ir_wall_control_th_right;
+        return ir_raw_readings[direction] > services::Config::ir_wall_control_th_right;
     case SensingDirection::FRONT_LEFT:
-        return ir_readings[direction] > services::Config::ir_wall_control_th_front_left;
+        return ir_raw_readings[direction] > services::Config::ir_wall_control_th_front_left;
     case SensingDirection::FRONT_RIGHT:
-        return ir_readings[direction] > services::Config::ir_wall_control_th_front_right;
+        return ir_raw_readings[direction] > services::Config::ir_wall_control_th_front_right;
     case SensingDirection::LEFT:
-        return ir_readings[direction] > services::Config::ir_wall_control_th_left;
+        return ir_raw_readings[direction] > services::Config::ir_wall_control_th_left;
     default:
         return false;
     }
@@ -281,13 +290,14 @@ void adc1_callback(uint32_t* data) {
         bsp::leds::ir_emitter_all_off();
         mod_step = 0;
         for (int i = 0; i < 4; i++) {
-            ir_readings[i] = aux_readings[i];
+            ir_raw_readings[i] = aux_readings[i];
+            ir_distances[i] = raw_to_distance_mm(static_cast<SensingDirection>(i), ir_raw_readings[i]);
         }
     } else {
         if (mod_step == 0) {
             // Ambient light reading (all emitters were off during conversion)
             for (int i = 0; i < 4; i++) {
-                ir_readings_off[i] = aux_readings[i];
+                ir_raw_readings_off[i] = aux_readings[i];
             }
             // Turn ON emitter for sensor 0 for the upcoming buffer conversion
             bsp::leds::ir_emitter_on(sensor_emitters[0]);
@@ -296,10 +306,11 @@ void adc1_callback(uint32_t* data) {
             uint8_t sensor_idx = mod_step - 1; // 0, 1, 2, 3
 
             // Record reading with only this sensor's emitter turned on
-            ir_readings_on[sensor_idx] = aux_readings[sensor_idx];
-            uint32_t reading = std::max(ir_readings_on[sensor_idx] - ir_readings_off[sensor_idx], 0L);
-            ir_readings[sensor_idx] = static_cast<uint32_t>(
-                IR_EMA_ALPHA * static_cast<float>(reading) + (1.0f - IR_EMA_ALPHA) * static_cast<float>(ir_readings[sensor_idx]));
+            ir_raw_readings_on[sensor_idx] = aux_readings[sensor_idx];
+            uint32_t reading = std::max(ir_raw_readings_on[sensor_idx] - ir_raw_readings_off[sensor_idx], 0L);
+            ir_raw_readings[sensor_idx] = static_cast<uint32_t>(
+                IR_EMA_ALPHA * static_cast<float>(reading) + (1.0f - IR_EMA_ALPHA) * static_cast<float>(ir_raw_readings[sensor_idx]));
+            ir_distances[sensor_idx] = raw_to_distance_mm(static_cast<SensingDirection>(sensor_idx), ir_raw_readings[sensor_idx]);
 
             // Turn OFF current emitter
             bsp::leds::ir_emitter_off(sensor_emitters[sensor_idx]);

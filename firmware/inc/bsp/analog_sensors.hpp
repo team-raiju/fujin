@@ -7,6 +7,7 @@
 #pragma once
 
 #include <array>
+#include <cmath>
 #include <cstdint>
 
 namespace bsp::analog_sensors {
@@ -19,6 +20,35 @@ enum SensingDirection {
     FRONT_RIGHT = 2,
     LEFT = 3,
 };
+
+struct IrCalibParams {
+    float a;
+    float b;
+    float c;
+};
+
+/// @brief Hardcoded calibration parameters for empirical logarithmic model:
+/// distance = a / ln(raw + c) - b
+constexpr IrCalibParams ir_calib_params[4] = {
+    // RIGHT (0)
+    {3821.004458f, 415.340935f, -342.127314f},
+    // FRONT_LEFT (1)
+    {4362.001131f, 484.625292f, 179.119118f},
+    // FRONT_RIGHT (2)
+    {3848.872537f, 415.133442f, -120.552799f},
+    // LEFT (3)
+    {3579.254976f, 359.789456f, -89.058130f},
+};
+
+/// @brief Converts raw ADC value to distance in mm using logarithmic model
+inline float raw_to_distance_mm(SensingDirection direction, uint32_t raw) {
+    const auto& params = ir_calib_params[direction];
+    float arg = static_cast<float>(raw) + params.c;
+    if (arg < 2.0f) {
+        arg = 2.0f;
+    }
+    return (params.a / std::log(arg)) - params.b;
+}
 
 struct SensingStatus {
     bool front_seeing;
@@ -56,13 +86,18 @@ void stop(void);
 void register_callback(bsp_analog_ready_callback_t callback);
 
 uint32_t* ir_latest_reading(void);
+float* ir_latest_distance(void);
 uint32_t battery_latest_reading(void);
 uint32_t* current_latest_reading(void);
 float battery_latest_reading_mv(void);
 float battery_latest_reading_volts(void);
 bool battery_low();
 
-uint32_t ir_reading(SensingDirection direction);
+/// @brief Alias for ir_reading: returns sensor reading distance in mm
+float ir_distance_mm(SensingDirection direction);
+/// @brief Returns raw ADC sensor reading
+uint32_t ir_raw_reading(SensingDirection direction);
+
 bool ir_reading_wall(SensingDirection direction);
 
 /// @brief compares the readings to a known pattern and calculates the sensing status
