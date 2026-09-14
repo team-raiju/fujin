@@ -1,4 +1,6 @@
+#include <algorithm>
 #include <cmath>
+#include <cstring>
 
 #include "st/hal.h"
 
@@ -47,33 +49,63 @@ constexpr float PWR_BATTERY_THRESHOLD_MV = 10700.0f;
 constexpr float PWR_BAT_VOLTAGE_MULTIPLIER = 4.19f;
 
 constexpr float IR_EMA_ALPHA = 0.5f;
+constexpr float IR_MAX_DISTANCE_MM = 300.0f;
 
-struct IrCalibParams {
-    float a;
-    float b;
-    float c;
+constexpr IrCalibParams default_ir_calib_params[4] = {
+    {3821.004458f, 415.340935f, -342.127314f}, // RIGHT
+    {4362.001131f, 484.625292f, 179.119118f},  // FRONT_LEFT
+    {3848.872537f, 415.133442f, -120.552799f}, // FRONT_RIGHT
+    {3579.254976f, 359.789456f, -89.058130f},  // LEFT
 };
 
-/// @brief Hardcoded calibration parameters for empirical logarithmic model:
-/// distance = a / ln(raw + c) - b
-constexpr IrCalibParams ir_calib_params[4] = {
+static IrCalibParams ir_calib_params[4] = {
     {3821.004458f, 415.340935f, -342.127314f},
     {4362.001131f, 484.625292f, 179.119118f},
     {3848.872537f, 415.133442f, -120.552799f},
     {3579.254976f, 359.789456f, -89.058130f},
 };
 
+} // namespace
+
 /// @brief Converts raw ADC value to distance in mm using logarithmic model
+/// distance = a / ln(raw + c) - b
 float raw_to_distance_mm(SensingDirection direction, uint32_t raw) {
+    if (static_cast<uint8_t>(direction) >= 4) {
+        return IR_MAX_DISTANCE_MM;
+    }
     const auto& params = ir_calib_params[direction];
     float argument = static_cast<float>(raw) + params.c;
     if (argument < 2.0f) {
         argument = 2.0f;
     }
-    return (params.a / std::log(argument)) - params.b;
+    float distance = (params.a / std::log(argument)) - params.b;
+    return std::min(distance, IR_MAX_DISTANCE_MM);
 }
 
-} // namespace
+IrCalibParams get_calib_params(SensingDirection direction) {
+    if (static_cast<uint8_t>(direction) < 4) {
+        return ir_calib_params[direction];
+    }
+    return default_ir_calib_params[0];
+}
+
+void set_calib_params(SensingDirection direction, const IrCalibParams& params) {
+    if (static_cast<uint8_t>(direction) < 4) {
+        ir_calib_params[direction] = params;
+    }
+}
+
+void reset_calib_params(SensingDirection direction) {
+    if (static_cast<uint8_t>(direction) < 4) {
+        ir_calib_params[direction] = default_ir_calib_params[direction];
+    }
+}
+
+void reset_all_calib_params() {
+    for (int i = 0; i < 4; i++) {
+        ir_calib_params[i] = default_ir_calib_params[i];
+    }
+}
 
 /// @section Private variables
 

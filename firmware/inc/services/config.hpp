@@ -1,5 +1,6 @@
 #pragma once
 
+#include "bsp/analog_sensors.hpp"
 #include "bsp/ble.hpp"
 
 namespace services {
@@ -85,6 +86,9 @@ public:
     static int save_z_bias();
     static void load_custom_movements_from_eeprom();
     static void load_movement_sequence_from_eeprom();
+    static void load_ir_calib_from_eeprom();
+    static int save_ir_calib_to_eeprom(bsp::analog_sensors::SensingDirection direction);
+    static int save_all_ir_calib_to_eeprom();
 };
 
 }

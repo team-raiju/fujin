@@ -1,6 +1,8 @@
+#include <cmath>
 #include <cstdio>
 #include <utility>
 
+#include "bsp/analog_sensors.hpp"
 #include "bsp/eeprom.hpp"
 #include "bsp/timers.hpp"
 #include "services/config.hpp"
@@ -161,6 +163,13 @@ static const std::map<Movement, uint16_t> forward_address_map = {
     {Movement::TURN_AROUND_INPLACE, bsp::eeprom::ADDR_FORWARD_PARAMS_TURN_AROUND_INPLACE},
 };
 
+static constexpr uint16_t ir_calib_eeprom_addrs[4][3] = {
+    {bsp::eeprom::ADDR_IR_CALIB_A_RIGHT, bsp::eeprom::ADDR_IR_CALIB_B_RIGHT, bsp::eeprom::ADDR_IR_CALIB_C_RIGHT},
+    {bsp::eeprom::ADDR_IR_CALIB_A_FRONT_LEFT, bsp::eeprom::ADDR_IR_CALIB_B_FRONT_LEFT, bsp::eeprom::ADDR_IR_CALIB_C_FRONT_LEFT},
+    {bsp::eeprom::ADDR_IR_CALIB_A_FRONT_RIGHT, bsp::eeprom::ADDR_IR_CALIB_B_FRONT_RIGHT, bsp::eeprom::ADDR_IR_CALIB_C_FRONT_RIGHT},
+    {bsp::eeprom::ADDR_IR_CALIB_A_LEFT, bsp::eeprom::ADDR_IR_CALIB_B_LEFT, bsp::eeprom::ADDR_IR_CALIB_C_LEFT},
+};
+
 union _float {
     float value;
     uint8_t raw[sizeof(float)];
@@ -190,6 +199,8 @@ void Config::init() {
     load_custom_movements_from_eeprom();
     bsp::delay_ms(5);
     load_movement_sequence_from_eeprom();
+    bsp::delay_ms(5);
+    load_ir_calib_from_eeprom();
 }
 
 int Config::parse_packet(uint8_t packet[bsp::ble::max_packet_size]) {
@@ -656,6 +667,71 @@ void Config::load_movement_sequence_from_eeprom() {
 
     auto navigation_service = services::Navigation::instance();
     navigation_service->set_hardcoded_movements(moves);
+}
+
+void Config::load_ir_calib_from_eeprom() {
+    for (int i = 0; i < 4; i++) {
+        _float fa, fb, fc;
+        if (bsp::eeprom::read_u32(ir_calib_eeprom_addrs[i][0], &fa.u32) == bsp::eeprom::OK &&
+            bsp::eeprom::read_u32(ir_calib_eeprom_addrs[i][1], &fb.u32) == bsp::eeprom::OK &&
+            bsp::eeprom::read_u32(ir_calib_eeprom_addrs[i][2], &fc.u32) == bsp::eeprom::OK) {
+
+            if (fa.u32 != 0xFFFFFFFF && fb.u32 != 0xFFFFFFFF && fc.u32 != 0xFFFFFFFF) {
+                if (!std::isnan(fa.value) && !std::isinf(fa.value) && fa.value > 0.0f &&
+                    !std::isnan(fb.value) && !std::isinf(fb.value) &&
+                    !std::isnan(fc.value) && !std::isinf(fc.value)) {
+                    bsp::analog_sensors::set_calib_params(
+                        static_cast<bsp::analog_sensors::SensingDirection>(i),
+                        {fa.value, fb.value, fc.value}
+                    );
+
+                    std::printf("%s: %f\r\n", bsp::eeprom::param_name(ir_calib_eeprom_addrs[i][0]), fa.value);
+                    bsp::delay_ms(2);
+                    std::printf("%s: %f\r\n", bsp::eeprom::param_name(ir_calib_eeprom_addrs[i][1]), fb.value);
+                    bsp::delay_ms(2);
+                    std::printf("%s: %f\r\n", bsp::eeprom::param_name(ir_calib_eeprom_addrs[i][2]), fc.value);
+                    bsp::delay_ms(2);
+                }
+            }
+        }
+        bsp::delay_ms(2);
+    }
+}
+
+int Config::save_ir_calib_to_eeprom(bsp::analog_sensors::SensingDirection direction) {
+    uint8_t idx = static_cast<uint8_t>(direction);
+    if (idx >= 4) {
+        return -1;
+    }
+    auto params = bsp::analog_sensors::get_calib_params(direction);
+    _float fa, fb, fc;
+    fa.value = params.a;
+    fb.value = params.b;
+    fc.value = params.c;
+
+    if (bsp::eeprom::write_u32(ir_calib_eeprom_addrs[idx][0], fa.u32) != bsp::eeprom::OK) {
+        return -1;
+    }
+    bsp::delay_ms(5);
+    if (bsp::eeprom::write_u32(ir_calib_eeprom_addrs[idx][1], fb.u32) != bsp::eeprom::OK) {
+        return -1;
+    }
+    bsp::delay_ms(5);
+    if (bsp::eeprom::write_u32(ir_calib_eeprom_addrs[idx][2], fc.u32) != bsp::eeprom::OK) {
+        return -1;
+    }
+    bsp::delay_ms(5);
+
+    return 0;
+}
+
+int Config::save_all_ir_calib_to_eeprom() {
+    for (int i = 0; i < 4; i++) {
+        if (save_ir_calib_to_eeprom(static_cast<bsp::analog_sensors::SensingDirection>(i)) != 0) {
+            return -1;
+        }
+    }
+    return 0;
 }
 
 }

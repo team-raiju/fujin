@@ -1,3 +1,4 @@
+#include <cstring>
 #include <map>
 #include <variant>
 
@@ -55,6 +56,13 @@ void FSM::start() {
             dispatch(BleCommand());
         }
 
+        if (packet[1] == bsp::ble::BlePacketType::RequestIrCalibParams ||
+            packet[1] == bsp::ble::BlePacketType::CalibrateIrSample) {
+            BleCommand cmd;
+            std::memcpy(cmd.packet, packet, bsp::ble::max_packet_size);
+            dispatch(cmd);
+        }
+
         if (packet[1] == bsp::ble::BlePacketType::Command) {
             static std::map<uint8_t, ButtonPressed::Type> b{
                 {bsp::ble::BleCommands::Stop, ButtonPressed::LONG2},
@@ -65,6 +73,7 @@ void FSM::start() {
                 {bsp::ble::BleCommands::ButtonMovementParameters, ButtonPressed::LONG3},
                 {bsp::ble::BleCommands::ButtonLogDump, ButtonPressed::LONG4},
                 {bsp::ble::BleCommands::ButtonRequestMoveSequence, ButtonPressed::LONG5},
+                {bsp::ble::BleCommands::ButtonEnterIrCalib, ButtonPressed::LONG6},
             };
 
             dispatch(ButtonPressed{.button = b[packet[2]]});

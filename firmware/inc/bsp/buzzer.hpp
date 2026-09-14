@@ -20,4 +20,8 @@ void set_volume(uint8_t volume);
 
 void set_frequency(uint16_t hz);
 
+void beep(uint32_t duration_ms);
+
+void beep_double(uint32_t first_ms, uint32_t gap_ms, uint32_t second_ms);
+
 }

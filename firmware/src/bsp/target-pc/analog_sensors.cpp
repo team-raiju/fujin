@@ -56,4 +56,16 @@ int32_t ir_side_wall_error() {
     return 0;
 }
 
+IrCalibParams get_calib_params(SensingDirection) {
+    return {0, 0, 0};
+}
+
+void set_calib_params(SensingDirection, const IrCalibParams&) {}
+void reset_calib_params(SensingDirection) {}
+void reset_all_calib_params() {}
+
+float raw_to_distance_mm(SensingDirection, uint32_t) {
+    return 0.0f;
+}
+
 } // namespace

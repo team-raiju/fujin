@@ -29,7 +29,12 @@ void Idle::enter() {
     bsp::ble::unlock_config_rcv();
 }
 
-State* Idle::react(BleCommand const&) {
+State* Idle::react(BleCommand const& event) {
+    if (event.packet[1] == bsp::ble::BlePacketType::RequestIrCalibParams) {
+        CalibrationIRSensors::send_calib_params();
+        return nullptr;
+    }
+
     bsp::buzzer::start();
     bsp::delay_ms(100);
     bsp::buzzer::stop();
@@ -82,6 +87,10 @@ State* Idle::react(ButtonPressed const& event) {
 
     if (event.button == ButtonPressed::LONG5) {
         services::Config::send_move_sequence();
+    }
+
+    if (event.button == ButtonPressed::LONG6) {
+        return &State::get<CalibrationIRSensors>();
     }
 
     return nullptr;

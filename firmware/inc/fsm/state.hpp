@@ -5,6 +5,7 @@
 #include <utility>
 
 #include "algorithms/pid.hpp"
+#include "bsp/analog_sensors.hpp"
 #include "fsm/event.hpp"
 #include "services/logger.hpp"
 #include "services/maze.hpp"
@@ -235,16 +236,33 @@ private:
 
 class CalibrationIRSensors : public State {
 public:
+    struct CalibSample {
+        float distance = 0.0f;
+        uint32_t raw_adc = 0;
+        bool recorded = false;
+    };
+
     CalibrationIRSensors();
 
     void enter() override;
     void exit() override;
 
+    State* react(BleCommand const&) override;
     State* react(ButtonPressed const&) override;
     State* react(Timeout const&) override;
 
+    static void send_calib_params();
+
 private:
     services::Notification* notification;
+    CalibSample sample_p1[4];
+    CalibSample sample_p2[4];
+
+    void handle_calib_sample(const uint8_t packet[bsp::ble::max_packet_size]);
+    void handle_reset_calib(uint8_t sensor_target);
+    void send_calib_ack(uint8_t sensor_idx, uint8_t point_id, float dist, uint32_t raw_adc, uint8_t status);
+    uint32_t read_averaged_adc(bsp::analog_sensors::SensingDirection direction);
+    bool solve_2point_calib(uint8_t sensor_idx);
 };
 
 class CalibrationIMU : public State {

@@ -16,4 +16,7 @@ void set_volume(uint8_t) {}
 
 void set_frequency(uint16_t) {}
 
+void beep(uint32_t) {}
+void beep_double(uint32_t, uint32_t, uint32_t) {}
+
 } // namespace

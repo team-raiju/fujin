@@ -1,13 +1,17 @@
+#include <algorithm>
+#include <cmath>
+#include <cstring>
+
 #include "bsp/analog_sensors.hpp"
 #include "bsp/ble.hpp"
 #include "bsp/buzzer.hpp"
 #include "bsp/debug.hpp"
+#include "bsp/encoders.hpp"
+#include "bsp/fan.hpp"
 #include "bsp/imu.hpp"
 #include "bsp/leds.hpp"
 #include "bsp/motors.hpp"
 #include "bsp/timers.hpp"
-#include "bsp/fan.hpp"
-#include "bsp/encoders.hpp"
 #include "fsm/state.hpp"
 #include "services/config.hpp"
 #include "utils/soft_timer.hpp"
@@ -37,6 +41,10 @@ State* PreCalib::react(ButtonPressed const& event) {
 
     if (event.button == ButtonPressed::LONG1) {
         return &State::get<CalibrationModeSelect>();
+    }
+
+    if (event.button == ButtonPressed::LONG6) {
+        return &State::get<CalibrationIRSensors>();
     }
 
     return nullptr;
@@ -121,15 +129,39 @@ void CalibrationIRSensors::enter() {
 
     bsp::motors::set(0, 0);
 
-    bsp::buzzer::start();
-    bsp::delay_ms(2000);
-    bsp::buzzer::stop();
+    for (int i = 0; i < 4; i++) {
+        sample_p1[i] = CalibSample();
+        sample_p2[i] = CalibSample();
+    }
 
-    soft_timer::start(1, soft_timer::CONTINUOUS);
+    bsp::buzzer::beep(150);
+
+    notification->reset();
+    soft_timer::start(10, soft_timer::CONTINUOUS);
+
+    send_calib_params();
 }
 
-State* CalibrationIRSensors::react(ButtonPressed const&) {
-    return &State::get<PreCalib>();
+State* CalibrationIRSensors::react(BleCommand const& event) {
+    if (event.packet[1] == bsp::ble::BlePacketType::RequestIrCalibParams) {
+        send_calib_params();
+    } else if (event.packet[1] == bsp::ble::BlePacketType::CalibrateIrSample) {
+        uint8_t point_id = event.packet[3];
+        if (point_id == 0) {
+            handle_reset_calib(event.packet[2]);
+        } else {
+            handle_calib_sample(event.packet);
+        }
+    }
+    return nullptr;
+}
+
+State* CalibrationIRSensors::react(ButtonPressed const& event) {
+    if (event.button == ButtonPressed::LONG2 || event.button == ButtonPressed::SHORT1 ||
+        event.button == ButtonPressed::SHORT2) {
+        return &State::get<Idle>();
+    }
+    return nullptr;
 }
 
 State* CalibrationIRSensors::react(Timeout const&) {
@@ -137,7 +169,156 @@ State* CalibrationIRSensors::react(Timeout const&) {
     return nullptr;
 }
 
-void CalibrationIRSensors::exit() {}
+void CalibrationIRSensors::exit() {
+    soft_timer::stop();
+    bsp::analog_sensors::enable_modulation(false);
+    bsp::leds::ir_emitter_all_off();
+}
+
+void CalibrationIRSensors::send_calib_params() {
+    uint8_t packet[15] = {0};
+    packet[0] = bsp::ble::header;
+    packet[1] = bsp::ble::BlePacketType::RequestIrCalibParams;
+
+    for (uint8_t i = 0; i < 4; i++) {
+        auto params = bsp::analog_sensors::get_calib_params(static_cast<bsp::analog_sensors::SensingDirection>(i));
+        packet[2] = i;
+        std::memcpy(&packet[3], &params.a, sizeof(float));
+        std::memcpy(&packet[7], &params.b, sizeof(float));
+        std::memcpy(&packet[11], &params.c, sizeof(float));
+
+        bsp::ble::transmit(packet, sizeof(packet));
+        bsp::delay_ms(5);
+    }
+}
+
+uint32_t CalibrationIRSensors::read_averaged_adc(bsp::analog_sensors::SensingDirection direction) {
+    uint32_t sum = 0;
+    uint32_t count = 0;
+    uint32_t start_tick = bsp::get_tick_ms();
+    while (bsp::get_tick_ms() - start_tick < 50) {
+        sum += bsp::analog_sensors::ir_raw_reading(direction);
+        count++;
+        bsp::delay_ms(2);
+    }
+    return count > 0 ? (sum / count) : bsp::analog_sensors::ir_raw_reading(direction);
+}
+
+bool CalibrationIRSensors::solve_2point_calib(uint8_t sensor_idx) {
+    if (sensor_idx >= 4) {
+        return false;
+    }
+
+    if (!sample_p1[sensor_idx].recorded || !sample_p2[sensor_idx].recorded) {
+        return false;
+    }
+
+    float d1 = sample_p1[sensor_idx].distance;
+    float r1 = static_cast<float>(sample_p1[sensor_idx].raw_adc);
+    float d2 = sample_p2[sensor_idx].distance;
+    float r2 = static_cast<float>(sample_p2[sensor_idx].raw_adc);
+
+    if (std::abs(d2 - d1) < 1.0f) {
+        return false;
+    }
+
+    auto dir = static_cast<bsp::analog_sensors::SensingDirection>(sensor_idx);
+    auto current_params = bsp::analog_sensors::get_calib_params(dir);
+    float c = current_params.c;
+
+    float u1 = 1.0f / std::log(std::max(r1 + c, 2.0f));
+    float u2 = 1.0f / std::log(std::max(r2 + c, 2.0f));
+    float denom = u2 - u1;
+
+    if (std::abs(denom) < 1e-6f){
+        return false;
+    }
+
+    float a = (d2 - d1) / denom;
+    float b = (a * u1) - d1;
+
+    if (a <= 0.0f) {
+        return false;
+    }
+
+    bsp::analog_sensors::IrCalibParams new_params = {a, b, c};
+    bsp::analog_sensors::set_calib_params(dir, new_params);
+    services::Config::save_ir_calib_to_eeprom(dir);
+
+    return true;
+}
+
+void CalibrationIRSensors::handle_reset_calib(uint8_t sensor_target) {
+    if (sensor_target < 4) {
+        auto dir = static_cast<bsp::analog_sensors::SensingDirection>(sensor_target);
+        bsp::analog_sensors::reset_calib_params(dir);
+        services::Config::save_ir_calib_to_eeprom(dir);
+        sample_p1[sensor_target] = CalibSample();
+        sample_p2[sensor_target] = CalibSample();
+    } else {
+        bsp::analog_sensors::reset_all_calib_params();
+        services::Config::save_all_ir_calib_to_eeprom();
+        for (int i = 0; i < 4; i++) {
+            sample_p1[i] = CalibSample();
+            sample_p2[i] = CalibSample();
+        }
+    }
+    bsp::buzzer::beep(100);
+    send_calib_params();
+}
+
+void CalibrationIRSensors::send_calib_ack(uint8_t sensor_idx, uint8_t point_id, float dist, uint32_t raw_adc,
+                                          uint8_t status) {
+    uint8_t ack[13] = {0};
+    ack[0] = bsp::ble::header;
+    ack[1] = bsp::ble::BlePacketType::CalibrateIrSample;
+    ack[2] = sensor_idx;
+    ack[3] = point_id;
+    std::memcpy(&ack[4], &dist, sizeof(float));
+    std::memcpy(&ack[8], &raw_adc, sizeof(uint32_t));
+    ack[12] = status;
+
+    bsp::ble::transmit(ack, sizeof(ack));
+    bsp::delay_ms(5);
+}
+
+void CalibrationIRSensors::handle_calib_sample(const uint8_t packet[bsp::ble::max_packet_size]) {
+    uint8_t sensor_target = packet[2]; // 0: RIGHT, 1: FRONT_LEFT, 2: FRONT_RIGHT, 3: LEFT
+    if (sensor_target >= 4) {
+        return;
+    }
+
+    uint8_t point_id = packet[3]; // 1: Point 1, 2: Point 2
+    if (point_id != 1 && point_id != 2) {
+        return;
+    }
+
+    float dist = 0.0f;
+    std::memcpy(&dist, &packet[4], sizeof(float));
+
+    auto dir = static_cast<bsp::analog_sensors::SensingDirection>(sensor_target);
+    uint32_t raw = read_averaged_adc(dir);
+
+    if (point_id == 1) {
+        sample_p1[sensor_target] = {.distance = dist, .raw_adc = raw, .recorded = true};
+        send_calib_ack(sensor_target, 1, dist, raw, 0);
+        bsp::buzzer::beep(80);
+    } else if (point_id == 2) {
+        sample_p2[sensor_target] = {.distance = dist, .raw_adc = raw, .recorded = true};
+        bool success = solve_2point_calib(sensor_target);
+        send_calib_ack(sensor_target, 2, dist, raw, success ? 0 : 1);
+
+        if (success) {
+            bsp::buzzer::beep_double(100, 80, 150);
+            send_calib_params();
+        } else {
+            for (int b = 0; b < 3; b++) {
+                bsp::buzzer::beep(60);
+                bsp::delay_ms(60);
+            }
+        }
+    }
+}
 
 CalibrationIMU::CalibrationIMU() {}
 

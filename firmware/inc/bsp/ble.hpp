@@ -25,6 +25,8 @@ enum BlePacketType : uint8_t {
     RequestLogData = 0x08,
     RequestMoveSequence = 0x09,
     UpdateMoveSequence = 0x0A,
+    RequestIrCalibParams = 0x0B,
+    CalibrateIrSample = 0x0C,
 };
 
 enum BleCommands : uint8_t {
@@ -36,6 +38,7 @@ enum BleCommands : uint8_t {
     ButtonMovementParameters = 0x05,
     ButtonLogDump = 0x06,
     ButtonRequestMoveSequence = 0x07,
+    ButtonEnterIrCalib = 0x08,
 };
 
 enum ForwardParamID : uint8_t {

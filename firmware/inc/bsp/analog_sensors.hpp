@@ -78,4 +78,16 @@ int32_t ir_diagonal_error();
 bool ir_wall_control_valid(SensingDirection direction);
 void enable_modulation(bool enable = true);
 
+struct IrCalibParams {
+    float a;
+    float b;
+    float c;
+};
+
+IrCalibParams get_calib_params(SensingDirection direction);
+void set_calib_params(SensingDirection direction, const IrCalibParams& params);
+void reset_calib_params(SensingDirection direction);
+void reset_all_calib_params();
+float raw_to_distance_mm(SensingDirection direction, uint32_t raw);
+
 }
