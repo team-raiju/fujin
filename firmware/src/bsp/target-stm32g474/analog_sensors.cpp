@@ -1,3 +1,5 @@
+#include <cmath>
+
 #include "st/hal.h"
 
 #include "bsp/analog_sensors.hpp"
@@ -7,6 +9,8 @@
 #include "utils/math.hpp"
 
 namespace bsp::analog_sensors {
+
+namespace {
 
 /*
  * Battery Sensor - ADC1 CH15
@@ -23,30 +27,53 @@ namespace bsp::analog_sensors {
  * - Full 5-phase modulation cycle (OFF + 4 individual ON): 5 * 95.8 us = ~479 us (~2.09 kHz <= 500 us)
  * - EMA filter (alpha = 0.5): group delay = 1 * 479 us = ~479 us (90% settling: ~1.59 ms)
  */
-#define ADC_1_DMA_CHANNELS 5
-#define READINGS_PER_ADC_1 44
-#define ADC_1_DMA_BUFFER_SIZE (ADC_1_DMA_CHANNELS * READINGS_PER_ADC_1)
-#define ADC_1_DMA_HALF_BUFFER_SIZE (ADC_1_DMA_BUFFER_SIZE / 2)
+constexpr uint16_t ADC_1_DMA_CHANNELS = 5;
+constexpr uint16_t READINGS_PER_ADC_1 = 44;
+constexpr uint16_t ADC_1_DMA_BUFFER_SIZE = ADC_1_DMA_CHANNELS * READINGS_PER_ADC_1;
+constexpr uint16_t ADC_1_DMA_HALF_BUFFER_SIZE = ADC_1_DMA_BUFFER_SIZE / 2;
 
 /* With these settings and ADC clock = CLK/4 and sample cycles = 24.5*/
 /* We have 1 sample per 28us*/
-#define ADC_2_DMA_CHANNELS 2
-#define READINGS_PER_ADC_2 32
-#define ADC_2_DMA_BUFFER_SIZE (ADC_2_DMA_CHANNELS * READINGS_PER_ADC_2)
-#define ADC_2_DMA_HALF_BUFFER_SIZE (ADC_2_DMA_BUFFER_SIZE / 2)
+constexpr uint16_t ADC_2_DMA_CHANNELS = 2;
+constexpr uint16_t READINGS_PER_ADC_2 = 32;
+constexpr uint16_t ADC_2_DMA_BUFFER_SIZE = ADC_2_DMA_CHANNELS * READINGS_PER_ADC_2;
+constexpr uint16_t ADC_2_DMA_HALF_BUFFER_SIZE = ADC_2_DMA_BUFFER_SIZE / 2;
 
-#define ADC_MAX_VALUE 4095.0
-#define ADC_MAX_VOLTAGE_MV 3300.0
-#define ADC_MAX_VOLTAGE_VOLTS 3.3f
+constexpr float ADC_MAX_VALUE = 4095.0f;
+constexpr float ADC_MAX_VOLTAGE_MV = 3300.0f;
+constexpr float ADC_MAX_VOLTAGE_VOLTS = 3.3f;
 
-#define PWR_BATTERY_THRESHOLD_MV 10700.0
-#define PWR_BAT_VOLTAGE_DIV_R1 100.0
-#define PWR_BAT_VOLTAGE_DIV_R2 33.0
-// #define PWR_BAT_VOLTAGE_MULTIPLIER ((PWR_BAT_VOLTAGE_DIV_R1 + PWR_BAT_VOLTAGE_DIV_R2) / PWR_BAT_VOLTAGE_DIV_R2)
-#define PWR_BAT_VOLTAGE_MULTIPLIER (4.19) // Experimentaly set
-#define PWR_BAT_POSITION_IN_ADC 4
+constexpr float PWR_BATTERY_THRESHOLD_MV = 10700.0f;
+constexpr float PWR_BAT_VOLTAGE_MULTIPLIER = 4.19f;
 
-#define IR_EMA_ALPHA 0.5f
+constexpr float IR_EMA_ALPHA = 0.5f;
+
+struct IrCalibParams {
+    float a;
+    float b;
+    float c;
+};
+
+/// @brief Hardcoded calibration parameters for empirical logarithmic model:
+/// distance = a / ln(raw + c) - b
+constexpr IrCalibParams ir_calib_params[4] = {
+    {3821.004458f, 415.340935f, -342.127314f},
+    {4362.001131f, 484.625292f, 179.119118f},
+    {3848.872537f, 415.133442f, -120.552799f},
+    {3579.254976f, 359.789456f, -89.058130f},
+};
+
+/// @brief Converts raw ADC value to distance in mm using logarithmic model
+float raw_to_distance_mm(SensingDirection direction, uint32_t raw) {
+    const auto& params = ir_calib_params[direction];
+    float argument = static_cast<float>(raw) + params.c;
+    if (argument < 2.0f) {
+        argument = 2.0f;
+    }
+    return (params.a / std::log(argument)) - params.b;
+}
+
+} // namespace
 
 /// @section Private variables
 
@@ -235,7 +262,8 @@ SensingStatus ir_get_sensing_status() {
 }
 
 int32_t ir_diagonal_error() {
-    bool greater_error_left = ir_raw_readings[SensingDirection::FRONT_LEFT] > ir_raw_readings[SensingDirection::FRONT_RIGHT];
+    bool greater_error_left =
+        ir_raw_readings[SensingDirection::FRONT_LEFT] > ir_raw_readings[SensingDirection::FRONT_RIGHT];
 
     int32_t ir_error;
 
@@ -307,10 +335,13 @@ void adc1_callback(uint32_t* data) {
 
             // Record reading with only this sensor's emitter turned on
             ir_raw_readings_on[sensor_idx] = aux_readings[sensor_idx];
-            uint32_t reading = std::max(ir_raw_readings_on[sensor_idx] - ir_raw_readings_off[sensor_idx], 0L);
-            ir_raw_readings[sensor_idx] = static_cast<uint32_t>(
-                IR_EMA_ALPHA * static_cast<float>(reading) + (1.0f - IR_EMA_ALPHA) * static_cast<float>(ir_raw_readings[sensor_idx]));
-            ir_distances[sensor_idx] = raw_to_distance_mm(static_cast<SensingDirection>(sensor_idx), ir_raw_readings[sensor_idx]);
+            int32_t reading_delta = ir_raw_readings_on[sensor_idx] - ir_raw_readings_off[sensor_idx];
+            uint32_t reading = reading_delta > 0 ? static_cast<uint32_t>(reading_delta) : 0;
+            ir_raw_readings[sensor_idx] =
+                static_cast<uint32_t>(IR_EMA_ALPHA * static_cast<float>(reading) +
+                                      (1.0f - IR_EMA_ALPHA) * static_cast<float>(ir_raw_readings[sensor_idx]));
+            ir_distances[sensor_idx] =
+                raw_to_distance_mm(static_cast<SensingDirection>(sensor_idx), ir_raw_readings[sensor_idx]);
 
             // Turn OFF current emitter
             bsp::leds::ir_emitter_off(sensor_emitters[sensor_idx]);
@@ -364,9 +395,11 @@ void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc) {
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) {
     if (hadc->Instance == ADC1) {
-        bsp::analog_sensors::adc1_callback(&bsp::analog_sensors::adc_1_dma_buffer[ADC_1_DMA_HALF_BUFFER_SIZE]);
+        bsp::analog_sensors::adc1_callback(
+            &bsp::analog_sensors::adc_1_dma_buffer[bsp::analog_sensors::ADC_1_DMA_HALF_BUFFER_SIZE]);
     } else if (hadc->Instance == ADC2) {
-        bsp::analog_sensors::adc2_callback(&bsp::analog_sensors::adc_2_dma_buffer[ADC_2_DMA_HALF_BUFFER_SIZE]);
+        bsp::analog_sensors::adc2_callback(
+            &bsp::analog_sensors::adc_2_dma_buffer[bsp::analog_sensors::ADC_2_DMA_HALF_BUFFER_SIZE]);
     }
 
     if (bsp::analog_sensors::reading_ready_callback != NULL) {

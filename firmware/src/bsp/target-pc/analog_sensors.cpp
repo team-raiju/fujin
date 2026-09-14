@@ -56,5 +56,4 @@ int32_t ir_side_wall_error() {
     return 0;
 }
 
-
 } // namespace

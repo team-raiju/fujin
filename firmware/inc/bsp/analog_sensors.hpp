@@ -7,7 +7,6 @@
 #pragma once
 
 #include <array>
-#include <cmath>
 #include <cstdint>
 
 namespace bsp::analog_sensors {
@@ -20,35 +19,6 @@ enum SensingDirection {
     FRONT_RIGHT = 2,
     LEFT = 3,
 };
-
-struct IrCalibParams {
-    float a;
-    float b;
-    float c;
-};
-
-/// @brief Hardcoded calibration parameters for empirical logarithmic model:
-/// distance = a / ln(raw + c) - b
-constexpr IrCalibParams ir_calib_params[4] = {
-    // RIGHT (0)
-    {3821.004458f, 415.340935f, -342.127314f},
-    // FRONT_LEFT (1)
-    {4362.001131f, 484.625292f, 179.119118f},
-    // FRONT_RIGHT (2)
-    {3848.872537f, 415.133442f, -120.552799f},
-    // LEFT (3)
-    {3579.254976f, 359.789456f, -89.058130f},
-};
-
-/// @brief Converts raw ADC value to distance in mm using logarithmic model
-inline float raw_to_distance_mm(SensingDirection direction, uint32_t raw) {
-    const auto& params = ir_calib_params[direction];
-    float arg = static_cast<float>(raw) + params.c;
-    if (arg < 2.0f) {
-        arg = 2.0f;
-    }
-    return (params.a / std::log(arg)) - params.b;
-}
 
 struct SensingStatus {
     bool front_seeing;
@@ -65,13 +35,13 @@ struct SensingPattern {
 /// @brief Sensor raw values in every wall combination
 constexpr std::array<SensingPattern, 8> ir_wall_patterns = {{
     {1119, 850, 1290, 1460}, // F-L-R
-    {960, 820, 1200, 880},  // F-L
-    {500, 700, 1160, 1460}, // F-R
-    {520, 755, 1200, 870},  // F
-    {900, 67, 246, 1460},   // L-R
+    {960, 820, 1200, 880},   // F-L
+    {500, 700, 1160, 1460},  // F-R
+    {520, 755, 1200, 870},   // F
+    {900, 67, 246, 1460},    // L-R
     {900, 28, 230, 870},     // L
-    {530, 35, 261, 1300},   // R
-    {180, 66, 238, 800}     // None
+    {530, 35, 261, 1300},    // R
+    {180, 66, 238, 800}      // None
 }};
 
 typedef void (*bsp_analog_ready_callback_t)(void);
