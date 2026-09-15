@@ -46,20 +46,21 @@ float Config::diagonal_walls_kd = 0.0050;
 
 float Config::min_move_speed = 0.2; // [m/s]
 
-float Config::ir_wall_dist_ref_right = 1391;
-float Config::ir_wall_dist_ref_front_left = 150;
-float Config::ir_wall_dist_ref_front_right = 150;
-float Config::ir_wall_dist_ref_left = 850;
 
-float Config::ir_wall_control_th_right = 1100;
-float Config::ir_wall_control_th_front_left = 200;
-float Config::ir_wall_control_th_front_right = 200;
-float Config::ir_wall_control_th_left = 650;
+float Config::ir_wall_dist_ref_right = 110;         // Reference distance of when the robot is in the middle of the cell
+float Config::ir_wall_dist_ref_front_left = 250;    // Reference distance when the robot is not seeing on a diagonal
+float Config::ir_wall_dist_ref_front_right = 250;   // Reference distance when the robot is not seeing on a diagonal
+float Config::ir_wall_dist_ref_left = 140;          // Reference distance of when the robot is in the middle of the cell
 
-float Config::ir_wall_detect_th_right = 1200;
-float Config::ir_wall_detect_th_front_left = 500;
-float Config::ir_wall_detect_th_front_right = 800;
-float Config::ir_wall_detect_th_left = 600;
+float Config::ir_wall_control_th_right = 120;       // Maximum distance to still enable wall control
+float Config::ir_wall_control_th_front_left = 250;  // Maximum distance to still enable diagonal control
+float Config::ir_wall_control_th_front_right = 250; // Maximum distance to still enable diagonal control
+float Config::ir_wall_control_th_left = 160;        // Maximum distance to still enable wall control
+
+float Config::ir_wall_detect_th_right = 120;        // Maximum distance to the wall to still consider we are reading a wall
+float Config::ir_wall_detect_th_front_left = 160;   // Maximum distance to the wall to still consider we are reading a wall
+float Config::ir_wall_detect_th_front_right = 160;  // Maximum distance to the wall to still consider we are reading a wall
+float Config::ir_wall_detect_th_left = 160;         // Maximum distance to the wall to still consider we are reading a wall
 
 float Config::z_imu_bias = -0.4905;
 
@@ -756,22 +757,33 @@ int Config::save_all_ir_calib_to_eeprom() {
 
 void Config::load_ir_wall_patterns_from_eeprom() {
     for (int i = 0; i < 8; i++) {
-        uint32_t l, fl, fr, r;
-        if (bsp::eeprom::read_u32(ir_wall_patterns_eeprom_addrs[i][0], &l) == bsp::eeprom::OK &&
-            bsp::eeprom::read_u32(ir_wall_patterns_eeprom_addrs[i][1], &fl) == bsp::eeprom::OK &&
-            bsp::eeprom::read_u32(ir_wall_patterns_eeprom_addrs[i][2], &fr) == bsp::eeprom::OK &&
-            bsp::eeprom::read_u32(ir_wall_patterns_eeprom_addrs[i][3], &r) == bsp::eeprom::OK) {
+        _float l, fl, fr, r;
+        if (bsp::eeprom::read_u32(ir_wall_patterns_eeprom_addrs[i][0], &l.u32) == bsp::eeprom::OK &&
+            bsp::eeprom::read_u32(ir_wall_patterns_eeprom_addrs[i][1], &fl.u32) == bsp::eeprom::OK &&
+            bsp::eeprom::read_u32(ir_wall_patterns_eeprom_addrs[i][2], &fr.u32) == bsp::eeprom::OK &&
+            bsp::eeprom::read_u32(ir_wall_patterns_eeprom_addrs[i][3], &r.u32) == bsp::eeprom::OK) {
 
-            if (l != 0xFFFFFFFF && fl != 0xFFFFFFFF && fr != 0xFFFFFFFF && r != 0xFFFFFFFF) {
-                bsp::analog_sensors::set_wall_pattern(i, {l, fl, fr, r});
+            if (l.u32 != 0xFFFFFFFF && fl.u32 != 0xFFFFFFFF && fr.u32 != 0xFFFFFFFF && r.u32 != 0xFFFFFFFF) {
+                const bool legacy_raw_pattern = l.u32 <= 4095 && fl.u32 <= 4095 && fr.u32 <= 4095 && r.u32 <= 4095;
+                if (legacy_raw_pattern) {
+                    bsp::analog_sensors::set_wall_pattern(
+                        i,
+                        {bsp::analog_sensors::raw_to_distance_mm(bsp::analog_sensors::LEFT, l.u32),
+                         bsp::analog_sensors::raw_to_distance_mm(bsp::analog_sensors::FRONT_LEFT, fl.u32),
+                         bsp::analog_sensors::raw_to_distance_mm(bsp::analog_sensors::FRONT_RIGHT, fr.u32),
+                         bsp::analog_sensors::raw_to_distance_mm(bsp::analog_sensors::RIGHT, r.u32)});
+                } else {
+                    bsp::analog_sensors::set_wall_pattern(i, {l.value, fl.value, fr.value, r.value});
+                }
 
-                std::printf("%s: %lu\r\n", bsp::eeprom::param_name(ir_wall_patterns_eeprom_addrs[i][0]), l);
+                auto pattern = bsp::analog_sensors::get_wall_pattern(i);
+                std::printf("%s: %f\r\n", bsp::eeprom::param_name(ir_wall_patterns_eeprom_addrs[i][0]), pattern.L);
                 bsp::delay_ms(2);
-                std::printf("%s: %lu\r\n", bsp::eeprom::param_name(ir_wall_patterns_eeprom_addrs[i][1]), fl);
+                std::printf("%s: %f\r\n", bsp::eeprom::param_name(ir_wall_patterns_eeprom_addrs[i][1]), pattern.FL);
                 bsp::delay_ms(2);
-                std::printf("%s: %lu\r\n", bsp::eeprom::param_name(ir_wall_patterns_eeprom_addrs[i][2]), fr);
+                std::printf("%s: %f\r\n", bsp::eeprom::param_name(ir_wall_patterns_eeprom_addrs[i][2]), pattern.FR);
                 bsp::delay_ms(2);
-                std::printf("%s: %lu\r\n", bsp::eeprom::param_name(ir_wall_patterns_eeprom_addrs[i][3]), r);
+                std::printf("%s: %f\r\n", bsp::eeprom::param_name(ir_wall_patterns_eeprom_addrs[i][3]), pattern.R);
                 bsp::delay_ms(2);
             }
         }
@@ -784,20 +796,25 @@ int Config::save_ir_wall_pattern_to_eeprom(uint8_t pattern_idx) {
         return -1;
     }
     auto pattern = bsp::analog_sensors::get_wall_pattern(pattern_idx);
+    _float value;
 
-    if (bsp::eeprom::write_u32(ir_wall_patterns_eeprom_addrs[pattern_idx][0], pattern.L) != bsp::eeprom::OK){
+    value.value = pattern.L;
+    if (bsp::eeprom::write_u32(ir_wall_patterns_eeprom_addrs[pattern_idx][0], value.u32) != bsp::eeprom::OK){
         return -1;
     }
     bsp::delay_ms(5);
-    if (bsp::eeprom::write_u32(ir_wall_patterns_eeprom_addrs[pattern_idx][1], pattern.FL) != bsp::eeprom::OK) {
+    value.value = pattern.FL;
+    if (bsp::eeprom::write_u32(ir_wall_patterns_eeprom_addrs[pattern_idx][1], value.u32) != bsp::eeprom::OK) {
         return -1;
     }
     bsp::delay_ms(5);
-    if (bsp::eeprom::write_u32(ir_wall_patterns_eeprom_addrs[pattern_idx][2], pattern.FR) != bsp::eeprom::OK){
+    value.value = pattern.FR;
+    if (bsp::eeprom::write_u32(ir_wall_patterns_eeprom_addrs[pattern_idx][2], value.u32) != bsp::eeprom::OK){
         return -1;
     }
     bsp::delay_ms(5);
-    if (bsp::eeprom::write_u32(ir_wall_patterns_eeprom_addrs[pattern_idx][3], pattern.R) != bsp::eeprom::OK){
+    value.value = pattern.R;
+    if (bsp::eeprom::write_u32(ir_wall_patterns_eeprom_addrs[pattern_idx][3], value.u32) != bsp::eeprom::OK){
         return -1;
     }
     bsp::delay_ms(5);

@@ -265,6 +265,7 @@ private:
     void handle_wall_pattern_calib(const uint8_t packet[bsp::ble::max_packet_size]);
     void send_wall_pattern_ack(uint8_t pattern_idx, uint8_t status, const bsp::analog_sensors::SensingPattern& pattern);
     uint32_t read_averaged_adc(bsp::analog_sensors::SensingDirection direction);
+    float read_averaged_distance(bsp::analog_sensors::SensingDirection direction);
     bool solve_2point_calib(uint8_t sensor_idx);
 };
 

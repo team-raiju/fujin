@@ -135,6 +135,7 @@ void Control::update() {
         last_target_angular_acceleration = target_angular_acceleration;
 
         bool is_accelerating = (target_angular_speed_rad_s * target_angular_acceleration) > 0.0f;
+        float dir = (target_angular_speed_rad_s > 0.0f) ? 1.0f : -1.0f;
         
         if (is_accelerating) {
             rotation_ff = target_angular_acceleration * params.angular_acc_feed_forward_k;
@@ -142,13 +143,6 @@ void Control::update() {
             rotation_ff = target_angular_acceleration * params.angular_brake_feed_forward_k;
         }
         rotation_ff += target_angular_speed_rad_s * params.angular_vel_feed_forward_k;
-
-        // if (std::abs(target_angular_speed_rad_s) > 0.01f) {
-        //     float dir = (target_angular_speed_rad_s > 0.0f) ? 1.0f : -1.0f;
-        //     rotation_ff += params.angular_coulomb_ff * dir;
-        // }
-
-        float dir = (target_angular_speed_rad_s > 0.0f) ? 1.0f : -1.0f;
 
         // Static friction
         if (is_accelerating && std::abs(bsp::imu::get_rad_per_s()) < 0.4f && std::abs(target_angular_acceleration) > 0.1f) {

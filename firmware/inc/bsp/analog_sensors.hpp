@@ -27,10 +27,10 @@ struct SensingStatus {
 };
 
 struct SensingPattern {
-    uint32_t L;
-    uint32_t FL;
-    uint32_t FR;
-    uint32_t R;
+    float L;
+    float FL;
+    float FR;
+    float R;
 };
 
 SensingPattern get_wall_pattern(uint8_t index);

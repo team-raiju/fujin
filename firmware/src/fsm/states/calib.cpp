@@ -210,6 +210,18 @@ uint32_t CalibrationIRSensors::read_averaged_adc(bsp::analog_sensors::SensingDir
     return count > 0 ? (sum / count) : bsp::analog_sensors::ir_raw_reading(direction);
 }
 
+float CalibrationIRSensors::read_averaged_distance(bsp::analog_sensors::SensingDirection direction) {
+    float sum = 0;
+    uint32_t count = 0;
+    uint32_t start_tick = bsp::get_tick_ms();
+    while (bsp::get_tick_ms() - start_tick < 50) {
+        sum += bsp::analog_sensors::ir_distance_mm(direction);
+        count++;
+        bsp::delay_ms(2);
+    }
+    return count > 0 ? (sum / (float)count) : bsp::analog_sensors::ir_distance_mm(direction);
+}
+
 bool CalibrationIRSensors::solve_2point_calib(uint8_t sensor_idx) {
     if (sensor_idx >= 4) {
         return false;
@@ -337,15 +349,10 @@ void CalibrationIRSensors::send_wall_patterns(uint8_t pattern_idx) {
     for (uint8_t i = start; i < end; i++) {
         auto pattern = bsp::analog_sensors::get_wall_pattern(i);
         packet[2] = i;
-        uint16_t l = static_cast<uint16_t>(pattern.L);
-        uint16_t fl = static_cast<uint16_t>(pattern.FL);
-        uint16_t fr = static_cast<uint16_t>(pattern.FR);
-        uint16_t r = static_cast<uint16_t>(pattern.R);
-
-        std::memcpy(&packet[3], &l, sizeof(uint16_t));
-        std::memcpy(&packet[5], &fl, sizeof(uint16_t));
-        std::memcpy(&packet[7], &fr, sizeof(uint16_t));
-        std::memcpy(&packet[9], &r, sizeof(uint16_t));
+        std::memcpy(&packet[3], &pattern.L, sizeof(float));
+        std::memcpy(&packet[7], &pattern.FL, sizeof(float));
+        std::memcpy(&packet[11], &pattern.FR, sizeof(float));
+        std::memcpy(&packet[15], &pattern.R, sizeof(float));
 
         bsp::ble::transmit(packet, sizeof(packet));
         bsp::delay_ms(5);
@@ -359,15 +366,10 @@ void CalibrationIRSensors::send_wall_pattern_ack(uint8_t pattern_idx, uint8_t st
     packet[2] = pattern_idx;
     packet[3] = status;
 
-    uint16_t l = static_cast<uint16_t>(pattern.L);
-    uint16_t fl = static_cast<uint16_t>(pattern.FL);
-    uint16_t fr = static_cast<uint16_t>(pattern.FR);
-    uint16_t r = static_cast<uint16_t>(pattern.R);
-
-    std::memcpy(&packet[4], &l, sizeof(uint16_t));
-    std::memcpy(&packet[6], &fl, sizeof(uint16_t));
-    std::memcpy(&packet[8], &fr, sizeof(uint16_t));
-    std::memcpy(&packet[10], &r, sizeof(uint16_t));
+    std::memcpy(&packet[4], &pattern.L, sizeof(float));
+    std::memcpy(&packet[8], &pattern.FL, sizeof(float));
+    std::memcpy(&packet[12], &pattern.FR, sizeof(float));
+    std::memcpy(&packet[16], &pattern.R, sizeof(float));
 
     bsp::ble::transmit(packet, sizeof(packet));
 }
@@ -383,10 +385,10 @@ void CalibrationIRSensors::handle_wall_pattern_calib(const uint8_t packet[bsp::b
             return;
         }
 
-        uint32_t l = read_averaged_adc(bsp::analog_sensors::LEFT);
-        uint32_t fl = read_averaged_adc(bsp::analog_sensors::FRONT_LEFT);
-        uint32_t fr = read_averaged_adc(bsp::analog_sensors::FRONT_RIGHT);
-        uint32_t r = read_averaged_adc(bsp::analog_sensors::RIGHT);
+        float l = read_averaged_distance(bsp::analog_sensors::LEFT);
+        float fl = read_averaged_distance(bsp::analog_sensors::FRONT_LEFT);
+        float fr = read_averaged_distance(bsp::analog_sensors::FRONT_RIGHT);
+        float r = read_averaged_distance(bsp::analog_sensors::RIGHT);
 
         bsp::analog_sensors::SensingPattern new_pattern = {l, fl, fr, r};
         bsp::analog_sensors::set_wall_pattern(pattern_idx, new_pattern);

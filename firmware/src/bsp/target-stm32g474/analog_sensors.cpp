@@ -66,14 +66,14 @@ static IrCalibParams ir_calib_params[4] = {
 };
 
 constexpr std::array<SensingPattern, 8> default_ir_wall_patterns = {{
-    {1119, 850, 1290, 1460}, // F-L-R
-    {960, 820, 1200, 880},   // F-L
-    {500, 700, 1160, 1460},  // F-R
-    {520, 755, 1200, 870},   // F
-    {900, 67, 246, 1460},    // L-R
-    {900, 28, 230, 870},     // L
-    {530, 35, 261, 1300},    // R
-    {180, 66, 238, 800}      // None
+    {156.157f, 144.226f, 129.702f, 129.025f}, // F-L-R
+    {168.937f, 146.920f, 135.949f, 192.362f}, // F-L
+    {234.924f, 158.840f, 138.945f, 129.025f}, // F-R
+    {230.265f, 153.131f, 135.949f, 194.181f}, // F
+    {174.572f, 300.000f, 300.000f, 129.025f}, // L-R
+    {174.572f, 300.000f, 300.000f, 194.181f}, // L
+    {228.042f, 300.000f, 300.000f, 141.274f}, // R
+    {300.000f, 300.000f, 300.000f, 208.335f}  // None
 }};
 
 static std::array<SensingPattern, 8> ir_wall_patterns = default_ir_wall_patterns;
@@ -238,29 +238,29 @@ uint32_t ir_raw_reading(SensingDirection direction) {
 bool ir_reading_wall(SensingDirection direction) {
     switch (direction) {
     case SensingDirection::RIGHT:
-        return ir_raw_readings[direction] > services::Config::ir_wall_detect_th_right;
+        return ir_distances[direction] < services::Config::ir_wall_detect_th_right;
     case SensingDirection::FRONT_LEFT:
-        return ir_raw_readings[direction] > services::Config::ir_wall_detect_th_front_left;
+        return ir_distances[direction] < services::Config::ir_wall_detect_th_front_left;
     case SensingDirection::FRONT_RIGHT:
-        return ir_raw_readings[direction] > services::Config::ir_wall_detect_th_front_right;
+        return ir_distances[direction] < services::Config::ir_wall_detect_th_front_right;
     case SensingDirection::LEFT:
-        return ir_raw_readings[direction] > services::Config::ir_wall_detect_th_left;
+        return ir_distances[direction] < services::Config::ir_wall_detect_th_left;
     default:
         return false;
     }
 }
 
 int32_t ir_side_wall_error() {
-    int32_t left_error = ir_raw_readings[SensingDirection::LEFT] - services::Config::ir_wall_dist_ref_left;
-    int32_t right_error = ir_raw_readings[SensingDirection::RIGHT] - services::Config::ir_wall_dist_ref_right;
+    int32_t left_error = ir_distances[SensingDirection::LEFT] - services::Config::ir_wall_dist_ref_left;
+    int32_t right_error = ir_distances[SensingDirection::RIGHT] - services::Config::ir_wall_dist_ref_right;
 
     int32_t ir_error;
     if (ir_wall_control_valid(SensingDirection::LEFT) && ir_wall_control_valid(SensingDirection::RIGHT)) {
-        ir_error = left_error - right_error;
+        ir_error = right_error - left_error;
     } else if (ir_wall_control_valid(SensingDirection::LEFT)) {
-        ir_error = 1.5 * left_error;
+        ir_error = -1.5 * left_error;
     } else if (ir_wall_control_valid(SensingDirection::RIGHT)) {
-        ir_error = -1.5 * right_error;
+        ir_error = 1.5 * right_error;
     } else {
         ir_error = 0;
     }
@@ -270,19 +270,19 @@ int32_t ir_side_wall_error() {
 
 SensingStatus ir_get_sensing_status() {
     SensingPattern current_pattern;
-    current_pattern.FL = ir_raw_reading(FRONT_LEFT);
-    current_pattern.FR = ir_raw_reading(FRONT_RIGHT);
-    current_pattern.L = ir_raw_reading(LEFT);
-    current_pattern.R = ir_raw_reading(RIGHT);
+    current_pattern.FL = ir_distance_mm(FRONT_LEFT);
+    current_pattern.FR = ir_distance_mm(FRONT_RIGHT);
+    current_pattern.L = ir_distance_mm(LEFT);
+    current_pattern.R = ir_distance_mm(RIGHT);
 
     // Compares the current value to all references and find the closest match
-    uint32_t min_diff = 10000;
+    float min_diff = 10000.0f;
     uint8_t pattern_idx = 0;
     for (uint8_t i = 0; i < ir_wall_patterns.size(); i++) {
-        uint32_t diff = std::abs((int32_t)current_pattern.FL - (int32_t)ir_wall_patterns[i].FL) +
-                        std::abs((int32_t)current_pattern.FR - (int32_t)ir_wall_patterns[i].FR) +
-                        std::abs((int32_t)current_pattern.L - (int32_t)ir_wall_patterns[i].L) +
-                        std::abs((int32_t)current_pattern.R - (int32_t)ir_wall_patterns[i].R);
+        float diff = std::fabs(current_pattern.FL - ir_wall_patterns[i].FL) +
+                     std::fabs(current_pattern.FR - ir_wall_patterns[i].FR) +
+                     std::fabs(current_pattern.L - ir_wall_patterns[i].L) +
+                     std::fabs(current_pattern.R - ir_wall_patterns[i].R);
         if (diff < min_diff) {
             min_diff = diff;
             pattern_idx = i;
@@ -335,14 +335,14 @@ SensingStatus ir_get_sensing_status() {
 
 int32_t ir_diagonal_error() {
     bool greater_error_left =
-        ir_raw_readings[SensingDirection::FRONT_LEFT] > ir_raw_readings[SensingDirection::FRONT_RIGHT];
+        ir_distances[SensingDirection::FRONT_LEFT] < ir_distances[SensingDirection::FRONT_RIGHT];
 
     int32_t ir_error;
 
     if (greater_error_left && ir_wall_control_valid(SensingDirection::FRONT_LEFT)) {
-        ir_error = ir_raw_readings[SensingDirection::FRONT_LEFT] - services::Config::ir_wall_dist_ref_front_left;
+        ir_error = -(ir_distances[SensingDirection::FRONT_LEFT] - services::Config::ir_wall_dist_ref_front_left);
     } else if (!greater_error_left && ir_wall_control_valid(SensingDirection::FRONT_RIGHT)) {
-        ir_error = -(ir_raw_readings[SensingDirection::FRONT_RIGHT] - services::Config::ir_wall_dist_ref_front_right);
+        ir_error = (ir_distances[SensingDirection::FRONT_RIGHT] - services::Config::ir_wall_dist_ref_front_right);
     } else {
         ir_error = 0;
     }
@@ -353,13 +353,13 @@ int32_t ir_diagonal_error() {
 bool ir_wall_control_valid(SensingDirection direction) {
     switch (direction) {
     case SensingDirection::RIGHT:
-        return ir_raw_readings[direction] > services::Config::ir_wall_control_th_right;
+        return ir_distances[direction] < services::Config::ir_wall_control_th_right;
     case SensingDirection::FRONT_LEFT:
-        return ir_raw_readings[direction] > services::Config::ir_wall_control_th_front_left;
+        return ir_distances[direction] < services::Config::ir_wall_control_th_front_left;
     case SensingDirection::FRONT_RIGHT:
-        return ir_raw_readings[direction] > services::Config::ir_wall_control_th_front_right;
+        return ir_distances[direction] < services::Config::ir_wall_control_th_front_right;
     case SensingDirection::LEFT:
-        return ir_raw_readings[direction] > services::Config::ir_wall_control_th_left;
+        return ir_distances[direction] < services::Config::ir_wall_control_th_left;
     default:
         return false;
     }
