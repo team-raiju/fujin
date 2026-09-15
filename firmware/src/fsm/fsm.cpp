@@ -76,6 +76,7 @@ void FSM::start() {
                 {bsp::ble::BleCommands::ButtonLogDump, ButtonPressed::LONG4},
                 {bsp::ble::BleCommands::ButtonRequestMoveSequence, ButtonPressed::LONG5},
                 {bsp::ble::BleCommands::ButtonEnterIrCalib, ButtonPressed::LONG6},
+                {bsp::ble::BleCommands::ButtonRequestMaze, ButtonPressed::LONG7},
             };
 
             dispatch(ButtonPressed{.button = b[packet[2]]});

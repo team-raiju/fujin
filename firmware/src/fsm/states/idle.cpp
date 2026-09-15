@@ -57,21 +57,26 @@ State* Idle::react(ButtonPressed const& event) {
 
     if (event.button == ButtonPressed::LONG2) {
         services::Config::send_parameters();
+    }
+    
+    if (event.button == ButtonPressed::LONG7) {
         auto maze = services::Maze::instance();
         std::printf("Maze backup: \r\n");
         bsp::delay_ms(5);
         maze->read_maze_from_memory(true);
         maze->print(maze->ORIGIN);
-
+    
         std::printf("Maze: \r\n");
         bsp::delay_ms(5);
         maze->read_maze_from_memory(false);
         maze->print(maze->ORIGIN);
-
+        
         auto target_directions = maze->directions_to_goal();
         auto target_movements = services::Navigation::instance()->get_movements_to_goal(
-            target_directions, services::Navigation::target_movement_mode_t::NORMAL);
-
+            target_directions, services::Navigation::target_movement_mode_t::DIAGONALS);
+        services::Notification::instance()->send_target_movements(target_movements);
+    
+        maze->print(maze->ORIGIN);
         bsp::delay_ms(5);
 
         services::Notification::instance()->send_maze();
