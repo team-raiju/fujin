@@ -1,70 +1,168 @@
-import serial
-import matplotlib.pyplot as plt
-import sys
-import signal
-import os
-from datetime import datetime
+"""
+Robot telemetry log analyzer.
 
-# --- Configuration ---
-SERIAL_PORT = '/dev/ttyACM0'
+Reads semicolon-delimited telemetry lines — either live from a serial
+connection or from a saved log file — figures out which columns are
+present, and plots them.
+
+Two log "modes" are auto-detected from the columns present:
+    control : PID / feed-forward tuning data (no position/sensor columns)
+    sensor  : odometry + IR sensor data (no PID columns)
+
+Usage:
+    python log_analyzer.py                          -> live capture from serial
+    python log_analyzer.py file.txt                  -> plot a single log
+    python log_analyzer.py a.txt b.txt --offset 50    -> compare two logs, time-
+                                                          shifting the second by 50ms
+Run with -h for the full list of options.
+"""
+
+from __future__ import annotations
+
+import argparse
+import os
+import signal
+import sys
+from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Optional
+
+import matplotlib.pyplot as plt
+import serial
+
+# ---------------------------------------------------------------------------
+# Configuration
+# ---------------------------------------------------------------------------
+SERIAL_PORT = "/dev/ttyACM0"
 BAUD_RATE = 115200
 READ_TIMEOUT = 1.0
-CONTROL_LOG_MODE = True  # Set to True for control parameters, False for original metrics
-PLOT_IMU_DIFF = True     # True: Plots IMU_Encoder_Diff | False: Plots Velocity P/I Terms
 
-def signal_handler(sig, frame):
-    """Handles the Ctrl+C signal to ensure a clean exit."""
-    print("\nCtrl+C detected! Closing program.")
-    sys.exit(0)
+# Both of these have command-line equivalents (--plot-imu-diff, --mode) set
+# in main(); the values here are just the defaults used when the module is
+# imported directly rather than run as a script.
+PLOT_IMU_DIFF = False   # True: show the IMU/encoder-diff panel; False: its per-mode alternative
+DEFAULT_MODE = 'sensor'  # Fallback guess used for live capture format, and when a
+                          # file's own columns/header don't reveal its mode.
 
-def save_log_to_disk(header, data_lines):
-    """Saves the structured log strings into a date-organized folder."""
-    date_folder = os.path.join("logs", datetime.now().strftime("%Y-%m-%d"))
-    if not os.path.exists(date_folder):
-        os.makedirs(date_folder)
-    
-    log_filename = f"log_{datetime.now().strftime('%H-%M-%S')}.txt"
-    log_path = os.path.join(date_folder, log_filename)
-    
-    try:
-        with open(log_path, "w") as f:
-            f.write(header + "\n")
-            f.write("\n".join(data_lines))
-        print(f"\n[Success] Log safely stored to: {log_path}")
-    except Exception as e:
-        print(f"Error saving log file: {e}")
+# ---------------------------------------------------------------------------
+# Column identity
+# ---------------------------------------------------------------------------
+# Every header spelling seen across firmware/log revisions, mapped to one
+# canonical field name. This is the single source of truth for what a
+# column *is* — everything below (fixed-width fallback layouts, mode
+# detection, plot panels) just refers to these canonical names instead of
+# re-describing the data.
+HEADER_KEY_MAP = {
+    't': 'time', 'time': 'time', 'time(ms)': 'time',
+    'vel': 'lin_vel_act', 'actuallinearvel': 'lin_vel_act', 'lin_vel_act': 'lin_vel_act',
+    'tgtvel': 'lin_vel_tgt', 'targetlinearvel': 'lin_vel_tgt', 'lin_vel_tgt': 'lin_vel_tgt',
+    'angvel': 'ang_vel_act', 'actualangularvel': 'ang_vel_act', 'ang_vel_act': 'ang_vel_act',
+    'tgtangvel': 'ang_vel_tgt', 'targetangularvel': 'ang_vel_tgt', 'ang_vel_tgt': 'ang_vel_tgt',
+    'pwm_l': 'pwm_left', 'pwml': 'pwm_left', 'pwm_left': 'pwm_left',
+    'pwm_r': 'pwm_right', 'pwmr': 'pwm_right', 'pwm_right': 'pwm_right',
+    'imudiff': 'imu_diff', 'imu_diff': 'imu_diff',
+    'posx': 'pos_x', 'posx(m)': 'pos_x', 'pos_x': 'pos_x',
+    'posy': 'pos_y', 'posy(m)': 'pos_y', 'pos_y': 'pos_y',
+    'angle': 'angle', 'angle(rad)': 'angle', 'dist': 'dist',
+    'sensl': 'sens_l', 'sensl(mm)': 'sens_l', 'sens_l': 'sens_l',
+    'sensfl': 'sens_fl', 'sensfl(mm)': 'sens_fl', 'sens_fl': 'sens_fl',
+    'sensfr': 'sens_fr', 'sensfr(mm)': 'sens_fr', 'sens_fr': 'sens_fr',
+    'sensr': 'sens_r', 'sensr(mm)': 'sens_r', 'sens_r': 'sens_r',
+    'velp': 'vel_p', 'vel_p': 'vel_p', 'veli': 'vel_i', 'vel_i': 'vel_i',
+    'angp': 'ang_p', 'ang_p': 'ang_p', 'angi': 'ang_i', 'ang_i': 'ang_i',
+    'rotff': 'rotation_ff', 'rotationff': 'rotation_ff', 'rotation_ff': 'rotation_ff',
+    'linff': 'linear_ff', 'linearff': 'linear_ff', 'linear_ff': 'linear_ff',
+    'batt_mv': 'battery', 'battery(mv)': 'battery', 'battery': 'battery', 'batt': 'battery',
+    'rawvell': 'raw_vel_l', 'rawvelr': 'raw_vel_r', 'rawangvel': 'raw_ang_vel',
+}
 
-def parse_log_file(file_path):
-    """Reads a log file and returns a structured dictionary of data arrays."""
-    if not os.path.exists(file_path):
-        print(f"Error: Log file '{file_path}' not found.")
-        return None
+# Columns that make a log unambiguously one mode or the other.
+CONTROL_ONLY_KEYS = {'vel_p', 'ang_p', 'rotation_ff'}
+SENSOR_ONLY_KEYS = {'sens_l', 'sens_fl', 'pos_x'}
 
-    with open(file_path, 'r') as f:
-        lines = f.readlines()
+# Fixed column layouts, used only when a file has no header line we can
+# parse. column_count -> [(mode, [canonical keys in order]), ...].
+# 13 columns is inherently ambiguous between the two historical layouts, so
+# both candidates are listed and disambiguated using whatever header text
+# is available (see _resolve_columns).
+FALLBACK_LAYOUTS = {
+    16: [('sensor', ['time', 'lin_vel_act', 'lin_vel_tgt', 'ang_vel_act', 'ang_vel_tgt',
+                      'pwm_left', 'pwm_right', 'imu_diff', 'pos_x', 'pos_y', 'angle', 'dist',
+                      'sens_l', 'sens_fl', 'sens_fr', 'sens_r'])],
+    15: [('control', ['time', 'lin_vel_act', 'lin_vel_tgt', 'ang_vel_act', 'ang_vel_tgt',
+                       'pwm_left', 'pwm_right', 'imu_diff', 'vel_p', 'vel_i', 'ang_p', 'ang_i',
+                       'rotation_ff', 'linear_ff', 'battery'])],
+    14: [('control', ['time', 'lin_vel_act', 'lin_vel_tgt', 'ang_vel_act', 'ang_vel_tgt',
+                       'pwm_left', 'pwm_right', 'imu_diff', 'vel_p', 'vel_i', 'ang_p', 'ang_i',
+                       'rotation_ff', 'linear_ff'])],
+    13: [('sensor', ['time', 'lin_vel_act', 'lin_vel_tgt', 'ang_vel_act', 'ang_vel_tgt',
+                      'pwm_left', 'pwm_right', 'imu_diff', 'battery', 'pos_x', 'pos_y', 'angle', 'dist']),
+         ('control', ['time', 'lin_vel_act', 'lin_vel_tgt', 'ang_vel_act', 'ang_vel_tgt',
+                       'pwm_left', 'pwm_right', 'imu_diff', 'vel_p', 'vel_i', 'ang_p', 'ang_i',
+                       'rotation_ff'])],
+}
 
-    if len(lines) <= 1:
-        print(f"Log file '{file_path}' is empty or missing data rows.")
-        return None
+# Layout + header text used for a live serial capture, keyed by mode.
+LIVE_CAPTURE_LAYOUTS = {
+    'control': FALLBACK_LAYOUTS[15][0][1],
+    'sensor': FALLBACK_LAYOUTS[16][0][1],
+}
+LIVE_CAPTURE_HEADERS = {
+    'control': (
+        "Time(ms);ActualLinearVel;TargetLinearVel;ActualAngularVel;TargetAngularVel;"
+        "PWML;PWMR;ImuDiff;VelP;VelI;AngP;AngI;RotationFF;LinearFF;Battery(mV)"
+    ),
+    'sensor': (
+        "Time(ms);ActualLinearVel;TargetLinearVel;ActualAngularVel;TargetAngularVel;"
+        "PWML;PWMR;ImuDiff;PosX(m);PosY(m);Angle(rad);Dist;"
+        "SensL(mm);SensFL(mm);SensFR(mm);SensR(mm)"
+    ),
+}
 
-    if CONTROL_LOG_MODE:
-        keys = [
-            'time', 'lin_vel_act', 'lin_vel_tgt', 'ang_vel_act', 'ang_vel_tgt',
-            'pwm_left', 'pwm_right', 'imu_diff', 'vel_p', 'vel_i', 'ang_p', 'ang_i', 'rotation_ff', 'linear_ff'
-        ]
-    else:
-        keys = [
-            'time', 'lin_vel_act', 'lin_vel_tgt', 'ang_vel_act', 'ang_vel_tgt',
-            'pwm_left', 'pwm_right', 'imu_diff', 'battery', 'pos_x', 'pos_y', 'angle', 'dist'
-        ]
 
-    data_dict = {k: [] for k in keys}
+# ---------------------------------------------------------------------------
+# Parsed log data
+# ---------------------------------------------------------------------------
+@dataclass
+class LogData:
+    mode: str                                    # 'control' or 'sensor'
+    series: dict = field(default_factory=dict)    # canonical_key -> [float, ...]
 
+    def get(self, key: str) -> list:
+        return self.series.get(key, [])
+
+    def has(self, key: str) -> bool:
+        """True if `key` has data aligned one-to-one with the time column."""
+        values = self.series.get(key, [])
+        return bool(values) and len(values) == len(self.series.get('time', []))
+
+
+# ---------------------------------------------------------------------------
+# Parsing
+# ---------------------------------------------------------------------------
+def _normalize_token(token: str) -> Optional[str]:
+    clean = token.split('(')[0].strip().lower()
+    if clean in HEADER_KEY_MAP:
+        return HEADER_KEY_MAP[clean]
+    clean_nopunct = ''.join(c for c in token.strip().lower() if c.isalnum() or c == '_')
+    return HEADER_KEY_MAP.get(clean_nopunct)
+
+
+def _parse_header_line(header_line: str, expected_count: int) -> Optional[list]:
+    """Maps a semicolon-separated header line to canonical keys, or returns
+    None if it doesn't fully resolve (wrong length, or an unknown column)."""
+    keys = [_normalize_token(p) for p in header_line.split(';')]
+    if len(keys) == expected_count and all(keys):
+        return keys
+    return None
+
+
+def _split_header_and_data(lines: list) -> tuple:
+    """Separates comment/header lines from numeric data lines, skipping any
+    `general_params = { ... };` block."""
+    header_lines, data_lines = [], []
     in_param_block = False
     for line in lines:
-        line = line.strip()
-        if not line: 
-            continue
         if line.startswith("general_params = {"):
             in_param_block = True
             continue
@@ -73,269 +171,312 @@ def parse_log_file(file_path):
                 in_param_block = False
             continue
         try:
-            fields = [float(x) for x in line.split(';')]
-            # Handle legacy files dynamically: loop only up to the available column count
-            for idx, field_val in enumerate(fields):
-                if idx < len(keys):
-                    data_dict[keys[idx]].append(field_val)
+            [float(x) for x in line.split(';')]
+            data_lines.append(line)
         except ValueError:
-            continue
+            header_lines.append(line)
+    return header_lines, data_lines
 
-    if not data_dict['time']:
-        print(f"No valid numerical data could be parsed from '{file_path}'.")
+
+def _resolve_columns(header_lines: list, cols_count: int) -> Optional[list]:
+    """Figures out the canonical key for every column, preferring an actual
+    header line (closest to the data first) and falling back to a known
+    fixed layout for that column count."""
+    for h in reversed(header_lines):
+        keys = _parse_header_line(h, cols_count)
+        if keys:
+            return keys
+
+    layouts = FALLBACK_LAYOUTS.get(cols_count)
+    if not layouts:
+        return None
+    if len(layouts) == 1:
+        return layouts[0][1]
+
+    # Ambiguous column count (13): use whatever header text is present as a hint,
+    # falling back to DEFAULT_MODE if there's no hint either.
+    looks_positional = any('pos' in h.lower() or 'dist' in h.lower() for h in header_lines)
+    wanted_mode = 'sensor' if looks_positional else DEFAULT_MODE
+    for mode, keys in layouts:
+        if mode == wanted_mode:
+            return keys
+    return layouts[0][1]
+
+
+def _detect_mode(keys: list) -> str:
+    key_set = set(keys)
+    if key_set & SENSOR_ONLY_KEYS:
+        return 'sensor'
+    if key_set & CONTROL_ONLY_KEYS:
+        return 'control'
+    return DEFAULT_MODE
+
+
+def parse_log_file(path: str) -> Optional[LogData]:
+    """Reads a log file and returns its parsed data, or None on failure."""
+    if not os.path.exists(path):
+        alt_path = os.path.join(os.path.dirname(__file__), path)
+        path = alt_path if os.path.exists(alt_path) else path
+    if not os.path.exists(path):
+        print(f"Error: Log file '{path}' not found.")
         return None
 
-    return data_dict
+    with open(path) as f:
+        lines = [line.strip() for line in f if line.strip()]
+    if not lines:
+        print(f"Log file '{path}' is empty.")
+        return None
 
-def plot_single(data_dict, title_suffix=""):
-    """Generates the system analysis visualizations for a single data set."""
-    t = data_dict['time']
-    
-    fig, axs = plt.subplots(3, 2, figsize=(15, 12), sharex=True)
-    
-    if CONTROL_LOG_MODE:
-        fig.suptitle(f'Motion Control Performance {title_suffix}', fontsize=16)
+    header_lines, data_lines = _split_header_and_data(lines)
+    if not data_lines:
+        print(f"No valid numerical data rows found in '{path}'.")
+        return None
 
-        # Row 1, Col 1: Velocity
-        axs[0, 0].plot(t, data_dict['lin_vel_act'], label='Actual Linear Velocity')
-        axs[0, 0].plot(t, data_dict['lin_vel_tgt'], label='Target', linestyle='--')
-        axs[0, 0].set_title('Linear Velocity')
-        axs[0, 0].set_ylabel('m/s')
+    cols_count = len(data_lines[0].split(';'))
+    keys = _resolve_columns(header_lines, cols_count)
+    if keys is None:
+        print(f"Unknown column layout ({cols_count} columns) in '{path}'.")
+        return None
 
-        # Row 1, Col 2: Angular Velocity
-        axs[0, 1].plot(t, data_dict['ang_vel_act'], label='Actual Angular Velocity')
-        axs[0, 1].plot(t, data_dict['ang_vel_tgt'], label='Target', linestyle='--')
-        axs[0, 1].set_title('Angular Velocity')
-        axs[0, 1].set_ylabel('rad/s')
+    series = {k: [] for k in keys}
+    for line in data_lines:
+        try:
+            values = [float(x) for x in line.split(';')]
+        except ValueError:
+            continue
+        for key, value in zip(keys, values):
+            series[key].append(value)
 
-        # Row 2, Col 1: Dynamic Toggle between IMU Diff and Velocity PID
-        if PLOT_IMU_DIFF:
-            axs[1, 0].plot(t, data_dict['imu_diff'], label='IMU Encoder Diff', color='tab:purple')
-            axs[1, 0].set_title('IMU & Encoder Variance')
-            axs[1, 0].set_ylabel('Difference')
-        else:
-            axs[1, 0].plot(t, data_dict['vel_p'], label='Velocity P Term')
-            axs[1, 0].plot(t, data_dict['vel_i'], label='Velocity I Term')
-            axs[1, 0].set_title('Velocity PID Terms')
-            axs[1, 0].set_ylabel('Value')
+    if not series.get('time'):
+        print(f"No valid numerical data could be parsed from '{path}'.")
+        return None
 
-        # Row 2, Col 2: Angular Velocity PID
-        axs[1, 1].plot(t, data_dict['ang_p'], label='Angular P Term')
-        axs[1, 1].plot(t, data_dict['ang_i'], label='Angular I Term')
-        axs[1, 1].set_title('Angular Velocity PID Terms')
-        axs[1, 1].set_ylabel('Value')
+    return LogData(mode=_detect_mode(keys), series=series)
 
-        # Row 3, Col 1: PWMs
-        axs[2, 0].plot(t, data_dict['pwm_left'], label='PWM Left')
-        axs[2, 0].plot(t, data_dict['pwm_right'], label='PWM Right')
-        axs[2, 0].set_title('PWM Signals')
-        axs[2, 0].set_ylabel('Duty Cycle (0-1000)')
 
-        # Row 3, Col 2: Feed Forward (Plots both if linear_ff data exists)
-        axs[2, 1].plot(t, data_dict['rotation_ff'], label='Rotation Feedforward')
-        if 'linear_ff' in data_dict and len(data_dict['linear_ff']) == len(t):
-            axs[2, 1].plot(t, data_dict['linear_ff'], label='Linear Feedforward')
-            axs[2, 1].set_title('Feed Forward Terms')
-        else:
-            axs[2, 1].set_title('Feed Forward (rotation_ff)')
-        axs[2, 1].set_ylabel('Value')
+def save_log_to_disk(header: str, data_lines: list) -> None:
+    """Saves raw log lines into a date-organized folder under ./logs."""
+    date_folder = os.path.join("logs", datetime.now().strftime("%Y-%m-%d"))
+    os.makedirs(date_folder, exist_ok=True)
+    log_path = os.path.join(date_folder, f"log_{datetime.now().strftime('%H-%M-%S')}.txt")
 
+    looks_like_header = any(
+        ';' in line and not line.startswith('general_params')
+        and any(col in line.lower() for col in ('vel', 'tgt', 'ang', 'time'))
+        for line in data_lines
+    )
+    try:
+        with open(log_path, "w") as f:
+            if not looks_like_header and header:
+                f.write(header + "\n")
+            f.write("\n".join(data_lines))
+        print(f"\n[Success] Log safely stored to: {log_path}")
+    except OSError as e:
+        print(f"Error saving log file: {e}")
+
+
+# ---------------------------------------------------------------------------
+# Plotting
+# ---------------------------------------------------------------------------
+@dataclass
+class Series:
+    key: str
+    label: str
+    style: str = '-'            # matplotlib linestyle
+    optional: bool = False      # if missing, just skip this line rather than the panel
+    dash_for_other: bool = False  # in a comparison plot, draw this dashed for every
+                                   # dataset after the first (helps tell same-styled
+                                   # lines like left/right apart when color alone isn't enough)
+
+
+@dataclass
+class Panel:
+    title: str
+    ylabel: str
+    series: list
+    xlabel: str = 'Time (ms)'
+    kind: str = 'time'          # 'time': x=time, y=each series | 'xy': series = [x_series, y_series]
+    fallback: Optional["Panel"] = None   # used if this panel's data isn't available at all
+
+    def is_available(self, data: LogData) -> bool:
+        required = [s for s in self.series if not s.optional]
+        if required:
+            return all(data.has(s.key) for s in required)
+        return any(data.has(s.key) for s in self.series)
+
+
+def _velocity_panels() -> list:
+    return [
+        Panel('Linear Velocity', 'm/s', [
+            Series('lin_vel_act', 'Actual Linear Velocity'),
+            Series('lin_vel_tgt', 'Target', style='--'),
+        ]),
+        Panel('Angular Velocity', 'rad/s', [
+            Series('ang_vel_act', 'Actual Angular Velocity'),
+            Series('ang_vel_tgt', 'Target', style='--'),
+        ]),
+    ]
+
+
+def _imu_or_alternate_panel(mode: str) -> Panel:
+    if PLOT_IMU_DIFF:
+        return Panel('IMU & Encoder Variance', 'Difference', [Series('imu_diff', 'IMU Encoder Diff')])
+    if mode == 'control':
+        return Panel('Velocity PID Terms', 'Value', [
+            Series('vel_p', 'Velocity P Term'),
+            Series('vel_i', 'Velocity I Term'),
+        ])
+    return Panel('Distance over Time', 'Distance', [Series('dist', 'Distance')])
+
+
+def _pwm_panel() -> Panel:
+    return Panel('PWM Signals', 'Duty Cycle (0-1000)', [
+        Series('pwm_left', 'PWM Left'),
+        Series('pwm_right', 'PWM Right', dash_for_other=True),
+    ])
+
+
+def get_panel_grid(mode: str, context: str) -> list:
+    """Builds the 3x2 grid of panels for a log `mode` ('control'/'sensor')
+    rendered in a given `context` ('single'/'comparison')."""
+    row1 = _velocity_panels()
+    row3_left = _pwm_panel()
+
+    if mode == 'control':
+        row2 = [
+            _imu_or_alternate_panel(mode),
+            Panel('Angular Velocity PID Terms', 'Value', [
+                Series('ang_p', 'Angular P Term'),
+                Series('ang_i', 'Angular I Term'),
+            ]),
+        ]
+        row3_right = Panel('Feed Forward Terms', 'Value', [
+            Series('rotation_ff', 'Rotation Feedforward'),
+            Series('linear_ff', 'Linear Feedforward', optional=True),
+        ])
     else:
-        fig.suptitle(f'System and Sensor Data {title_suffix}', fontsize=16)
-
-        # Row 1, Col 1: Velocity
-        axs[0, 0].plot(t, data_dict['lin_vel_act'], label='Actual Linear Velocity')
-        axs[0, 0].plot(t, data_dict['lin_vel_tgt'], label='Target', linestyle='--')
-        axs[0, 0].set_title('Linear Velocity')
-        axs[0, 0].set_ylabel('m/s')
-
-        # Row 1, Col 2: Angular Velocity
-        axs[0, 1].plot(t, data_dict['ang_vel_act'], label='Actual Angular Velocity')
-        axs[0, 1].plot(t, data_dict['ang_vel_tgt'], label='Target', linestyle='--')
-        axs[0, 1].set_title('Angular Velocity')
-        axs[0, 1].set_ylabel('rad/s')
-
-        # Row 2, Col 1: Dynamic Toggle for Distance vs IMU Diff
-        if PLOT_IMU_DIFF:
-            axs[1, 0].plot(t, data_dict['imu_diff'], label='IMU Encoder Diff', color='tab:purple')
-            axs[1, 0].set_title('IMU & Encoder Variance')
-            axs[1, 0].set_ylabel('Difference')
+        if context == 'comparison':
+            second_panel = Panel(
+                'Spatial Odometry Tracking', 'Y Position (m)',
+                [Series('pos_x', 'Path'), Series('pos_y', 'Path')],
+                xlabel='X Position (m)', kind='xy',
+            )
         else:
-            axs[1, 0].plot(t, data_dict['dist'], label='Distance')
-            axs[1, 0].set_title('Distance over Time')
-            axs[1, 0].set_ylabel('Distance')
+            second_panel = Panel('Angle over Time', 'Angle (rad)', [Series('angle', 'Angle')])
+        row2 = [_imu_or_alternate_panel(mode), second_panel]
 
-        # Row 2, Col 2: Angle
-        axs[1, 1].plot(t, data_dict['angle'], label='Angle')
-        axs[1, 1].set_title('Angle over Time')
-        axs[1, 1].set_ylabel('Angle (rad)')
+        row3_right = Panel('Sensor Distances (mm)', 'Distance (mm)', [
+            Series('sens_l', 'Sens Left', dash_for_other=True),
+            Series('sens_fl', 'Sens Front Left', style='--', optional=True),
+            Series('sens_fr', 'Sens Front Right', style=':', optional=True),
+            Series('sens_r', 'Sens Right', optional=True, dash_for_other=True),
+        ])
+        row3_right.fallback = Panel('Battery Voltage over Time', 'Voltage (mV)',
+                                     [Series('battery', 'Battery Voltage')])
 
-        # Row 3, Col 1: PWMs
-        axs[2, 0].plot(t, data_dict['pwm_left'], label='PWM Left')
-        axs[2, 0].plot(t, data_dict['pwm_right'], label='PWM Right')
-        axs[2, 0].set_title('PWM Signals')
-        axs[2, 0].set_ylabel('Duty Cycle (0-1000)')
+    return [row1, row2, [row3_left, row3_right]]
 
-        # Row 3, Col 2: Battery Voltage
-        axs[2, 1].plot(t, data_dict['battery'], label='Battery Voltage')
-        axs[2, 1].set_title('Battery Voltage over Time')
-        axs[2, 1].set_ylabel('Voltage (mV)')
 
-    for ax in axs.flat:
-        ax.set_xlabel('Time (ms)')
-        ax.tick_params(labelbottom=True)
-        ax.legend()
-        ax.grid(True)
+def _resolve_panel(panel: Panel, datasets: list) -> Panel:
+    """Swaps in `panel.fallback` if none of the datasets have the panel's data."""
+    if panel.fallback and not any(panel.is_available(d) for d in datasets):
+        return panel.fallback
+    return panel
+
+
+def _render_panel(ax, panel: Panel, datasets: list) -> None:
+    """`datasets` is a list of (label, color, LogData). color=None lets
+    matplotlib auto-assign colors."""
+    multi = len(datasets) > 1
+
+    if panel.kind == 'xy':
+        x_key, y_key = panel.series[0].key, panel.series[1].key
+        for name, color, data in datasets:
+            xs, ys = data.get(x_key), data.get(y_key)
+            if not xs or not ys:
+                continue
+            label = f'Path ({name})' if multi else 'Path'
+            ax.plot(xs, ys, color=color, label=label, marker='o', markersize=2, alpha=0.7)
+        ax.axis('equal')
+    else:
+        for idx, (name, color, data) in enumerate(datasets):
+            times = data.get('time')
+            for s in panel.series:
+                values = data.get(s.key)
+                if not values or len(values) != len(times):
+                    continue
+                style = '--' if (multi and idx > 0 and s.dash_for_other) else s.style
+                label = f'{s.label} ({name})' if multi else s.label
+                ax.plot(times, values, style, color=color, label=label)
+
+    ax.set_title(panel.title)
+    ax.set_xlabel(panel.xlabel)
+    ax.set_ylabel(panel.ylabel)
+    ax.tick_params(labelbottom=True)
+    ax.grid(True)
+    if ax.get_legend_handles_labels()[0]:
+        ax.legend(fontsize='small')
+
+
+def plot_single(data: LogData, title_suffix: str = "") -> None:
+    grid = get_panel_grid(data.mode, context='single')
+    fig, axs = plt.subplots(3, 2, figsize=(15, 12), sharex=True)
+
+    mode_title = 'Motion Control Performance' if data.mode == 'control' else 'System and Sensor Data'
+    fig.suptitle(f'{mode_title} {title_suffix}', fontsize=16)
+
+    for row_panels, ax_row in zip(grid, axs):
+        for panel, ax in zip(row_panels, ax_row):
+            resolved = _resolve_panel(panel, [data])
+            _render_panel(ax, resolved, [('', None, data)])
 
     fig.tight_layout(rect=[0, 0.03, 1, 0.95])
     plt.show()
 
-def plot_comparison(file1, file2, offset=0.0):
-    """Parses two log files, applies an optional time offset to file2, and plots both."""
-    d1 = parse_log_file(file1)
-    d2 = parse_log_file(file2)
 
+def plot_comparison(file1: str, file2: str, offset: float = 0.0) -> None:
+    d1, d2 = parse_log_file(file1), parse_log_file(file2)
     if not d1 or not d2:
         return
 
-    name1 = os.path.basename(file1)
-    name2 = os.path.basename(file2)
+    name1, name2 = os.path.basename(file1), os.path.basename(file2)
+    if offset:
+        d2.series['time'] = [t + offset for t in d2.get('time')]
 
-    if offset != 0.0:
-        d2['time'] = [t + offset for t in d2['time']]
-        offset_msg = f" (Shifted by {offset:+.1f} ms)"
-    else:
-        offset_msg = ""
+    mode = d1.mode  # if the two logs disagree, defer to the first file's mode
+    grid = get_panel_grid(mode, context='comparison')
+    datasets = [(name1, 'tab:blue', d1), (name2, 'tab:green', d2)]
 
-    c1_act, c1_tgt = 'tab:blue', 'tab:cyan'
-    c2_act, c2_tgt = 'tab:green', 'tab:olive'
+    resolved_grid = [[_resolve_panel(panel, [d1, d2]) for panel in row] for row in grid]
 
     fig, axs = plt.subplots(3, 2, figsize=(16, 12))
+    offset_msg = f' (Shifted by {offset:+.1f} ms)' if offset else ''
     fig.suptitle(f'Comparison: {name1} vs {name2}{offset_msg}', fontsize=16)
 
-    # Row 1, Col 1: Velocity
-    axs[0, 0].plot(d1['time'], d1['lin_vel_act'], color=c1_act, label=f'Actual ({name1})')
-    axs[0, 0].plot(d1['time'], d1['lin_vel_tgt'], '--', color=c1_tgt, label=f'Target ({name1})')
-    axs[0, 0].plot(d2['time'], d2['lin_vel_act'], color=c2_act, label=f'Actual ({name2})')
-    axs[0, 0].plot(d2['time'], d2['lin_vel_tgt'], '--', color=c2_tgt, label=f'Target ({name2})')
-    axs[0, 0].set_title('Linear Velocity Comparison')
-    axs[0, 0].set_ylabel('m/s')
+    # Link the x-axis across every time-based panel (not the xy odometry plot).
+    time_axes = [axs[r][c] for r in range(3) for c in range(2) if resolved_grid[r][c].kind == 'time']
+    for ax in time_axes[1:]:
+        ax.sharex(time_axes[0])
 
-    # Row 1, Col 2: Angular Velocity
-    axs[0, 1].plot(d1['time'], d1['ang_vel_act'], color=c1_act, label=f'Actual ({name1})')
-    axs[0, 1].plot(d1['time'], d1['ang_vel_tgt'], '--', color=c1_tgt, label=f'Target ({name1})')
-    axs[0, 1].plot(d2['time'], d2['ang_vel_act'], color=c2_act, label=f'Actual ({name2})')
-    axs[0, 1].plot(d2['time'], d2['ang_vel_tgt'], '--', color=c2_tgt, label=f'Target ({name2})')
-    axs[0, 1].set_title('Angular Velocity Comparison')
-    axs[0, 1].set_ylabel('rad/s')
-
-    if CONTROL_LOG_MODE:
-        # Row 2, Col 1: Dynamic comparison toggle
-        if PLOT_IMU_DIFF:
-            axs[1, 0].plot(d1['time'], d1['imu_diff'], color=c1_act, label=f'IMU Diff ({name1})')
-            axs[1, 0].plot(d2['time'], d2['imu_diff'], color=c2_act, label=f'IMU Diff ({name2})')
-            axs[1, 0].set_title('IMU Variance Comparison')
-        else:
-            axs[1, 0].plot(d1['time'], d1['vel_p'], color=c1_act, label=f'Vel P ({name1})')
-            axs[1, 0].plot(d1['time'], d1['vel_i'], ':', color=c1_act, label=f'Vel I ({name1})')
-            axs[1, 0].plot(d2['time'], d2['vel_p'], color=c2_act, label=f'Vel P ({name2})')
-            axs[1, 0].plot(d2['time'], d2['vel_i'], ':', color=c2_act, label=f'Vel I ({name2})')
-            axs[1, 0].set_title('Velocity PID Terms Comparison')
-        axs[1, 0].set_ylabel('Value')
-
-        # Row 2, Col 2: Angular Velocity PID
-        axs[1, 1].plot(d1['time'], d1['ang_p'], color=c1_act, label=f'Ang P ({name1})')
-        axs[1, 1].plot(d1['time'], d1['ang_i'], ':', color=c1_act, label=f'Ang I ({name1})')
-        axs[1, 1].plot(d2['time'], d2['ang_p'], color=c2_act, label=f'Ang P ({name2})')
-        axs[1, 1].plot(d2['time'], d2['ang_i'], ':', color=c2_act, label=f'Ang I ({name2})')
-        axs[1, 1].set_title('Angular PID Terms Comparison')
-        axs[1, 1].set_ylabel('Value')
-
-        # Row 3, Col 2: Feed Forward Comparison
-        axs[2, 1].plot(d1['time'], d1['rotation_ff'], color=c1_act, label=f'Rot FF ({name1})')
-        axs[2, 1].plot(d2['time'], d2['rotation_ff'], color=c2_act, label=f'Rot FF ({name2})')
-        
-        # Dynamically append linear feedforward to comparison if available
-        if 'linear_ff' in d1 and len(d1['linear_ff']) == len(d1['time']):
-            axs[2, 1].plot(d1['time'], d1['linear_ff'], color=c1_act, label=f'Lin FF ({name1})')
-        if 'linear_ff' in d2 and len(d2['linear_ff']) == len(d2['time']):
-            axs[2, 1].plot(d1['time'], d1['linear_ff'], color=c2_act, label=f'Lin FF ({name1})')
-
-            
-        axs[2, 1].set_title('Feedforward Terms Comparison')
-        axs[2, 1].set_ylabel('Value')
-    else:
-        # Row 2, Col 1: Non-control context dynamic toggle
-        if PLOT_IMU_DIFF:
-            axs[1, 0].plot(d1['time'], d1['imu_diff'], color=c1_act, label=name1)
-            axs[1, 0].plot(d2['time'], d2['imu_diff'], color=c2_act, label=name2)
-            axs[1, 0].set_title('IMU Variance Comparison')
-            axs[1, 0].set_ylabel('Difference')
-        else:
-            axs[1, 0].plot(d1['time'], d1['dist'], color=c1_act, label=name1)
-            axs[1, 0].plot(d2['time'], d2['dist'], color=c2_act, label=name2)
-            axs[1, 0].set_title('Distance Tracking Comparison')
-            axs[1, 0].set_ylabel('Distance')
-
-        # Row 2, Col 2: Spatial Odometry Tracking (pos_x vs pos_y)
-        axs[1, 1].plot(d1['pos_x'], d1['pos_y'], color=c1_act, label=f'Path ({name1})', marker='o', markersize=2, alpha=0.7)
-        axs[1, 1].plot(d2['pos_x'], d2['pos_y'], color=c2_act, label=f'Path ({name2})', marker='x', markersize=2, alpha=0.7)
-        axs[1, 1].set_title('Spatial Odometry Tracking')
-        axs[1, 1].set_xlabel('X Position (m)')
-        axs[1, 1].set_ylabel('Y Position (m)')
-        axs[1, 1].axis('equal')
-
-        # Row 3, Col 2: Battery Voltage
-        axs[2, 1].plot(d1['time'], d1['battery'], color=c1_act, label=name1)
-        axs[2, 1].plot(d2['time'], d2['battery'], color=c2_act, label=name2)
-        axs[2, 1].set_title('Battery Voltage Comparison')
-        axs[2, 1].set_ylabel('mV')
-
-    # Row 3, Col 1: PWM Signals (shared layout property across both modes)
-    axs[2, 0].plot(d1['time'], d1['pwm_left'], color=c1_act, label=f'PWM Left ({name1})')
-    axs[2, 0].plot(d1['time'], d1['pwm_right'], ':', color=c1_act, label=f'PWM Right ({name1})')
-    axs[2, 0].plot(d2['time'], d2['pwm_left'], color=c2_act, label=f'PWM Left ({name2})')
-    axs[2, 0].plot(d2['time'], d2['pwm_right'], ':', color=c2_act, label=f'PWM Right ({name2})')
-    axs[2, 0].set_title('PWM Signals Comparison')
-    axs[2, 0].set_ylabel('Duty Cycle (0-1000)')
-
-    first_time_ax = axs[0, 0]
-    for ax in axs.flat[1:]:
-        if not (ax == axs[1, 1] and not CONTROL_LOG_MODE):
-            ax.sharex(first_time_ax)
-
-    for ax in axs.flat:
-        if not (ax == axs[1, 1] and not CONTROL_LOG_MODE):  # skip setting time label on spatial odometry plot
-            ax.set_xlabel('Time (ms)')
-            ax.tick_params(labelbottom=True)
-        ax.legend(fontsize='small')
-        ax.grid(True)
+    for row_panels, ax_row in zip(resolved_grid, axs):
+        for panel, ax in zip(row_panels, ax_row):
+            _render_panel(ax, panel, datasets)
 
     fig.tight_layout(rect=[0, 0.03, 1, 0.95])
     plt.show()
 
-def collect_print_and_plot_data():
-    """Connects to serial port, pipes text stream, logs to disk, and updates graphs."""
-    if CONTROL_LOG_MODE:
-        keys = [
-            'time', 'lin_vel_act', 'lin_vel_tgt', 'ang_vel_act', 'ang_vel_tgt',
-            'pwm_left', 'pwm_right', 'imu_diff', 'vel_p', 'vel_i', 'ang_p', 'ang_i', 'rotation_ff', 'linear_ff'
-        ]
-        header = (
-            "Time(ms);ActualLinearVel;TargetLinearVel;ActualAngularVel;TargetAngularVel;"
-            "PWML;PWMR;ImuDiff;VelP;VelI;AngP;AngI;RotationFF;LinearFF"
-        )
-    else:
-        keys = [
-            'time', 'lin_vel_act', 'lin_vel_tgt', 'ang_vel_act', 'ang_vel_tgt',
-            'pwm_left', 'pwm_right', 'imu_diff', 'battery', 'pos_x', 'pos_y', 'angle', 'dist'
-        ]
-        header = (
-            "Time(ms);ActualLinearVel;TargetLinearVel;ActualAngularVel;TargetAngularVel;"
-            "PWML;PWMR;ImuDiff;Battery(mV);PosX(m);PosY(m);Angle(rad);Dist"
-        )
 
-    data_dict = {k: [] for k in keys}
+# ---------------------------------------------------------------------------
+# Live serial capture
+# ---------------------------------------------------------------------------
+def collect_print_and_plot_data() -> None:
+    """Connects to the serial port, streams a burst of telemetry to disk,
+    then plots it once the stream ends."""
+    mode = DEFAULT_MODE
+    keys = LIVE_CAPTURE_LAYOUTS[mode]
+    header = LIVE_CAPTURE_HEADERS[mode]
+
+    series = {k: [] for k in keys}
     data_lines = []
 
     try:
@@ -343,63 +484,90 @@ def collect_print_and_plot_data():
             ser.flush()
             print(f"Successfully connected to {SERIAL_PORT}")
             print("Waiting for data burst... Press physical button or use Ctrl+C to exit.")
-            
-            while True:
+
+            line = ""
+            while not line:
                 line = ser.readline().decode('utf-8', errors='ignore').strip()
-                if line:
-                    print("Data reception started...")
-                    break
-            
+            print("Data reception started...")
+
             while line:
                 data_lines.append(line)
-                
                 try:
-                    fields = line.split(';')
-                    if len(fields) > 1:
-                        float_fields = [float(x) for x in fields]
-                        for idx, field_val in enumerate(float_fields):
-                            if idx < len(keys):
-                                data_dict[keys[idx]].append(field_val)
+                    values = [float(x) for x in line.split(';')]
+                    for key, value in zip(keys, values):
+                        series[key].append(value)
                 except ValueError:
                     pass
-                
                 line = ser.readline().decode('utf-8', errors='ignore').strip()
-            
-            print(f"Data collection complete. Received {len(data_dict['time'])} data points.")
+
+            print(f"Data collection complete. Received {len(series['time'])} data points.")
 
     except serial.SerialException as e:
         print(f"Error: Could not open serial port {SERIAL_PORT}. {e}")
         return
 
-    if not data_dict['time']:
+    if not series['time']:
         print("No data was collected. Exiting.")
         return
 
     save_log_to_disk(header, data_lines)
-    plot_single(data_dict, title_suffix="(Live Session)")
+    plot_single(LogData(mode=mode, series=series), title_suffix="(Live Session)")
 
-if __name__ == "__main__":
-    signal.signal(signal.SIGINT, signal_handler)
-    
-    args_count = len(sys.argv)
-    
-    if args_count == 2:
-        parsed_data = parse_log_file(sys.argv[1])
-        if parsed_data:
-            plot_single(parsed_data, title_suffix=f"({os.path.basename(sys.argv[1])})")
-            
-    elif args_count >= 3:
-        file_one = sys.argv[1]
-        file_two = sys.argv[2]
-        
-        time_offset = 0.0
-        if args_count >= 4:
-            try:
-                time_offset = float(sys.argv[3])
-            except ValueError:
-                print(f"Warning: Invalid offset target context '{sys.argv[3]}'. Defaulting to 0.0.")
-        
-        plot_comparison(file_one, file_two, offset=time_offset)
-        
+
+# ---------------------------------------------------------------------------
+# Entry point
+# ---------------------------------------------------------------------------
+def _signal_handler(sig, frame):
+    print("\nCtrl+C detected! Closing program.")
+    sys.exit(0)
+
+
+def _build_arg_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Parse and plot robot telemetry logs, live from serial or from saved files.",
+    )
+    parser.add_argument(
+        'files', nargs='*', metavar='FILE',
+        help="Log file(s) to plot. None: live serial capture. One: plot that log. "
+             "Two: compare them side by side.",
+    )
+    parser.add_argument(
+        '--offset', type=float, default=0.0, metavar='MS',
+        help="Time offset in milliseconds applied to the second file when comparing "
+             "two logs. Default: 0.",
+    )
+    parser.add_argument(
+        '--plot-imu-diff', action='store_true', default=False,
+        help="Show the IMU/encoder-diff panel. If not set, that panel slot instead shows "
+             "its per-mode alternative (velocity PID terms for control logs, distance-over-"
+             "time for sensor logs). Default: off.",
+    )
+    parser.add_argument(
+        '--mode', choices=['control', 'sensor'], default='sensor',
+        help="Log format to use for live serial capture, and the fallback guess when a "
+             "file's mode can't be determined from its columns or header. Default: sensor.",
+    )
+    return parser
+
+
+def main() -> None:
+    global PLOT_IMU_DIFF, DEFAULT_MODE
+
+    signal.signal(signal.SIGINT, _signal_handler)
+    args = _build_arg_parser().parse_args()
+
+    PLOT_IMU_DIFF = args.plot_imu_diff
+    DEFAULT_MODE = args.mode
+
+    if len(args.files) == 1:
+        data = parse_log_file(args.files[0])
+        if data:
+            plot_single(data, title_suffix=f"({os.path.basename(args.files[0])})")
+    elif len(args.files) >= 2:
+        plot_comparison(args.files[0], args.files[1], offset=args.offset)
     else:
         collect_print_and_plot_data()
+
+
+if __name__ == "__main__":
+    main()

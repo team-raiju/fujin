@@ -4,7 +4,7 @@
 
 namespace services {
 
-#define CONTROL_LOG_MODE 1
+#define CONTROL_LOG_MODE 0
 
 enum class ParamIndex : uint8_t {
     VelocityMS,
@@ -21,12 +21,16 @@ enum class ParamIndex : uint8_t {
     AngI,
     RotationFF,
     LinearFF,
-#else
     Battery,
+#else
     PositionX,
     PositionY,
     Angle,
     Distance,
+    SensorDistanceLeft,
+    SensorDistanceFrontLeft,
+    SensorDistanceFrontRight,
+    SensorDistanceRight,
 #endif
     COUNT
 };
@@ -36,9 +40,9 @@ public:
     union LogData {
 
         #if CONTROL_LOG_MODE
-        uint8_t data[20];
+        uint8_t data[21];
         #else
-        uint8_t data[17];
+        uint8_t data[24];
         #endif
 
         struct {
@@ -59,22 +63,26 @@ public:
             uint16_t ang_i : 12;
             uint16_t rotation_ff : 10;
             uint16_t linear_ff : 10;
-#else
             uint16_t battery : 8;
-
+#else
             uint16_t position_mm_x : 16;
             uint16_t position_mm_y : 16;
             uint16_t angle : 14;
             uint16_t distance : 14;
+
+            uint16_t sensor_distance_l : 10;
+            uint16_t sensor_distance_fl : 10;
+            uint16_t sensor_distance_fr : 10;
+            uint16_t sensor_distance_r : 10;
 #endif
 
         } __attribute__((packed)) fields;
     };
 
     #if CONTROL_LOG_MODE
-    static_assert(sizeof(LogData) == 20, "LogData size must be exactly 20 bytes!");
+    static_assert(sizeof(LogData) == 21, "LogData size must be exactly 21 bytes!");
     #else
-    static_assert(sizeof(LogData) == 17, "LogData size must be exactly 17 bytes!");
+    static_assert(sizeof(LogData) == 24, "LogData size must be exactly 24 bytes!");
     #endif
 
 
@@ -106,7 +114,7 @@ private:
     LogData logdata[7];
     uint8_t log_data_idx;
     uint32_t addr_offset;
-    uint8_t ram_logger[80000]; // Max log number is 60000 / sizeof(LogData)
+    uint8_t ram_logger[80000]; // Max log number is 80000 / sizeof(LogData)
 };
 
 }

@@ -271,9 +271,9 @@ const GeneralParams general_params_search_slow = {
     0.0,                      // Fan speed
     0.0420,  0.00021, 0.0500, // Angular P,I,D
     0.0004,  0.0004,  0.004,  // Angular acc ff, Angular brake ff, Angular velocity ff
-    0.03125, 0.018,   0.0,    // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
+    0.03125, 0.018,   0.105,    // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
     0.0006,  0.0000,  0.0020, // Wall P,I,D
-    2.5000,  0.0100,  0.0000, // Linear velocity P,I,D
+    2.5000,  0.0100,  25.0000, // Linear velocity P,I,D
     0.0000,  0.0000,  0.0000, // Diagonal walls P,I,D
     45.0,                     // Start wall break mm left
     57.0,                     // Start wall break mm right
@@ -282,7 +282,7 @@ const GeneralParams general_params_search_slow = {
     40.0,                     // Max linear brake jerk
     0.13,                     // Coulomb ff
     0.0,                      // Angular Coulomb ff
-    0.0                      // Angular Static ff
+    0.0                       // Angular Static ff
 };
 
 const GeneralParams general_params_search_medium = {
@@ -325,9 +325,9 @@ const GeneralParams general_params_slow = {
     0.0,                      // Fan speed
     0.0420,  0.00021, 0.0500, // Angular P,I,D
     0.0004,  0.0004,  0.004,  // Angular acc ff, Angular brake ff, Angular velocity ff
-    0.03125, 0.018,   0.0,    // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
+    0.03125, 0.018,   0.105,    // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
     0.0015,  0.0000,  0.0050, // Wall P,I,D
-    2.5000,  0.0100,  0.0000, // Linear velocity P,I,D
+    2.5000,  0.0100,  25.0000, // Linear velocity P,I,D
     0.0045,  0.0000,  0.0090, // Diagonal walls P,I,D
     53.0,                     // Start wall break mm left
     75.0,                     // Start wall break mm right
@@ -336,7 +336,7 @@ const GeneralParams general_params_slow = {
     40.0,                     // Max linear brake jerk
     0.13,                     // Coulomb ff
     0.0,                      // Angular Coulomb ff
-    0.0                      // Angular Static ff
+    0.0                       // Angular Static ff
 };
 
 const GeneralParams general_params_medium = {

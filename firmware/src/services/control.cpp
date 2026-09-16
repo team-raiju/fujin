@@ -118,7 +118,13 @@ void Control::update() {
         emergency = ((linear_speed_error > 0.5) || (angular_speed_error_raw > 6.0));
 
         if (wall_pid_enabled) {
-            target_angular_speed_rad_s += walls_pid.calculate(0.0, bsp::analog_sensors::ir_side_wall_error());
+            const float max_wall_ang_accel = (params.fan_speed > 0) ? 1000.0f : 400.0f; // rad/s^2
+            const float max_step = max_wall_ang_accel / Config::CONTROL_FREQUENCY_HZ;
+
+            target_angular_speed_rad_s += walls_pid.calculate(0.0f, bsp::analog_sensors::ir_side_wall_error());
+            target_angular_speed_rad_s =
+                std::clamp(target_angular_speed_rad_s, (last_target_angular_speed_rad_s - max_step),
+                           (last_target_angular_speed_rad_s + max_step));
         }
 
         if (diagonal_pid_enabled) {
@@ -136,7 +142,7 @@ void Control::update() {
 
         bool is_accelerating = (target_angular_speed_rad_s * target_angular_acceleration) > 0.0f;
         float dir = (target_angular_speed_rad_s > 0.0f) ? 1.0f : -1.0f;
-        
+
         if (is_accelerating) {
             rotation_ff = target_angular_acceleration * params.angular_acc_feed_forward_k;
         } else {
@@ -145,7 +151,8 @@ void Control::update() {
         rotation_ff += target_angular_speed_rad_s * params.angular_vel_feed_forward_k;
 
         // Static friction
-        if (is_accelerating && std::abs(bsp::imu::get_rad_per_s()) < 0.4f && std::abs(target_angular_acceleration) > 0.1f) {
+        if (is_accelerating && std::abs(bsp::imu::get_rad_per_s()) < 0.4f &&
+            std::abs(target_angular_acceleration) > 0.1f) {
             rotation_ff += params.angular_static_ff * dir;
         } // Dynamic friction
         else if (std::abs(target_angular_speed_rad_s) > 0.005f) {

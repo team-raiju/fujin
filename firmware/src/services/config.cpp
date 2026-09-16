@@ -47,20 +47,20 @@ float Config::diagonal_walls_kd = 0.0050;
 float Config::min_move_speed = 0.2; // [m/s]
 
 
-float Config::ir_wall_dist_ref_right = 110;         // Reference distance of when the robot is in the middle of the cell
+float Config::ir_wall_dist_ref_right = 165;         // Reference distance of when the robot is in the middle of the cell
 float Config::ir_wall_dist_ref_front_left = 250;    // Reference distance when the robot is not seeing on a diagonal
 float Config::ir_wall_dist_ref_front_right = 250;   // Reference distance when the robot is not seeing on a diagonal
-float Config::ir_wall_dist_ref_left = 140;          // Reference distance of when the robot is in the middle of the cell
+float Config::ir_wall_dist_ref_left = 180;          // Reference distance of when the robot is in the middle of the cell
 
-float Config::ir_wall_control_th_right = 120;       // Maximum distance to still enable wall control
+float Config::ir_wall_control_th_right = 225;       // Maximum distance to still enable wall control
 float Config::ir_wall_control_th_front_left = 250;  // Maximum distance to still enable diagonal control
 float Config::ir_wall_control_th_front_right = 250; // Maximum distance to still enable diagonal control
-float Config::ir_wall_control_th_left = 160;        // Maximum distance to still enable wall control
+float Config::ir_wall_control_th_left = 225;        // Maximum distance to still enable wall control
 
-float Config::ir_wall_detect_th_right = 120;        // Maximum distance to the wall to still consider we are reading a wall
-float Config::ir_wall_detect_th_front_left = 160;   // Maximum distance to the wall to still consider we are reading a wall
-float Config::ir_wall_detect_th_front_right = 160;  // Maximum distance to the wall to still consider we are reading a wall
-float Config::ir_wall_detect_th_left = 160;         // Maximum distance to the wall to still consider we are reading a wall
+float Config::ir_wall_detect_th_right = 220;        // Maximum distance to the wall to still consider we are reading a wall (used on wall brake)
+float Config::ir_wall_detect_th_front_left = 160;   // Maximum distance to the wall to still consider we are reading a wall (used to start the robot)
+float Config::ir_wall_detect_th_front_right = 160;  // Maximum distance to the wall to still consider we are reading a wall (used to start the robot)
+float Config::ir_wall_detect_th_left = 220;         // Maximum distance to the wall to still consider we are reading a wall (used on wall brake)
 
 float Config::z_imu_bias = -0.4905;
 
