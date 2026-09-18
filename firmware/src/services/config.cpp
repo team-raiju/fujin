@@ -46,21 +46,20 @@ float Config::diagonal_walls_kd = 0.0050;
 
 float Config::min_move_speed = 0.2; // [m/s]
 
+float Config::ir_wall_dist_ref_left = 180;   // Reference distance of when the robot is in the middle of the cell
+float Config::ir_wall_dist_ref_right = 165;  // Reference distance of when the robot is in the middle of the cell
+float Config::ir_wall_detect_th_left = 220;  // Maximum distance to the wall to still consider we are reading a wall (used on wall brake)
+float Config::ir_wall_detect_th_right = 220; // Maximum distance to the wall to still consider we are reading a wall (used on wall brake)
 
-float Config::ir_wall_dist_ref_right = 165;         // Reference distance of when the robot is in the middle of the cell
-float Config::ir_wall_dist_ref_front_left = 250;    // Reference distance when the robot is not seeing on a diagonal
-float Config::ir_wall_dist_ref_front_right = 250;   // Reference distance when the robot is not seeing on a diagonal
-float Config::ir_wall_dist_ref_left = 180;          // Reference distance of when the robot is in the middle of the cell
+float Config::ir_diagonal_ref_fl = 280;      // Reference distance when the robot is not seeing on a diagonal
+float Config::ir_diagonal_ref_fr = 280;      // Reference distance when the robot is not seeing on a diagonal
+float Config::ir_diagonal_control_th_fl = 260; // Maximum distance to still enable diagonal control
+float Config::ir_diagonal_control_th_fr = 260; // Maximum distance to still enable diagonal control
 
-float Config::ir_wall_control_th_right = 225;       // Maximum distance to still enable wall control
-float Config::ir_wall_control_th_front_left = 250;  // Maximum distance to still enable diagonal control
-float Config::ir_wall_control_th_front_right = 250; // Maximum distance to still enable diagonal control
-float Config::ir_wall_control_th_left = 225;        // Maximum distance to still enable wall control
-
-float Config::ir_wall_detect_th_right = 220;        // Maximum distance to the wall to still consider we are reading a wall (used on wall brake)
-float Config::ir_wall_detect_th_front_left = 160;   // Maximum distance to the wall to still consider we are reading a wall (used to start the robot)
-float Config::ir_wall_detect_th_front_right = 160;  // Maximum distance to the wall to still consider we are reading a wall (used to start the robot)
-float Config::ir_wall_detect_th_left = 220;         // Maximum distance to the wall to still consider we are reading a wall (used on wall brake)
+float Config::sensor_r_slope_max_th = 100.0f;
+float Config::sensor_l_slope_max_th = 40.0f;
+float Config::right_sensor_angle_deg = 56.5f;
+float Config::left_sensor_angle_deg = 56.5f;
 
 float Config::z_imu_bias = -0.4905;
 
@@ -88,18 +87,18 @@ static std::pair<float*, bsp::eeprom::param_addresses_t> params[] = {
     {&Config::diagonal_walls_ki, bsp::eeprom::ADDR_DIAGONAL_WALLS_KI},
     {&Config::diagonal_walls_kd, bsp::eeprom::ADDR_DIAGONAL_WALLS_KD},
     {&Config::min_move_speed, bsp::eeprom::ADDR_MIN_MOVE_SPEED},
-    {&Config::ir_wall_dist_ref_right, bsp::eeprom::ADDR_IR_WALL_DIST_REF_RIGHT},
-    {&Config::ir_wall_dist_ref_front_left, bsp::eeprom::ADDR_IR_WALL_DIST_REF_FRONT_LEFT},
-    {&Config::ir_wall_dist_ref_front_right, bsp::eeprom::ADDR_IR_WALL_DIST_REF_FRONT_RIGHT},
     {&Config::ir_wall_dist_ref_left, bsp::eeprom::ADDR_IR_WALL_DIST_REF_LEFT},
-    {&Config::ir_wall_control_th_right, bsp::eeprom::ADDR_IR_WALL_CONTROL_TH_RIGHT},
-    {&Config::ir_wall_control_th_front_left, bsp::eeprom::ADDR_IR_WALL_CONTROL_TH_FRONT_LEFT},
-    {&Config::ir_wall_control_th_front_right, bsp::eeprom::ADDR_IR_WALL_CONTROL_TH_FRONT_RIGHT},
-    {&Config::ir_wall_control_th_left, bsp::eeprom::ADDR_IR_WALL_CONTROL_TH_LEFT},
-    {&Config::ir_wall_detect_th_right, bsp::eeprom::ADDR_IR_WALL_DETECT_TH_RIGHT},
-    {&Config::ir_wall_detect_th_front_left, bsp::eeprom::ADDR_IR_WALL_DETECT_TH_FRONT_LEFT},
-    {&Config::ir_wall_detect_th_front_right, bsp::eeprom::ADDR_IR_WALL_DETECT_TH_FRONT_RIGHT},
+    {&Config::ir_wall_dist_ref_right, bsp::eeprom::ADDR_IR_WALL_DIST_REF_RIGHT},
     {&Config::ir_wall_detect_th_left, bsp::eeprom::ADDR_IR_WALL_DETECT_TH_LEFT},
+    {&Config::ir_wall_detect_th_right, bsp::eeprom::ADDR_IR_WALL_DETECT_TH_RIGHT},
+    {&Config::ir_diagonal_ref_fl, bsp::eeprom::ADDR_IR_DIAGONAL_REF_FL},
+    {&Config::ir_diagonal_ref_fr, bsp::eeprom::ADDR_IR_DIAGONAL_REF_FR},
+    {&Config::ir_diagonal_control_th_fl, bsp::eeprom::ADDR_IR_DIAGONAL_CONTROL_TH_FL},
+    {&Config::ir_diagonal_control_th_fr, bsp::eeprom::ADDR_IR_DIAGONAL_CONTROL_TH_FR},
+    {&Config::sensor_r_slope_max_th, bsp::eeprom::ADDR_SENSOR_R_SLOPE_MAX_TH},
+    {&Config::sensor_l_slope_max_th, bsp::eeprom::ADDR_SENSOR_L_SLOPE_MAX_TH},
+    {&Config::right_sensor_angle_deg, bsp::eeprom::ADDR_RIGHT_SENSOR_ANGLE_DEG},
+    {&Config::left_sensor_angle_deg, bsp::eeprom::ADDR_LEFT_SENSOR_ANGLE_DEG},
     {&Config::z_imu_bias, bsp::eeprom::ADDR_Z_IMU_BIAS},
     {&Config::start_wall_break_mm_left, bsp::eeprom::ADDR_START_WALL_BREAK_MM_LEFT},
     {&Config::start_wall_break_mm_right, bsp::eeprom::ADDR_START_WALL_BREAK_MM_RIGHT},

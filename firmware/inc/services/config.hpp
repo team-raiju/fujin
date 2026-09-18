@@ -50,20 +50,20 @@ public:
 
     static float min_move_speed;
 
-    static float ir_wall_dist_ref_right;
-    static float ir_wall_dist_ref_front_left;
-    static float ir_wall_dist_ref_front_right;
     static float ir_wall_dist_ref_left;
-
-    static float ir_wall_control_th_right;
-    static float ir_wall_control_th_front_left;
-    static float ir_wall_control_th_front_right;
-    static float ir_wall_control_th_left;
-
-    static float ir_wall_detect_th_right;
-    static float ir_wall_detect_th_front_left;
-    static float ir_wall_detect_th_front_right;
+    static float ir_wall_dist_ref_right;
     static float ir_wall_detect_th_left;
+    static float ir_wall_detect_th_right;
+
+    static float ir_diagonal_ref_fl;
+    static float ir_diagonal_ref_fr;
+    static float ir_diagonal_control_th_fl;
+    static float ir_diagonal_control_th_fr;
+
+    static float sensor_r_slope_max_th;
+    static float sensor_l_slope_max_th;
+    static float right_sensor_angle_deg;
+    static float left_sensor_angle_deg;
 
     static float z_imu_bias;
 

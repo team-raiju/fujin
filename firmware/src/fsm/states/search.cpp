@@ -205,7 +205,7 @@ void SearchWaitStart::enter() {
 }
 
 State* SearchWaitStart::react(Timeout const&) {
-    using bsp::analog_sensors::ir_reading_wall;
+    using bsp::analog_sensors::ir_start_condition;
     using bsp::analog_sensors::SensingDirection;
 
     bsp::leds::ir_emitter_on(bsp::leds::LEFT_FRONT);
@@ -214,7 +214,7 @@ State* SearchWaitStart::react(Timeout const&) {
     bsp::delay_ms(5);
 
     for (int i = 0; i < 400; i++) {
-        if (!ir_reading_wall(SensingDirection::FRONT_LEFT) || !ir_reading_wall(SensingDirection::FRONT_RIGHT)) {
+        if (!ir_start_condition()) {
             soft_timer::start(services::Config::ms_to_ticks(100), soft_timer::SINGLE);
             bsp::leds::ir_emitter_all_off();
             bsp::analog_sensors::enable_modulation(false);
@@ -297,7 +297,6 @@ State* Search::react(ButtonPressed const& event) {
 }
 
 State* Search::react(Timeout const&) {
-    using bsp::analog_sensors::ir_reading_wall;
     using bsp::analog_sensors::SensingDirection;
     using bsp::analog_sensors::SensingStatus;
 

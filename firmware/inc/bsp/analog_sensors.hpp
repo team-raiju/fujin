@@ -65,12 +65,15 @@ uint32_t ir_raw_reading(SensingDirection direction);
 
 bool ir_reading_wall(SensingDirection direction);
 
+bool ir_start_condition();
+
+
 /// @brief compares the readings to a known pattern and calculates the sensing status
 SensingStatus ir_get_sensing_status();
 
 int32_t ir_side_wall_error();
 int32_t ir_diagonal_error();
-bool ir_wall_control_valid(SensingDirection direction);
+bool ir_diagonal_control_valid(SensingDirection direction);
 void enable_modulation(bool enable = true);
 
 struct IrCalibParams {
