@@ -51,6 +51,9 @@ constexpr float PWR_BAT_VOLTAGE_MULTIPLIER = 4.19f;
 constexpr float IR_EMA_ALPHA = 0.5f;
 constexpr float IR_MAX_DISTANCE_MM = 300.0f;
 
+constexpr float SENSOR_SLOPE_MAX_TH = 40.0f;
+
+
 constexpr IrCalibParams default_ir_calib_params[4] = {
     {3821.004458f, 415.340935f, -342.127314f}, // RIGHT
     {4362.001131f, 484.625292f, 179.119118f},  // FRONT_LEFT
@@ -155,6 +158,9 @@ static bsp_analog_ready_callback_t reading_ready_callback;
 
 static uint32_t ir_raw_readings[4];
 static float ir_distances[4];
+static float ir_slope[4];
+static float ir_distance_history[4][3];
+static bool ir_slope_initialized[4];
 static int32_t ir_raw_readings_on[4];
 static int32_t ir_raw_readings_off[4];
 static uint32_t battery_reading;
@@ -182,6 +188,10 @@ void init(void) {
 void start(void) {
     bsp::leds::ir_emitter_all_off();
     mod_step = 0;
+    for (int i = 0; i < 4; i++) {
+        ir_slope[i] = 0.0f;
+        ir_slope_initialized[i] = false;
+    }
     HAL_ADC_Start_DMA(&hadc1, adc_1_dma_buffer, ADC_1_DMA_BUFFER_SIZE);
     // HAL_ADC_Start_DMA(&hadc2, adc_2_dma_buffer, ADC_2_DMA_BUFFER_SIZE);
 }
@@ -238,13 +248,15 @@ uint32_t ir_raw_reading(SensingDirection direction) {
 bool ir_reading_wall(SensingDirection direction) {
     switch (direction) {
     case SensingDirection::RIGHT:
-        return ir_distances[direction] < services::Config::ir_wall_detect_th_right;
+        return ir_distances[direction] < services::Config::ir_wall_detect_th_right &&
+               std::fabs(ir_slope[direction]) < SENSOR_SLOPE_MAX_TH;
     case SensingDirection::FRONT_LEFT:
         return ir_distances[direction] < services::Config::ir_wall_detect_th_front_left;
     case SensingDirection::FRONT_RIGHT:
         return ir_distances[direction] < services::Config::ir_wall_detect_th_front_right;
     case SensingDirection::LEFT:
-        return ir_distances[direction] < services::Config::ir_wall_detect_th_left;
+        return ir_distances[direction] < services::Config::ir_wall_detect_th_left &&
+               std::fabs(ir_slope[direction]) < SENSOR_SLOPE_MAX_TH;
     default:
         return false;
     }
@@ -334,8 +346,7 @@ SensingStatus ir_get_sensing_status() {
 }
 
 int32_t ir_diagonal_error() {
-    bool greater_error_left =
-        ir_distances[SensingDirection::FRONT_LEFT] < ir_distances[SensingDirection::FRONT_RIGHT];
+    bool greater_error_left = ir_distances[SensingDirection::FRONT_LEFT] < ir_distances[SensingDirection::FRONT_RIGHT];
 
     int32_t ir_error;
 
@@ -353,13 +364,15 @@ int32_t ir_diagonal_error() {
 bool ir_wall_control_valid(SensingDirection direction) {
     switch (direction) {
     case SensingDirection::RIGHT:
-        return ir_distances[direction] < services::Config::ir_wall_control_th_right;
+        return ir_distances[direction] < services::Config::ir_wall_control_th_right &&
+               std::fabs(ir_slope[direction]) < SENSOR_SLOPE_MAX_TH;
     case SensingDirection::FRONT_LEFT:
         return ir_distances[direction] < services::Config::ir_wall_control_th_front_left;
     case SensingDirection::FRONT_RIGHT:
         return ir_distances[direction] < services::Config::ir_wall_control_th_front_right;
     case SensingDirection::LEFT:
-        return ir_distances[direction] < services::Config::ir_wall_control_th_left;
+        return ir_distances[direction] < services::Config::ir_wall_control_th_left &&
+               std::fabs(ir_slope[direction]) < SENSOR_SLOPE_MAX_TH;
     default:
         return false;
     }
@@ -372,6 +385,24 @@ void enable_modulation(bool enable) {
 }
 
 /// @section Private functions
+
+void update_ir_slope(SensingDirection direction, float distance) {
+    const auto index = static_cast<uint8_t>(direction);
+    if (!ir_slope_initialized[index]) {
+        ir_distance_history[index][0] = distance;
+        ir_distance_history[index][1] = distance;
+        ir_distance_history[index][2] = distance;
+        ir_slope[index] = 0.0f;
+        ir_slope_initialized[index] = true;
+        return;
+    }
+
+    ir_slope[index] = 4.0f * (distance - ir_distance_history[index][2]) +
+                      (ir_distance_history[index][0] - ir_distance_history[index][1]);
+    ir_distance_history[index][2] = ir_distance_history[index][1];
+    ir_distance_history[index][1] = ir_distance_history[index][0];
+    ir_distance_history[index][0] = distance;
+}
 
 void adc1_callback(uint32_t* data) {
     uint32_t aux_readings[ADC_1_DMA_CHANNELS] = {0};
@@ -392,6 +423,7 @@ void adc1_callback(uint32_t* data) {
         for (int i = 0; i < 4; i++) {
             ir_raw_readings[i] = aux_readings[i];
             ir_distances[i] = raw_to_distance_mm(static_cast<SensingDirection>(i), ir_raw_readings[i]);
+            update_ir_slope(static_cast<SensingDirection>(i), ir_distances[i]);
         }
     } else {
         if (mod_step == 0) {
@@ -414,6 +446,7 @@ void adc1_callback(uint32_t* data) {
                                       (1.0f - IR_EMA_ALPHA) * static_cast<float>(ir_raw_readings[sensor_idx]));
             ir_distances[sensor_idx] =
                 raw_to_distance_mm(static_cast<SensingDirection>(sensor_idx), ir_raw_readings[sensor_idx]);
+            update_ir_slope(static_cast<SensingDirection>(sensor_idx), ir_distances[sensor_idx]);
 
             // Turn OFF current emitter
             bsp::leds::ir_emitter_off(sensor_emitters[sensor_idx]);

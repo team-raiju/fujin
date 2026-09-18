@@ -47,8 +47,8 @@ void update_led_progress(float progress, uint32_t& last_toggle_time, bool& led_s
 const Logger::ParamInfo paramInfoArray[] = {
     {32767, -5, 10, 2184.0f},     // velocity_ms
     {32767, -5, 10, 2184.0f},     // target_velocity_ms
-    {65535, -45, 5, 1310.0f},     // angular_speed_rad_s
-    {65535, -45, 5, 1310.0f},     // target_rad_s
+    {65535, -45, 45, 728.0f},     // angular_speed_rad_s
+    {65535, -45, 45, 728.0f},     // target_rad_s
     {1023, -1000, 1000, 0.5115f}, // pwm_left
     {1023, -1000, 1000, 0.5115f}, // pwm_right
     {1023, -5, 5, 102.3f},        // encoder_imu_diff
@@ -64,8 +64,8 @@ const Logger::ParamInfo paramInfoArray[] = {
 const Logger::ParamInfo paramInfoArray[] = {
     {32767, -5, 10, 2184.0f},       // velocity_ms
     {32767, -5, 10, 2184.0f},       // target_velocity_ms
-    {65535, -45, 5, 1310.0f},       // angular_speed_rad_s
-    {65535, -45, 5, 1310.0f},       // target_rad_s
+    {65535, -45, 45, 728.0f},       // angular_speed_rad_s
+    {65535, -45, 45, 728.0f},       // target_rad_s
     {1023, -1000, 1000, 0.5115f},   // pwm_left
     {1023, -1000, 1000, 0.5115f},   // pwm_right
     {1023, -5, 5, 102.3f},          // encoder_imu_diff

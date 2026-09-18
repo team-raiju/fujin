@@ -348,7 +348,7 @@ State* Search::react(Timeout const&) {
         }
 
         if (dir == Direction::STOP && target == services::Maze::ORIGIN) {
-            navigation->set_movement(Movement::TURN_AROUND_INPLACE, Movement::FORWARD, Movement::STOP, 1);
+            navigation->set_movement(Movement::TURN_AROUND_INPLACE, Movement::FORWARD, Movement::STOP, 1, 1);
             // navigation->set_movement(Direction::NORTH);
             stop_next_move = true;
         } else if (dir == Direction::STOP) {
@@ -357,7 +357,7 @@ State* Search::react(Timeout const&) {
                 if (target == services::Maze::ORIGIN) { // Maze fully explored
                     bsp::buzzer::start();
                     bsp::leds::stripe_set(Color::White);
-                    navigation->set_movement(Movement::TURN_AROUND_INPLACE, Movement::FORWARD, Movement::STOP, 1);
+                    navigation->set_movement(Movement::TURN_AROUND_INPLACE, Movement::FORWARD, Movement::STOP, 1, 1);
                     stop_next_move = true;
                 }
             } else {

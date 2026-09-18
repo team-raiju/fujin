@@ -53,7 +53,7 @@ public:
     /// @param prev_movement The previous movement
     /// @param next_movement The next movement
     /// @param count The number of steps to take on the current movement
-    void set_movement(Movement movement, Movement prev_movement, Movement next_movement, uint8_t count);
+    void set_movement(Movement movement, Movement prev_movement, Movement next_movement, uint8_t count, uint8_t next_move_count);
 
     std::vector<std::pair<Movement, uint8_t>> get_movements_to_goal(std::vector<Direction> target_directions,
                                                                     target_movement_mode_t mode);

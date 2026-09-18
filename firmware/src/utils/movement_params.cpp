@@ -3,6 +3,7 @@
 
 #define T(ms) services::Config::ms_to_ticks(ms)
 
+// clang-format off
 const std::map<Movement, TurnParams> turn_params_search_slow = {
     {Movement::TURN_AROUND, {0.0, 0.0, 0.3, 52.36, 3.49, T(0), T(0), -1, T(0), T(0), 0, 0}},
     {Movement::TURN_AROUND_INPLACE, {0.0, 0.0, 0.3, 52.36, 3.49, T(0), T(0), -1, T(0), T(0), 0, 0}},
@@ -57,7 +58,7 @@ const std::map<Movement, ForwardParams> forward_params_search_fast = {
 };
 
 const std::map<Movement, TurnParams> turn_params_slow = {
-    {Movement::TURN_RIGHT_45, {-50.0, -86.0, 0.5, 100.00, 7.854, T(0), T(0), -1, T(0), T(0), 0, 0}},
+    {Movement::TURN_RIGHT_45, {-45.0, -81.5, 0.5, 175.00, 8.5, T(92.5), T(176), -1, T(48.5), T(141), 5000, 5000}},
     {Movement::TURN_LEFT_45, {-50.0, -86.0, 0.5, 100.00, 7.854, T(0), T(0), 1, T(0), T(0), 0, 0}},
     {Movement::TURN_RIGHT_90, {0.0, -41.0, 0.5, 150.0, 10.47, T(150), T(250), -1, T(70), T(220), 0, 0}},
     {Movement::TURN_LEFT_90, {0.0, -41.0, 0.5, 150.0, 10.47, T(150), T(250), 1, T(70), T(220), 0, 0}},
@@ -266,129 +267,130 @@ std::map<Movement, ForwardParams> forward_params_custom = {
     {Movement::TURN_AROUND_INPLACE, {0.7, 4.0, 6.0, 80.0}},
 
 };
+// clang-format on
 
 const GeneralParams general_params_search_slow = {
-    0.0,                      // Fan speed
-    0.0420,  0.00021, 0.0500, // Angular P,I,D
-    0.0004,  0.0004,  0.004,  // Angular acc ff, Angular brake ff, Angular velocity ff
-    0.03125, 0.018,   0.105,    // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
-    0.0006,  0.0000,  0.0020, // Wall P,I,D
+    0.0,                       // Fan speed
+    0.0420,  0.00021, 0.0500,  // Angular P,I,D
+    0.0004,  0.0004,  0.004,   // Angular acc ff, Angular brake ff, Angular velocity ff
+    0.03125, 0.018,   0.105,   // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
+    0.0006,  0.0000,  0.0020,  // Wall P,I,D
     2.5000,  0.0100,  25.0000, // Linear velocity P,I,D
-    0.0000,  0.0000,  0.0000, // Diagonal walls P,I,D
-    45.0,                     // Start wall break mm left
-    57.0,                     // Start wall break mm right
-    1.0,                      // Enable wall break correction
-    40.0,                     // Max linear acceleration jerk
-    40.0,                     // Max linear brake jerk
-    0.13,                     // Coulomb ff
-    0.0,                      // Angular Coulomb ff
-    0.0                       // Angular Static ff
+    0.0000,  0.0000,  0.0000,  // Diagonal walls P,I,D
+    45.0,                      // Start wall break mm left
+    57.0,                      // Start wall break mm right
+    1.0,                       // Enable wall break correction
+    40.0,                      // Max linear acceleration jerk
+    40.0,                      // Max linear brake jerk
+    0.13,                      // Coulomb ff
+    0.0,                       // Angular Coulomb ff
+    0.0                        // Angular Static ff
 };
 
 const GeneralParams general_params_search_medium = {
-    150.0,                   // Fan speed
-    0.0550,  0.0045, 0.0000, // Angular P,I,D
+    150.0,                    // Fan speed
+    0.0550,  0.0045,  0.0000, // Angular P,I,D
     0.00000, 0.00000, 0.0000, // Angular acc ff, Angular brake ff, Angular velocity ff
-    0.0,     0.0,    0.0,    // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
-    0.0020,  0.0000, 0.0080, // Wall P,I,D
-    8.0000,  0.0500, 0.0000, // Linear velocity P,I,D
-    0.0000,  0.0000, 0.0000, // Diagonal walls P,I,D
-    55.0,                    // Start wall break mm left
-    67.0,                    // Start wall break mm right
-    1.0,                     // Enable wall break correction
-    100.0,                   // Max linear acceleration jerk
-    100.0,                   // Max linear brake jerk
-    0.13,                    // Coulomb ff
-    0.0,                     // Angular Coulomb ff
-    0.0                     // Angular Static ff
-};
-
-const GeneralParams general_params_search_fast = {
-    220.0,                   // Fan speed
-    0.0850,  0.0055, 0.0000, // Angular P,I,D
-    0.00000, 0.00000, 0.0000, // Angular acc ff, Angular brake ff, Angular velocity ff
-    0.0,     0.0,    0.0,    // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
-    0.0020,  0.0000, 0.0080, // Wall P,I,D
-    8.0000,  0.0500, 0.0000, // Linear velocity P,I,D
-    0.0000,  0.0000, 0.0000, // Diagonal walls P,I,D
-    55.0,                    // Start wall break mm left
-    67.0,                    // Start wall break mm right
-    1.0,                     // Enable wall break correction
-    100.0,                   // Max linear acceleration jerk
-    100.0,                   // Max linear brake jerk
-    0.13,                    // Coulomb ff
-    0.0,                     // Angular Coulomb ff
-    0.25                     // Angular Static ff
-};
-
-const GeneralParams general_params_slow = {
-    0.0,                      // Fan speed
-    0.0420,  0.00021, 0.0500, // Angular P,I,D
-    0.0004,  0.0004,  0.004,  // Angular acc ff, Angular brake ff, Angular velocity ff
-    0.03125, 0.018,   0.105,    // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
-    0.0015,  0.0000,  0.0050, // Wall P,I,D
-    2.5000,  0.0100,  25.0000, // Linear velocity P,I,D
-    0.0045,  0.0000,  0.0090, // Diagonal walls P,I,D
-    53.0,                     // Start wall break mm left
-    75.0,                     // Start wall break mm right
+    0.0,     0.0,     0.0,    // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
+    0.0020,  0.0000,  0.0080, // Wall P,I,D
+    8.0000,  0.0500,  0.0000, // Linear velocity P,I,D
+    0.0000,  0.0000,  0.0000, // Diagonal walls P,I,D
+    55.0,                     // Start wall break mm left
+    67.0,                     // Start wall break mm right
     1.0,                      // Enable wall break correction
-    40.0,                     // Max linear acceleration jerk
-    40.0,                     // Max linear brake jerk
+    100.0,                    // Max linear acceleration jerk
+    100.0,                    // Max linear brake jerk
     0.13,                     // Coulomb ff
     0.0,                      // Angular Coulomb ff
     0.0                       // Angular Static ff
 };
 
+const GeneralParams general_params_search_fast = {
+    220.0,                    // Fan speed
+    0.0850,  0.0055,  0.0000, // Angular P,I,D
+    0.00000, 0.00000, 0.0000, // Angular acc ff, Angular brake ff, Angular velocity ff
+    0.0,     0.0,     0.0,    // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
+    0.0020,  0.0000,  0.0080, // Wall P,I,D
+    8.0000,  0.0500,  0.0000, // Linear velocity P,I,D
+    0.0000,  0.0000,  0.0000, // Diagonal walls P,I,D
+    55.0,                     // Start wall break mm left
+    67.0,                     // Start wall break mm right
+    1.0,                      // Enable wall break correction
+    100.0,                    // Max linear acceleration jerk
+    100.0,                    // Max linear brake jerk
+    0.13,                     // Coulomb ff
+    0.0,                      // Angular Coulomb ff
+    0.25                      // Angular Static ff
+};
+
+const GeneralParams general_params_slow = {
+    0.0,                       // Fan speed
+    0.0420,  0.00021, 0.0500,  // Angular P,I,D
+    0.0004,  0.0004,  0.004,   // Angular acc ff, Angular brake ff, Angular velocity ff
+    0.03125, 0.018,   0.105,   // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
+    0.0015,  0.0000,  0.0050,  // Wall P,I,D
+    2.5000,  0.0100,  25.0000, // Linear velocity P,I,D
+    0.0045,  0.0000,  0.0090,  // Diagonal walls P,I,D
+    53.0,                      // Start wall break mm left
+    75.0,                      // Start wall break mm right
+    1.0,                       // Enable wall break correction
+    40.0,                      // Max linear acceleration jerk
+    40.0,                      // Max linear brake jerk
+    0.13,                      // Coulomb ff
+    0.0,                       // Angular Coulomb ff
+    0.0                        // Angular Static ff
+};
+
 const GeneralParams general_params_medium = {
-    600.0,                   // Fan speed
-    0.0900,  0.0005, 0.0500, // Angular P,I,D
-    0.0006,  0.0006, 0.0056, // Angular acc ff, Angular brake ff, Angular velocity ff
-    0.033,   0.025,  0.1410, // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
-    0.0025,  0.0000, 0.0100, // Wall P,I,D
-    2.500,   0.0100, 0.0000, // Linear velocity P,I,D
-    0.0010,  0.0000, 0.0040, // Diagonal walls P,I,D
-    55.0,                    // Start wall break mm left
-    72.0,                    // Start wall break mm right
-    1.0,                     // Enable wall break correction
-    625.0,                   // Max linear acceleration jerk
-    625.0,                   // Max linear brake jerk
-    0.18,                    // Coulomb ff
-    0.07,                    // Angular Coulomb ff
-    0.25                     // Angular Static ff
+    600.0,                  // Fan speed
+    0.0900, 0.0005, 0.0500, // Angular P,I,D
+    0.0006, 0.0006, 0.0056, // Angular acc ff, Angular brake ff, Angular velocity ff
+    0.033,  0.025,  0.1410, // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
+    0.0025, 0.0000, 0.0100, // Wall P,I,D
+    2.500,  0.0100, 0.0000, // Linear velocity P,I,D
+    0.0010, 0.0000, 0.0040, // Diagonal walls P,I,D
+    55.0,                   // Start wall break mm left
+    72.0,                   // Start wall break mm right
+    1.0,                    // Enable wall break correction
+    625.0,                  // Max linear acceleration jerk
+    625.0,                  // Max linear brake jerk
+    0.18,                   // Coulomb ff
+    0.07,                   // Angular Coulomb ff
+    0.25                    // Angular Static ff
 };
 
 const GeneralParams general_params_fast = {
-    600.0,                   // Fan speed
-    0.0900,  0.0005, 0.0500, // Angular P,I,D
-    0.0006,  0.0006, 0.0056, // Angular acc ff, Angular brake ff, Angular velocity ff
-    0.033,   0.025,  0.1410, // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
-    0.0025,  0.0000, 0.0100, // Wall P,I,D
-    2.500,   0.0100, 0.0000, // Linear velocity P,I,D
-    0.0010,  0.0000, 0.0040, // Diagonal walls P,I,D
-    55.0,                    // Start wall break mm left
-    72.0,                    // Start wall break mm right
-    1.0,                     // Enable wall break correction
-    625.0,                   // Max linear acceleration jerk
-    625.0,                   // Max linear brake jerk
-    0.18,                    // Coulomb ff
-    0.07,                    // Angular Coulomb ff
-    0.25                     // Angular Static ff
+    600.0,                  // Fan speed
+    0.0900, 0.0005, 0.0500, // Angular P,I,D
+    0.0006, 0.0006, 0.0056, // Angular acc ff, Angular brake ff, Angular velocity ff
+    0.033,  0.025,  0.1410, // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
+    0.0025, 0.0000, 0.0100, // Wall P,I,D
+    2.500,  0.0100, 0.0000, // Linear velocity P,I,D
+    0.0010, 0.0000, 0.0040, // Diagonal walls P,I,D
+    55.0,                   // Start wall break mm left
+    72.0,                   // Start wall break mm right
+    1.0,                    // Enable wall break correction
+    625.0,                  // Max linear acceleration jerk
+    625.0,                  // Max linear brake jerk
+    0.18,                   // Coulomb ff
+    0.07,                   // Angular Coulomb ff
+    0.25                    // Angular Static ff
 };
 
 const GeneralParams general_params_super = {
-    600.0,                   // Fan speed
-    0.0900,  0.0005, 0.0500, // Angular P,I,D
-    0.0006,  0.0006, 0.0056, // Angular acc ff, Angular brake ff, Angular velocity ff
-    0.033,   0.025,  0.1410, // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
-    0.0025,  0.0000, 0.0100, // Wall P,I,D
-    2.500,   0.0100, 0.0000, // Linear velocity P,I,D
-    0.0010,  0.0000, 0.0040, // Diagonal walls P,I,D
-    55.0,                    // Start wall break mm left
-    72.0,                    // Start wall break mm right
-    1.0,                     // Enable wall break correction
-    625.0,                   // Max linear acceleration jerk
-    625.0,                   // Max linear brake jerk
-    0.18,                    // Coulomb ff
-    0.07,                    // Angular Coulomb ff
-    0.25                     // Angular Static ff
+    600.0,                  // Fan speed
+    0.0900, 0.0005, 0.0500, // Angular P,I,D
+    0.0006, 0.0006, 0.0056, // Angular acc ff, Angular brake ff, Angular velocity ff
+    0.033,  0.025,  0.1410, // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
+    0.0025, 0.0000, 0.0100, // Wall P,I,D
+    2.500,  0.0100, 0.0000, // Linear velocity P,I,D
+    0.0010, 0.0000, 0.0040, // Diagonal walls P,I,D
+    55.0,                   // Start wall break mm left
+    72.0,                   // Start wall break mm right
+    1.0,                    // Enable wall break correction
+    625.0,                  // Max linear acceleration jerk
+    625.0,                  // Max linear brake jerk
+    0.18,                   // Coulomb ff
+    0.07,                   // Angular Coulomb ff
+    0.25                    // Angular Static ff
 };

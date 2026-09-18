@@ -27,6 +27,7 @@ IR_WALL_DIST_REF_RIGHT = 165.0  # Right reference distance (mm)
 # Thresholds (mm) below which wall control is valid (must be greater than reference distance)
 IR_WALL_CONTROL_TH_LEFT = 225.0  # Left wall control threshold (mm)
 IR_WALL_CONTROL_TH_RIGHT = 225.0 # Right wall control threshold (mm)
+IR_SLOPE_THRESHOLD = 40.0        # Wall control is valid when abs(slope) is below this value
 
 HEADER_KEY_MAP = {
     't': 'time', 'time': 'time', 'time(ms)': 'time',
@@ -225,18 +226,14 @@ def compute_cumulative_distance(time_ms, lin_vel=None, fallback_dist=None):
 
     return np.zeros(len(t_arr))
 
-def compute_sensor_derivatives(values):
+def compute_sensor_slope(values):
     """
-    Computes:
-      1. Step derivative: Current reading - Last reading (Sensor(0) - Sensor(-1))
-      2. 4-point weighted slope: (Sensor(0) - Sensor(-3)) * 4 + (Sensor(-1) - Sensor(-2)) * 1
+        Computes the 4-point weighted slope used by the firmware:
+            (Sensor(0) - Sensor(-3)) * 4 + (Sensor(-1) - Sensor(-2)) * 1
     """
     s = np.array(values, dtype=float)
     if len(s) == 0:
-        return np.array([]), np.array([])
-
-    # Step derivative: Sensor(i) - Sensor(i-1)
-    deriv = np.diff(s, prepend=s[0])
+                return np.array([])
 
     # Lagged readings for slope filter: S(0), S(-1), S(-2), S(-3)
     s_m1 = np.roll(s, 1)
@@ -249,7 +246,30 @@ def compute_sensor_derivatives(values):
     # Slope = (Sensor(0) - Sensor(-3) * 4) + (Sensor(-1) - Sensor(-2) * 1)
     slope = 4.0 * (s - s_m3) + 1.0 * (s_m1 - s_m2)
 
-    return deriv, slope
+    return slope
+
+def compute_control_validity(values, control_threshold):
+    """Returns the firmware-matching control-valid mask and its weighted slope."""
+    distances = np.array(values, dtype=float)
+    slope = compute_sensor_slope(distances)
+    valid = (distances < control_threshold) & (np.abs(slope) < IR_SLOPE_THRESHOLD)
+    return valid, slope
+
+def shade_invalid_regions(ax, x_axis, valid, color):
+    """Shade contiguous regions where wall control is invalid."""
+    if len(x_axis) == 0 or len(valid) != len(x_axis):
+        return
+
+    invalid = ~valid
+    start = None
+    for index, is_invalid in enumerate(invalid):
+        if is_invalid and start is None:
+            start = index
+        elif not is_invalid and start is not None:
+            ax.axvspan(x_axis[start], x_axis[index - 1], color=color, alpha=0.22, lw=0)
+            start = None
+    if start is not None:
+        ax.axvspan(x_axis[start], x_axis[-1], color=color, alpha=0.22, lw=0)
 
 def ir_side_wall_error(left_dist, right_dist,
                        ref_left=IR_WALL_DIST_REF_LEFT,
@@ -277,8 +297,8 @@ def ir_side_wall_error(left_dist, right_dist,
     left_error = l_arr - ref_left
     right_error = r_arr - ref_right
 
-    valid_left = l_arr < th_left
-    valid_right = r_arr < th_right
+    valid_left, _ = compute_control_validity(l_arr, th_left)
+    valid_right, _ = compute_control_validity(r_arr, th_right)
 
     num_valid_l = int(np.sum(valid_left))
     num_valid_r = int(np.sum(valid_right))
@@ -338,9 +358,7 @@ def plot_single_grid(data_dict, x_axis, x_label, title):
     Plots each sensor in a 2x2 grid.
     On each subplot:
       - Left y-axis: Sensor distance reading (mm).
-      - Right y-axis:
-          1. Step derivative: Current reading - Last reading (Δ mm).
-          2. Slope: (Sensor(0) - Sensor(-3)) * 4 + (Sensor(-1) - Sensor(-2)) * 1.
+      - Right y-axis: weighted slope and its ± threshold lines.
     """
     fig, axs = plt.subplots(2, 2, figsize=(16, 11), sharex=True)
     grid_map = [
@@ -355,20 +373,32 @@ def plot_single_grid(data_dict, x_axis, x_label, title):
         if len(vals) == len(x_axis):
             # 1. Sensor reading on primary axis
             line1 = ax.plot(x_axis, vals, label=f"{meta['label']} Reading", color=meta['color'], lw=1.6)
+            control_threshold = IR_WALL_CONTROL_TH_LEFT if key == 'sens_l' else (
+                IR_WALL_CONTROL_TH_RIGHT if key == 'sens_r' else None)
+            control_line = []
+            if control_threshold is not None:
+                control_line = [ax.axhline(control_threshold, color='#008c95', linestyle='--', lw=1.1,
+                                           label=f'Control threshold {control_threshold:.0f} mm')]
+                valid, _ = compute_control_validity(vals, control_threshold)
+                invalid_color = '#1f77b4' if key == 'sens_l' else '#2ca02c'
+                shade_invalid_regions(ax, x_axis, valid, invalid_color)
             ax.set_ylabel('Distance (mm)', color=meta['color'])
             ax.tick_params(axis='y', labelcolor=meta['color'])
 
-            # 2. Derivative and Slope on secondary axis
-            deriv, slope = compute_sensor_derivatives(vals)
+            # 2. Weighted slope on secondary axis
+            slope = compute_sensor_slope(vals)
             ax2 = ax.twinx()
-            line2 = ax2.plot(x_axis, deriv, label='Derivative (Current - Last)', color='#d95f02', linestyle='--', lw=1.2, alpha=0.85)
-            line3 = ax2.plot(x_axis, slope, label='Slope: (S0-S-3)*4 + (S-1-S-2)*1', color='#ff0000', linestyle='-.', lw=1.3, alpha=0.9)
+            line2 = ax2.plot(x_axis, slope, label='Slope: (S0-S-3)*4 + (S-1-S-2)*1', color='#ff0000', linestyle='-.', lw=1.3, alpha=0.9)
+            threshold_upper = ax2.axhline(IR_SLOPE_THRESHOLD, color='#d95f02', linestyle=':', lw=1.2,
+                                           label=f'Slope +{IR_SLOPE_THRESHOLD:.0f}')
+            threshold_lower = ax2.axhline(-IR_SLOPE_THRESHOLD, color='#d95f02', linestyle=':', lw=1.2,
+                                           label=f'Slope -{IR_SLOPE_THRESHOLD:.0f}')
             ax2.axhline(0, color='gray', linestyle=':', alpha=0.5, lw=0.8)
-            ax2.set_ylabel('Derivative & Slope (Δ mm)', color='#d95f02')
+            ax2.set_ylabel('Slope (Δ mm)', color='#d95f02')
             ax2.tick_params(axis='y', labelcolor='#d95f02')
 
             # Combined legend
-            lines = line1 + line2 + line3
+            lines = line1 + control_line + line2 + [threshold_upper, threshold_lower]
             labels = [l.get_label() for l in lines]
             ax.legend(lines, labels, loc='upper right', fontsize='small')
         else:
@@ -379,7 +409,7 @@ def plot_single_grid(data_dict, x_axis, x_label, title):
 
     axs[1, 0].set_xlabel(x_label)
     axs[1, 1].set_xlabel(x_label)
-    fig.suptitle(f'IR Sensors, Derivatives & Slope - {title}', fontsize=15)
+    fig.suptitle(f'IR Sensors, Control Validity & Slope - {title}', fontsize=15)
     fig.tight_layout(rect=[0, 0.03, 1, 0.96])
     plt.show()
 
@@ -400,8 +430,18 @@ def plot_single_default(data_dict, x_axis, x_label, title,
     has_l = len(data_dict.get('sens_l', [])) == len(x_axis)
     has_r = len(data_dict.get('sens_r', [])) == len(x_axis)
     if has_l and has_r:
-        ax_side.plot(x_axis, data_dict['sens_l'], label=SENSOR_META['sens_l']['label'], color=SENSOR_META['sens_l']['color'], lw=1.5)
-        ax_side.plot(x_axis, data_dict['sens_r'], label=SENSOR_META['sens_r']['label'], color=SENSOR_META['sens_r']['color'], lw=1.5)
+        left_values = np.array(data_dict['sens_l'], dtype=float)
+        right_values = np.array(data_dict['sens_r'], dtype=float)
+        ax_side.plot(x_axis, left_values, label=SENSOR_META['sens_l']['label'], color=SENSOR_META['sens_l']['color'], lw=1.5)
+        ax_side.plot(x_axis, right_values, label=SENSOR_META['sens_r']['label'], color=SENSOR_META['sens_r']['color'], lw=1.5)
+        ax_side.axhline(th_left, color=SENSOR_META['sens_l']['color'], linestyle=':', lw=1.0,
+                        label=f'Left control threshold ({th_left:.0f} mm)')
+        ax_side.axhline(th_right, color=SENSOR_META['sens_r']['color'], linestyle=':', lw=1.0,
+                        label=f'Right control threshold ({th_right:.0f} mm)')
+        left_valid, _ = compute_control_validity(left_values, th_left)
+        right_valid, _ = compute_control_validity(right_values, th_right)
+        shade_invalid_regions(ax_side, x_axis, left_valid, '#1f77b4')
+        shade_invalid_regions(ax_side, x_axis, right_valid, '#2ca02c')
         
         # Calculate side wall error using firmware formula
         wall_error = ir_side_wall_error(data_dict['sens_l'], data_dict['sens_r'],
@@ -478,7 +518,7 @@ def main():
     parser.add_argument('--vs-dist', action='store_true', help="Plot against integrated cumulative travel distance (mm) instead of time.")
     parser.add_argument('--combined', action='store_true', help="Plot all 4 sensors on a single plot.")
     parser.add_argument('--grid', '--grud', action='store_true', dest='grid',
-                        help="Plot each sensor in a 2x2 grid with its derivative and 4-point weighted slope.")
+                        help="Plot each sensor in a 2x2 grid with control thresholds and weighted slope.")
     parser.add_argument('--offset', type=float, default=0.0, help="Timeline offset (ms) for comparison mode.")
     parser.add_argument('--ref-left', type=float, default=IR_WALL_DIST_REF_LEFT,
                         help=f"Reference left wall distance in mm (default: {IR_WALL_DIST_REF_LEFT})")
