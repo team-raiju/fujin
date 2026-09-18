@@ -90,7 +90,42 @@ private:
     enum class WallBreak { LEFT, RIGHT, NONE };
 
     Navigation() {}
+
+    // Lifecycle / configuration
+    void configure_mode(navigation_mode_t mode);
     void update_cell_position_and_dir();
+
+    // Main movement state handlers
+    bool is_linear_movement(Movement movement) const;
+    bool is_turn_movement(Movement movement) const;
+    bool is_turn_around_movement() const;
+    bool is_search_turn_movement() const;
+    bool is_turn_from_diagonal() const;
+    void step_linear_movement();
+    void step_turn_movement();
+
+    // Linear movement helpers
+    void apply_wall_break_correction();
+    float get_acceleration_ramp_distance_m(float current_speed, float acceleration, float brake_jerk) const;
+    float get_required_brake_distance(float control_linear_speed, float deceleration,
+                                      bool continuous_start_to_forward);
+    void update_linear_target_speed(float& control_linear_speed, float max_speed, float max_acceleration,
+                                    float deceleration, bool continuous_start_to_forward);
+    void configure_linear_pid();
+    void finish_linear_movement(float control_linear_speed);
+
+    // Turn movement helpers
+    void step_turn_forward();
+    void step_turn_rotation();
+    void step_turn_stabilize_1();
+    void step_turn_stabilize_2();
+    void update_turn_linear_speed(float& control_linear_speed, float max_speed, float acceleration,
+                                  float deceleration, float final_speed);
+    void transition_after_turn_forward();
+    void update_turn_angular_acceleration(const TurnParams& turn, uint32_t elapsed_time);
+    void transition_after_turn_rotation();
+    bool is_front_emergency() const; 
+
 
     /// @brief Get the movement type to go to a target direction, based on the current direction and search mode
     /// @param target_dir The target direction
