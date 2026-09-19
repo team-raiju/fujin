@@ -70,6 +70,8 @@ float Config::z_imu_bias = -0.4905;
 float Config::start_wall_break_mm_left = 65.0;  // 3.0m/s
 float Config::start_wall_break_mm_right = 80.0; // 3.0m/s
 float Config::enable_wall_break_correction = 1.0;
+float Config::enable_lateral_correction_90 = 0.0f;
+float Config::enable_lateral_correction_wall = 0.0f;
 
 // All params
 static std::pair<float*, bsp::eeprom::param_addresses_t> params[] = {
@@ -115,6 +117,8 @@ static std::pair<float*, bsp::eeprom::param_addresses_t> params[] = {
     {&Config::coulomb_ff, bsp::eeprom::ADDR_COULOMB_FF},
     {&Config::angular_coulomb_ff, bsp::eeprom::ADDR_ANGULAR_COULOMB_FF},
     {&Config::angular_static_ff, bsp::eeprom::ADDR_ANGULAR_STATIC_FF},
+    {&Config::enable_lateral_correction_90, bsp::eeprom::ADDR_ENABLE_LATERAL_CORRECTION_90},
+    {&Config::enable_lateral_correction_wall, bsp::eeprom::ADDR_ENABLE_LATERAL_CORRECTION_WALL},
 };
 
 static const std::map<Movement, uint16_t> turn_address_map = {

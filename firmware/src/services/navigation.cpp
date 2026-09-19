@@ -30,7 +30,7 @@ constexpr float WALL_BREAK_DEBUG_DISTANCE_MIN_MM = 180.0f;
 constexpr float WALL_BREAK_DEBUG_DISTANCE_MAX_MM = 187.5f;
 constexpr float SEARCH_WALL_BREAK_MIN_DISTANCE_MM = 40.0f;
 constexpr uint32_t WALL_BREAK_CONFIRM_COUNT = 4;
-constexpr float WALL_BREAK_MAX_CORRECTION_ERROR_MM = 60.0f;
+constexpr float WALL_BREAK_MAX_CORRECTION_ERROR_MM = 40.0f;
 constexpr float LINEAR_BRAKE_MARGIN_MM = 20.0f;
 constexpr float LINEAR_ACCEL_MARGIN_MM = 20.0f;
 constexpr float DIAGONAL_PID_START_DISTANCE_MM = 50.0f;
@@ -103,6 +103,7 @@ void Navigation::reset(navigation_mode_t mode) {
     current_cell = {0, 0};
     complete_prev_move_travel = 0;
     waiting_for_fast_param = false;
+    turn_end_correction_mm = 0.0f;
 
     current_direction = Direction::NORTH;
 
@@ -333,11 +334,63 @@ void Navigation::apply_wall_break_correction() {
         return;
     }
 
+    using bsp::analog_sensors::ir_distance_mm;
+    using bsp::analog_sensors::ir_reading_wall;
+    using bsp::analog_sensors::SensingDirection;
+
+    constexpr float DEG_TO_RAD = 3.14159265358979323846f / 180.0f;
+    constexpr float MAX_LATERAL_OFFSET_MM = 10.0f;
+    constexpr float MAX_LONGITUDINAL_CORRECTION = 10.0f;
+
     const float current_movement_traveled = traveled_dist_mm - complete_prev_move_travel;
     const int cells_traveled = static_cast<int>(current_movement_traveled / CELL_SIZE_MM);
-    const float wall_break_offset = wall_break == WallBreak::LEFT ? general_params.start_wall_break_mm_left
-                                                                  : general_params.start_wall_break_mm_right;
-    const float corrected_distance_mm = (cells_traveled * CELL_SIZE_MM) + wall_break_offset + complete_prev_move_travel;
+
+    float base_offset_mm = 0.0f;
+    float longitudinal_correction_mm = 0.0f;
+
+    if (wall_break == WallBreak::LEFT) {
+        base_offset_mm = general_params.start_wall_break_mm_left;
+
+        // Left wall just broke: measure lateral displacement using opposite (Right) sensor
+        if (Config::enable_lateral_correction_wall && ir_reading_wall(SensingDirection::RIGHT)) {
+            const float cos_theta_r = std::cos(Config::right_sensor_angle_deg * DEG_TO_RAD);
+            const float tan_theta_l = std::tan(Config::left_sensor_angle_deg * DEG_TO_RAD);
+
+            const float measured_dist_r = ir_distance_mm(SensingDirection::RIGHT);
+            const float delta_l_r = measured_dist_r - Config::ir_wall_dist_ref_right;
+
+            // lateral_offset_mm > 0 means further from right wall => shifted toward the left wall
+            float lateral_offset_mm = delta_l_r * cos_theta_r;
+            lateral_offset_mm = std::clamp(lateral_offset_mm, -MAX_LATERAL_OFFSET_MM, MAX_LATERAL_OFFSET_MM);
+
+            // Closer to left wall means the beam caught the break later along the track (+dx)
+            longitudinal_correction_mm = lateral_offset_mm * tan_theta_l;
+            longitudinal_correction_mm = std::clamp(longitudinal_correction_mm, -MAX_LONGITUDINAL_CORRECTION, MAX_LONGITUDINAL_CORRECTION);
+        }
+    } else if (wall_break == WallBreak::RIGHT) {
+        base_offset_mm = general_params.start_wall_break_mm_right;
+
+        // Right wall just broke: measure lateral displacement using opposite (Left) sensor
+        if (Config::enable_lateral_correction_wall && ir_reading_wall(SensingDirection::LEFT)) {
+            const float cos_theta_l = std::cos(Config::left_sensor_angle_deg * DEG_TO_RAD);
+            const float tan_theta_r = std::tan(Config::right_sensor_angle_deg * DEG_TO_RAD);
+
+            const float measured_dist_l = ir_distance_mm(SensingDirection::LEFT);
+            const float delta_l_l = measured_dist_l - Config::ir_wall_dist_ref_left;
+
+            // lateral_offset_mm > 0 means further from left wall => shifted toward the right wall
+            float lateral_offset_mm = delta_l_l * cos_theta_l;
+            lateral_offset_mm = std::clamp(lateral_offset_mm, -MAX_LATERAL_OFFSET_MM, MAX_LATERAL_OFFSET_MM);
+
+            // Closer to right wall means the beam caught the break later along the track (+dx)
+            longitudinal_correction_mm = lateral_offset_mm * tan_theta_r;
+            longitudinal_correction_mm = std::clamp(longitudinal_correction_mm, -MAX_LONGITUDINAL_CORRECTION, MAX_LONGITUDINAL_CORRECTION);
+        }
+    }
+
+    const float corrected_distance_mm =
+        (cells_traveled * CELL_SIZE_MM) + base_offset_mm + longitudinal_correction_mm + complete_prev_move_travel;
+
     const float distance_error_mm = current_movement_traveled - corrected_distance_mm;
 
     if (std::abs(distance_error_mm) < WALL_BREAK_MAX_CORRECTION_ERROR_MM) {
@@ -572,8 +625,7 @@ void Navigation::configure_linear_pid() {
 
 void Navigation::finish_linear_movement(float control_linear_speed) {
     const bool reached_target = std::abs(traveled_dist_mm) >= target_travel_mm;
-    const bool finished_stop =
-        current_movement == Movement::STOP && is_braking && control_linear_speed <= 0.0f;
+    const bool finished_stop = current_movement == Movement::STOP && is_braking && control_linear_speed <= 0.0f;
 
     if (reached_target || finished_stop || is_front_emergency()) {
         is_finished = true;
@@ -918,9 +970,56 @@ void Navigation::update_cell_position_and_dir() {
     }
 }
 
+float Navigation::calculate_turn_end_offset(Movement movement) {
+    using bsp::analog_sensors::ir_distance_mm;
+    using bsp::analog_sensors::ir_reading_wall;
+    using bsp::analog_sensors::SensingDirection;
+
+    float lateral_error_mm = 0.0f;
+    constexpr float MAX_ALLOWED_OFFSET_MM = 10.0f;
+    constexpr float DEG_TO_RAD = 3.14159265358979323846f / 180.0f;
+
+    if (movement == Movement::TURN_LEFT_90) {
+        // Turning Left: check opposite (Right) wall
+        if (ir_reading_wall(SensingDirection::RIGHT)) {
+            const float cos_theta = std::cos(Config::right_sensor_angle_deg * DEG_TO_RAD);
+            float measured_dist = ir_distance_mm(SensingDirection::RIGHT);
+            float delta_l = measured_dist - Config::ir_wall_dist_ref_right; // positive when further from right wall
+            lateral_error_mm = delta_l * cos_theta;
+        }
+    } else if (movement == Movement::TURN_RIGHT_90) {
+        // Turning Right: check opposite (Left) wall
+        if (ir_reading_wall(SensingDirection::LEFT)) {
+            const float cos_theta = std::cos(Config::left_sensor_angle_deg * DEG_TO_RAD);
+            float measured_dist = ir_distance_mm(SensingDirection::LEFT);
+            float delta_l = measured_dist - Config::ir_wall_dist_ref_left; // positive when further from left wall
+            lateral_error_mm = delta_l * cos_theta;
+        }
+    }
+
+    // Clamp adjustment to guard against sensor anomalies
+    lateral_error_mm = std::clamp(lateral_error_mm, -MAX_ALLOWED_OFFSET_MM, MAX_ALLOWED_OFFSET_MM);
+
+    // If robot was further away from the opposite wall (+delta), the turn's ends +delta mm after
+    return lateral_error_mm;
+}
+
 void Navigation::set_movement(Movement movement, Movement prev_movement, Movement next_movement, uint8_t count,
                               uint8_t next_move_count) {
+
     complete_prev_move_travel = -1 * turn_params[prev_movement].end;
+
+    if (Config::enable_lateral_correction_90) {
+        if (prev_movement == Movement::TURN_LEFT_90 || prev_movement == Movement::TURN_RIGHT_90) {
+            complete_prev_move_travel -= turn_end_correction_mm;
+            turn_end_correction_mm = 0.0f;
+        }
+
+        if (movement == Movement::TURN_LEFT_90 || movement == Movement::TURN_RIGHT_90) {
+            turn_end_correction_mm = calculate_turn_end_offset(movement);
+        }
+    }
+
     previous_movement = prev_movement;
     current_movement = movement;
 

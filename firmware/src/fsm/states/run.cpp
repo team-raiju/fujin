@@ -210,7 +210,6 @@ State* RunMoveModeSelect::react(ButtonPressed const& event) {
 
 RunMapSelect::RunMapSelect() {
     map_backup = false;
-
 }
 
 void RunMapSelect::enter() {
@@ -271,7 +270,7 @@ void RunWaitStart::enter() {
 }
 
 State* RunWaitStart::react(Timeout const&) {
-    using bsp::analog_sensors::ir_reading_wall;
+    using bsp::analog_sensors::ir_start_condition;
     using bsp::analog_sensors::SensingDirection;
 
     bsp::leds::ir_emitter_on(bsp::leds::LEFT_FRONT);
@@ -280,7 +279,7 @@ State* RunWaitStart::react(Timeout const&) {
     bsp::delay_ms(5);
 
     for (int i = 0; i < 400; i++) {
-        if (!ir_reading_wall(SensingDirection::FRONT_LEFT) || !ir_reading_wall(SensingDirection::FRONT_RIGHT)) {
+        if (!ir_start_condition()) {
             soft_timer::start(services::Config::ms_to_ticks(100), soft_timer::SINGLE);
             bsp::leds::ir_emitter_all_off();
             bsp::analog_sensors::enable_modulation(false);
@@ -349,8 +348,9 @@ void Run::enter() {
     auto movement = target_movements[0].first;
     auto prev_movement = target_movements[0].first;
     auto next_movement = target_movements[1].first;
+    auto next_movement_count = target_movements[1].second;
 
-    navigation->set_movement(movement, prev_movement, next_movement, 1);
+    navigation->set_movement(movement, prev_movement, next_movement, 1, next_movement_count);
 }
 
 State* Run::react(ButtonPressed const& event) {
@@ -378,7 +378,6 @@ State* Run::react(BleCommand const&) {
 }
 
 State* Run::react(Timeout const&) {
-    using bsp::analog_sensors::ir_reading_wall;
     using bsp::analog_sensors::SensingDirection;
 
     if (indicate_read && bsp::get_tick_ms() - last_indication > 75) {
@@ -409,12 +408,15 @@ State* Run::react(Timeout const&) {
         auto next_movement =
             ((move_count + 1) < target_movements.size()) ? target_movements[move_count + 1].first : Movement::STOP;
 
+        auto next_movement_count =
+            ((move_count + 1) < target_movements.size()) ? target_movements[move_count + 1].second : 1;
+
         auto cells = target_movements[move_count].second;
 
-        navigation->set_movement(movement, prev_movement, next_movement, cells);
+        navigation->set_movement(movement, prev_movement, next_movement, cells, next_movement_count);
     }
 
-    if ((bsp::imu::is_imu_emergency() || services::Control::instance()->is_emergency()) && move_count > 1) {
+    if ((bsp::imu::is_imu_emergency() || services::Control::instance()->is_emergency()) && move_count >= 1) {
         emergency = true;
         soft_timer::stop();
         bsp::motors::set(0, 0);

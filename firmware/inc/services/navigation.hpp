@@ -140,6 +140,7 @@ private:
     bool start_brake_ramp_up(float current_speed, float current_accel, float final_speed, float jerk);
     float get_effective_max_acceleration(float current_speed, float base_max_accel);
     WallBreak process_wall_break();
+    float calculate_turn_end_offset(Movement movement);
     void reset_wall_break();
     void reset_movement_variables(bool reset_linear_accel = true);
 
@@ -160,6 +161,7 @@ private:
 
     bool is_initialized = false;
     bool is_finished = false;
+    float turn_end_correction_mm = 0.0f;
 
     uint32_t reference_time;
     uint32_t turn_tick_counter = 0;
