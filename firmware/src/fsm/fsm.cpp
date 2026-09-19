@@ -43,7 +43,9 @@ void FSM::start() {
 
         if (packet[1] == bsp::ble::BlePacketType::UpdateParameters && !bsp::ble::is_config_locked()) {
             services::Config::parse_packet(packet);
-            dispatch(BleCommand());
+            BleCommand cmd;
+            std::memcpy(cmd.packet, packet, bsp::ble::max_packet_size);
+            dispatch(cmd);
         }
 
         if (packet[1] == bsp::ble::BlePacketType::UpdateMovementParameters && !bsp::ble::is_config_locked()) {
@@ -56,7 +58,8 @@ void FSM::start() {
             dispatch(BleCommand());
         }
 
-        if (packet[1] == bsp::ble::BlePacketType::RequestIrCalibParams ||
+        if (packet[1] == bsp::ble::BlePacketType::RequestParameters ||
+            packet[1] == bsp::ble::BlePacketType::RequestIrCalibParams ||
             packet[1] == bsp::ble::BlePacketType::CalibrateIrSample ||
             packet[1] == bsp::ble::BlePacketType::RequestIrWallPatterns ||
             packet[1] == bsp::ble::BlePacketType::CalibrateIrWallPattern) {

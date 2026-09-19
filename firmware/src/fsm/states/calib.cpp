@@ -136,6 +136,8 @@ void CalibrationIRSensors::enter() {
 
     bsp::buzzer::beep(150);
 
+    bsp::ble::unlock_config_rcv();
+
     notification->reset();
     soft_timer::start(10, soft_timer::CONTINUOUS);
 
@@ -158,6 +160,10 @@ State* CalibrationIRSensors::react(BleCommand const& event) {
         send_wall_patterns(event.packet[2]);
     } else if (event.packet[1] == bsp::ble::BlePacketType::CalibrateIrWallPattern) {
         handle_wall_pattern_calib(event.packet);
+    } else if (event.packet[1] == bsp::ble::BlePacketType::RequestParameters) {
+        services::Config::send_parameters();
+    } else if (event.packet[1] == bsp::ble::BlePacketType::UpdateParameters) {
+        bsp::buzzer::beep(60);
     }
     return nullptr;
 }
@@ -177,6 +183,7 @@ State* CalibrationIRSensors::react(Timeout const&) {
 
 void CalibrationIRSensors::exit() {
     soft_timer::stop();
+    bsp::ble::lock_config_rcv();
     bsp::analog_sensors::enable_modulation(false);
     bsp::leds::ir_emitter_all_off();
 }

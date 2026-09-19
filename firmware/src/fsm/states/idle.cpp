@@ -34,6 +34,10 @@ State* Idle::react(BleCommand const& event) {
         CalibrationIRSensors::send_calib_params();
         return nullptr;
     }
+    if (event.packet[1] == bsp::ble::BlePacketType::RequestParameters) {
+        services::Config::send_parameters();
+        return nullptr;
+    }
 
     bsp::buzzer::start();
     bsp::delay_ms(100);
