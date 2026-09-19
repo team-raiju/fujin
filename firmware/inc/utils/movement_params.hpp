@@ -7,7 +7,7 @@ static constexpr float CELL_SIZE_MM = 180.0;
 static constexpr float HALF_CELL_SIZE_MM = 90.0;
 static constexpr float CELL_DIAGONAL_SIZE_MM = 127.27922;
 static constexpr float ROBOT_DIST_FROM_CENTER_START_MM_FAST = 21.0; // To account for slippery when fast mode
-static constexpr float ROBOT_DIST_FROM_CENTER_START_MM = 19.0;  // Actually 15.5, But also account for slippery
+static constexpr float ROBOT_DIST_FROM_CENTER_START_MM = 17.5;  // Actually 17.5 with 6mm wall, and 20.5mm with 12mm wall But also account for slippery
 
 /**
  * @struct TurnParams

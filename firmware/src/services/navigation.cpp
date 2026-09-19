@@ -290,6 +290,8 @@ Navigation::WallBreak Navigation::process_wall_break() {
         }
     } else if (wall_break_distance > CELL_SIZE_MM) {
         process = true;
+    } else if ((previous_movement == START) && (current_movement == FORWARD) && (wall_break_last_dist < 0.1)){
+        process = true;
     }
 
     if (!process) {
@@ -742,10 +744,10 @@ void Navigation::update_turn_angular_acceleration(const TurnParams& turn, uint32
     const float max_angular_deceleration = -turn.angular_accel;
     const float control_frequency = Config::CONTROL_FREQUENCY_HZ;
 
-    if (elapsed_time <= turn.t_start_deccel) {
+    if (elapsed_time < turn.t_start_deccel) {
         if (turn.accel_ramp_up_jerk == 0 || turn.time_to_decrease_jerk_1 == 0) {
             current_angular_acceleration = max_angular_acceleration;
-        } else if (elapsed_time <= turn.time_to_decrease_jerk_1) {
+        } else if (elapsed_time < turn.time_to_decrease_jerk_1) {
             current_angular_acceleration += turn.accel_ramp_up_jerk / control_frequency;
             current_angular_acceleration = std::min(current_angular_acceleration, max_angular_acceleration);
         } else {
@@ -757,7 +759,7 @@ void Navigation::update_turn_angular_acceleration(const TurnParams& turn, uint32
 
     if (turn.accel_ramp_down_jerk == 0 || turn.time_to_decrease_jerk_2 == 0) {
         current_angular_acceleration = max_angular_deceleration;
-    } else if (elapsed_time <= turn.time_to_decrease_jerk_2) {
+    } else if (elapsed_time < turn.time_to_decrease_jerk_2) {
         current_angular_acceleration -= turn.accel_ramp_down_jerk / control_frequency;
         current_angular_acceleration = std::max(current_angular_acceleration, max_angular_deceleration);
     } else {
@@ -809,7 +811,7 @@ void Navigation::step_turn_rotation() {
     control->set_wall_pid_enabled(false);
     control->set_diagonal_pid_enabled(false);
 
-    if (elapsed_time > turn_params[current_movement].t_stop) {
+    if (turn_tick_counter >= turn_params[current_movement].t_stop) {
         transition_after_turn_rotation();
     }
 }

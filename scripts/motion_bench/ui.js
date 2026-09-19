@@ -306,12 +306,12 @@ function buildReadoutCard(ch, res) {
   <div class="rc-item"><span class="rc-label">t2 cruise</span><span class="rc-value">${formatMs(res.t2)}<span class="rc-unit">ms</span></span></div>
   <div class="rc-item"><span class="rc-label">t3 decel</span><span class="rc-value">${formatMs(res.t3)}<span class="rc-unit">ms</span></span></div>
   <div class="rc-item"><span class="rc-label">T total</span><span class="rc-value">${formatMs(res.T)}<span class="rc-unit">ms</span></span></div>
-  <div class="rc-item"><span class="rc-label">t1+t2</span><span class="rc-value">${formatMs(res.t1 + res.t2)}<span class="rc-unit">ms</span></span></div>
+  <div class="rc-item"><span class="rc-label">t1+t2 (t_start_deccel)</span><span class="rc-value">${formatMs(res.t1 + res.t2)}<span class="rc-unit">ms</span></span></div>
+  <div class="rc-item"><span class="rc-label">time to decrease jerk_1</span><span class="rc-value">${formatMs(res.t4 || 0)}<span class="rc-unit">ms</span></span></div>
+  <div class="rc-item"><span class="rc-label">time to decrease jerk_2</span><span class="rc-value">${formatMs(res.t5 || 0)}<span class="rc-unit">ms</span></span></div>
   <div class="rc-item"><span class="rc-label">peak accel</span><span class="rc-value">${res.peakAccel.toFixed(1)}<span class="rc-unit">rad/s&sup2;</span></span></div>
   <div class="rc-item"><span class="rc-label">peak speed</span><span class="rc-value">${res.peakOmega.toFixed(3)}<span class="rc-unit">rad/s</span></span></div>
   <div class="rc-item"><span class="rc-label">final position</span><span class="rc-value">${res.final.x.toFixed(2)}, ${res.final.y.toFixed(2)}, ${(res.final.theta * R2D).toFixed(2)}&#176;</span></div>
-  <div class="rc-item"><span class="rc-label">t4 jerk decel</span><span class="rc-value">${formatMs(res.t4 || 0)}<span class="rc-unit">ms</span></span></div>
-  <div class="rc-item"><span class="rc-label">t5 jerk accel</span><span class="rc-value">${formatMs(res.t5 || 0)}<span class="rc-unit">ms</span></span></div>
 </div>
   </div>`;
 }
