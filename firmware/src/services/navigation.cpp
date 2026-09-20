@@ -72,6 +72,8 @@ GeneralParams make_custom_general_params() {
         services::Config::coulomb_ff,
         services::Config::angular_coulomb_ff,
         services::Config::angular_static_ff,
+        services::Config::angular_coulomb_ff_inplace,
+        services::Config::angular_static_ff_inplace,
     };
 }
 
@@ -196,6 +198,7 @@ void Navigation::reset_movement_variables(bool reset_linear_accel) {
     turn_tick_counter = 0;
     is_finished = false;
     is_braking = false;
+    control->set_use_inplace_friction(false);
 
     if (!is_linear_movement(current_movement) || previous_movement != current_movement) {
         bsp::analog_sensors::ir_reset_all_wall_hysteresis();
@@ -631,6 +634,7 @@ void Navigation::finish_linear_movement(float control_linear_speed) {
 }
 
 void Navigation::step_linear_movement() {
+    control->set_use_inplace_friction(false);
 
     if (current_movement == Movement::STOP) {
         forward_end_speed = 0.0f;
@@ -662,7 +666,8 @@ void Navigation::update_turn_linear_speed(float& control_linear_speed, float max
                                           float deceleration, float final_speed) {
     const float braking_distance_mm =
         MILLIMETERS_PER_METER * get_torricelli_distance(final_speed, control_linear_speed, -deceleration);
-    const bool before_braking_point = std::abs(traveled_dist_mm) < (target_travel_mm - braking_distance_mm);
+    const bool before_braking_point =
+        !is_braking && (std::abs(traveled_dist_mm) < (target_travel_mm - braking_distance_mm));
 
     if (before_braking_point) {
         if (control_linear_speed < max_speed) {
@@ -670,12 +675,17 @@ void Navigation::update_turn_linear_speed(float& control_linear_speed, float max
             control_linear_speed = std::min(control_linear_speed, max_speed);
         }
     } else if (control_linear_speed > final_speed) {
+        is_braking = true;
         control_linear_speed -= deceleration / Config::CONTROL_FREQUENCY_HZ;
-        control_linear_speed = std::max(control_linear_speed, Config::min_move_speed);
+        control_linear_speed = std::max(control_linear_speed, final_speed);
+        if (final_speed > 0.0f) {
+            control_linear_speed = std::max(control_linear_speed, Config::min_move_speed);
+        }
     }
 }
 
 void Navigation::transition_after_turn_forward() {
+    is_braking = false;
     if (is_turn_around_movement()) {
         if (mini_fsm_state == MiniFSMStates::FORWARD_2) {
             is_finished = true;
@@ -706,6 +716,7 @@ void Navigation::transition_after_turn_forward() {
 }
 
 void Navigation::step_turn_forward() {
+    control->set_use_inplace_friction(false);
     const float max_speed = forward_params[current_movement].max_speed;
     const float acceleration = forward_params[current_movement].acceleration;
     const float deceleration = forward_params[current_movement].deceleration;
@@ -730,7 +741,13 @@ void Navigation::step_turn_forward() {
     control->set_target_linear_speed(control_linear_speed);
     control->set_target_angular_speed(0);
 
-    if (std::abs(traveled_dist_mm) >= target_travel_mm) {
+    const bool reached_target = std::abs(traveled_dist_mm) >= target_travel_mm;
+    const bool is_turn_around_stop = is_turn_around_movement() && (mini_fsm_state == MiniFSMStates::FORWARD_1);
+
+    const bool should_transition =
+        is_turn_around_stop ? (is_braking && control_linear_speed <= 0.0f) : reached_target;
+
+    if (should_transition) {
         transition_after_turn_forward();
     }
 }
@@ -765,11 +782,13 @@ void Navigation::update_turn_angular_acceleration(const TurnParams& turn, uint32
 }
 
 void Navigation::transition_after_turn_rotation() {
+    control->set_use_inplace_friction(false);
 
     if (is_turn_around_movement()) {
         control->set_target_angular_speed(0.0f);
         control->set_motor_control_disabled(true);
         reference_time = bsp::get_tick_ms();
+        is_braking = false;
         mini_fsm_state = MiniFSMStates::STABILIZE_2;
         return;
     }
@@ -780,6 +799,7 @@ void Navigation::transition_after_turn_rotation() {
         target_travel_mm = HALF_CELL_SIZE_MM - std::abs(current_position_mm.y);
         reference_time = bsp::get_tick_ms();
         traveled_dist_mm = 0;
+        is_braking = false;
         mini_fsm_state = MiniFSMStates::FORWARD_2;
         return;
     }
@@ -806,6 +826,7 @@ void Navigation::step_turn_rotation() {
     control->set_target_angular_speed(control_angular_speed_abs * turn_sign);
     control->set_wall_pid_enabled(false);
     control->set_diagonal_pid_enabled(false);
+    control->set_use_inplace_friction(is_turn_around_movement());
 
     if (turn_tick_counter >= turn_params[current_movement].t_stop) {
         transition_after_turn_rotation();
@@ -815,6 +836,7 @@ void Navigation::step_turn_rotation() {
 void Navigation::step_turn_stabilize_1() {
     control->set_wall_pid_enabled(false);
     control->set_diagonal_pid_enabled(false);
+    control->set_use_inplace_friction(false);
 
     const uint32_t elapsed_time = bsp::get_tick_ms() - reference_time;
     if (elapsed_time <= STABILIZE_FORWARD_TIME_MS) {
@@ -826,6 +848,7 @@ void Navigation::step_turn_stabilize_1() {
     control->set_motor_control_disabled(false);
     traveled_dist_mm = 0;
     turn_tick_counter = 0;
+    is_braking = false;
     mini_fsm_state = MiniFSMStates::TURN;
     current_angular_acceleration = 0.0f;
 }
@@ -833,6 +856,7 @@ void Navigation::step_turn_stabilize_1() {
 void Navigation::step_turn_stabilize_2() {
     control->set_wall_pid_enabled(false);
     control->set_diagonal_pid_enabled(false);
+    control->set_use_inplace_friction(false);
 
     const uint32_t elapsed_time = bsp::get_tick_ms() - reference_time;
     if (elapsed_time <= STABILIZE_TURN_TIME_MS) {
@@ -843,6 +867,7 @@ void Navigation::step_turn_stabilize_2() {
     control->reset(general_params);
     control->set_motor_control_disabled(false);
     traveled_dist_mm = 0;
+    is_braking = false;
 
     if (current_movement == Movement::TURN_AROUND_INPLACE) {
         is_finished = true;

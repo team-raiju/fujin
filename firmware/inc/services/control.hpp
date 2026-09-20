@@ -26,7 +26,10 @@ class Control {
         void set_wall_pid_enabled(bool enabled) { wall_pid_enabled = enabled; }
         void set_diagonal_pid_enabled(bool enabled) { diagonal_pid_enabled = enabled; }
         void set_motor_control_disabled(bool disabled) {motor_control_disabled = disabled;}
-        
+        void set_use_inplace_friction(bool use) { use_inplace_friction = use; }
+        void set_inplace_friction(bool use) { use_inplace_friction = use; }
+        bool get_use_inplace_friction() const { return use_inplace_friction; }
+
         float get_target_linear_speed() const { return target_linear_speed_m_s; }
         float get_target_angular_speed() const { return target_angular_speed_rad_s; }
         float get_target_linear_acceleration() const { return target_linear_acceleration; }
@@ -75,6 +78,7 @@ class Control {
         int16_t pwm_duty_r;
         bool motor_control_disabled = false;
         bool emergency = false;
+        bool use_inplace_friction = false;
         uint16_t fan_pwm = 0;
 
         GeneralParams params;

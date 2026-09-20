@@ -41,8 +41,7 @@ READ_TIMEOUT = 1.0
 # in main(); the values here are just the defaults used when the module is
 # imported directly rather than run as a script.
 PLOT_IMU_DIFF = False   # True: show the IMU/encoder-diff panel; False: its per-mode alternative
-DEFAULT_MODE = 'sensor'  # Fallback guess used for live capture format, and when a
-                          # file's own columns/header don't reveal its mode.
+DEFAULT_MODE = 'control' # Fallback guess when a file or stream's own columns/header don't reveal its mode.
 
 # ---------------------------------------------------------------------------
 # Column identity
@@ -212,6 +211,41 @@ def _detect_mode(keys: list) -> str:
     return DEFAULT_MODE
 
 
+def parse_log_lines(lines: list, source_name: str = "data") -> Optional[LogData]:
+    """Parses raw telemetry lines into a LogData object, auto-detecting columns and mode."""
+    clean_lines = [line.strip() for line in lines if line.strip()]
+    if not clean_lines:
+        print(f"Log from '{source_name}' is empty.")
+        return None
+
+    header_lines, data_lines = _split_header_and_data(clean_lines)
+    if not data_lines:
+        print(f"No valid numerical data rows found in '{source_name}'.")
+        return None
+
+    cols_count = len(data_lines[0].strip().rstrip(';').split(';'))
+    keys = _resolve_columns(header_lines, cols_count)
+    if keys is None:
+        print(f"Unknown column layout ({cols_count} columns) in '{source_name}'.")
+        return None
+
+    series = {k: [] for k in keys}
+    for line in data_lines:
+        try:
+            values = [float(x) for x in line.strip().rstrip(';').split(';')]
+        except ValueError:
+            continue
+        for key, value in zip(keys, values):
+            series[key].append(value)
+
+    if not series.get('time'):
+        print(f"No valid numerical data could be parsed from '{source_name}'.")
+        return None
+
+    mode = _detect_mode(keys)
+    return LogData(mode=mode, series=series)
+
+
 def parse_log_file(path: str) -> Optional[LogData]:
     """Reads a log file and returns its parsed data, or None on failure."""
     if not os.path.exists(path):
@@ -222,36 +256,9 @@ def parse_log_file(path: str) -> Optional[LogData]:
         return None
 
     with open(path) as f:
-        lines = [line.strip() for line in f if line.strip()]
-    if not lines:
-        print(f"Log file '{path}' is empty.")
-        return None
+        lines = f.readlines()
 
-    header_lines, data_lines = _split_header_and_data(lines)
-    if not data_lines:
-        print(f"No valid numerical data rows found in '{path}'.")
-        return None
-
-    cols_count = len(data_lines[0].split(';'))
-    keys = _resolve_columns(header_lines, cols_count)
-    if keys is None:
-        print(f"Unknown column layout ({cols_count} columns) in '{path}'.")
-        return None
-
-    series = {k: [] for k in keys}
-    for line in data_lines:
-        try:
-            values = [float(x) for x in line.split(';')]
-        except ValueError:
-            continue
-        for key, value in zip(keys, values):
-            series[key].append(value)
-
-    if not series.get('time'):
-        print(f"No valid numerical data could be parsed from '{path}'.")
-        return None
-
-    return LogData(mode=_detect_mode(keys), series=series)
+    return parse_log_lines(lines, source_name=path)
 
 
 def save_log_to_disk(header: str, data_lines: list) -> None:
@@ -472,11 +479,6 @@ def plot_comparison(file1: str, file2: str, offset: float = 0.0) -> None:
 def collect_print_and_plot_data() -> None:
     """Connects to the serial port, streams a burst of telemetry to disk,
     then plots it once the stream ends."""
-    mode = DEFAULT_MODE
-    keys = LIVE_CAPTURE_LAYOUTS[mode]
-    header = LIVE_CAPTURE_HEADERS[mode]
-
-    series = {k: [] for k in keys}
     data_lines = []
 
     try:
@@ -492,26 +494,26 @@ def collect_print_and_plot_data() -> None:
 
             while line:
                 data_lines.append(line)
-                try:
-                    values = [float(x) for x in line.split(';')]
-                    for key, value in zip(keys, values):
-                        series[key].append(value)
-                except ValueError:
-                    pass
                 line = ser.readline().decode('utf-8', errors='ignore').strip()
 
-            print(f"Data collection complete. Received {len(series['time'])} data points.")
+            print(f"Data collection complete. Received {len(data_lines)} lines.")
 
     except serial.SerialException as e:
         print(f"Error: Could not open serial port {SERIAL_PORT}. {e}")
         return
 
-    if not series['time']:
+    if not data_lines:
         print("No data was collected. Exiting.")
         return
 
+    data = parse_log_lines(data_lines, source_name="live serial session")
+    if not data:
+        print("Could not parse telemetry data. Exiting.")
+        return
+
+    header = LIVE_CAPTURE_HEADERS.get(data.mode, LIVE_CAPTURE_HEADERS.get(DEFAULT_MODE, ""))
     save_log_to_disk(header, data_lines)
-    plot_single(LogData(mode=mode, series=series), title_suffix="(Live Session)")
+    plot_single(data, title_suffix="(Live Session)")
 
 
 # ---------------------------------------------------------------------------
@@ -543,9 +545,9 @@ def _build_arg_parser() -> argparse.ArgumentParser:
              "time for sensor logs). Default: off.",
     )
     parser.add_argument(
-        '--mode', choices=['control', 'sensor'], default='sensor',
-        help="Log format to use for live serial capture, and the fallback guess when a "
-             "file's mode can't be determined from its columns or header. Default: sensor.",
+        '--mode', choices=['control', 'sensor'], default='control',
+        help="Fallback mode when a log's columns or header don't reveal its mode. "
+             "Default: control.",
     )
     return parser
 

@@ -35,6 +35,8 @@ public:
     static float coulomb_ff;
     static float angular_coulomb_ff;
     static float angular_static_ff;
+    static float angular_coulomb_ff_inplace;
+    static float angular_static_ff_inplace;
 
     static float wall_kp;
     static float wall_ki;

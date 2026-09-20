@@ -4,7 +4,7 @@
 
 namespace services {
 
-#define CONTROL_LOG_MODE 0
+#define CONTROL_LOG_MODE 1
 
 enum class ParamIndex : uint8_t {
     VelocityMS,

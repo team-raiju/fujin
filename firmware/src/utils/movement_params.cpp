@@ -1,31 +1,51 @@
 #include "utils/movement_params.hpp"
 #include "services/config.hpp"
 
+// clang-format off
 #define T(ms) services::Config::ms_to_ticks(ms)
 
-// clang-format off
+/*
+Turn Start Position | turn_params.start | foward_params.target_travel 
+------------------- | ----------------- | ---------------------------
+Before cell start   | E.g: -16.0        | 0.0
+After cell start    | 0.0               | E.g: 16.0
+Search Curve        | 0.0               | E.g: 16.0
+Turn Around         | 0.0               | E.g: 80.0
+Turn Around Inplace | 0.0               | E.g: 80.0
+
+Turn End Position   | turn_params.end   | Notes
+------------------- | ----------------- | ---------------------------
+Before cell start   | E.g: -16.0        | Next FORWARD travels EXTRA (+16 mm)
+After cell start    | E.g: 16.0         | Next FORWARD travels LESS (-16 mm)
+Search Curve        | 0.0               | Uses FORWARD_2 to dynamically calculate using HALF_CELL_SIZE_MM - std::abs(current_position_mm.y);
+Turn Around         | 0.0               | Uses FORWARD_2 to dynamically calculate using target_travel_mm = std::abs(current_position_mm.x);
+Turn Around Inplace | 0.0               | Will not do anything after turning 180 degrees
+*/
+
+/// @section TURN_PARMS_SEARCH_SLOW
 const std::map<Movement, TurnParams> turn_params_search_slow = {
-    {Movement::TURN_AROUND, {0.0, 0.0, 0.3, 52.36, 3.49, T(0), T(0), -1, T(0), T(0), 0, 0}},
-    {Movement::TURN_AROUND_INPLACE, {0.0, 0.0, 0.3, 52.36, 3.49, T(0), T(0), -1, T(0), T(0), 0, 0}},
-    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.0, 0.0, 0.3, 55, 5.5, T(0), T(0), -1, T(0), T(0), 0, 0}},
-    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.0, 0.0, 0.3, 55, 5.5, T(0), T(0), 1, T(0), T(0), 0, 0}},
+    {Movement::TURN_AROUND, {0.0, 0.0, 0.5, 150, 11, T(287), T(410), -1, T(73), T(360), 3000, 3000}},
+    {Movement::TURN_AROUND_INPLACE, {0.0, 0.0, 0.5, 150, 11, T(287), T(410), -1, T(73), T(360), 3000, 3000}},
+    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.0, 0.0, 0.5, 180, 11.0, T(143), T(240), -1, T(61), T(204), 5000, 5000}},
+    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.0, 0.0, 0.5, 180, 11.0, T(143), T(240), 1, T(61), T(204), 5000, 5000}},
 };
 
 const std::map<Movement, ForwardParams> forward_params_search_slow = {
-    {Movement::START, {0.3, 0.85, 0.85, HALF_CELL_SIZE_MM + ROBOT_DIST_FROM_CENTER_START_MM}},
-    {Movement::FORWARD, {0.3, 0.85, 0.85, CELL_SIZE_MM}},
-    {Movement::STOP, {0.3, 0.85, 0.85, (HALF_CELL_SIZE_MM)}},
-    {Movement::TURN_AROUND, {0.3, 0.5, 0.5, 80.0}},
-    {Movement::TURN_AROUND_INPLACE, {0.3, 0.5, 0.5, 80.0}},
-    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.3, 0.85, 0.85, 24.0}},
-    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.3, 0.85, 0.85, 24.0}},
+    {Movement::START, {0.5, 3.0, 3.0, HALF_CELL_SIZE_MM + ROBOT_DIST_FROM_CENTER_START_MM}},
+    {Movement::FORWARD, {0.5, 3.0, 3.0, CELL_SIZE_MM}},
+    {Movement::STOP, {0.5, 3.0, 5.0, (HALF_CELL_SIZE_MM)}},
+    {Movement::TURN_AROUND, {0.5, 3.0, 5.0, 80.0}},
+    {Movement::TURN_AROUND_INPLACE, {0.5, 3.0, 5.0, 80.0}},
+    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.5, 3.0, 3.0, 19.51}},
+    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.5, 3.0, 3.0, 19.51}},
 };
 
+/// @section TURN_PARMS_SEARCH_MEDIUM
 const std::map<Movement, TurnParams> turn_params_search_medium = {
     {Movement::TURN_AROUND, {0.0, 0.0, 0.5, 104.72, 10.47, T(301), T(401), -1, T(0), T(0), 0, 0}},
     {Movement::TURN_AROUND_INPLACE, {0.0, 0.0, 0.5, 104.72, 10.47, T(301), T(401), -1, T(0), T(0), 0, 0}},
-    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.0, 0.0, 0.5, 139.62, 10.47, T(150), T(225), -1, T(0), T(0), 0, 0}}, // -30.0
-    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.0, 0.0, 0.5, 139.62, 10.47, T(150), T(225), 1, T(0), T(0), 0, 0}},   // -30.0
+    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.0, 0.0, 0.5, 139.62, 10.47, T(150), T(225), -1, T(0), T(0), 0, 0}},
+    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.0, 0.0, 0.5, 139.62, 10.47, T(150), T(225), 1, T(0), T(0), 0, 0}},
 };
 
 const std::map<Movement, ForwardParams> forward_params_search_medium = {
@@ -38,6 +58,7 @@ const std::map<Movement, ForwardParams> forward_params_search_medium = {
     {Movement::TURN_LEFT_90_SEARCH_MODE, {0.5, 3.0, 3.0, 27.0}},
 };
 
+/// @section TURN_PARMS_SEARCH_FAST
 const std::map<Movement, TurnParams> turn_params_search_fast = {
     {Movement::TURN_AROUND, {0.0, 0.0, 0.7, 104.72, 10.47, T(301), T(401), -1, T(0), T(0), 0, 0}},
     {Movement::TURN_AROUND_INPLACE, {0.0, 0.0, 0.7, 104.72, 10.47, T(301), T(401), -1, T(0), T(0), 0, 0}},
@@ -57,6 +78,7 @@ const std::map<Movement, ForwardParams> forward_params_search_fast = {
     {Movement::TURN_LEFT_90_SEARCH_MODE, {0.7, 4.0, 4.0, 23.0}},
 };
 
+/// @section TURN_PARMS_SLOW
 const std::map<Movement, TurnParams> turn_params_slow = {
     {Movement::TURN_RIGHT_45, {-45.0, -81.5, 0.5, 175.00, 8.5, T(92.5), T(176), -1, T(48.5), T(141), 5000, 5000}},
     {Movement::TURN_LEFT_45, {-50.0, -86.0, 0.5, 100.00, 7.854, T(0), T(0), 1, T(0), T(0), 0, 0}},
@@ -94,6 +116,7 @@ const std::map<Movement, ForwardParams> forward_params_slow = {
     {Movement::TURN_LEFT_135_FROM_45, {0.5, 2.0, 2.0, 78.5}},
 };
 
+/// @section TURN_PARMS_MEDIUM
 const std::map<Movement, TurnParams> turn_params_medium = {
 
     {Movement::TURN_RIGHT_45, {-46.0, -91.0, 1.0, 610.86, 17.45, T(44), T(79), -1, T(0), T(0), 0, 0}},
@@ -137,6 +160,7 @@ const std::map<Movement, ForwardParams> forward_params_medium = {
     {Movement::TURN_LEFT_135_FROM_45, {1.0, 12.0, 20.0, 70.0}},
 };
 
+/// @section TURN_PARMS_FAST
 const std::map<Movement, TurnParams> turn_params_fast = {
     {Movement::TURN_RIGHT_45, {-64.0, -82.0, 1.5, 785.40, 20.07, T(38), T(73), -1, T(0), T(0), 0, 0}},
     {Movement::TURN_LEFT_45, {-64.0, -82.0, 1.5, 785.40, 20.07, T(38), T(73), 1, T(0), T(0), 0, 0}},
@@ -177,6 +201,7 @@ const std::map<Movement, ForwardParams> forward_params_fast = {
     {Movement::TURN_LEFT_135_FROM_45, {1.5, 12.0, 20.0, 28.0}},
 };
 
+/// @section TURN_PARMS_SUPER
 const std::map<Movement, TurnParams> turn_params_super = {
     {Movement::TURN_RIGHT_45, {-64.0, -82.0, 1.5, 785.40, 20.07, T(38), T(73), -1, T(0), T(0), 0, 0}},
     {Movement::TURN_LEFT_45, {-64.0, -82.0, 1.5, 785.40, 20.07, T(38), T(73), 1, T(0), T(0), 0, 0}},
@@ -217,6 +242,7 @@ const std::map<Movement, ForwardParams> forward_params_super = {
     {Movement::TURN_LEFT_135_FROM_45, {1.5, 12.0, 20.0, 28.0}},
 };
 
+/// @section TURN_PARMS_CUSTOM
 std::map<Movement, TurnParams> turn_params_custom = {
     {Movement::TURN_RIGHT_45, {-64.0, -82.0, 1.5, 785.40, 20.07, T(38), T(73), -1, T(0), T(0), 0, 0}},
     {Movement::TURN_LEFT_45, {-64.0, -82.0, 1.5, 785.40, 20.07, T(38), T(73), 1, T(0), T(0), 0, 0}},
@@ -284,7 +310,9 @@ const GeneralParams general_params_search_slow = {
     40.0,                      // Max linear brake jerk
     0.13,                      // Coulomb ff
     0.0,                       // Angular Coulomb ff
-    0.0                        // Angular Static ff
+    0.0,                       // Angular Static ff
+    0.0,                       // Angular Coulomb ff Inplace
+    0.0                        // Angular Static ff Inplace
 };
 
 const GeneralParams general_params_search_medium = {
@@ -302,7 +330,9 @@ const GeneralParams general_params_search_medium = {
     100.0,                    // Max linear brake jerk
     0.13,                     // Coulomb ff
     0.0,                      // Angular Coulomb ff
-    0.0                       // Angular Static ff
+    0.0,                      // Angular Static ff
+    0.0,                      // Angular Coulomb ff Inplace
+    0.0                       // Angular Static ff Inplace
 };
 
 const GeneralParams general_params_search_fast = {
@@ -320,7 +350,9 @@ const GeneralParams general_params_search_fast = {
     100.0,                    // Max linear brake jerk
     0.13,                     // Coulomb ff
     0.0,                      // Angular Coulomb ff
-    0.25                      // Angular Static ff
+    0.25,                     // Angular Static ff
+    0.0,                      // Angular Coulomb ff Inplace
+    0.0                       // Angular Static ff Inplace
 };
 
 const GeneralParams general_params_slow = {
@@ -338,7 +370,9 @@ const GeneralParams general_params_slow = {
     40.0,                      // Max linear brake jerk
     0.13,                      // Coulomb ff
     0.0,                       // Angular Coulomb ff
-    0.0                        // Angular Static ff
+    0.0,                       // Angular Static ff
+    0.0,                       // Angular Coulomb ff Inplace
+    0.0                        // Angular Static ff Inplace
 };
 
 const GeneralParams general_params_medium = {
@@ -356,7 +390,9 @@ const GeneralParams general_params_medium = {
     625.0,                  // Max linear brake jerk
     0.18,                   // Coulomb ff
     0.07,                   // Angular Coulomb ff
-    0.25                    // Angular Static ff
+    0.25,                   // Angular Static ff
+    0.0,                    // Angular Coulomb ff Inplace
+    0.0                     // Angular Static ff Inplace
 };
 
 const GeneralParams general_params_fast = {
@@ -374,7 +410,9 @@ const GeneralParams general_params_fast = {
     625.0,                  // Max linear brake jerk
     0.18,                   // Coulomb ff
     0.07,                   // Angular Coulomb ff
-    0.25                    // Angular Static ff
+    0.25,                   // Angular Static ff
+    0.0,                    // Angular Coulomb ff Inplace
+    0.0                     // Angular Static ff Inplace
 };
 
 const GeneralParams general_params_super = {
@@ -392,5 +430,7 @@ const GeneralParams general_params_super = {
     625.0,                  // Max linear brake jerk
     0.18,                   // Coulomb ff
     0.07,                   // Angular Coulomb ff
-    0.25                    // Angular Static ff
+    0.25,                   // Angular Static ff
+    0.0,                    // Angular Coulomb ff Inplace
+    0.0                     // Angular Static ff Inplace
 };

@@ -297,20 +297,71 @@ function formatMs(v) {
   return step < 0.001 ? v.toFixed(1) : v.toFixed(0);
 }
 
+function computeTurnSuggestions(rawStart, rawFinal) {
+  if (!rawStart || !rawFinal) {
+    return { suggBefore: 0, suggAfter: 0, isPast180: false, offsetPast180: 0 };
+  }
+
+  const th0 = rawStart.theta;
+  const thf = rawFinal.theta;
+  const x_raw = rawFinal.x;
+  const y_raw = rawFinal.y;
+
+  const targetX = 180.0;
+  const targetY = 90.0;
+
+  const deltaX = targetX - x_raw;
+  const deltaY = targetY - y_raw;
+
+  // System:
+  // d_before * sin(th0) + d_after * sin(thf) = deltaX
+  // d_before * cos(th0) + d_after * cos(thf) = deltaY
+  // D = sin(th0)*cos(thf) - cos(th0)*sin(thf) = sin(th0 - thf)
+  const D = Math.sin(th0 - thf);
+
+  let d_before = 0;
+  let d_after = 0;
+
+  if (Math.abs(D) > 1e-4) {
+    d_before = (deltaX * Math.cos(thf) - deltaY * Math.sin(thf)) / D;
+    d_after = (Math.sin(th0) * deltaY - Math.cos(th0) * deltaX) / D;
+  } else {
+    d_before = targetY - y_raw;
+    d_after = 0;
+  }
+
+  const isPast180 = d_after < 0;
+  const offsetPast180 = x_raw - targetX;
+
+  return {
+    suggBefore: d_before,
+    suggAfter: d_after,
+    isPast180,
+    offsetPast180
+  };
+}
+
 function buildReadoutCard(ch, res) {
   const meta = CH_META[ch];
+  const sugg = res.suggestions || { suggBefore: 0, suggAfter: 0, isPast180: false, offsetPast180: 0 };
+  const suggAfterHtml = sugg.isPast180
+    ? `+${sugg.offsetPast180.toFixed(2)}<span class="rc-unit">mm</span> <span style="font-size:9px; color:var(--muted)">(offset-180)</span>`
+    : `${sugg.suggAfter.toFixed(2)}<span class="rc-unit">mm</span>`;
+
   return `<div class="readout-card" data-ch="${ch}">
 <div class="rc-head"><div class="led"></div><div class="rc-name">${meta.label}</div></div>
 <div class="rc-grid">
   <div class="rc-item"><span class="rc-label">t1 accel</span><span class="rc-value">${formatMs(res.t1)}<span class="rc-unit">ms</span></span></div>
   <div class="rc-item"><span class="rc-label">t2 cruise</span><span class="rc-value">${formatMs(res.t2)}<span class="rc-unit">ms</span></span></div>
   <div class="rc-item"><span class="rc-label">t3 decel</span><span class="rc-value">${formatMs(res.t3)}<span class="rc-unit">ms</span></span></div>
-  <div class="rc-item"><span class="rc-label">T total</span><span class="rc-value">${formatMs(res.T)}<span class="rc-unit">ms</span></span></div>
-  <div class="rc-item"><span class="rc-label">t1+t2 (t_start_deccel)</span><span class="rc-value">${formatMs(res.t1 + res.t2)}<span class="rc-unit">ms</span></span></div>
-  <div class="rc-item"><span class="rc-label">time to decrease jerk_1</span><span class="rc-value">${formatMs(res.t4 || 0)}<span class="rc-unit">ms</span></span></div>
-  <div class="rc-item"><span class="rc-label">time to decrease jerk_2</span><span class="rc-value">${formatMs(res.t5 || 0)}<span class="rc-unit">ms</span></span></div>
-  <div class="rc-item"><span class="rc-label">peak accel</span><span class="rc-value">${res.peakAccel.toFixed(1)}<span class="rc-unit">rad/s&sup2;</span></span></div>
-  <div class="rc-item"><span class="rc-label">peak speed</span><span class="rc-value">${res.peakOmega.toFixed(3)}<span class="rc-unit">rad/s</span></span></div>
+  <div class="rc-item"><span class="rc-label">T1 + T2 (t_start_deccel)</span><span class="rc-value">${formatMs(res.t1 + res.t2)}<span class="rc-unit">ms</span></span></div>
+  <div class="rc-item"><span class="rc-label">t4 jerk decel (time_to_decrease_jerk_1)</span><span class="rc-value">${formatMs(res.t4 || 0)}<span class="rc-unit">ms</span></span></div>
+  <div class="rc-item"><span class="rc-label">t5 jerk accel (time_to_decrease_jerk_2)</span><span class="rc-value">${formatMs(res.t5 || 0)}<span class="rc-unit">ms</span></span></div>
+  <div class="rc-item"><span class="rc-label">T total (t_stop)</span><span class="rc-value">${formatMs(res.T)}<span class="rc-unit">ms</span></span></div>
+  <div class="rc-item"><span class="rc-label">peak accel (angular_accel)</span><span class="rc-value">${res.peakAccel.toFixed(1)}<span class="rc-unit">rad/s&sup2;</span></span></div>
+  <div class="rc-item"><span class="rc-label">sugg. mm before</span><span class="rc-value">${sugg.suggBefore >= 0 ? '+' : ''}${sugg.suggBefore.toFixed(2)}<span class="rc-unit">mm</span></span></div>
+  <div class="rc-item"><span class="rc-label">sugg. mm after</span><span class="rc-value">${suggAfterHtml}</span></div>
+  <div class="rc-item"><span class="rc-label">peak speed (max_angular_speed)</span><span class="rc-value">${res.peakOmega.toFixed(3)}<span class="rc-unit">rad/s</span></span></div>
   <div class="rc-item"><span class="rc-label">final position</span><span class="rc-value">${res.final.x.toFixed(2)}, ${res.final.y.toFixed(2)}, ${(res.final.theta * R2D).toFixed(2)}&#176;</span></div>
 </div>
   </div>`;
@@ -358,6 +409,11 @@ function recomputeAndRender() {
       console.error(ch, e);
       return;
     }
+    // Calculate suggestions from raw simulation before applying user offsets
+    const rawStart = out.positions[0];
+    const rawFinal = out.positions[out.positions.length - 1];
+    out.results.suggestions = computeTurnSuggestions(rawStart, rawFinal);
+
     // Apply before/after turn offsets to trajectory positions
     out.positions = applyBeforeAfterTurn(out.positions, mmBefore, mmAfter);
     // Update final position in results to reflect trajectory modification

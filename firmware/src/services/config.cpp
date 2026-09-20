@@ -31,6 +31,8 @@ float Config::wheel_radius_mm = 12.75;
 float Config::coulomb_ff = 0.13;
 float Config::angular_coulomb_ff = 0.0;
 float Config::angular_static_ff = 0.0;
+float Config::angular_coulomb_ff_inplace = 0.0;
+float Config::angular_static_ff_inplace = 0.0;
 
 float Config::wall_kp = 0.0025;
 float Config::wall_ki = 0.0;
@@ -117,6 +119,8 @@ static std::pair<float*, bsp::eeprom::param_addresses_t> params[] = {
     {&Config::coulomb_ff, bsp::eeprom::ADDR_COULOMB_FF},
     {&Config::angular_coulomb_ff, bsp::eeprom::ADDR_ANGULAR_COULOMB_FF},
     {&Config::angular_static_ff, bsp::eeprom::ADDR_ANGULAR_STATIC_FF},
+    {&Config::angular_coulomb_ff_inplace, bsp::eeprom::ADDR_ANGULAR_COULOMB_FF_INPLACE},
+    {&Config::angular_static_ff_inplace, bsp::eeprom::ADDR_ANGULAR_STATIC_FF_INPLACE},
     {&Config::enable_lateral_correction_90, bsp::eeprom::ADDR_ENABLE_LATERAL_CORRECTION_90},
     {&Config::enable_lateral_correction_wall, bsp::eeprom::ADDR_ENABLE_LATERAL_CORRECTION_WALL},
 };
@@ -348,6 +352,10 @@ void Config::print_parameters() {
     std::printf("    angular_coulomb_ff = %f,\r\n", Config::angular_coulomb_ff);
     bsp::delay_ms(5);
     std::printf("    angular_static_ff = %f,\r\n", Config::angular_static_ff);
+    bsp::delay_ms(5);
+    std::printf("    angular_coulomb_ff_inplace = %f,\r\n", Config::angular_coulomb_ff_inplace);
+    bsp::delay_ms(5);
+    std::printf("    angular_static_ff_inplace = %f,\r\n", Config::angular_static_ff_inplace);
     bsp::delay_ms(5);
     std::printf("};\r\n");
     bsp::delay_ms(5);
