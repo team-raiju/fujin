@@ -177,10 +177,8 @@ private:
     Direction target_direction;
     float complete_prev_move_travel;
 
-    uint32_t wall_right_counter_on = 0;
-    uint32_t wall_left_counter_on = 0;
-    uint32_t wall_right_counter_off = 0;
-    uint32_t wall_left_counter_off = 0;
+    bool wall_right_was_confirmed = false;
+    bool wall_left_was_confirmed = false;
     float wall_break_last_dist = 0;
     bool current_wall_break_detected = false;
     bool is_braking = false;

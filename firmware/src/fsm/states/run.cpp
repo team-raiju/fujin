@@ -264,7 +264,7 @@ void RunWaitStart::enter() {
     bsp::fan::set(0);
 
     /* Only start IR if powered by the battery */
-    if (bsp::analog_sensors::battery_latest_reading_mv() > 7000) {
+    if (bsp::analog_sensors::battery_latest_reading_mv_real() > 7000) {
         soft_timer::start(services::Config::ms_to_ticks(100), soft_timer::SINGLE);
     }
 }

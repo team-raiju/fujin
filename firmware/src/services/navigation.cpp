@@ -26,8 +26,8 @@ using bsp::leds::Color;
 namespace {
 
 constexpr float FRONT_EMERGENCY_DISTANCE_MM = 50.0f;
-constexpr float WALL_BREAK_DEBUG_DISTANCE_MIN_MM = 180.0f;
-constexpr float WALL_BREAK_DEBUG_DISTANCE_MAX_MM = 187.5f;
+constexpr float WALL_BREAK_DEBUG_DISTANCE_MIN_MM = 90.0f;
+constexpr float WALL_BREAK_DEBUG_DISTANCE_MAX_MM = 97.5f;
 constexpr float SEARCH_WALL_BREAK_MIN_DISTANCE_MM = 40.0f;
 constexpr uint32_t WALL_BREAK_CONFIRM_COUNT = 4;
 constexpr float WALL_BREAK_MAX_CORRECTION_ERROR_MM = 40.0f;
@@ -196,6 +196,10 @@ void Navigation::reset_movement_variables(bool reset_linear_accel) {
     turn_tick_counter = 0;
     is_finished = false;
     is_braking = false;
+
+    if (!is_linear_movement(current_movement) || previous_movement != current_movement) {
+        bsp::analog_sensors::ir_reset_all_wall_hysteresis();
+    }
 }
 
 float Navigation::get_torricelli_distance(float final_speed, float initial_speed, float acceleration) {
@@ -257,11 +261,8 @@ float Navigation::get_effective_max_acceleration(float current_speed, float base
 }
 
 void Navigation::reset_wall_break() {
-    wall_right_counter_on = 0;
-    wall_left_counter_on = 0;
-
-    wall_right_counter_off = 0;
-    wall_left_counter_off = 0;
+    wall_right_was_confirmed = false;
+    wall_left_was_confirmed = false;
 
     wall_break_last_dist = 0.0f;
     current_wall_break_detected = false;
@@ -279,6 +280,13 @@ Navigation::WallBreak Navigation::process_wall_break() {
         return WallBreak::NONE;
     }
 
+    if (bsp::analog_sensors::ir_is_wall_confirmed(bsp::analog_sensors::SensingDirection::RIGHT)) {
+        wall_right_was_confirmed = true;
+    }
+    if (bsp::analog_sensors::ir_is_wall_confirmed(bsp::analog_sensors::SensingDirection::LEFT)) {
+        wall_left_was_confirmed = true;
+    }
+
     bool process = false;
     if (is_search_mode(selected_mode)) {
         bool valid_previous_move =
@@ -288,7 +296,7 @@ Navigation::WallBreak Navigation::process_wall_break() {
             !current_wall_break_detected) {
             process = true;
         }
-    } else if (wall_break_distance > CELL_SIZE_MM) {
+    } else if (wall_break_distance > (CELL_SIZE_MM + HALF_CELL_SIZE_MM)) {
         process = true;
     } else if ((previous_movement == START) && (current_movement == FORWARD) && (wall_break_last_dist < 0.1)){
         process = true;
@@ -298,30 +306,17 @@ Navigation::WallBreak Navigation::process_wall_break() {
         return WallBreak::NONE;
     }
 
-    bool right_seeing = bsp::analog_sensors::ir_reading_wall(bsp::analog_sensors::SensingDirection::RIGHT);
-    bool left_seeing = bsp::analog_sensors::ir_reading_wall(bsp::analog_sensors::SensingDirection::LEFT);
-
-    if (right_seeing) {
-        wall_right_counter_on += 1;
-        wall_right_counter_off = 0;
-    } else {
-        wall_right_counter_off += 1;
-    }
-
-    if (left_seeing) {
-        wall_left_counter_on += 1;
-        wall_left_counter_off = 0;
-    } else {
-        wall_left_counter_off += 1;
-    }
-
-    if (wall_right_counter_on >= WALL_BREAK_CONFIRM_COUNT && wall_right_counter_off > 0) {
+    if (wall_right_was_confirmed &&
+        bsp::analog_sensors::ir_wall_break_condition(bsp::analog_sensors::SensingDirection::RIGHT)) {
+        wall_right_was_confirmed = false;
         wall_break_last_dist = traveled_dist_mm;
         current_wall_break_detected = true;
         return WallBreak::RIGHT;
     }
 
-    if (wall_left_counter_on >= WALL_BREAK_CONFIRM_COUNT && wall_left_counter_off > 0) {
+    if (wall_left_was_confirmed &&
+        bsp::analog_sensors::ir_wall_break_condition(bsp::analog_sensors::SensingDirection::LEFT)) {
+        wall_left_was_confirmed = false;
         wall_break_last_dist = traveled_dist_mm;
         current_wall_break_detected = true;
         return WallBreak::LEFT;
@@ -438,6 +433,7 @@ void Navigation::update(void) {
     encoder_imu_diff = encoder_diff_mm - expected_diff_mm;
 
     traveled_dist_mm += delta_x_mm;
+    bsp::analog_sensors::ir_update_wall_hysteresis(delta_x_mm);
 
     Position rotated_delta;
     rotated_delta.x = delta_x_mm * std::cos(intermediate_angle_rad);

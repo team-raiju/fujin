@@ -176,7 +176,7 @@ void Notification::update(bool ignore_maze) {
     }
 
     case SEND_BATTERY: {
-        uint32_t bat = bsp::analog_sensors::battery_latest_reading_mv();
+        uint32_t bat = bsp::analog_sensors::battery_latest_reading_mv_real();
 
         uint8_t data[] = {
             bsp::ble::header,

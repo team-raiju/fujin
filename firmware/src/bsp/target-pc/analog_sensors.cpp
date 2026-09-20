@@ -57,6 +57,21 @@ bool ir_reading_wall(SensingDirection) {
     return true;
 }
 
+bool ir_is_wall_confirmed(SensingDirection) {
+    return true;
+}
+
+bool ir_wall_break_condition(SensingDirection) {
+    return false;
+}
+
+void ir_update_wall_hysteresis(float) {}
+void ir_reset_wall_hysteresis(SensingDirection) {}
+void ir_reset_all_wall_hysteresis() {}
+float ir_slope_value(SensingDirection) {
+    return 0.0f;
+}
+
 float ir_distance_mm(SensingDirection direction) {
     return dummy_distances[direction];
 }

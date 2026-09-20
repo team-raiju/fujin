@@ -56,6 +56,8 @@ uint32_t battery_latest_reading(void);
 uint32_t* current_latest_reading(void);
 float battery_latest_reading_mv(void);
 float battery_latest_reading_volts(void);
+float battery_latest_reading_mv_real(void);
+float battery_latest_reading_volts_real(void);
 bool battery_low();
 
 /// @brief Alias for ir_reading: returns sensor reading distance in mm
@@ -64,6 +66,12 @@ float ir_distance_mm(SensingDirection direction);
 uint32_t ir_raw_reading(SensingDirection direction);
 
 bool ir_reading_wall(SensingDirection direction);
+bool ir_is_wall_confirmed(SensingDirection direction);
+bool ir_wall_break_condition(SensingDirection direction);
+void ir_update_wall_hysteresis(float delta_traveled_mm);
+void ir_reset_wall_hysteresis(SensingDirection direction);
+void ir_reset_all_wall_hysteresis();
+float ir_slope_value(SensingDirection direction);
 
 bool ir_start_condition();
 

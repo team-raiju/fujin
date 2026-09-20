@@ -250,9 +250,39 @@ def compute_sensor_slope(values):
 
 def compute_control_validity(values, control_threshold):
     """Returns the firmware-matching control-valid mask and its weighted slope."""
+def compute_control_validity(values, control_threshold, dist=None, hysteresis_dist=20.0):
+    """Returns the firmware-matching control-valid mask and its weighted slope with distance hysteresis."""
     distances = np.array(values, dtype=float)
     slope = compute_sensor_slope(distances)
     valid = (distances < control_threshold) & (np.abs(slope) < IR_SLOPE_THRESHOLD)
+    raw_valid = (distances < control_threshold) & (np.abs(slope) < IR_SLOPE_THRESHOLD)
+    break_cond = (distances > control_threshold) | (slope > IR_SLOPE_THRESHOLD)
+
+    if dist is None or len(dist) != len(distances):
+        return raw_valid, slope
+
+    valid = np.zeros_like(raw_valid, dtype=bool)
+    confirmed = False
+    acc_dist = 0.0
+    for i in range(len(distances)):
+        delta_d = (dist[i] - dist[i-1]) if i > 0 else 0.0
+        if delta_d < 0:
+            delta_d = 0.0
+
+        if break_cond[i]:
+            confirmed = False
+            acc_dist = 0.0
+        elif raw_valid[i]:
+            if not confirmed:
+                acc_dist += delta_d
+                if acc_dist >= hysteresis_dist:
+                    confirmed = True
+        else:
+            confirmed = False
+            acc_dist = 0.0
+
+        valid[i] = confirmed
+
     return valid, slope
 
 def shade_invalid_regions(ax, x_axis, valid, color):
@@ -275,7 +305,9 @@ def ir_side_wall_error(left_dist, right_dist,
                        ref_left=IR_WALL_DIST_REF_LEFT,
                        ref_right=IR_WALL_DIST_REF_RIGHT,
                        th_left=IR_WALL_CONTROL_TH_LEFT,
-                       th_right=IR_WALL_CONTROL_TH_RIGHT):
+                       th_right=IR_WALL_CONTROL_TH_RIGHT,
+                       dist=None,
+                       hysteresis_dist=20.0):
     """
     Computes side wall error matching firmware ir_side_wall_error():
         int32_t left_error = ir_distances[LEFT] - ir_wall_dist_ref_left;
@@ -284,9 +316,9 @@ def ir_side_wall_error(left_dist, right_dist,
         if (ir_wall_control_valid(LEFT) && ir_wall_control_valid(RIGHT)) {
             ir_error = right_error - left_error;
         } else if (ir_wall_control_valid(LEFT)) {
-            ir_error = -1.5 * left_error;
+            ir_error = -2.0 * left_error;
         } else if (ir_wall_control_valid(RIGHT)) {
-            ir_error = 1.5 * right_error;
+            ir_error = 2.0 * right_error;
         } else {
             ir_error = 0;
         }
@@ -297,8 +329,8 @@ def ir_side_wall_error(left_dist, right_dist,
     left_error = l_arr - ref_left
     right_error = r_arr - ref_right
 
-    valid_left, _ = compute_control_validity(l_arr, th_left)
-    valid_right, _ = compute_control_validity(r_arr, th_right)
+    valid_left, _ = compute_control_validity(l_arr, th_left, dist=dist, hysteresis_dist=hysteresis_dist)
+    valid_right, _ = compute_control_validity(r_arr, th_right, dist=dist, hysteresis_dist=hysteresis_dist)
 
     num_valid_l = int(np.sum(valid_left))
     num_valid_r = int(np.sum(valid_right))
@@ -317,11 +349,11 @@ def ir_side_wall_error(left_dist, right_dist,
 
     # Only left valid
     only_left = valid_left & (~valid_right)
-    ir_error[only_left] = -1.5 * left_error[only_left]
+    ir_error[only_left] = -2.0 * left_error[only_left]
 
     # Only right valid
     only_right = (~valid_left) & valid_right
-    ir_error[only_right] = 1.5 * right_error[only_right]
+    ir_error[only_right] = 2.0 * right_error[only_right]
 
     return ir_error
 
@@ -379,7 +411,8 @@ def plot_single_grid(data_dict, x_axis, x_label, title):
             if control_threshold is not None:
                 control_line = [ax.axhline(control_threshold, color='#008c95', linestyle='--', lw=1.1,
                                            label=f'Control threshold {control_threshold:.0f} mm')]
-                valid, _ = compute_control_validity(vals, control_threshold)
+                dist_vals = np.array(data_dict.get('dist', []), dtype=float) if 'dist' in data_dict else None
+                valid, _ = compute_control_validity(vals, control_threshold, dist=dist_vals)
                 invalid_color = '#1f77b4' if key == 'sens_l' else '#2ca02c'
                 shade_invalid_regions(ax, x_axis, valid, invalid_color)
             ax.set_ylabel('Distance (mm)', color=meta['color'])
@@ -432,21 +465,23 @@ def plot_single_default(data_dict, x_axis, x_label, title,
     if has_l and has_r:
         left_values = np.array(data_dict['sens_l'], dtype=float)
         right_values = np.array(data_dict['sens_r'], dtype=float)
+        dist_vals = np.array(data_dict.get('dist', []), dtype=float) if 'dist' in data_dict else None
         ax_side.plot(x_axis, left_values, label=SENSOR_META['sens_l']['label'], color=SENSOR_META['sens_l']['color'], lw=1.5)
         ax_side.plot(x_axis, right_values, label=SENSOR_META['sens_r']['label'], color=SENSOR_META['sens_r']['color'], lw=1.5)
         ax_side.axhline(th_left, color=SENSOR_META['sens_l']['color'], linestyle=':', lw=1.0,
                         label=f'Left control threshold ({th_left:.0f} mm)')
         ax_side.axhline(th_right, color=SENSOR_META['sens_r']['color'], linestyle=':', lw=1.0,
                         label=f'Right control threshold ({th_right:.0f} mm)')
-        left_valid, _ = compute_control_validity(left_values, th_left)
-        right_valid, _ = compute_control_validity(right_values, th_right)
+        left_valid, _ = compute_control_validity(left_values, th_left, dist=dist_vals)
+        right_valid, _ = compute_control_validity(right_values, th_right, dist=dist_vals)
         shade_invalid_regions(ax_side, x_axis, left_valid, '#1f77b4')
         shade_invalid_regions(ax_side, x_axis, right_valid, '#2ca02c')
         
         # Calculate side wall error using firmware formula
         wall_error = ir_side_wall_error(data_dict['sens_l'], data_dict['sens_r'],
                                         ref_left=ref_left, ref_right=ref_right,
-                                        th_left=th_left, th_right=th_right)
+                                        th_left=th_left, th_right=th_right,
+                                        dist=dist_vals)
         ax_side.plot(x_axis, wall_error, label=f'IR Side Wall Error (refL={ref_left:.0f}, refR={ref_right:.0f})', color='#e7298a', linestyle='--', lw=1.5)
         ax_side.axhline(0, color='gray', linestyle=':', alpha=0.5, lw=0.8)
 

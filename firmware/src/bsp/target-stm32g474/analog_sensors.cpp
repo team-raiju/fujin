@@ -45,8 +45,13 @@ constexpr float ADC_MAX_VALUE = 4095.0f;
 constexpr float ADC_MAX_VOLTAGE_MV = 3300.0f;
 constexpr float ADC_MAX_VOLTAGE_VOLTS = 3.3f;
 
-constexpr float PWR_BATTERY_THRESHOLD_MV = 10700.0f;
-constexpr float PWR_BAT_VOLTAGE_MULTIPLIER = 4.19f;
+constexpr float PWR_BATTERY_THRESHOLD_MV = 11300.0f;
+
+// This value does not give a real battery value, but to change it, means changing the control constants so we will do it later
+constexpr float PWR_BAT_VOLTAGE_MULTIPLIER = 4.19f; 
+
+// This is the real multiplier measured with a multimeter. TODO: replace above value and change control constantes to be multiplied by 11.73%  = (1/(1-0,105))
+constexpr float PWR_BAT_VOLTAGE_MULTIPLIER_REAL = 4.63f; 
 
 constexpr float IR_EMA_ALPHA = 0.5f;
 constexpr float IR_MAX_DISTANCE_MM = 300.0f;
@@ -80,6 +85,8 @@ constexpr std::array<SensingPattern, 8> default_ir_wall_patterns = {{
 }};
 
 static std::array<SensingPattern, 8> ir_wall_patterns = default_ir_wall_patterns;
+
+static constexpr float WALL_HYSTERESIS_DISTANCE_MM = 30.0f;
 
 } // namespace
 
@@ -161,6 +168,8 @@ static float ir_distances[4];
 static float ir_slope[4];
 static float ir_distance_history[4][3];
 static bool ir_slope_initialized[4];
+static bool wall_confirmed[4] = {false, false, false, false};
+static float wall_dist_accumulated_mm[4] = {0.0f, 0.0f, 0.0f, 0.0f};
 static int32_t ir_raw_readings_on[4];
 static int32_t ir_raw_readings_off[4];
 static uint32_t battery_reading;
@@ -191,6 +200,8 @@ void start(void) {
     for (int i = 0; i < 4; i++) {
         ir_slope[i] = 0.0f;
         ir_slope_initialized[i] = false;
+        wall_confirmed[i] = false;
+        wall_dist_accumulated_mm[i] = 0.0f;
     }
     HAL_ADC_Start_DMA(&hadc1, adc_1_dma_buffer, ADC_1_DMA_BUFFER_SIZE);
     // HAL_ADC_Start_DMA(&hadc2, adc_2_dma_buffer, ADC_2_DMA_BUFFER_SIZE);
@@ -229,8 +240,18 @@ float battery_latest_reading_volts(void) {
     return measured_adc_voltage * PWR_BAT_VOLTAGE_MULTIPLIER;
 }
 
+float battery_latest_reading_mv_real(void) {
+    float measured_adc_voltage = (battery_reading / ADC_MAX_VALUE) * ADC_MAX_VOLTAGE_MV;
+    return measured_adc_voltage * PWR_BAT_VOLTAGE_MULTIPLIER_REAL;
+}
+
+float battery_latest_reading_volts_real(void) {
+    float measured_adc_voltage = (battery_reading / ADC_MAX_VALUE) * ADC_MAX_VOLTAGE_VOLTS;
+    return measured_adc_voltage * PWR_BAT_VOLTAGE_MULTIPLIER_REAL;
+}
+
 bool battery_low() {
-    return battery_latest_reading_mv() <= PWR_BATTERY_THRESHOLD_MV;
+    return battery_latest_reading_mv_real() <= PWR_BATTERY_THRESHOLD_MV;
 }
 
 uint32_t* current_latest_reading(void) {
@@ -262,17 +283,83 @@ bool ir_reading_wall(SensingDirection direction) {
     }
 }
 
+bool ir_is_wall_confirmed(SensingDirection direction) {
+    const auto index = static_cast<uint8_t>(direction);
+    if (index < 4) {
+        return wall_confirmed[index];
+    }
+    return false;
+}
+
+bool ir_wall_break_condition(SensingDirection direction) {
+    switch (direction) {
+    case SensingDirection::RIGHT:
+        return ir_distances[direction] > services::Config::ir_wall_detect_th_right ||
+               ir_slope[direction] > services::Config::sensor_r_slope_max_th;
+    case SensingDirection::LEFT:
+        return ir_distances[direction] > services::Config::ir_wall_detect_th_left ||
+               ir_slope[direction] > services::Config::sensor_l_slope_max_th;
+    default:
+        return false;
+    }
+}
+
+void ir_update_wall_hysteresis(float delta_traveled_mm) {
+    if (delta_traveled_mm <= 0.0f) {
+        return;
+    }
+
+    const SensingDirection side_directions[2] = {SensingDirection::LEFT, SensingDirection::RIGHT};
+    for (const auto dir : side_directions) {
+        const auto index = static_cast<uint8_t>(dir);
+
+        if (ir_wall_break_condition(dir)) {
+            wall_confirmed[index] = false;
+            wall_dist_accumulated_mm[index] = 0.0f;
+        } else if (ir_reading_wall(dir)) {
+            if (!wall_confirmed[index]) {
+                wall_dist_accumulated_mm[index] += delta_traveled_mm;
+                if (wall_dist_accumulated_mm[index] >= WALL_HYSTERESIS_DISTANCE_MM) {
+                    wall_confirmed[index] = true;
+                }
+            }
+        } else {
+            wall_confirmed[index] = false;
+            wall_dist_accumulated_mm[index] = 0.0f;
+        }
+    }
+}
+
+void ir_reset_wall_hysteresis(SensingDirection direction) {
+    const auto index = static_cast<uint8_t>(direction);
+    if (index < 4) {
+        wall_confirmed[index] = false;
+        wall_dist_accumulated_mm[index] = 0.0f;
+    }
+}
+
+void ir_reset_all_wall_hysteresis() {
+    for (int i = 0; i < 4; i++) {
+        wall_confirmed[i] = false;
+        wall_dist_accumulated_mm[i] = 0.0f;
+    }
+}
+
+float ir_slope_value(SensingDirection direction) {
+    return ir_slope[direction];
+}
+
 int32_t ir_side_wall_error() {
     int32_t left_error = ir_distances[SensingDirection::LEFT] - services::Config::ir_wall_dist_ref_left;
     int32_t right_error = ir_distances[SensingDirection::RIGHT] - services::Config::ir_wall_dist_ref_right;
 
     int32_t ir_error;
-    if (ir_reading_wall(SensingDirection::LEFT) && ir_reading_wall(SensingDirection::RIGHT)) {
+    if (ir_is_wall_confirmed(SensingDirection::LEFT) && ir_is_wall_confirmed(SensingDirection::RIGHT)) {
         ir_error = right_error - left_error;
-    } else if (ir_reading_wall(SensingDirection::LEFT)) {
-        ir_error = -1.5 * left_error;
-    } else if (ir_reading_wall(SensingDirection::RIGHT)) {
-        ir_error = 1.5 * right_error;
+    } else if (ir_is_wall_confirmed(SensingDirection::LEFT)) {
+        ir_error = -2.0 * left_error;
+    } else if (ir_is_wall_confirmed(SensingDirection::RIGHT)) {
+        ir_error = 2.0 * right_error;
     } else {
         ir_error = 0;
     }
@@ -307,7 +394,6 @@ bool ir_diagonal_control_valid(SensingDirection direction) {
         return false;
     }
 }
-
 
 SensingStatus ir_get_sensing_status() {
     SensingPattern current_pattern;
@@ -373,7 +459,6 @@ SensingStatus ir_get_sensing_status() {
 
     return status;
 }
-
 
 bool ir_start_condition() {
     return ir_distances[SensingDirection::FRONT_LEFT] < START_SENSOR_DIST_MM &&
