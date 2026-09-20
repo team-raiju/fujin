@@ -229,7 +229,13 @@ public:
     State* react(ButtonPressed const&) override;
 
 private:
-    enum calibration_mode_t { IR_CALIBRATION, IMU_CALIBRATION, FAN_CALIBRATION, MOTORS_CALIBRATION };
+    enum calibration_mode_t {
+        IR_CALIBRATION,
+        IR_DISTANCE_CALIBRATION,
+        IMU_CALIBRATION,
+        FAN_CALIBRATION,
+        MOTORS_CALIBRATION
+    };
 
     calibration_mode_t calibration_mode;
 };
@@ -267,6 +273,33 @@ private:
     uint32_t read_averaged_adc(bsp::analog_sensors::SensingDirection direction);
     float read_averaged_distance(bsp::analog_sensors::SensingDirection direction);
     bool solve_2point_calib(uint8_t sensor_idx);
+};
+
+class CalibrationIRDistance : public State {
+public:
+    enum step_t {
+        WAITING_PLACEMENT,
+        SAMPLING,
+    };
+
+    CalibrationIRDistance();
+
+    void enter() override;
+    void exit() override;
+
+    State* react(ButtonPressed const&) override;
+    State* react(Timeout const&) override;
+
+private:
+    step_t step;
+    uint32_t current_distance_mm;
+    uint32_t sample_count;
+    uint32_t sum_raw_l;
+    uint32_t sum_raw_fl;
+    uint32_t sum_raw_fr;
+    uint32_t sum_raw_r;
+
+    void print_prompt();
 };
 
 class CalibrationIMU : public State {

@@ -65,6 +65,9 @@ State* CalibrationModeSelect::react(ButtonPressed const& event) {
     if (event.button == ButtonPressed::SHORT2) {
         if (calibration_mode == IR_CALIBRATION) {
             bsp::leds::stripe_set(bsp::leds::Color::Blue, bsp::leds::Color::Blue);
+            calibration_mode = IR_DISTANCE_CALIBRATION;
+        } else if (calibration_mode == IR_DISTANCE_CALIBRATION) {
+            bsp::leds::stripe_set(bsp::leds::Color::Blue, bsp::leds::Color::Orange);
             calibration_mode = IMU_CALIBRATION;
         } else if (calibration_mode == IMU_CALIBRATION) {
             bsp::leds::stripe_set(bsp::leds::Color::Orange, bsp::leds::Color::Black);
@@ -87,8 +90,11 @@ State* CalibrationModeSelect::react(ButtonPressed const& event) {
             bsp::leds::stripe_set(bsp::leds::Color::Orange, bsp::leds::Color::Black);
             calibration_mode = FAN_CALIBRATION;
         } else if (calibration_mode == FAN_CALIBRATION) {
-            bsp::leds::stripe_set(bsp::leds::Color::Blue, bsp::leds::Color::Blue);
+            bsp::leds::stripe_set(bsp::leds::Color::Blue, bsp::leds::Color::Orange);
             calibration_mode = IMU_CALIBRATION;
+        } else if (calibration_mode == IMU_CALIBRATION) {
+            bsp::leds::stripe_set(bsp::leds::Color::Blue, bsp::leds::Color::Blue);
+            calibration_mode = IR_DISTANCE_CALIBRATION;
         } else {
             bsp::leds::stripe_set(bsp::leds::Color::Blue, bsp::leds::Color::Black);
             calibration_mode = IR_CALIBRATION;
@@ -99,6 +105,8 @@ State* CalibrationModeSelect::react(ButtonPressed const& event) {
     if (event.button == ButtonPressed::LONG1) {
         if (calibration_mode == IR_CALIBRATION) {
             return &State::get<CalibrationIRSensors>();
+        } else if (calibration_mode == IR_DISTANCE_CALIBRATION) {
+            return &State::get<CalibrationIRDistance>();
         } else if (calibration_mode == IMU_CALIBRATION) {
             return &State::get<CalibrationIMU>();
         } else if (calibration_mode == FAN_CALIBRATION) {
@@ -421,6 +429,152 @@ void CalibrationIRSensors::handle_wall_pattern_calib(const uint8_t packet[bsp::b
             send_wall_pattern_ack(pattern_idx, 0, pat);
         }
     }
+}
+
+CalibrationIRDistance::CalibrationIRDistance() {
+    step = WAITING_PLACEMENT;
+    current_distance_mm = 10;
+    sample_count = 0;
+    sum_raw_l = 0;
+    sum_raw_fl = 0;
+    sum_raw_fr = 0;
+    sum_raw_r = 0;
+}
+
+void CalibrationIRDistance::print_prompt() {
+    std::printf("\r\n========================================\r\n");
+    bsp::delay_ms(5);
+    std::printf(">>> Place micromouse at %lu mm <<<\r\n", static_cast<unsigned long>(current_distance_mm));
+    bsp::delay_ms(5);
+    std::printf("Press button to start 5s raw ADC sampling (Long press to exit)\r\n");
+    bsp::delay_ms(5);
+    std::printf("========================================\r\n");
+    bsp::delay_ms(5);
+}
+
+void CalibrationIRDistance::enter() {
+    bsp::debug::print("state:CalibrationIRDistance");
+
+    bsp::leds::stripe_set(bsp::leds::Color::Orange);
+    bsp::leds::ir_emitter_all_on();
+    bsp::analog_sensors::enable_modulation();
+    bsp::motors::set(0, 0);
+
+    bsp::buzzer::start();
+    bsp::delay_ms(150);
+    bsp::buzzer::stop();
+
+    step = WAITING_PLACEMENT;
+    current_distance_mm = 10;
+    sample_count = 0;
+    sum_raw_l = 0;
+    sum_raw_fl = 0;
+    sum_raw_fr = 0;
+    sum_raw_r = 0;
+
+    print_prompt();
+    soft_timer::start(services::Config::ms_to_ticks(100), soft_timer::CONTINUOUS);
+}
+
+State* CalibrationIRDistance::react(ButtonPressed const& event) {
+    if (event.button == ButtonPressed::LONG1 || event.button == ButtonPressed::LONG2) {
+        std::printf("\r\nCalibration aborted by user.\r\n");
+        return &State::get<PreCalib>();
+    }
+
+    if (step == WAITING_PLACEMENT &&
+        (event.button == ButtonPressed::SHORT1 || event.button == ButtonPressed::SHORT2)) {
+        bsp::buzzer::start();
+        bsp::delay_ms(60);
+        bsp::buzzer::stop();
+
+        bsp::leds::stripe_set(bsp::leds::Color::Green);
+
+        step = SAMPLING;
+        sample_count = 0;
+        sum_raw_l = 0;
+        sum_raw_fl = 0;
+        sum_raw_fr = 0;
+        sum_raw_r = 0;
+
+        std::printf("--- Sampling raw ADC values at %lu mm (5s @ 100ms) ---\r\n",
+                    static_cast<unsigned long>(current_distance_mm));
+        bsp::delay_ms(5);
+        std::printf("Dist_mm,Sample,L,FL,FR,R\r\n");
+        bsp::delay_ms(5);
+    }
+
+    return nullptr;
+}
+
+State* CalibrationIRDistance::react(Timeout const&) {
+    if (step != SAMPLING) {
+        return nullptr;
+    }
+
+    const uint32_t raw_l = bsp::analog_sensors::ir_raw_reading(bsp::analog_sensors::LEFT);
+    const uint32_t raw_fl = bsp::analog_sensors::ir_raw_reading(bsp::analog_sensors::FRONT_LEFT);
+    const uint32_t raw_fr = bsp::analog_sensors::ir_raw_reading(bsp::analog_sensors::FRONT_RIGHT);
+    const uint32_t raw_r = bsp::analog_sensors::ir_raw_reading(bsp::analog_sensors::RIGHT);
+
+    sample_count++;
+    sum_raw_l += raw_l;
+    sum_raw_fl += raw_fl;
+    sum_raw_fr += raw_fr;
+    sum_raw_r += raw_r;
+
+    std::printf("%lu,%lu,%lu,%lu,%lu,%lu\r\n",
+                static_cast<unsigned long>(current_distance_mm),
+                static_cast<unsigned long>(sample_count),
+                static_cast<unsigned long>(raw_l),
+                static_cast<unsigned long>(raw_fl),
+                static_cast<unsigned long>(raw_fr),
+                static_cast<unsigned long>(raw_r));
+
+    if (sample_count >= 50) {
+        const uint32_t avg_l = sum_raw_l / sample_count;
+        const uint32_t avg_fl = sum_raw_fl / sample_count;
+        const uint32_t avg_fr = sum_raw_fr / sample_count;
+        const uint32_t avg_r = sum_raw_r / sample_count;
+
+        std::printf("--- %lu mm Summary | Avg: L=%lu FL=%lu FR=%lu R=%lu ---\r\n",
+                    static_cast<unsigned long>(current_distance_mm),
+                    static_cast<unsigned long>(avg_l),
+                    static_cast<unsigned long>(avg_fl),
+                    static_cast<unsigned long>(avg_fr),
+                    static_cast<unsigned long>(avg_r));
+
+        bsp::buzzer::start();
+        bsp::delay_ms(100);
+        bsp::buzzer::stop();
+
+        if (current_distance_mm < 250) {
+            current_distance_mm += 10;
+            step = WAITING_PLACEMENT;
+            bsp::leds::stripe_set(bsp::leds::Color::Orange);
+            print_prompt();
+        } else {
+            bsp::delay_ms(5);
+            std::printf("\r\n========================================\r\n");
+            bsp::delay_ms(5);
+            std::printf("*** RAW IR SENSOR CALIBRATION COMPLETE (10-250mm) ***\r\n");
+            bsp::delay_ms(5);
+            std::printf("========================================\r\n");
+            bsp::delay_ms(5);
+            return &State::get<PreCalib>();
+        }
+    }
+
+    return nullptr;
+}
+
+void CalibrationIRDistance::exit() {
+    soft_timer::stop();
+    bsp::leds::ir_emitter_all_off();
+    bsp::analog_sensors::enable_modulation(false);
+    bsp::leds::stripe_set(bsp::leds::Color::Black);
+    bsp::buzzer::stop();
+    bsp::motors::set(0, 0);
 }
 
 CalibrationIMU::CalibrationIMU() {}

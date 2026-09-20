@@ -60,17 +60,17 @@ constexpr float START_SENSOR_DIST_MM = 150.0f;
 constexpr float FRONT_SENSOR_SEEING_DIST_MM = 160.0f;
 
 constexpr IrCalibParams default_ir_calib_params[4] = {
-    {3821.004458f, 415.340935f, -342.127314f}, // RIGHT
-    {4362.001131f, 484.625292f, 179.119118f},  // FRONT_LEFT
-    {3848.872537f, 415.133442f, -120.552799f}, // FRONT_RIGHT
-    {3579.254976f, 359.789456f, -89.058130f},  // LEFT
+    {3970.258981f, 434.914686f, 108.274530f},  // RIGHT
+    {5906.861078f, 706.272927f, 267.342336f},  // FRONT_LEFT
+    {3934.811769f, 439.237611f, -12.466576f},  // FRONT_RIGHT
+    {3715.954588f, 407.345898f, 40.763487f},   // LEFT
 };
 
 static IrCalibParams ir_calib_params[4] = {
-    {3821.004458f, 415.340935f, -342.127314f},
-    {4362.001131f, 484.625292f, 179.119118f},
-    {3848.872537f, 415.133442f, -120.552799f},
-    {3579.254976f, 359.789456f, -89.058130f},
+    {3970.258981f, 434.914686f, 108.274530f},
+    {5906.861078f, 706.272927f, 267.342336f},
+    {3934.811769f, 439.237611f, -12.466576f},
+    {3715.954588f, 407.345898f, 40.763487f},
 };
 
 constexpr std::array<SensingPattern, 8> default_ir_wall_patterns = {{
