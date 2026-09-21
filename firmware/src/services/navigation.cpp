@@ -28,7 +28,7 @@ namespace {
 constexpr float FRONT_EMERGENCY_DISTANCE_MM = 50.0f;
 constexpr float WALL_BREAK_DEBUG_DISTANCE_MIN_MM = 90.0f;
 constexpr float WALL_BREAK_DEBUG_DISTANCE_MAX_MM = 97.5f;
-constexpr float SEARCH_WALL_BREAK_MIN_DISTANCE_MM = 40.0f;
+constexpr float SEARCH_WALL_BREAK_MIN_DISTANCE_MM = 35.0f;
 constexpr uint32_t WALL_BREAK_CONFIRM_COUNT = 4;
 constexpr float WALL_BREAK_MAX_CORRECTION_ERROR_MM = 40.0f;
 constexpr float LINEAR_BRAKE_MARGIN_MM = 20.0f;
@@ -293,7 +293,8 @@ Navigation::WallBreak Navigation::process_wall_break() {
     bool process = false;
     if (is_search_mode(selected_mode)) {
         bool valid_previous_move =
-            ((previous_movement == FORWARD) || (previous_movement == START) || (previous_movement == TURN_AROUND));
+            (previous_movement == FORWARD || previous_movement == START || previous_movement == TURN_AROUND ||
+             previous_movement == TURN_RIGHT_90_SEARCH_MODE || previous_movement == TURN_LEFT_90_SEARCH_MODE);
 
         if (valid_previous_move && wall_break_distance > SEARCH_WALL_BREAK_MIN_DISTANCE_MM &&
             !current_wall_break_detected) {
@@ -301,7 +302,7 @@ Navigation::WallBreak Navigation::process_wall_break() {
         }
     } else if (wall_break_distance > (CELL_SIZE_MM + HALF_CELL_SIZE_MM)) {
         process = true;
-    } else if ((previous_movement == START) && (current_movement == FORWARD) && (wall_break_last_dist < 0.1)){
+    } else if ((previous_movement == START) && (current_movement == FORWARD) && (wall_break_last_dist < 0.1)) {
         process = true;
     }
 
@@ -365,7 +366,8 @@ void Navigation::apply_wall_break_correction() {
 
             // Closer to left wall means the beam caught the break later along the track (+dx)
             longitudinal_correction_mm = lateral_offset_mm * tan_theta_l;
-            longitudinal_correction_mm = std::clamp(longitudinal_correction_mm, -MAX_LONGITUDINAL_CORRECTION, MAX_LONGITUDINAL_CORRECTION);
+            longitudinal_correction_mm =
+                std::clamp(longitudinal_correction_mm, -MAX_LONGITUDINAL_CORRECTION, MAX_LONGITUDINAL_CORRECTION);
         }
     } else if (wall_break == WallBreak::RIGHT) {
         base_offset_mm = general_params.start_wall_break_mm_right;
@@ -384,7 +386,8 @@ void Navigation::apply_wall_break_correction() {
 
             // Closer to right wall means the beam caught the break later along the track (+dx)
             longitudinal_correction_mm = lateral_offset_mm * tan_theta_r;
-            longitudinal_correction_mm = std::clamp(longitudinal_correction_mm, -MAX_LONGITUDINAL_CORRECTION, MAX_LONGITUDINAL_CORRECTION);
+            longitudinal_correction_mm =
+                std::clamp(longitudinal_correction_mm, -MAX_LONGITUDINAL_CORRECTION, MAX_LONGITUDINAL_CORRECTION);
         }
     }
 
@@ -744,8 +747,7 @@ void Navigation::step_turn_forward() {
     const bool reached_target = std::abs(traveled_dist_mm) >= target_travel_mm;
     const bool is_turn_around_stop = is_turn_around_movement() && (mini_fsm_state == MiniFSMStates::FORWARD_1);
 
-    const bool should_transition =
-        is_turn_around_stop ? (is_braking && control_linear_speed <= 0.0f) : reached_target;
+    const bool should_transition = is_turn_around_stop ? (is_braking && control_linear_speed <= 0.0f) : reached_target;
 
     if (should_transition) {
         transition_after_turn_forward();

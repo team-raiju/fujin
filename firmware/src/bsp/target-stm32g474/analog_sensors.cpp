@@ -54,7 +54,7 @@ constexpr float PWR_BAT_VOLTAGE_MULTIPLIER = 4.19f;
 constexpr float PWR_BAT_VOLTAGE_MULTIPLIER_REAL = 4.63f; 
 
 constexpr float IR_EMA_ALPHA = 0.5f;
-constexpr float IR_MAX_DISTANCE_MM = 300.0f;
+constexpr float IR_MAX_DISTANCE_MM = 270.0f;
 
 constexpr float START_SENSOR_DIST_MM = 150.0f;
 constexpr float FRONT_SENSOR_SEEING_DIST_MM = 160.0f;
@@ -75,13 +75,13 @@ static IrCalibParams ir_calib_params[4] = {
 
 constexpr std::array<SensingPattern, 8> default_ir_wall_patterns = {{
     {170.85f, 155.71f, 141.92f, 174.55f}, // F-L-R
-    {170.50f, 152.29f, 146.06f, 300.00f}, // F-L
-    {300.00f, 155.64f, 141.08f, 158.25f}, // F-R
-    {300.00f, 160.85f, 152.47f, 300.00f}, // F
-    {175.98f, 300.00f, 300.00f, 166.89f}, // L-R
-    {167.21f, 300.00f, 300.00f, 300.00f}, // L
-    {300.00f, 300.00f, 300.00f, 162.26f}, // R
-    {300.00f, 300.00f, 300.00f, 300.00f}  // None
+    {170.50f, 152.29f, 146.06f, 270.00f}, // F-L
+    {270.00f, 155.64f, 141.08f, 158.25f}, // F-R
+    {270.00f, 160.85f, 152.47f, 270.00f}, // F
+    {175.98f, 270.00f, 270.00f, 166.89f}, // L-R
+    {167.21f, 270.00f, 270.00f, 270.00f}, // L
+    {270.00f, 270.00f, 270.00f, 162.26f}, // R
+    {270.00f, 270.00f, 270.00f, 270.00f}  // None
 }};
 
 static std::array<SensingPattern, 8> ir_wall_patterns = default_ir_wall_patterns;

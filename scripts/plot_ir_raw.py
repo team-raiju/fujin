@@ -240,7 +240,7 @@ def main():
         # Determine raw range to evaluate
         if 'R' in loaded_data:
             r_means = loaded_data['R']['means']
-            raw_min = max(float(np.min(r_means)) - 50.0, 300.0)
+            raw_min = max(float(np.min(r_means)) - 50.0, 270.0)
             raw_max = float(np.max(r_means)) + 50.0
         else:
             raw_min = 400.0

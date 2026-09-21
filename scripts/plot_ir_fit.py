@@ -59,6 +59,8 @@ SENSOR_LABELS = {
     'R': 'Right (R)',
 }
 
+IR_MAX_DISTANCE_MM = 270.0  # Maximum sensor distance (mm)
+
 
 # ==============================================================================
 # PARSING & STATISTICS
@@ -596,7 +598,7 @@ def load_sensor_data(sensor, filepath, min_dist_arg, max_dist_arg):
     peak_idx = int(np.argmax(means))
     default_min_dist = distances[peak_idx]
     fit_min_dist = min_dist_arg if min_dist_arg is not None else default_min_dist
-    fit_max_dist = max_dist_arg if max_dist_arg is not None else max(distances)
+    fit_max_dist = max_dist_arg if max_dist_arg is not None else min(max(distances), IR_MAX_DISTANCE_MM)
 
     mask = [(fit_min_dist <= d <= fit_max_dist) for d in distances]
     d_fit = np.array(distances)[mask]
@@ -661,8 +663,8 @@ def main():
     parser.add_argument(
         "--max-dist",
         type=float,
-        default=None,
-        help="Maximum distance (mm) to include for curve fitting (defaults to max measured distance)."
+        default=IR_MAX_DISTANCE_MM,
+        help=f"Maximum distance (mm) to include for curve fitting (default: {IR_MAX_DISTANCE_MM:.0f})."
     )
     parser.add_argument(
         "--ref1",

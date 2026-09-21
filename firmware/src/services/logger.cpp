@@ -73,10 +73,10 @@ const Logger::ParamInfo paramInfoArray[] = {
     {65535, -250, 250, 131.0f},     // position_mm_y
     {16383, -180, 180, 45.5083f},   // angle
     {16383, -500, 12600, 1.25061f}, // distance_mm
-    {1023, 0, 300, 3.41f},          // sensor_distance_l
-    {1023, 0, 300, 3.41f},          // sensor_distance_fl
-    {1023, 0, 300, 3.41f},          // sensor_distance_fr
-    {1023, 0, 300, 3.41f},          // sensor_distance_r
+    {1023, 0, 270, 3.7889f},        // sensor_distance_l
+    {1023, 0, 270, 3.7889f},        // sensor_distance_fl
+    {1023, 0, 270, 3.7889f},        // sensor_distance_fr
+    {1023, 0, 270, 3.7889f},        // sensor_distance_r
 };
 #endif
 
