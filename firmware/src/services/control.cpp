@@ -100,6 +100,8 @@ void Control::reset(GeneralParams general_params) {
     motor_control_disabled = false;
     emergency = false;
     use_inplace_friction = false;
+    wall_pid_enabled = false;
+    diagonal_pid_enabled = false;
 }
 
 void Control::update() {
@@ -159,21 +161,23 @@ void Control::update() {
         }
         rotation_ff += target_angular_speed_rad_s * params.angular_vel_feed_forward_k;
 
-        // Friction feedforward: in-place vs rolling
-        const float static_ff = (use_inplace_friction && params.angular_static_ff_inplace > 0.0f)
-                                    ? params.angular_static_ff_inplace
-                                    : params.angular_static_ff;
-        const float coulomb_ff = (use_inplace_friction && params.angular_coulomb_ff_inplace > 0.0f)
-                                     ? params.angular_coulomb_ff_inplace
-                                     : params.angular_coulomb_ff;
+        // Friction feedforward: in-place vs rolling (only enabled when not fixing walls, e.g. during turns)
+        if (!wall_pid_enabled && !diagonal_pid_enabled) {
+            const float static_ff = (use_inplace_friction && params.angular_static_ff_inplace > 0.0f)
+                                        ? params.angular_static_ff_inplace
+                                        : params.angular_static_ff;
+            const float coulomb_ff = (use_inplace_friction && params.angular_coulomb_ff_inplace > 0.0f)
+                                         ? params.angular_coulomb_ff_inplace
+                                         : params.angular_coulomb_ff;
 
-        // Static friction
-        if (is_accelerating && std::abs(bsp::imu::get_rad_per_s()) < 0.4f &&
-            std::abs(target_angular_acceleration) > 0.1f) {
-            rotation_ff += static_ff * dir;
-        } // Dynamic friction
-        else if (std::abs(target_angular_speed_rad_s) > 0.005f) {
-            rotation_ff += coulomb_ff * dir;
+            // Static friction
+            if (is_accelerating && std::abs(bsp::imu::get_rad_per_s()) < 0.4f &&
+                std::abs(target_angular_acceleration) > 0.1f) {
+                rotation_ff += static_ff * dir;
+            } // Dynamic friction
+            else if (std::abs(target_angular_speed_rad_s) > 0.005f) {
+                rotation_ff += coulomb_ff * dir;
+            }
         }
 
         last_target_angular_speed_rad_s = target_angular_speed_rad_s;

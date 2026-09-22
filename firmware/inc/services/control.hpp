@@ -72,8 +72,8 @@ class Control {
         float last_target_angular_speed_rad_s;
         float target_angular_acceleration = 0.0f;
         float last_target_angular_acceleration = 0.0f;
-        bool wall_pid_enabled;
-        bool diagonal_pid_enabled;
+        bool wall_pid_enabled = false;
+        bool diagonal_pid_enabled = false;
         int16_t pwm_duty_l;
         int16_t pwm_duty_r;
         bool motor_control_disabled = false;
