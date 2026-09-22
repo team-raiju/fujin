@@ -564,6 +564,38 @@ main {
   grid-column: 1 / -1;
 }
 
+.fw-copy-btn {
+  font-size: 9.5px;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: 'IBM Plex Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: color 0.15s ease;
+}
+
+.fw-copy-btn:hover {
+  color: var(--text);
+}
+
+.fw-code {
+  font-size: 11px;
+  user-select: all;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 6px 8px;
+  white-space: nowrap;
+  overflow-x: auto;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.fw-code:hover {
+  border-color: var(--line-bright);
+  background: rgba(0, 0, 0, 0.45);
+}
+
 #empty-readouts,
 #lin-empty-readouts {
   color: var(--muted-dim);

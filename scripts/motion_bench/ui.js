@@ -341,12 +341,87 @@ function computeTurnSuggestions(rawStart, rawFinal) {
   };
 }
 
+function copyFirmwareParams(targetEl, text) {
+  const container = targetEl.closest('.fw-line-item');
+  const btn = container ? container.querySelector('.fw-copy-btn') : null;
+  const doFeedback = () => {
+    if (btn) {
+      const orig = btn.textContent;
+      btn.textContent = 'COPIED!';
+      btn.style.color = 'var(--jerk)';
+      setTimeout(() => {
+        btn.textContent = orig;
+        btn.style.color = '';
+      }, 1500);
+    }
+  };
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(doFeedback).catch(() => {
+      fallbackCopy(text);
+      doFeedback();
+    });
+  } else {
+    fallbackCopy(text);
+    doFeedback();
+  }
+}
+if (typeof window !== 'undefined') {
+  window.copyFirmwareParams = copyFirmwareParams;
+}
+
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand('copy');
+  } catch (e) {
+    console.error('Copy failed', e);
+  }
+  document.body.removeChild(ta);
+}
+
 function buildReadoutCard(ch, res) {
   const meta = CH_META[ch];
   const sugg = res.suggestions || { suggBefore: 0, suggAfter: 0, isPast180: false, offsetPast180: 0 };
   const suggAfterHtml = sugg.isPast180
     ? `+${sugg.offsetPast180.toFixed(2)}<span class="rc-unit">mm</span> <span style="font-size:9px; color:var(--muted)">(offset-180)</span>`
     : `${sugg.suggAfter.toFixed(2)}<span class="rc-unit">mm</span>`;
+
+  let fwItemHtml = '';
+  if (ch === 'jerk') {
+    const mmBefore = state.mmBeforeTurn || 0;
+    const startStr = mmBefore.toFixed(2);
+    const mmAfterSlider = state.mmAfterTurn || 0;
+    const finalX = res.final ? res.final.x : 0;
+    const mmAfterCalc = (finalX - mmAfterSlider) - 180;
+    const endStr = mmAfterCalc.toFixed(2);
+    const linSpeedStr = (state.linearSpeed % 1 === 0 ? state.linearSpeed.toFixed(1) : Number(state.linearSpeed.toFixed(3)).toString());
+    const accelStr = (res.peakAccel % 1 === 0 ? res.peakAccel.toFixed(1) : Number(res.peakAccel.toFixed(2)).toString());
+    const omegaStr = (res.peakOmega % 1 === 0 ? res.peakOmega.toFixed(1) : Number(res.peakOmega.toFixed(2)).toString());
+    const tStartDecel = formatMs(res.t1 + res.t2);
+    const tStop = formatMs(res.T);
+    const sign = 1;
+    const tJerkDecel = formatMs(res.t4 || 0);
+    const tJerkAccel = formatMs(res.t5 || 0);
+    const jerkStart = Math.round(state.jerkJerk || 0);
+    const jerkAfter = Math.round(state.jerkJerkAfter || 0);
+
+    const fwLine = `{${startStr}, ${endStr}, ${linSpeedStr}, ${accelStr}, ${omegaStr}, T(${tStartDecel}), T(${tStop}), ${sign}, T(${tJerkDecel}), T(${tJerkAccel}), ${jerkStart}, ${jerkAfter}}`;
+
+    fwItemHtml = `
+  <div class="rc-item wide fw-line-item" style="margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--line);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+      <span class="rc-label">firmware params</span>
+      <span class="fw-copy-btn" onclick="copyFirmwareParams(this, '${fwLine}')">copy</span>
+    </div>
+    <div class="rc-value fw-code" onclick="copyFirmwareParams(this, '${fwLine}')" title="Click to copy firmware line">${fwLine}</div>
+  </div>`;
+  }
 
   return `<div class="readout-card" data-ch="${ch}">
 <div class="rc-head"><div class="led"></div><div class="rc-name">${meta.label}</div></div>
@@ -362,7 +437,7 @@ function buildReadoutCard(ch, res) {
   <div class="rc-item"><span class="rc-label">sugg. mm before</span><span class="rc-value">${sugg.suggBefore >= 0 ? '+' : ''}${sugg.suggBefore.toFixed(2)}<span class="rc-unit">mm</span></span></div>
   <div class="rc-item"><span class="rc-label">sugg. mm after</span><span class="rc-value">${suggAfterHtml}</span></div>
   <div class="rc-item"><span class="rc-label">peak speed (max_angular_speed)</span><span class="rc-value">${res.peakOmega.toFixed(3)}<span class="rc-unit">rad/s</span></span></div>
-  <div class="rc-item"><span class="rc-label">final position</span><span class="rc-value">${res.final.x.toFixed(2)}, ${res.final.y.toFixed(2)}, ${(res.final.theta * R2D).toFixed(2)}&#176;</span></div>
+  <div class="rc-item"><span class="rc-label">final position</span><span class="rc-value">${res.final.x.toFixed(2)}, ${res.final.y.toFixed(2)}, ${(res.final.theta * R2D).toFixed(2)}&#176;</span></div>${fwItemHtml}
 </div>
   </div>`;
 }
