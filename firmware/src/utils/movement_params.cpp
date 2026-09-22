@@ -280,6 +280,10 @@ std::map<Movement, ForwardParams> forward_params_custom = {
     {Movement::TURN_LEFT_90, {1.3, 12.0, 20.0, 5.0}},
     {Movement::TURN_RIGHT_180, {1.3, 12.0, 20.0, -7.0}},
     {Movement::TURN_LEFT_180, {1.3, 12.0, 20.0, -7.0}},
+    {Movement::TURN_RIGHT_45, {0.0, 0.0, 0.0, 0.0}},
+    {Movement::TURN_LEFT_45, {0.0, 0.0, 0.0, 0.0}},
+    {Movement::TURN_RIGHT_135, {0.0, 0.0, 0.0, 0.0}},
+    {Movement::TURN_LEFT_135, {0.0, 0.0, 0.0, 0.0}},
 
     {Movement::TURN_RIGHT_45_FROM_45, {1.5, 12.0, 20.0, 67.5}},
     {Movement::TURN_LEFT_45_FROM_45, {1.5, 12.0, 20.0, 63.0}},
@@ -509,6 +513,13 @@ bool load_movement_preset_to_custom(navigation_mode_t preset) {
 
     const auto& forward_src = get_forward_params(preset);
     const auto& turn_src = get_turn_params(preset);
+
+    for (auto& pair : forward_params_custom) {
+        pair.second = ForwardParams{};
+    }
+    for (auto& pair : turn_params_custom) {
+        pair.second = TurnParams{};
+    }
 
     for (const auto& pair : forward_src) {
         forward_params_custom[pair.first] = pair.second;

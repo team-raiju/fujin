@@ -239,25 +239,26 @@ void Navigation::reset_wall_break() {
 }
 
 Navigation::WallBreak Navigation::process_wall_break() {
-
-    const float wall_break_distance = traveled_dist_mm - wall_break_last_dist;
-    if (wall_break_distance >= WALL_BREAK_DEBUG_DISTANCE_MIN_MM &&
-        wall_break_distance < WALL_BREAK_DEBUG_DISTANCE_MAX_MM) {
-        bsp::leds::stripe_set(Color::Black);
-    }
-
     if (current_movement != Movement::FORWARD) {
+        wall_left_was_confirmed = false;
+        wall_right_was_confirmed = false;
         return WallBreak::NONE;
     }
 
-    if (bsp::analog_sensors::ir_is_wall_confirmed(bsp::analog_sensors::SensingDirection::RIGHT)) {
-        wall_right_was_confirmed = true;
-    }
-    if (bsp::analog_sensors::ir_is_wall_confirmed(bsp::analog_sensors::SensingDirection::LEFT)) {
-        wall_left_was_confirmed = true;
-    }
+    const bool right_is_confirmed = bsp::analog_sensors::ir_is_wall_confirmed(bsp::analog_sensors::SensingDirection::RIGHT);
+    const bool left_is_confirmed = bsp::analog_sensors::ir_is_wall_confirmed(bsp::analog_sensors::SensingDirection::LEFT);
+
+    const bool right_break = bsp::analog_sensors::ir_wall_break_condition(bsp::analog_sensors::SensingDirection::RIGHT);
+    const bool left_break = bsp::analog_sensors::ir_wall_break_condition(bsp::analog_sensors::SensingDirection::LEFT);
+
+    const bool falling_edge_right = wall_right_was_confirmed && right_break;
+    const bool falling_edge_left  = wall_left_was_confirmed  && left_break;
+
+    wall_right_was_confirmed = right_is_confirmed;
+    wall_left_was_confirmed = left_is_confirmed;
 
     bool process = false;
+    const float wall_break_distance = traveled_dist_mm - wall_break_last_dist;
     if (is_search_mode(selected_mode)) {
         bool valid_previous_move =
             (previous_movement == FORWARD || previous_movement == START || previous_movement == TURN_AROUND ||
@@ -267,7 +268,7 @@ Navigation::WallBreak Navigation::process_wall_break() {
             !current_wall_break_detected) {
             process = true;
         }
-    } else if (wall_break_distance > (CELL_SIZE_MM + HALF_CELL_SIZE_MM)) {
+    } else if (wall_break_distance > CELL_SIZE_MM) {
         process = true;
     } else if ((previous_movement == START) && (current_movement == FORWARD) && (wall_break_last_dist < 0.1)) {
         process = true;
@@ -277,17 +278,13 @@ Navigation::WallBreak Navigation::process_wall_break() {
         return WallBreak::NONE;
     }
 
-    if (wall_right_was_confirmed &&
-        bsp::analog_sensors::ir_wall_break_condition(bsp::analog_sensors::SensingDirection::RIGHT)) {
-        wall_right_was_confirmed = false;
+    if (falling_edge_right) {
         wall_break_last_dist = traveled_dist_mm;
         current_wall_break_detected = true;
         return WallBreak::RIGHT;
     }
 
-    if (wall_left_was_confirmed &&
-        bsp::analog_sensors::ir_wall_break_condition(bsp::analog_sensors::SensingDirection::LEFT)) {
-        wall_left_was_confirmed = false;
+    if (falling_edge_left) {
         wall_break_last_dist = traveled_dist_mm;
         current_wall_break_detected = true;
         return WallBreak::LEFT;
@@ -295,7 +292,6 @@ Navigation::WallBreak Navigation::process_wall_break() {
 
     return WallBreak::NONE;
 }
-
 void Navigation::apply_wall_break_correction() {
     const WallBreak wall_break = process_wall_break();
     if (wall_break == WallBreak::NONE) {
