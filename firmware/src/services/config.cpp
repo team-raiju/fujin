@@ -125,6 +125,38 @@ static std::pair<float*, bsp::eeprom::param_addresses_t> params[] = {
     {&Config::enable_lateral_correction_wall, bsp::eeprom::ADDR_ENABLE_LATERAL_CORRECTION_WALL},
 };
 
+static const std::pair<float*, bsp::eeprom::param_addresses_t> general_params_eeprom[] = {
+    {&Config::fan_speed, bsp::eeprom::ADDR_FAN_SPEED},
+    {&Config::angular_kp, bsp::eeprom::ADDR_ANGULAR_KP},
+    {&Config::angular_ki, bsp::eeprom::ADDR_ANGULAR_KI},
+    {&Config::angular_kd, bsp::eeprom::ADDR_ANGULAR_KD},
+    {&Config::wall_kp, bsp::eeprom::ADDR_WALL_KP},
+    {&Config::wall_ki, bsp::eeprom::ADDR_WALL_KI},
+    {&Config::wall_kd, bsp::eeprom::ADDR_WALL_KD},
+    {&Config::linear_vel_kp, bsp::eeprom::ADDR_LINEAR_VEL_KP},
+    {&Config::linear_vel_ki, bsp::eeprom::ADDR_LINEAR_VEL_KI},
+    {&Config::linear_vel_kd, bsp::eeprom::ADDR_LINEAR_VEL_KD},
+    {&Config::diagonal_walls_kp, bsp::eeprom::ADDR_DIAGONAL_WALLS_KP},
+    {&Config::diagonal_walls_ki, bsp::eeprom::ADDR_DIAGONAL_WALLS_KI},
+    {&Config::diagonal_walls_kd, bsp::eeprom::ADDR_DIAGONAL_WALLS_KD},
+    {&Config::start_wall_break_mm_left, bsp::eeprom::ADDR_START_WALL_BREAK_MM_LEFT},
+    {&Config::start_wall_break_mm_right, bsp::eeprom::ADDR_START_WALL_BREAK_MM_RIGHT},
+    {&Config::enable_wall_break_correction, bsp::eeprom::ADDR_ENABLE_WALL_BREAK_CORRECTION},
+    {&Config::angular_acc_feed_forward_k, bsp::eeprom::ADDR_ANGULAR_ACC_FEED_FORWARD_K},
+    {&Config::angular_brake_feed_forward_k, bsp::eeprom::ADDR_ANGULAR_BRAKE_FEED_FORWARD_K},
+    {&Config::angular_vel_feed_forward_k, bsp::eeprom::ADDR_ANGULAR_VEL_FEED_FORWARD_K},
+    {&Config::linear_vel_acc_feed_forward_k, bsp::eeprom::ADDR_LINEAR_VEL_ACC_FEED_FORWARD_K},
+    {&Config::linear_vel_brake_feed_forward_k, bsp::eeprom::ADDR_LINEAR_VEL_BRAKE_FEED_FORWARD_K},
+    {&Config::linear_vel_feed_forward_k, bsp::eeprom::ADDR_LINEAR_VEL_FEED_FORWARD_K},
+    {&Config::max_linear_acc_jerk, bsp::eeprom::ADDR_MAX_LINEAR_ACC_JERK},
+    {&Config::max_linear_brake_jerk, bsp::eeprom::ADDR_MAX_LINEAR_BRAKE_JERK},
+    {&Config::coulomb_ff, bsp::eeprom::ADDR_COULOMB_FF},
+    {&Config::angular_coulomb_ff, bsp::eeprom::ADDR_ANGULAR_COULOMB_FF},
+    {&Config::angular_static_ff, bsp::eeprom::ADDR_ANGULAR_STATIC_FF},
+    {&Config::angular_coulomb_ff_inplace, bsp::eeprom::ADDR_ANGULAR_COULOMB_FF_INPLACE},
+    {&Config::angular_static_ff_inplace, bsp::eeprom::ADDR_ANGULAR_STATIC_FF_INPLACE},
+};
+
 static const std::map<Movement, uint16_t> turn_address_map = {
     {Movement::TURN_RIGHT_45, bsp::eeprom::ADDR_TURN_PARAMS_RIGHT_45},
     {Movement::TURN_LEFT_45, bsp::eeprom::ADDR_TURN_PARAMS_LEFT_45},
@@ -263,6 +295,19 @@ int Config::parse_packet(uint8_t packet[bsp::ble::max_packet_size]) {
 
 int Config::write_default_params() {
     for (auto& param : params) {
+        _float f;
+        f.value = *param.first;
+        if (bsp::eeprom::write_u32(param.second, f.u32) != bsp::eeprom::OK) {
+            return -1;
+        }
+        bsp::delay_ms(5);
+    }
+
+    return 0;
+}
+
+int Config::save_general_params_to_eeprom() {
+    for (const auto& param : general_params_eeprom) {
         _float f;
         f.value = *param.first;
         if (bsp::eeprom::write_u32(param.second, f.u32) != bsp::eeprom::OK) {
@@ -457,6 +502,57 @@ int Config::parse_movement_packet(uint8_t packet[bsp::ble::max_packet_size]) {
     }
 
     return -1;
+}
+
+int Config::load_movement_preset(uint8_t preset_id) {
+    if (!load_movement_preset_to_custom(static_cast<navigation_mode_t>(preset_id))) {
+        return -1;
+    }
+
+    write_all_move_params_to_eeprom();
+    send_movement_parameters();
+    return 0;
+}
+
+int Config::load_general_preset(uint8_t preset_id) {
+    if (preset_id > SUPER) {
+        return -1;
+    }
+
+    const GeneralParams& gp = get_general_params(static_cast<navigation_mode_t>(preset_id));
+    Config::fan_speed = gp.fan_speed;
+    Config::angular_kp = gp.angular_kp;
+    Config::angular_ki = gp.angular_ki;
+    Config::angular_kd = gp.angular_kd;
+    Config::angular_acc_feed_forward_k = gp.angular_acc_feed_forward_k;
+    Config::angular_brake_feed_forward_k = gp.angular_brake_feed_forward_k;
+    Config::angular_vel_feed_forward_k = gp.angular_vel_feed_forward_k;
+    Config::linear_vel_acc_feed_forward_k = gp.linear_vel_acc_feed_forward_k;
+    Config::linear_vel_brake_feed_forward_k = gp.linear_vel_brake_feed_forward_k;
+    Config::linear_vel_feed_forward_k = gp.linear_vel_feed_forward_k;
+    Config::wall_kp = gp.wall_kp;
+    Config::wall_ki = gp.wall_ki;
+    Config::wall_kd = gp.wall_kd;
+    Config::linear_vel_kp = gp.linear_vel_kp;
+    Config::linear_vel_ki = gp.linear_vel_ki;
+    Config::linear_vel_kd = gp.linear_vel_kd;
+    Config::diagonal_walls_kp = gp.diagonal_walls_kp;
+    Config::diagonal_walls_ki = gp.diagonal_walls_ki;
+    Config::diagonal_walls_kd = gp.diagonal_walls_kd;
+    Config::start_wall_break_mm_left = gp.start_wall_break_mm_left;
+    Config::start_wall_break_mm_right = gp.start_wall_break_mm_right;
+    Config::enable_wall_break_correction = gp.enable_wall_break_correction;
+    Config::max_linear_acc_jerk = gp.max_linear_acc_jerk;
+    Config::max_linear_brake_jerk = gp.max_linear_brake_jerk;
+    Config::coulomb_ff = gp.coulomb_ff;
+    Config::angular_coulomb_ff = gp.angular_coulomb_ff;
+    Config::angular_static_ff = gp.angular_static_ff;
+    Config::angular_coulomb_ff_inplace = gp.angular_coulomb_ff_inplace;
+    Config::angular_static_ff_inplace = gp.angular_static_ff_inplace;
+
+    save_general_params_to_eeprom();
+    send_parameters();
+    return 0;
 }
 
 void Config::send_movement_parameters() {

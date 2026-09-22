@@ -435,3 +435,87 @@ const GeneralParams general_params_super = {
     0.0,                    // Angular Coulomb ff Inplace
     0.0                     // Angular Static ff Inplace
 };
+
+const std::map<Movement, TurnParams>& get_turn_params(navigation_mode_t mode) {
+    switch (mode) {
+    case SEARCH_SLOW:
+        return turn_params_search_slow;
+    case SEARCH_MEDIUM:
+        return turn_params_search_medium;
+    case SEARCH_FAST:
+        return turn_params_search_fast;
+    case SLOW:
+        return turn_params_slow;
+    case MEDIUM:
+        return turn_params_medium;
+    case FAST:
+        return turn_params_fast;
+    case SUPER:
+        return turn_params_super;
+    case CUSTOM:
+    default:
+        return turn_params_custom;
+    }
+}
+
+const std::map<Movement, ForwardParams>& get_forward_params(navigation_mode_t mode) {
+    switch (mode) {
+    case SEARCH_SLOW:
+        return forward_params_search_slow;
+    case SEARCH_MEDIUM:
+        return forward_params_search_medium;
+    case SEARCH_FAST:
+        return forward_params_search_fast;
+    case SLOW:
+        return forward_params_slow;
+    case MEDIUM:
+        return forward_params_medium;
+    case FAST:
+        return forward_params_fast;
+    case SUPER:
+        return forward_params_super;
+    case CUSTOM:
+    default:
+        return forward_params_custom;
+    }
+}
+
+const GeneralParams& get_general_params(navigation_mode_t mode) {
+    switch (mode) {
+    case SEARCH_SLOW:
+        return general_params_search_slow;
+    case SEARCH_MEDIUM:
+        return general_params_search_medium;
+    case SEARCH_FAST:
+        return general_params_search_fast;
+    case SLOW:
+        return general_params_slow;
+    case MEDIUM:
+        return general_params_medium;
+    case FAST:
+        return general_params_fast;
+    case SUPER:
+        return general_params_super;
+    case CUSTOM:
+    default:
+        return general_params_slow;
+    }
+}
+
+bool load_movement_preset_to_custom(navigation_mode_t preset) {
+    if (preset == CUSTOM || preset > SUPER) {
+        return false;
+    }
+
+    const auto& forward_src = get_forward_params(preset);
+    const auto& turn_src = get_turn_params(preset);
+
+    for (const auto& pair : forward_src) {
+        forward_params_custom[pair.first] = pair.second;
+    }
+    for (const auto& pair : turn_src) {
+        turn_params_custom[pair.first] = pair.second;
+    }
+
+    return true;
+}

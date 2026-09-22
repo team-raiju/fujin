@@ -53,6 +53,14 @@ void FSM::start() {
             dispatch(BleCommand());
         }
 
+        if ((packet[1] == bsp::ble::BlePacketType::LoadMovementPreset ||
+             packet[1] == bsp::ble::BlePacketType::LoadGeneralPreset) &&
+            !bsp::ble::is_config_locked()) {
+            BleCommand cmd;
+            std::memcpy(cmd.packet, packet, bsp::ble::max_packet_size);
+            dispatch(cmd);
+        }
+
         if (packet[1] == bsp::ble::BlePacketType::UpdateMoveSequence && !bsp::ble::is_config_locked()) {
             services::Config::parse_move_sequence_packet(packet);
             dispatch(BleCommand());

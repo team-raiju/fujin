@@ -332,9 +332,9 @@ void Run::enter() {
     logger->init();
     
     maze->read_maze_from_memory(map_backup);
-    maze->print(maze->ORIGIN);
+    // maze->print(maze->ORIGIN);
     target_directions = maze->directions_to_goal();
-    maze->print(maze->ORIGIN);
+    // maze->print(maze->ORIGIN);
 
     services::Control::instance()->start_fan();
     bsp::delay_ms(200);

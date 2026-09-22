@@ -78,8 +78,11 @@ public:
     static void init();
     static int parse_packet(uint8_t packet[bsp::ble::max_packet_size]);
     static int parse_movement_packet(uint8_t packet[bsp::ble::max_packet_size]);
+    static int load_movement_preset(uint8_t preset_id);
+    static int load_general_preset(uint8_t preset_id);
     static int parse_move_sequence_packet(uint8_t packet[bsp::ble::max_packet_size]);
     static int write_default_params();
+    static int save_general_params_to_eeprom();
     static int write_all_move_params_to_eeprom();
     static int write_turn_param_to_eeprom(Movement movement_id);
     static int write_forward_param_to_eeprom(Movement movement_id);

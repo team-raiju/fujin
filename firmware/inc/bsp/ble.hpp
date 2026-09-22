@@ -30,6 +30,8 @@ enum BlePacketType : uint8_t {
     RequestIrWallPatterns = 0x0D,
     CalibrateIrWallPattern = 0x0E,
     TargetMovementSequence = 0x0F,
+    LoadMovementPreset = 0x10,
+    LoadGeneralPreset = 0x11,
 };
 
 enum BleCommands : uint8_t {

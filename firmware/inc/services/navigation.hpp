@@ -6,21 +6,14 @@
 
 #include "algorithms/pid.hpp"
 #include "services/control.hpp"
+#include "utils/movement_params.hpp"
 
 namespace services {
 
 class Navigation {
 public:
-    enum navigation_mode_t {
-        SEARCH_SLOW,
-        SEARCH_MEDIUM,
-        SEARCH_FAST,
-        CUSTOM,
-        SLOW,
-        MEDIUM,
-        FAST,
-        SUPER
-    };
+    using navigation_mode_t = ::navigation_mode_t;
+    using enum ::navigation_mode_t;
 
     enum target_movement_mode_t {
         NORMAL,

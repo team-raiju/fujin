@@ -124,47 +124,14 @@ void Navigation::reset(navigation_mode_t mode) {
 }
 
 void Navigation::configure_mode(navigation_mode_t mode) {
-    switch (mode) {
-    case SEARCH_SLOW:
-        turn_params = turn_params_search_slow;
-        forward_params = forward_params_search_slow;
-        general_params = general_params_search_slow;
-        break;
-    case SEARCH_MEDIUM:
-        turn_params = turn_params_search_medium;
-        forward_params = forward_params_search_medium;
-        general_params = general_params_search_medium;
-        break;
-    case SEARCH_FAST:
-        turn_params = turn_params_search_fast;
-        forward_params = forward_params_search_fast;
-        general_params = general_params_search_fast;
-        break;
-    case CUSTOM:
+    if (mode == CUSTOM) {
         turn_params = turn_params_custom;
         forward_params = forward_params_custom;
         general_params = make_custom_general_params();
-        break;
-    case SLOW:
-        turn_params = turn_params_slow;
-        forward_params = forward_params_slow;
-        general_params = general_params_slow;
-        break;
-    case MEDIUM:
-        turn_params = turn_params_medium;
-        forward_params = forward_params_medium;
-        general_params = general_params_medium;
-        break;
-    case FAST:
-        turn_params = turn_params_fast;
-        forward_params = forward_params_fast;
-        general_params = general_params_fast;
-        break;
-    case SUPER:
-        turn_params = turn_params_super;
-        forward_params = forward_params_super;
-        general_params = general_params_super;
-        break;
+    } else {
+        turn_params = get_turn_params(mode);
+        forward_params = get_forward_params(mode);
+        general_params = get_general_params(mode);
     }
 }
 

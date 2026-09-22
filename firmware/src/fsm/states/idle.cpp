@@ -38,6 +38,20 @@ State* Idle::react(BleCommand const& event) {
         services::Config::send_parameters();
         return nullptr;
     }
+    if (event.packet[1] == bsp::ble::BlePacketType::LoadMovementPreset) {
+        bsp::buzzer::start();
+        bsp::delay_ms(100);
+        bsp::buzzer::stop();
+        services::Config::load_movement_preset(event.packet[2]);
+        return nullptr;
+    }
+    if (event.packet[1] == bsp::ble::BlePacketType::LoadGeneralPreset) {
+        bsp::buzzer::start();
+        bsp::delay_ms(100);
+        bsp::buzzer::stop();
+        services::Config::load_general_preset(event.packet[2]);
+        return nullptr;
+    }
 
     bsp::buzzer::start();
     bsp::delay_ms(100);
