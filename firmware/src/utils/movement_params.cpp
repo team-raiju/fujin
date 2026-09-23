@@ -80,41 +80,39 @@ const std::map<Movement, ForwardParams> forward_params_search_fast = {
 
 /// @section TURN_PARMS_SLOW
 const std::map<Movement, TurnParams> turn_params_slow = {
-    {Movement::TURN_RIGHT_45, {-45.02, -81.33, 0.5, 180.0, 8.45, T(93.0), T(176.0), -1, T(47.0), T(140.0), 5000, 5000}},
-    {Movement::TURN_LEFT_45, {-45.02, -81.33, 0.5, 180.0, 8.45, T(93.0), T(176.0), 1, T(47.0), T(140.0), 5000, 5000}},
-    {Movement::TURN_RIGHT_90, {0.0, -15.67, 0.5, 150.0, 10.47, T(150), T(250), -1, T(70), T(220), 5000, 5000}},
-    {Movement::TURN_LEFT_90, {0.0, -15.67, 0.5, 150.0, 10.47, T(150), T(250), 1, T(70), T(220), 5000, 5000}},
-    {Movement::TURN_RIGHT_180, {0.00, 0.87, 0.5, 100.0, 5.58, T(563.0), T(639.0), -1, T(56.0), T(619.0), 5000, 5000}},
-    {Movement::TURN_LEFT_180, {0.00, 0.87, 0.5, 100.0, 5.58, T(563.0), T(639.0), 1, T(56.0), T(619.0), 5000, 5000}},
+    {Movement::TURN_RIGHT_45, {-45.02, -81.33, 0.5, 180.0, 8.45, T(93.0), T(176.0), -1, T(47.0), T(140.0), 5000, 5000}},        //ok
+    {Movement::TURN_LEFT_45, {-45.02, -81.33, 0.5, 180.0, 8.45, T(93.0), T(176.0), 1, T(47.0), T(140.0), 5000, 5000}},          //ok
+    {Movement::TURN_RIGHT_90, {0.0, -15.67, 0.5, 150.0, 10.47, T(147), T(247), -1, T(70), T(217), 5000, 5000}},                 //ok
+    {Movement::TURN_LEFT_90, {0.0, -15.67, 0.5, 150.0, 10.47, T(147), T(247), 1, T(70), T(217), 5000, 5000}},                   //ok
+    {Movement::TURN_RIGHT_180, {-10.0, 15.0, 0.5, 100.0, 5.58, T(563.0), T(639.0), -1, T(56.0), T(619.0), 5000, 5000}},         //ok
+    {Movement::TURN_LEFT_180, {-10.0, 15.0, 0.5, 100.0, 5.58, T(563.0), T(639.0), 1, T(56.0), T(619.0), 5000, 5000}},           //ok
     {Movement::TURN_RIGHT_135, {-3.79, -70.15, 0.5, 120.0, 7.5, T(314.0), T(400.5), -1, T(62.5), T(376.5), 5000, 5000}},
-    {Movement::TURN_LEFT_135, {-3.79, -70.15, 0.5, 120.0, 7.5, T(314.0), T(400.5), 1, T(62.5), T(376.5), 5000, 5000}},
-    
-    {Movement::TURN_RIGHT_45_FROM_45, {0.0, 45.92, 0.5, 180.0, 8.45, T(93.0), T(176.0), -1, T(47.0), T(140.0), 5000, 5000}},
-    {Movement::TURN_LEFT_45_FROM_45, {0.0, 45.92, 0.5, 180.0, 8.45, T(93.0), T(176.0), 1, T(47.0), T(140.0), 5000, 5000}},
-    {Movement::TURN_RIGHT_90_FROM_45, {0.0, -52.91, 0.5, 150.0, 10.47, T(150.0), T(250.0), -1, T(70.0), T(220.0), 5000, 5000}},
-    {Movement::TURN_LEFT_90_FROM_45, {0.0, -52.91, 0.5, 150.0, 10.47, T(150.0), T(250.0), 1, T(70.0), T(220.0), 5000, 5000}},
+    {Movement::TURN_LEFT_135, {-0.1, -74.5, 0.5, 120.0, 7.5, T(312.0), T(398.5), 1, T(62.5), T(374.5), 5000, 5000}},            //ok
+    {Movement::TURN_RIGHT_45_FROM_45, {0.0, 45.92, 0.5, 180.0, 8.45, T(91.0), T(174.0), -1, T(47.0), T(138.0), 5000, 5000}},    //ok
+    {Movement::TURN_LEFT_45_FROM_45, {0.0, 45.92, 0.5, 180.0, 8.45, T(91.0), T(174.0), 1, T(47.0), T(138.0), 5000, 5000}},      //ok
+    {Movement::TURN_RIGHT_90_FROM_45, {0.0, -52.91, 0.5, 150.0, 10.47, T(150.0), T(250.0), -1, T(70.0), T(220.0), 5000, 5000}}, 
+    {Movement::TURN_LEFT_90_FROM_45, {0.0, -57.0, 0.5, 150.0, 10.47, T(147.0), T(247.0), 1, T(70.0), T(217.0), 5000, 5000}},    //ok
     {Movement::TURN_RIGHT_135_FROM_45, {0.0, 4.54, 0.5, 120.0, 7.5, T(314.0), T(400.5), -1, T(62.5), T(376.5), 5000, 5000}},
-    {Movement::TURN_LEFT_135_FROM_45, {0.0, 4.54, 0.5, 120.0, 7.5, T(314.0), T(400.5), 1, T(62.5), T(376.5), 5000, 5000}},
+    {Movement::TURN_LEFT_135_FROM_45, {0.0, 12.5, 0.5, 120.0, 7.5, T(310.5), T(397.0), 1, T(62.5), T(373.0), 5000, 5000}},      //ok
     
-    {Movement::TURN_AROUND, {0.0, 0.0, 0.5, 150.0, 11.0, T(288), T(411), -1, T(73), T(361), 3000, 3000}},
+    {Movement::TURN_AROUND, {0.0, 0.0, 0.5, 150.0, 11.0, T(288), T(411), -1, T(73), T(361), 3000, 3000}},   //ok
 };
 
 const std::map<Movement, ForwardParams> forward_params_slow = {
-    {Movement::START, {0.5, 3.0, 3.0, HALF_CELL_SIZE_MM + ROBOT_DIST_FROM_CENTER_START_MM}},
-    {Movement::FORWARD, {3.0, 8.0, 8.0, CELL_SIZE_MM}},
-    {Movement::DIAGONAL, {2.0, 5.0, 5.0, CELL_DIAGONAL_SIZE_MM}},
-    {Movement::STOP, {0.5, 3.0, 3.0, (HALF_CELL_SIZE_MM - 10.0)}},
+    {Movement::START, {0.5, 3.0, 3.0, HALF_CELL_SIZE_MM + ROBOT_DIST_FROM_CENTER_START_MM}},   //ok
+    {Movement::FORWARD, {3.0, 8.0, 8.0, CELL_SIZE_MM}},             //ok
+    {Movement::DIAGONAL, {2.0, 5.0, 5.0, CELL_DIAGONAL_SIZE_MM}},   //ok
+    {Movement::STOP, {0.5, 3.0, 3.0, (HALF_CELL_SIZE_MM - 10.0)}},  //ok
     {Movement::TURN_AROUND, {0.5, 3.0, 5.0, 80.0}},
 
-    {Movement::TURN_RIGHT_90, {0.5, 3.0, 3.0, 16.53}},
-    {Movement::TURN_LEFT_90, {0.5, 3.0, 3.0, 16.53}},
-
-    {Movement::TURN_RIGHT_45_FROM_45, {0.5, 3.0, 3.0, 82.21}},
-    {Movement::TURN_LEFT_45_FROM_45, {0.5, 3.0, 3.0, 82.21}},
+    {Movement::TURN_RIGHT_90, {0.5, 3.0, 3.0, 16.53}},              //ok
+    {Movement::TURN_LEFT_90, {0.5, 3.0, 3.0, 16.53}},               //ok
+    {Movement::TURN_RIGHT_45_FROM_45, {0.5, 3.0, 3.0, 90.00}},      //ok
+    {Movement::TURN_LEFT_45_FROM_45, {0.5, 3.0, 3.0, 82.21}},       //ok
     {Movement::TURN_RIGHT_90_FROM_45, {0.5, 3.0, 3.0, 53.84}},
-    {Movement::TURN_LEFT_90_FROM_45, {0.5, 3.0, 3.0, 53.84}},
+    {Movement::TURN_LEFT_90_FROM_45, {0.5, 3.0, 3.0, 57.0}},        //ok
     {Movement::TURN_RIGHT_135_FROM_45, {0.5, 3.0, 3.0, 70.68}},
-    {Movement::TURN_LEFT_135_FROM_45, {0.5, 3.0, 3.0, 70.68}},
+    {Movement::TURN_LEFT_135_FROM_45, {0.5, 3.0, 3.0, 70.68}},      //ok
 };
 
 /// @section TURN_PARMS_MEDIUM
