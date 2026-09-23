@@ -69,6 +69,19 @@ enum TurnParamID : uint8_t {
     ACCEL_RAMP_DOWN_JERK = 0x0B,
 };
 
+struct BleLogData {
+    uint16_t velocity_ms;
+    uint16_t target_velocity_ms;
+    uint16_t angular_speed_rad_s;
+    uint16_t target_rad_s;
+    uint16_t pwm_left;
+    uint16_t pwm_right;
+    uint16_t angle;
+    uint16_t distance;
+} __attribute__((packed));
+
+static_assert(sizeof(BleLogData) == 16, "BleLogData size must be exactly 16 bytes!");
+
 /// @brief callback function for BLE received data
 typedef std::function<void(uint8_t[receive_packet_size])> BleCallback;
 

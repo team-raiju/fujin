@@ -129,7 +129,7 @@ void Control::update() {
         emergency = ((linear_speed_error > 0.5) || (angular_speed_error_raw > 6.0));
 
         if (wall_pid_enabled) {
-            const float max_wall_ang_accel = (params.fan_speed > 0) ? 1000.0f : 400.0f; // rad/s^2
+            const float max_wall_ang_accel = (params.fan_speed > 0) ? 1000.0f : 150.0f; // rad/s^2
             const float max_step = max_wall_ang_accel / Config::CONTROL_FREQUENCY_HZ;
 
             target_angular_speed_rad_s += walls_pid.calculate(0.0f, bsp::analog_sensors::ir_side_wall_error());

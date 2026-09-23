@@ -272,22 +272,43 @@ void Logger::send_log_ble() {
 
 #if CONTROL_LOG_MODE
 #else
+    uint32_t last_toggle_time = bsp::get_tick_ms();
+    bool led_state = false;
+
     uint32_t saved_size = addr_offset;
-    uint8_t packet[19] = {0};
+    uint8_t packet[18] = {0};
     packet[0] = bsp::ble::header;
     packet[1] = bsp::ble::BlePacketType::RequestLogData;
 
-    for (uint16_t i = 0; i < saved_size; i += sizeof(LogData)) {
+    for (uint32_t i = 0; i < saved_size; i += sizeof(LogData)) {
         LogData read_logdata;
         if (i + sizeof(read_logdata.data) > sizeof(ram_logger)) {
             break;
         }
 
-        memcpy(packet + 2, ram_logger + i, 17);
+        float progress = (saved_size > 0) ? (static_cast<float>(i) / static_cast<float>(saved_size)) : 1.0f;
+        update_led_progress(progress, last_toggle_time, led_state);
+
+        memcpy(read_logdata.data, ram_logger + i, sizeof(read_logdata.data));
+
+        bsp::ble::BleLogData ble_data = {
+            .velocity_ms = static_cast<uint16_t>(read_logdata.fields.velocity_ms),
+            .target_velocity_ms = static_cast<uint16_t>(read_logdata.fields.target_velocity_ms),
+            .angular_speed_rad_s = static_cast<uint16_t>(read_logdata.fields.angular_speed_rad_s),
+            .target_rad_s = static_cast<uint16_t>(read_logdata.fields.target_rad_s),
+            .pwm_left = static_cast<uint16_t>(read_logdata.fields.pwm_left),
+            .pwm_right = static_cast<uint16_t>(read_logdata.fields.pwm_right),
+            .angle = static_cast<uint16_t>(read_logdata.fields.angle),
+            .distance = static_cast<uint16_t>(read_logdata.fields.distance),
+        };
+
+        memcpy(packet + 2, &ble_data, sizeof(ble_data));
 
         bsp::ble::transmit(packet, sizeof(packet));
         bsp::delay_ms(5);
     }
+
+    bsp::leds::stripe_set(bsp::leds::Color::Black);
 #endif
 }
 }
