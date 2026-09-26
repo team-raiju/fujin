@@ -6,8 +6,8 @@
 static constexpr float CELL_SIZE_MM = 180.0;
 static constexpr float HALF_CELL_SIZE_MM = 90.0;
 static constexpr float CELL_DIAGONAL_SIZE_MM = 127.27922;
-static constexpr float ROBOT_DIST_FROM_CENTER_START_MM_FAST = 21.0; // To account for slippery when fast mode
-static constexpr float ROBOT_DIST_FROM_CENTER_START_MM = 17.5;  // Actually 17.5 with 6mm wall, and 20.5mm with 12mm wall But also account for slippery
+static constexpr float ROBOT_DIST_FROM_CENTER_START_MM_FAST = 17.5; // To account for slippery when fast mode this can be adjusted
+static constexpr float ROBOT_DIST_FROM_CENTER_START_MM = 17.5;  // Actually 17.5 with 6mm wall, and 14.5mm with 12mm wall
 
 /**
  * @struct TurnParams
@@ -110,6 +110,7 @@ struct GeneralParams {
     float enable_wall_break_correction;
     float max_linear_acc_jerk;
     float max_linear_brake_jerk;
+    float wheel_radius_mm;
     float coulomb_ff;
     float angular_coulomb_ff;
     float angular_static_ff;
@@ -123,13 +124,14 @@ struct GeneralParams {
           wall_kp(0), wall_ki(0), wall_kd(0),
           linear_vel_kp(0), linear_vel_ki(0), linear_vel_kd(0), diagonal_walls_kp(0), diagonal_walls_ki(0),
           diagonal_walls_kd(0), start_wall_break_mm_left(0), start_wall_break_mm_right(0),
-          enable_wall_break_correction(0), max_linear_acc_jerk(0), max_linear_brake_jerk(0), coulomb_ff(0),
+          enable_wall_break_correction(0), max_linear_acc_jerk(0), max_linear_brake_jerk(0),
+          wheel_radius_mm(0), coulomb_ff(0),
           angular_coulomb_ff(0), angular_static_ff(0),
           angular_coulomb_ff_inplace(0), angular_static_ff_inplace(0) {}
 
     GeneralParams(float fan, float akp, float aki, float akd, float aaff, float abff, float avff, float lvaff, float lvbff, float lvff, float wkp, float wki,
                   float wkd, float lvkp, float lvki, float lvkd, float dwkp, float dwki, float dwkd, float swbcl,
-                  float swbcr, float ewbc, float mlaj, float mlbj, float c_ff, float angular_c_ff, float angular_s_ff,
+                  float swbcr, float ewbc, float mlaj, float mlbj, float wr, float c_ff, float angular_c_ff, float angular_s_ff,
                   float angular_c_ff_inplace = 0.0f, float angular_s_ff_inplace = 0.0f)
         : fan_speed(fan), angular_kp(akp), angular_ki(aki), angular_kd(akd), angular_acc_feed_forward_k(aaff),
           angular_brake_feed_forward_k(abff),
@@ -139,7 +141,7 @@ struct GeneralParams {
           wall_kd(wkd), linear_vel_kp(lvkp), linear_vel_ki(lvki), linear_vel_kd(lvkd), diagonal_walls_kp(dwkp),
           diagonal_walls_ki(dwki), diagonal_walls_kd(dwkd), start_wall_break_mm_left(swbcl),
           start_wall_break_mm_right(swbcr), enable_wall_break_correction(ewbc),
-          max_linear_acc_jerk(mlaj), max_linear_brake_jerk(mlbj), coulomb_ff(c_ff),
+          max_linear_acc_jerk(mlaj), max_linear_brake_jerk(mlbj), wheel_radius_mm(wr), coulomb_ff(c_ff),
           angular_coulomb_ff(angular_c_ff), angular_static_ff(angular_s_ff),
           angular_coulomb_ff_inplace(angular_c_ff_inplace), angular_static_ff_inplace(angular_s_ff_inplace) {}
 };

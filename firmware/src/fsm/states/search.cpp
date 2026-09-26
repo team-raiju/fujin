@@ -315,6 +315,8 @@ State* Search::react(Timeout const&) {
             return &State::get<Idle>();
             // stop_next_move = false;
             // returning = false;
+            // target = services::Maze::GOAL_POSITIONS[0];
+            // save_maze = false;
             // maze->reset();
         }
 

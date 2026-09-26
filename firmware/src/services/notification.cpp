@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <algorithm>
+#include <cmath>
 
 #include "bsp/analog_sensors.hpp"
 #include "bsp/ble.hpp"
@@ -157,7 +158,9 @@ void Notification::update(bool ignore_maze) {
     case SEND_SENSORS: {
         using namespace bsp::analog_sensors;
         auto sensors = ir_latest_reading();
-        uint8_t data[] = {
+        auto distances = ir_latest_distance();
+        const SensingDirection wire_order[] = {LEFT, FRONT_LEFT, FRONT_RIGHT, RIGHT};
+        uint8_t data[18] = {
             bsp::ble::header,
             bsp::ble::BlePacketType::SensorData,
             uint8_t((sensors[SensingDirection::LEFT] & 0xFF00) >> 8),
@@ -169,6 +172,13 @@ void Notification::update(bool ignore_maze) {
             uint8_t((sensors[SensingDirection::RIGHT] & 0xFF00) >> 8),
             uint8_t(sensors[SensingDirection::RIGHT] & 0x00FF),
         };
+
+        for (uint8_t i = 0; i < 4; i++) {
+            long distance_tenths = std::clamp(std::lround(distances[wire_order[i]] * 10.0f), -32768L, 32767L);
+            uint16_t encoded = static_cast<uint16_t>(static_cast<int16_t>(distance_tenths));
+            data[10 + (i * 2)] = static_cast<uint8_t>((encoded >> 8) & 0xFF);
+            data[11 + (i * 2)] = static_cast<uint8_t>(encoded & 0xFF);
+        }
 
         bsp::ble::transmit(data, sizeof(data));
         state = SEND_BATTERY;

@@ -25,7 +25,7 @@ using bsp::leds::Color;
 
 namespace {
 
-constexpr float FRONT_EMERGENCY_DISTANCE_MM = 50.0f;
+constexpr float FRONT_EMERGENCY_DISTANCE_MM = 70.0f;
 constexpr float WALL_BREAK_DEBUG_DISTANCE_MM = 90.0f;
 constexpr float SEARCH_WALL_BREAK_MIN_DISTANCE_MM = 35.0f;
 constexpr uint32_t WALL_BREAK_CONFIRM_COUNT = 4;
@@ -68,6 +68,7 @@ GeneralParams make_custom_general_params() {
         services::Config::enable_wall_break_correction,
         services::Config::max_linear_acc_jerk,
         services::Config::max_linear_brake_jerk,
+        services::Config::wheel_radius_mm,
         services::Config::coulomb_ff,
         services::Config::angular_coulomb_ff,
         services::Config::angular_static_ff,
@@ -132,6 +133,7 @@ void Navigation::configure_mode(navigation_mode_t mode) {
         forward_params = get_forward_params(mode);
         general_params = get_general_params(mode);
     }
+    bsp::encoders::set_wheel_radius_mm(general_params.wheel_radius_mm);
 }
 
 bool Navigation::is_front_emergency() const {
@@ -143,9 +145,7 @@ bool Navigation::is_front_emergency() const {
     using bsp::analog_sensors::SensingDirection;
 
     return ir_distance_mm(SensingDirection::FRONT_LEFT) < FRONT_EMERGENCY_DISTANCE_MM &&
-           ir_distance_mm(SensingDirection::FRONT_RIGHT) < FRONT_EMERGENCY_DISTANCE_MM &&
-           ir_distance_mm(SensingDirection::LEFT) < FRONT_EMERGENCY_DISTANCE_MM &&
-           ir_distance_mm(SensingDirection::RIGHT) < FRONT_EMERGENCY_DISTANCE_MM;
+           ir_distance_mm(SensingDirection::FRONT_RIGHT) < FRONT_EMERGENCY_DISTANCE_MM;
 }
 
 void Navigation::reset_movement_variables(bool reset_linear_accel) {
@@ -605,7 +605,7 @@ void Navigation::finish_linear_movement(float control_linear_speed) {
     const bool reached_target = std::abs(traveled_dist_mm) >= target_travel_mm;
     const bool finished_stop = current_movement == Movement::STOP && is_braking && control_linear_speed <= 0.0f;
 
-    if (reached_target || finished_stop || is_front_emergency()) {
+    if (reached_target || finished_stop) {
         is_finished = true;
     }
 }

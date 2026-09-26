@@ -147,6 +147,7 @@
 
 -------------------------------------------------
 //Final 1
+target_movements = {
 {Movement::START, 1},
 {Movement::TURN_LEFT_135, 1},
 {Movement::TURN_RIGHT_90_FROM_45, 1},
@@ -199,6 +200,8 @@
 {Movement::TURN_LEFT_45_FROM_45, 1},
 {Movement::FORWARD, 1},
 {Movement::STOP, 1},
+};
+
 --------------------------------------
 
 //Final 2

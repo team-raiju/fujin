@@ -36,4 +36,12 @@ float get_right_linear_velocity_m_s() {
     return 0;
 }
 
+void set_wheel_radius_mm(float radius_mm) {
+    (void)radius_mm;
+}
+
+float get_wheel_radius_mm() {
+    return 13.25f;
+}
+
 }

@@ -56,6 +56,7 @@ public:
 
     float get_encoder_imu_diff() const { return encoder_imu_diff; };
 
+    bool is_front_emergency() const; 
 
 private:
     enum class PathState {
@@ -119,7 +120,6 @@ private:
     void transition_after_turn_forward_2();
     void update_turn_angular_acceleration(const TurnParams& turn, uint32_t elapsed_time);
     void transition_after_turn_rotation();
-    bool is_front_emergency() const; 
 
 
     /// @brief Get the movement type to go to a target direction, based on the current direction and search mode

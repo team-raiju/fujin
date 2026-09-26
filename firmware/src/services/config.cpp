@@ -27,7 +27,7 @@ float Config::linear_vel_brake_feed_forward_k = 0.0;
 float Config::linear_vel_feed_forward_k = 0.0;
 float Config::max_linear_acc_jerk = 100.0;
 float Config::max_linear_brake_jerk = 100.0;
-float Config::wheel_radius_mm = 12.75;
+float Config::wheel_radius_mm = 13.25;
 float Config::coulomb_ff = 0.13;
 float Config::angular_coulomb_ff = 0.0;
 float Config::angular_static_ff = 0.0;
@@ -150,6 +150,7 @@ static const std::pair<float*, bsp::eeprom::param_addresses_t> general_params_ee
     {&Config::linear_vel_feed_forward_k, bsp::eeprom::ADDR_LINEAR_VEL_FEED_FORWARD_K},
     {&Config::max_linear_acc_jerk, bsp::eeprom::ADDR_MAX_LINEAR_ACC_JERK},
     {&Config::max_linear_brake_jerk, bsp::eeprom::ADDR_MAX_LINEAR_BRAKE_JERK},
+    {&Config::wheel_radius_mm, bsp::eeprom::ADDR_WHEEL_RADIUS_MM},
     {&Config::coulomb_ff, bsp::eeprom::ADDR_COULOMB_FF},
     {&Config::angular_coulomb_ff, bsp::eeprom::ADDR_ANGULAR_COULOMB_FF},
     {&Config::angular_static_ff, bsp::eeprom::ADDR_ANGULAR_STATIC_FF},
@@ -544,6 +545,7 @@ int Config::load_general_preset(uint8_t preset_id) {
     Config::enable_wall_break_correction = gp.enable_wall_break_correction;
     Config::max_linear_acc_jerk = gp.max_linear_acc_jerk;
     Config::max_linear_brake_jerk = gp.max_linear_brake_jerk;
+    Config::wheel_radius_mm = gp.wheel_radius_mm;
     Config::coulomb_ff = gp.coulomb_ff;
     Config::angular_coulomb_ff = gp.angular_coulomb_ff;
     Config::angular_static_ff = gp.angular_static_ff;

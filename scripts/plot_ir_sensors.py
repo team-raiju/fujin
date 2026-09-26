@@ -27,7 +27,7 @@ IR_WALL_DIST_REF_RIGHT = 165.0  # Right reference distance (mm)
 # Thresholds (mm) below which wall control is valid (must be greater than reference distance)
 IR_WALL_CONTROL_TH_LEFT = 225.0  # Left wall control threshold (mm)
 IR_WALL_CONTROL_TH_RIGHT = 225.0 # Right wall control threshold (mm)
-IR_SLOPE_THRESHOLD = 40.0        # Wall control is valid when abs(slope) is below this value
+IR_SLOPE_THRESHOLD = 90.0        # Wall control is valid when abs(slope) is below this value
 IR_MAX_DISTANCE_MM = 270.0       # Maximum sensor distance (mm)
 
 HEADER_KEY_MAP = {

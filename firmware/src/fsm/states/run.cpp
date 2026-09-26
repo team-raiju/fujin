@@ -25,7 +25,6 @@ using bsp::leds::Color;
 namespace fsm {
 
 static bool indicate_read = false;
-static uint32_t last_indication = 0;
 static services::Navigation::target_movement_mode_t move_mode = services::Navigation::SMOOTH;
 static bool map_backup = false;
 
@@ -344,6 +343,7 @@ void Run::enter() {
 
     move_count = 0;
     emergency = false;
+    indicate_read = false;
 
     auto movement = target_movements[0].first;
     auto prev_movement = target_movements[0].first;
@@ -351,6 +351,9 @@ void Run::enter() {
     auto next_movement_count = target_movements[1].second;
 
     navigation->set_movement(movement, prev_movement, next_movement, 1, next_movement_count);
+
+    bsp::leds::stripe_set(Color::Black);
+    bsp::delay_ms(250);
 }
 
 State* Run::react(ButtonPressed const& event) {
@@ -380,15 +383,29 @@ State* Run::react(BleCommand const&) {
 State* Run::react(Timeout const&) {
     using bsp::analog_sensors::SensingDirection;
 
-    if (indicate_read && bsp::get_tick_ms() - last_indication > 75) {
+    navigation->update();
+
+    if (indicate_read && std::abs(navigation->get_robot_travelled_dist_mm()) >= 130.0f) {
         bsp::leds::stripe_set(Color::Black);
         indicate_read = false;
     }
 
-    navigation->update();
     bool done = navigation->step();
 
     logger->update();
+
+    if (navigation->is_front_emergency() ||
+        ((bsp::imu::is_imu_emergency() || services::Control::instance()->is_emergency()) && move_count >= 1)) {
+        emergency = true;
+        soft_timer::stop();
+        bsp::motors::set(0, 0);
+        bsp::fan::set(0);
+        bsp::leds::stripe_set(Color::Orange);
+        bsp::buzzer::start();
+        bsp::delay_ms(500);
+        bsp::buzzer::stop();
+        return &State::get<Idle>();
+    }
 
     if (done) {
 
@@ -397,7 +414,6 @@ State* Run::react(Timeout const&) {
             return &State::get<Idle>();
         }
 
-        last_indication = bsp::get_tick_ms();
         indicate_read = true;
         bsp::leds::stripe_set(Color::Green);
 
@@ -414,18 +430,6 @@ State* Run::react(Timeout const&) {
         auto cells = target_movements[move_count].second;
 
         navigation->set_movement(movement, prev_movement, next_movement, cells, next_movement_count);
-    }
-
-    if ((bsp::imu::is_imu_emergency() || services::Control::instance()->is_emergency()) && move_count >= 1) {
-        emergency = true;
-        soft_timer::stop();
-        bsp::motors::set(0, 0);
-        bsp::fan::set(0);
-        bsp::leds::stripe_set(Color::Orange);
-        bsp::buzzer::start();
-        bsp::delay_ms(500);
-        bsp::buzzer::stop();
-        return &State::get<Idle>();
     }
 
     return nullptr;
