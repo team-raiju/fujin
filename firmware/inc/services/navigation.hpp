@@ -108,13 +108,15 @@ private:
     void finish_linear_movement(float control_linear_speed);
 
     // Turn movement helpers
-    void step_turn_forward();
+    void step_turn_forward_1();
+    void step_turn_forward_2();
     void step_turn_rotation();
     void step_turn_stabilize_1();
     void step_turn_stabilize_2();
     void update_turn_linear_speed(float& control_linear_speed, float max_speed, float acceleration,
                                   float deceleration, float final_speed);
-    void transition_after_turn_forward();
+    void transition_after_turn_forward_1();
+    void transition_after_turn_forward_2();
     void update_turn_angular_acceleration(const TurnParams& turn, uint32_t elapsed_time);
     void transition_after_turn_rotation();
     bool is_front_emergency() const; 
@@ -174,6 +176,7 @@ private:
     bool wall_left_was_confirmed = false;
     float wall_break_last_dist = 0;
     bool current_wall_break_detected = false;
+    bool wall_break_debug_led_on = false;
     bool is_braking = false;
     float encoder_imu_diff = 0;
 

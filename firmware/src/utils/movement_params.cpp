@@ -80,22 +80,22 @@ const std::map<Movement, ForwardParams> forward_params_search_fast = {
 
 /// @section TURN_PARMS_SLOW
 const std::map<Movement, TurnParams> turn_params_slow = {
-    {Movement::TURN_RIGHT_45, {-45.02, -81.33, 0.5, 180.0, 8.45, T(93.0), T(176.0), -1, T(47.0), T(140.0), 5000, 5000}},        //ok
-    {Movement::TURN_LEFT_45, {-45.02, -81.33, 0.5, 180.0, 8.45, T(93.0), T(176.0), 1, T(47.0), T(140.0), 5000, 5000}},          //ok
+    {Movement::TURN_RIGHT_45, {-45.02, -81.33, 0.5, 180.0, 8.45, T(91.0), T(174.0), -1, T(47.0), T(138.0), 5000, 5000}},        //ok
+    {Movement::TURN_LEFT_45, {-45.02, -81.33, 0.5, 180.0, 8.45, T(91.0), T(174.0), 1, T(47.0), T(138.0), 5000, 5000}},          //ok
     {Movement::TURN_RIGHT_90, {0.0, -15.67, 0.5, 150.0, 10.47, T(147), T(247), -1, T(70), T(217), 5000, 5000}},                 //ok
     {Movement::TURN_LEFT_90, {0.0, -15.67, 0.5, 150.0, 10.47, T(147), T(247), 1, T(70), T(217), 5000, 5000}},                   //ok
-    {Movement::TURN_RIGHT_180, {-10.0, 15.0, 0.5, 100.0, 5.58, T(563.0), T(639.0), -1, T(56.0), T(619.0), 5000, 5000}},         //ok
-    {Movement::TURN_LEFT_180, {-10.0, 15.0, 0.5, 100.0, 5.58, T(563.0), T(639.0), 1, T(56.0), T(619.0), 5000, 5000}},           //ok
-    {Movement::TURN_RIGHT_135, {-3.79, -70.15, 0.5, 120.0, 7.5, T(314.0), T(400.5), -1, T(62.5), T(376.5), 5000, 5000}},
-    {Movement::TURN_LEFT_135, {-0.1, -74.5, 0.5, 120.0, 7.5, T(312.0), T(398.5), 1, T(62.5), T(374.5), 5000, 5000}},            //ok
+    {Movement::TURN_RIGHT_180, {-10.0, 15.0, 0.5, 100.0, 5.58, T(556.0), T(632.0), -1, T(56.0), T(612.0), 5000, 5000}},         //ok
+    {Movement::TURN_LEFT_180, {-10.0, 15.0, 0.5, 100.0, 5.58, T(560.0), T(636.0), 1, T(56.0), T(616.0), 5000, 5000}},           //ok
+    {Movement::TURN_RIGHT_135, {0.0, -74.5, 0.5, 120.0, 7.5, T(311.0), T(397.5), -1, T(62.5), T(373.5), 5000, 5000}},           //ok
+    {Movement::TURN_LEFT_135, {-0.1, -69.0, 0.5, 120.0, 7.5, T(312.0), T(398.5), 1, T(62.5), T(374.5), 5000, 5000}},            //ok
     {Movement::TURN_RIGHT_45_FROM_45, {0.0, 45.92, 0.5, 180.0, 8.45, T(91.0), T(174.0), -1, T(47.0), T(138.0), 5000, 5000}},    //ok
     {Movement::TURN_LEFT_45_FROM_45, {0.0, 45.92, 0.5, 180.0, 8.45, T(91.0), T(174.0), 1, T(47.0), T(138.0), 5000, 5000}},      //ok
-    {Movement::TURN_RIGHT_90_FROM_45, {0.0, -52.91, 0.5, 150.0, 10.47, T(150.0), T(250.0), -1, T(70.0), T(220.0), 5000, 5000}}, 
-    {Movement::TURN_LEFT_90_FROM_45, {0.0, -57.0, 0.5, 150.0, 10.47, T(147.0), T(247.0), 1, T(70.0), T(217.0), 5000, 5000}},    //ok
-    {Movement::TURN_RIGHT_135_FROM_45, {0.0, 4.54, 0.5, 120.0, 7.5, T(314.0), T(400.5), -1, T(62.5), T(376.5), 5000, 5000}},
+    {Movement::TURN_RIGHT_90_FROM_45, {0.0, -59.00, 0.5, 150.0, 10.47, T(147.0), T(247.0), -1, T(70.0), T(217.0), 5000, 5000}}, //ok
+    {Movement::TURN_LEFT_90_FROM_45, {0.0, -57.00, 0.5, 150.0, 10.47, T(147.0), T(247.0), 1, T(70.0), T(217.0), 5000, 5000}},   //ok
+    {Movement::TURN_RIGHT_135_FROM_45, {0.0, -6.0, 0.5, 120.0, 7.5, T(310.5), T(397.0), -1, T(62.5), T(373.0), 5000, 5000}},    //ok
     {Movement::TURN_LEFT_135_FROM_45, {0.0, 12.5, 0.5, 120.0, 7.5, T(310.5), T(397.0), 1, T(62.5), T(373.0), 5000, 5000}},      //ok
-    
-    {Movement::TURN_AROUND, {0.0, 0.0, 0.5, 150.0, 11.0, T(288), T(411), -1, T(73), T(361), 3000, 3000}},   //ok
+    {Movement::TURN_AROUND, {0.0, 0.0, 0.5, 150.0, 11.0, T(288), T(411), -1, T(73), T(361), 3000, 3000}},                       //ok
+    {Movement::TURN_AROUND_INPLACE, {0.0, 0.0, 0.5, 150.0, 11.0, T(288), T(411), -1, T(73), T(361), 3000, 3000}},               //ok
 };
 
 const std::map<Movement, ForwardParams> forward_params_slow = {
@@ -103,15 +103,19 @@ const std::map<Movement, ForwardParams> forward_params_slow = {
     {Movement::FORWARD, {3.0, 8.0, 8.0, CELL_SIZE_MM}},             //ok
     {Movement::DIAGONAL, {2.0, 5.0, 5.0, CELL_DIAGONAL_SIZE_MM}},   //ok
     {Movement::STOP, {0.5, 3.0, 3.0, (HALF_CELL_SIZE_MM - 10.0)}},  //ok
-    {Movement::TURN_AROUND, {0.5, 3.0, 5.0, 80.0}},
+    {Movement::TURN_AROUND, {0.5, 3.0, 5.0, 80.0}},                 //ok
+    {Movement::TURN_AROUND_INPLACE, {0.5, 3.0, 5.0, 80.0}},         //ok
+
 
     {Movement::TURN_RIGHT_90, {0.5, 3.0, 3.0, 16.53}},              //ok
     {Movement::TURN_LEFT_90, {0.5, 3.0, 3.0, 16.53}},               //ok
+    {Movement::TURN_RIGHT_135, {0.5, 3.0, 3.0, 4.0}},               //ok
+    {Movement::TURN_LEFT_135, {0.5, 3.0, 3.0, 0.0}},                //ok
     {Movement::TURN_RIGHT_45_FROM_45, {0.5, 3.0, 3.0, 90.00}},      //ok
-    {Movement::TURN_LEFT_45_FROM_45, {0.5, 3.0, 3.0, 82.21}},       //ok
-    {Movement::TURN_RIGHT_90_FROM_45, {0.5, 3.0, 3.0, 53.84}},
-    {Movement::TURN_LEFT_90_FROM_45, {0.5, 3.0, 3.0, 57.0}},        //ok
-    {Movement::TURN_RIGHT_135_FROM_45, {0.5, 3.0, 3.0, 70.68}},
+    {Movement::TURN_LEFT_45_FROM_45, {0.5, 3.0, 3.0, 82.20}},       //ok
+    {Movement::TURN_RIGHT_90_FROM_45, {0.5, 3.0, 3.0, 52.00}},      //ok
+    {Movement::TURN_LEFT_90_FROM_45, {0.5, 3.0, 3.0, 53.00}},       //ok
+    {Movement::TURN_RIGHT_135_FROM_45, {0.5, 3.0, 3.0, 81.0}},      //ok
     {Movement::TURN_LEFT_135_FROM_45, {0.5, 3.0, 3.0, 70.68}},      //ok
 };
 
@@ -363,7 +367,7 @@ const GeneralParams general_params_slow = {
     0.0420,  0.00021, 0.000,   // Angular P,I,D
     0.00035, 0.0003,  0.003,   // Angular acc ff, Angular brake ff, Angular velocity ff
     0.03125, 0.018,   0.105,   // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
-    0.0090,  0.0000,  0.0000,  // Wall P,I,D
+    0.0130,  0.0000,  0.0000,  // Wall P,I,D
     2.5000,  0.0100,  25.0000, // Linear velocity P,I,D
     0.0090,  0.0000,  0.0000,  // Diagonal walls P,I,D
     56.0,                      // Start wall break mm left
