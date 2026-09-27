@@ -112,9 +112,25 @@ function simulateSequence(steps, presetName, options = {}) {
       targetTravelMm = completePrevMoveTravel + fwdDef.target_travel_mm;
     }
 
+    const preserveAccelFromStart =
+      (prevMovement === 'START' && (movement === 'FORWARD' || movement === 'DIAGONAL') && count >= 3);
+    const continuousStartToForward =
+      (movement === 'START' && (nextMovement === 'FORWARD' || nextMovement === 'DIAGONAL') && nextMoveCount >= 3);
+    const resetLinearAccel = !preserveAccelFromStart;
+
     let forwardEndSpeed = 0.0;
     if (movement === 'STOP') {
       forwardEndSpeed = 0.0;
+    } else if (movement === 'START') {
+      if (continuousStartToForward) {
+        forwardEndSpeed = preset.forward[nextMovement] ? preset.forward[nextMovement].max_speed : 0.0;
+      } else if (preset.turn && preset.turn[nextMovement]) {
+        forwardEndSpeed = preset.turn[nextMovement].turn_linear_speed;
+      } else if (nextMovement === 'STOP') {
+        forwardEndSpeed = 0.0;
+      } else {
+        forwardEndSpeed = preset.forward['START'] ? preset.forward['START'].max_speed : 0.0;
+      }
     } else if (nextMovement === 'FORWARD' || nextMovement === 'DIAGONAL') {
       forwardEndSpeed = preset.forward[nextMovement] ? preset.forward[nextMovement].max_speed : 0.0;
     } else if (nextMovement === 'STOP') {
@@ -123,10 +139,6 @@ function simulateSequence(steps, presetName, options = {}) {
       const turnDef = preset.turn[nextMovement];
       forwardEndSpeed = turnDef ? turnDef.turn_linear_speed : 0.0;
     }
-
-    const preserveAccelFromStart = (prevMovement === 'START' && (movement === 'FORWARD' || movement === 'DIAGONAL'));
-    const continuousStartToForward = (movement === 'START' && (nextMovement === 'FORWARD' || nextMovement === 'DIAGONAL'));
-    const resetLinearAccel = !preserveAccelFromStart;
 
     let traveledDistMm = 0.0;
     let isBraking = false;
@@ -140,7 +152,9 @@ function simulateSequence(steps, presetName, options = {}) {
 
     if (isLinearMovement(movement)) {
       // LINEAR EXECUTION
-      const maxSpeed = (movement === 'START' && continuousStartToForward) ? forwardEndSpeed : fwdDef.max_speed;
+      const maxSpeed = (movement === 'START' && continuousStartToForward)
+        ? forwardEndSpeed
+        : ((movement === 'START' && forwardEndSpeed > 0.0) ? Math.min(fwdDef.max_speed, forwardEndSpeed) : fwdDef.max_speed);
       const maxAcceleration = fwdDef.acceleration;
       const deceleration = fwdDef.deceleration;
       const isStartMove = (movement === 'START');
@@ -174,8 +188,15 @@ function simulateSequence(steps, presetName, options = {}) {
 
         maxLinSpeedObserved = Math.max(maxLinSpeedObserved, Math.abs(stateObj.controlLinearSpeed));
 
-        // Update linear speed via updated S-curve function
-        updateLinearTargetSpeedStep(stateObj, maxSpeed, maxAcceleration, deceleration, continuousStartToForward, forwardEndSpeed, targetTravelMm, genParams, moveBrakeMarginMm, moveAccelMarginMm);
+      const isSingleCellLinear = (movement === 'FORWARD') && count === 1 && prevMovement !== 'START';
+      const stepGenParams = isSingleCellLinear
+        ? { ...genParams, max_linear_acc_jerk: 50000.0, max_linear_brake_jerk: 50000.0 }
+        : (movement === 'STOP'
+          ? { ...genParams, max_linear_acc_jerk: (genParams.max_linear_acc_jerk || 625.0) * 2.0, max_linear_brake_jerk: (genParams.max_linear_brake_jerk || 625.0) * 2.0 }
+          : genParams);
+
+      // Update linear speed via updated S-curve function
+      updateLinearTargetSpeedStep(stateObj, maxSpeed, maxAcceleration, deceleration, continuousStartToForward, forwardEndSpeed, targetTravelMm, stepGenParams, moveBrakeMarginMm, moveAccelMarginMm);
 
         // Distance & time integration
         stateObj.traveledDistMm += (stateObj.controlLinearSpeed * 1000.0) / Hz;

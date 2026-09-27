@@ -583,22 +583,22 @@ const FIRMWARE_PRESETS = {
         "target_travel_mm": 127.27922
       },
       "STOP": {
-        "max_speed": 1.0,
+        "max_speed": 2.2,
         "acceleration": 20.0,
-        "deceleration": 25.0,
-        "target_travel_mm": 80.0
+        "deceleration": 35.0,
+        "target_travel_mm": 95.0
       },
       "TURN_AROUND": {
-        "max_speed": 1.0,
+        "max_speed": 2.2,
         "acceleration": 20.0,
-        "deceleration": 25.0,
-        "target_travel_mm": 80.0
+        "deceleration": 35.0,
+        "target_travel_mm": 95.0
       },
       "TURN_AROUND_INPLACE": {
-        "max_speed": 1.0,
+        "max_speed": 2.2,
         "acceleration": 20.0,
-        "deceleration": 25.0,
-        "target_travel_mm": 80.0
+        "deceleration": 35.0,
+        "target_travel_mm": 95.0
       },
       "TURN_RIGHT_90": {
         "max_speed": 2.0,
@@ -652,37 +652,37 @@ const FIRMWARE_PRESETS = {
         "max_speed": 1.7,
         "acceleration": 15.0,
         "deceleration": 20.0,
-        "target_travel_mm": 64.52
+        "target_travel_mm": 67.5
       },
       "TURN_LEFT_45_FROM_45": {
         "max_speed": 1.7,
         "acceleration": 15.0,
         "deceleration": 20.0,
-        "target_travel_mm": 64.52
+        "target_travel_mm": 69.0
       },
       "TURN_RIGHT_90_FROM_45": {
-        "max_speed": 2.0,
+        "max_speed": 1.7,
         "acceleration": 15.0,
         "deceleration": 20.0,
-        "target_travel_mm": 8.36
+        "target_travel_mm": 26.2
       },
       "TURN_LEFT_90_FROM_45": {
-        "max_speed": 2.0,
+        "max_speed": 1.7,
         "acceleration": 15.0,
         "deceleration": 20.0,
-        "target_travel_mm": 8.36
+        "target_travel_mm": 23.0
       },
       "TURN_RIGHT_135_FROM_45": {
-        "max_speed": 2.0,
+        "max_speed": 1.7,
         "acceleration": 15.0,
         "deceleration": 20.0,
-        "target_travel_mm": 59.1
+        "target_travel_mm": 61.0
       },
       "TURN_LEFT_135_FROM_45": {
-        "max_speed": 2.0,
+        "max_speed": 1.7,
         "acceleration": 15.0,
         "deceleration": 20.0,
-        "target_travel_mm": 59.1
+        "target_travel_mm": 61.0
       }
     },
     "turn": {
@@ -706,11 +706,11 @@ const FIRMWARE_PRESETS = {
         "turn_linear_speed": 1.7,
         "angular_accel": 1095.0,
         "max_angular_speed": 19.83,
-        "t_start_deccel": 37.0,
-        "t_stop": 73.0,
+        "t_start_deccel": 36.5,
+        "t_stop": 72.5,
         "sign": 1,
         "time_to_decrease_jerk_1": 14.0,
-        "time_to_decrease_jerk_2": 59.5,
+        "time_to_decrease_jerk_2": 59.0,
         "accel_ramp_up_jerk": 80000.0,
         "accel_ramp_down_jerk": 50000.0
       },
@@ -729,44 +729,44 @@ const FIRMWARE_PRESETS = {
         "accel_ramp_down_jerk": 50000.0
       },
       "TURN_LEFT_90": {
-        "start": -29.34,
+        "start": -21.34,
         "end": 32.06,
         "turn_linear_speed": 2.0,
         "angular_accel": 1000.0,
         "max_angular_speed": 26.66,
-        "t_start_deccel": 57.5,
-        "t_stop": 102.5,
+        "t_start_deccel": 56.5,
+        "t_stop": 101.5,
         "sign": 1,
         "time_to_decrease_jerk_1": 25.0,
-        "time_to_decrease_jerk_2": 86.0,
+        "time_to_decrease_jerk_2": 85.0,
         "accel_ramp_up_jerk": 60000.0,
         "accel_ramp_down_jerk": 50000.0
       },
       "TURN_RIGHT_135": {
-        "start": -15.56,
-        "end": 55.8,
-        "turn_linear_speed": 2.0,
-        "angular_accel": 1200.0,
-        "max_angular_speed": 33.0,
-        "t_start_deccel": 68.0,
-        "t_stop": 115.0,
+        "start": -12.52,
+        "end": -66.28,
+        "turn_linear_speed": 1.7,
+        "angular_accel": 900.0,
+        "max_angular_speed": 26.66,
+        "t_start_deccel": 85.5,
+        "t_stop": 130.0,
         "sign": -1,
-        "time_to_decrease_jerk_1": 23.0,
-        "time_to_decrease_jerk_2": 100.0,
+        "time_to_decrease_jerk_1": 26.5,
+        "time_to_decrease_jerk_2": 118.5,
         "accel_ramp_up_jerk": 80000.0,
         "accel_ramp_down_jerk": 50000.0
       },
       "TURN_LEFT_135": {
-        "start": -15.56,
-        "end": 55.8,
-        "turn_linear_speed": 2.0,
-        "angular_accel": 1200.0,
-        "max_angular_speed": 33.0,
-        "t_start_deccel": 68.0,
-        "t_stop": 115.0,
+        "start": -8.5,
+        "end": -61.28,
+        "turn_linear_speed": 1.7,
+        "angular_accel": 900.0,
+        "max_angular_speed": 26.66,
+        "t_start_deccel": 85.0,
+        "t_stop": 129.5,
         "sign": 1,
-        "time_to_decrease_jerk_1": 23.0,
-        "time_to_decrease_jerk_2": 100.0,
+        "time_to_decrease_jerk_1": 26.5,
+        "time_to_decrease_jerk_2": 118.0,
         "accel_ramp_up_jerk": 80000.0,
         "accel_ramp_down_jerk": 50000.0
       },
@@ -790,11 +790,11 @@ const FIRMWARE_PRESETS = {
         "turn_linear_speed": 2.18,
         "angular_accel": 1000.0,
         "max_angular_speed": 24.75,
-        "t_start_deccel": 124.0,
-        "t_stop": 165.0,
+        "t_start_deccel": 122.5,
+        "t_stop": 163.5,
         "sign": 1,
         "time_to_decrease_jerk_1": 21.0,
-        "time_to_decrease_jerk_2": 152.5,
+        "time_to_decrease_jerk_2": 151.0,
         "accel_ramp_up_jerk": 80000.0,
         "accel_ramp_down_jerk": 50000.0
       },
@@ -814,71 +814,71 @@ const FIRMWARE_PRESETS = {
       },
       "TURN_LEFT_45_FROM_45": {
         "start": 0.0,
-        "end": 65.89,
+        "end": 70.89,
         "turn_linear_speed": 1.7,
         "angular_accel": 1095.0,
         "max_angular_speed": 19.83,
-        "t_start_deccel": 37.0,
-        "t_stop": 73.0,
+        "t_start_deccel": 36.5,
+        "t_stop": 72.5,
         "sign": 1,
         "time_to_decrease_jerk_1": 14.0,
-        "time_to_decrease_jerk_2": 59.5,
+        "time_to_decrease_jerk_2": 59.0,
         "accel_ramp_up_jerk": 80000.0,
         "accel_ramp_down_jerk": 50000.0
       },
       "TURN_RIGHT_90_FROM_45": {
         "start": 0.0,
-        "end": -5.0,
-        "turn_linear_speed": 2.0,
+        "end": -24.0,
+        "turn_linear_speed": 1.7,
         "angular_accel": 1000.0,
         "max_angular_speed": 26.66,
-        "t_start_deccel": 57.5,
-        "t_stop": 102.5,
+        "t_start_deccel": 57.0,
+        "t_stop": 102.0,
         "sign": -1,
         "time_to_decrease_jerk_1": 25.0,
-        "time_to_decrease_jerk_2": 86.0,
+        "time_to_decrease_jerk_2": 85.5,
         "accel_ramp_up_jerk": 60000.0,
         "accel_ramp_down_jerk": 50000.0
       },
       "TURN_LEFT_90_FROM_45": {
         "start": 0.0,
-        "end": -5.0,
-        "turn_linear_speed": 2.0,
+        "end": -27.0,
+        "turn_linear_speed": 1.7,
         "angular_accel": 1000.0,
         "max_angular_speed": 26.66,
-        "t_start_deccel": 57.5,
-        "t_stop": 102.5,
+        "t_start_deccel": 56.5,
+        "t_stop": 101.5,
         "sign": 1,
         "time_to_decrease_jerk_1": 25.0,
-        "time_to_decrease_jerk_2": 86.0,
+        "time_to_decrease_jerk_2": 85.0,
         "accel_ramp_up_jerk": 60000.0,
         "accel_ramp_down_jerk": 50000.0
       },
       "TURN_RIGHT_135_FROM_45": {
         "start": 0.0,
-        "end": 18.55,
-        "turn_linear_speed": 2.0,
-        "angular_accel": 1200.0,
-        "max_angular_speed": 33.0,
-        "t_start_deccel": 68.0,
-        "t_stop": 115.0,
+        "end": 13.31,
+        "turn_linear_speed": 1.7,
+        "angular_accel": 900.0,
+        "max_angular_speed": 26.66,
+        "t_start_deccel": 85.5,
+        "t_stop": 130.0,
         "sign": -1,
-        "time_to_decrease_jerk_1": 23.0,
-        "time_to_decrease_jerk_2": 100.0,
+        "time_to_decrease_jerk_1": 26.5,
+        "time_to_decrease_jerk_2": 118.5,
         "accel_ramp_up_jerk": 80000.0,
         "accel_ramp_down_jerk": 50000.0
       },
       "TURN_LEFT_135_FROM_45": {
         "start": 0.0,
-        "end": 18.55,
-        "turn_linear_speed": 2.0,
-        "angular_accel": 1200.0,
-        "max_angular_speed": 33.0,
-        "t_start_deccel": 68.0,
-        "t_stop": 115.0,
+        "end": 13.31,
+        "turn_linear_speed": 1.7,
+        "angular_accel": 900.0,
+        "max_angular_speed": 26.66,
+        "t_start_deccel": 85.0,
+        "t_stop": 129.5,
         "sign": 1,
-        "time_to_decrease_jerk_1": 23.0,
-        "time_to_decrease_jerk_2": 100.0,
+        "time_to_decrease_jerk_1": 26.5,
+        "time_to_decrease_jerk_2": 118.0,
         "accel_ramp_up_jerk": 80000.0,
         "accel_ramp_down_jerk": 50000.0
       },

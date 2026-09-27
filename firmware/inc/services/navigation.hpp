@@ -169,6 +169,7 @@ private:
     Direction current_direction;
     Movement current_movement;
     Movement previous_movement;
+    uint8_t current_movement_count = 1;
     Direction target_direction;
     float complete_prev_move_travel;
 
