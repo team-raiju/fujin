@@ -562,6 +562,13 @@ tabButtons.forEach(btn => {
       recomputeAndRender();
       omegaChart.resize();
       alphaChart.resize();
+    } else if (targetTab === 'sequence') {
+      if (seqLinVelChart) {
+        seqLinVelChart.resize();
+        seqAngVelChart.resize();
+        seqLinAccChart.resize();
+        seqAngAccChart.resize();
+      }
     }
   });
 });
@@ -972,4 +979,484 @@ function recomputeAndRenderLinear() {
 // Init linear field displays & initial render
 linFields.forEach(([id, key, decimals]) => syncLinFieldUI(id, decimals, key));
 recomputeAndRenderLinear();
+
+
+// ==========================================
+// SEQUENCE PLANNER TAB UI
+// ==========================================
+let seqLinVelChart, seqAngVelChart, seqLinAccChart, seqAngAccChart;
+
+let sequenceSteps = [
+  { name: 'START', count: 1 },
+  { name: 'FORWARD', count: 2 },
+  { name: 'TURN_RIGHT_90', count: 1 },
+  { name: 'FORWARD', count: 2 },
+  { name: 'STOP', count: 1 }
+];
+
+function seqChartOptions(yTitle) {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: false,
+    parsing: false,
+    elements: {
+      point: { radius: 0 },
+      line: { tension: 0 }
+    },
+    scales: {
+      x: {
+        type: 'linear',
+        title: { display: true, text: 'Time (ms)', color: '#526059' },
+        grid: { color: '#1c2622' },
+        ticks: {
+          color: '#7d9188',
+          callback: function(value) {
+            return Number(value).toFixed(1);
+          }
+        }
+      },
+      y: {
+        title: { display: true, text: yTitle, color: '#526059' },
+        grid: { color: '#1c2622' },
+        ticks: { color: '#7d9188' }
+      }
+    },
+    plugins: {
+      legend: {
+        labels: { color: '#dfe9e3', font: { family: "'IBM Plex Mono', monospace", size: 10.5 } }
+      },
+      tooltip: {
+        backgroundColor: 'rgba(18, 25, 23, 0.95)',
+        borderColor: '#34483f',
+        borderWidth: 1,
+        titleColor: '#dfe9e3',
+        bodyColor: '#7d9188',
+        callbacks: {
+          title: function(items) {
+            if (!items.length) return '';
+            return Number(items[0].parsed.x).toFixed(1) + ' ms';
+          },
+          label: function(item) {
+            return item.dataset.label + ': ' + Number(item.parsed.y).toFixed(3);
+          }
+        }
+      }
+    }
+  };
+}
+
+function initSequenceCharts() {
+  const ctxLinVel = document.getElementById('chart-seq-lin-vel');
+  if (ctxLinVel && !seqLinVelChart) {
+    seqLinVelChart = new Chart(ctxLinVel.getContext('2d'), {
+      type: 'line',
+      data: { datasets: [] },
+      options: seqChartOptions('Linear Vel (m/s)')
+    });
+  }
+
+  const ctxAngVel = document.getElementById('chart-seq-ang-vel');
+  if (ctxAngVel && !seqAngVelChart) {
+    seqAngVelChart = new Chart(ctxAngVel.getContext('2d'), {
+      type: 'line',
+      data: { datasets: [] },
+      options: seqChartOptions('Angular Vel (rad/s)')
+    });
+  }
+
+  const ctxLinAcc = document.getElementById('chart-seq-lin-acc');
+  if (ctxLinAcc && !seqLinAccChart) {
+    seqLinAccChart = new Chart(ctxLinAcc.getContext('2d'), {
+      type: 'line',
+      data: { datasets: [] },
+      options: seqChartOptions('Linear Acc (m/s²)')
+    });
+  }
+
+  const ctxAngAcc = document.getElementById('chart-seq-ang-acc');
+  if (ctxAngAcc && !seqAngAccChart) {
+    seqAngAccChart = new Chart(ctxAngAcc.getContext('2d'), {
+      type: 'line',
+      data: { datasets: [] },
+      options: seqChartOptions('Angular Acc (rad/s²)')
+    });
+  }
+}
+
+function renderSequenceSteps() {
+  const container = document.getElementById('seq-steps-container');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const isLastStop = sequenceSteps.length > 0 && sequenceSteps[sequenceSteps.length - 1].name === 'STOP';
+
+  sequenceSteps.forEach((step, idx) => {
+    const row = document.createElement('div');
+    row.className = 'seq-step-row';
+
+    const badge = document.createElement('span');
+    badge.className = 'seq-step-badge';
+    badge.textContent = `#${idx + 1}`;
+
+    const select = document.createElement('select');
+    select.className = 'seq-step-select';
+
+    ALL_MOVEMENTS.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m;
+      opt.textContent = m;
+      if (m === step.name) opt.selected = true;
+      select.appendChild(opt);
+    });
+
+    select.addEventListener('change', () => {
+      step.name = select.value;
+      if (step.name === 'STOP') {
+        // Stop sequence here
+        sequenceSteps = sequenceSteps.slice(0, idx + 1);
+        renderSequenceSteps();
+      } else if (idx === sequenceSteps.length - 1) {
+        // When adding new movement at end, new box appears below
+        sequenceSteps.push({ name: 'FORWARD', count: 1 });
+        renderSequenceSteps();
+      }
+      runSequenceSimulation();
+    });
+
+    const countInput = document.createElement('input');
+    countInput.type = 'number';
+    countInput.className = 'seq-step-count';
+    countInput.min = '1';
+    countInput.max = '50';
+    countInput.value = step.count || 1;
+    countInput.title = 'Count';
+
+    countInput.addEventListener('input', () => {
+      step.count = Math.max(1, parseInt(countInput.value) || 1);
+      runSequenceSimulation();
+    });
+
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'btn-remove-step';
+    removeBtn.textContent = '✕';
+    removeBtn.title = 'Remove Step';
+    removeBtn.addEventListener('click', () => {
+      if (sequenceSteps.length > 1) {
+        sequenceSteps.splice(idx, 1);
+        renderSequenceSteps();
+        runSequenceSimulation();
+      }
+    });
+
+    row.appendChild(badge);
+    row.appendChild(select);
+    row.appendChild(countInput);
+    if (sequenceSteps.length > 1) {
+      row.appendChild(removeBtn);
+    }
+
+    container.appendChild(row);
+  });
+
+  const addBtn = document.getElementById('btn-add-step');
+  const stopNotice = document.getElementById('seq-stop-notice');
+  if (addBtn) {
+    if (isLastStop) {
+      addBtn.disabled = true;
+      addBtn.style.display = 'none';
+      if (stopNotice) stopNotice.style.display = 'block';
+    } else {
+      addBtn.disabled = false;
+      addBtn.style.display = 'block';
+      if (stopNotice) stopNotice.style.display = 'none';
+    }
+  }
+}
+
+function initCustomParamsUI() {
+  const movSelect = document.getElementById('s-custom-mov-select');
+  if (!movSelect) return;
+  movSelect.innerHTML = '';
+
+  ALL_MOVEMENTS.forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m;
+    opt.textContent = m;
+    movSelect.appendChild(opt);
+  });
+
+  movSelect.addEventListener('change', () => {
+    renderCustomMovementInputs(movSelect.value);
+  });
+
+  const inpAccJerk = document.getElementById('inp-custom-lin-acc-jerk');
+  const inpBrkJerk = document.getElementById('inp-custom-lin-brk-jerk');
+  if (inpAccJerk && inpBrkJerk) {
+    inpAccJerk.value = customPreset.general.max_linear_acc_jerk;
+    inpBrkJerk.value = customPreset.general.max_linear_brake_jerk;
+
+    inpAccJerk.addEventListener('input', () => {
+      customPreset.general.max_linear_acc_jerk = parseFloat(inpAccJerk.value) || 625.0;
+      runSequenceSimulation();
+    });
+    inpBrkJerk.addEventListener('input', () => {
+      customPreset.general.max_linear_brake_jerk = parseFloat(inpBrkJerk.value) || 625.0;
+      runSequenceSimulation();
+    });
+  }
+
+  const copyBtn = document.getElementById('btn-copy-custom-base');
+  const baseSelect = document.getElementById('s-seqCustomBase');
+  if (copyBtn && baseSelect) {
+    copyBtn.addEventListener('click', () => {
+      copyPresetToCustom(baseSelect.value);
+      if (inpAccJerk) inpAccJerk.value = customPreset.general.max_linear_acc_jerk;
+      if (inpBrkJerk) inpBrkJerk.value = customPreset.general.max_linear_brake_jerk;
+      renderCustomMovementInputs(movSelect.value);
+      runSequenceSimulation();
+    });
+  }
+
+  renderCustomMovementInputs(movSelect.value || 'START');
+}
+
+function renderCustomMovementInputs(movName) {
+  const container = document.getElementById('custom-movement-inputs');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const isLinear = isLinearMovement(movName);
+  const fwd = customPreset.forward[movName] || (isLinear
+    ? { max_speed: 2.0, acceleration: 20.0, deceleration: 25.0, target_travel_mm: 180.0 }
+    : { max_speed: 0.0, acceleration: 0.0, deceleration: 0.0, target_travel_mm: 0.0 });
+  customPreset.forward[movName] = fwd;
+  const turn = customPreset.turn[movName] || null;
+
+  let html = `<div style="font-size:10px; font-weight:bold; color:var(--text); margin-bottom:4px; font-family:'IBM Plex Mono',monospace;">Forward / Linear Kinematics:</div>`;
+  html += `<div class="seq-params-grid">`;
+  html += `
+    <div class="seq-param-item"><label>Max Speed (m/s)</label><input type="number" step="0.1" id="cf-max-speed" value="${fwd.max_speed}"></div>
+    <div class="seq-param-item"><label>Accel (m/s²)</label><input type="number" step="1" id="cf-accel" value="${fwd.acceleration}"></div>
+    <div class="seq-param-item"><label>Decel (m/s²)</label><input type="number" step="1" id="cf-decel" value="${fwd.deceleration}"></div>
+    <div class="seq-param-item"><label>Travel (mm)</label><input type="number" step="0.1" id="cf-travel" value="${fwd.target_travel_mm}"></div>
+  `;
+  html += `</div>`;
+
+  if (turn) {
+    html += `<div style="font-size:10px; font-weight:bold; color:var(--text); margin:10px 0 4px 0; font-family:'IBM Plex Mono',monospace;">Turn Kinematics:</div>`;
+    html += `<div class="seq-params-grid">`;
+    html += `
+      <div class="seq-param-item"><label>Turn Speed (m/s)</label><input type="number" step="0.1" id="ct-speed" value="${turn.turn_linear_speed}"></div>
+      <div class="seq-param-item"><label>Start Offset (mm)</label><input type="number" step="0.1" id="ct-start" value="${turn.start}"></div>
+      <div class="seq-param-item"><label>End Offset (mm)</label><input type="number" step="0.1" id="ct-end" value="${turn.end}"></div>
+      <div class="seq-param-item"><label>Max Ang Speed</label><input type="number" step="0.1" id="ct-max-omega" value="${turn.max_angular_speed}"></div>
+      <div class="seq-param-item"><label>Ang Accel</label><input type="number" step="10" id="ct-ang-accel" value="${turn.angular_accel}"></div>
+      <div class="seq-param-item"><label>t_start_decel (ms)</label><input type="number" step="0.5" id="ct-tsd" value="${turn.t_start_deccel}"></div>
+      <div class="seq-param-item"><label>t_stop (ms)</label><input type="number" step="0.5" id="ct-ts" value="${turn.t_stop}"></div>
+      <div class="seq-param-item"><label>Turn Sign (-1/+1)</label><input type="number" step="2" id="ct-sign" value="${turn.sign}"></div>
+      <div class="seq-param-item"><label>t_jerk_1 (ms)</label><input type="number" step="0.5" id="ct-tj1" value="${turn.time_to_decrease_jerk_1 || 0}"></div>
+      <div class="seq-param-item"><label>t_jerk_2 (ms)</label><input type="number" step="0.5" id="ct-tj2" value="${turn.time_to_decrease_jerk_2 || 0}"></div>
+      <div class="seq-param-item"><label>Ramp Up Jerk</label><input type="number" step="1000" id="ct-jup" value="${turn.accel_ramp_up_jerk || 0}"></div>
+      <div class="seq-param-item"><label>Ramp Down Jerk</label><input type="number" step="1000" id="ct-jdown" value="${turn.accel_ramp_down_jerk || 0}"></div>
+    `;
+    html += `</div>`;
+  }
+
+  container.innerHTML = html;
+
+  const bindInput = (id, obj, prop) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('input', () => {
+      obj[prop] = parseFloat(el.value) || 0.0;
+      runSequenceSimulation();
+    });
+  };
+
+  bindInput('cf-max-speed', fwd, 'max_speed');
+  bindInput('cf-accel', fwd, 'acceleration');
+  bindInput('cf-decel', fwd, 'deceleration');
+  bindInput('cf-travel', fwd, 'target_travel_mm');
+
+  if (turn) {
+    bindInput('ct-speed', turn, 'turn_linear_speed');
+    bindInput('ct-start', turn, 'start');
+    bindInput('ct-end', turn, 'end');
+    bindInput('ct-max-omega', turn, 'max_angular_speed');
+    bindInput('ct-ang-accel', turn, 'angular_accel');
+    bindInput('ct-tsd', turn, 't_start_deccel');
+    bindInput('ct-ts', turn, 't_stop');
+    bindInput('ct-sign', turn, 'sign');
+    bindInput('ct-tj1', turn, 'time_to_decrease_jerk_1');
+    bindInput('ct-tj2', turn, 'time_to_decrease_jerk_2');
+    bindInput('ct-jup', turn, 'accel_ramp_up_jerk');
+    bindInput('ct-jdown', turn, 'accel_ramp_down_jerk');
+  }
+}
+
+let seqGlobalBrakeMargin = 20.0;
+let seqGlobalAccelMargin = 20.0;
+
+function initSeqMarginsUI() {
+  const sync = (type) => {
+    const r = document.getElementById(`r-seq${type}Margin`);
+    const n = document.getElementById(`n-seq${type}Margin`);
+    const v = document.getElementById(`v-seq${type}Margin`);
+    if (!r || !n || !v) return;
+
+    const update = (val) => {
+      val = parseFloat(val);
+      if (isNaN(val)) val = 0.0;
+      r.value = val;
+      n.value = val;
+      v.textContent = val.toFixed(1);
+      if (type === 'Brake') seqGlobalBrakeMargin = val;
+      else seqGlobalAccelMargin = val;
+      runSequenceSimulation();
+    };
+
+    r.addEventListener('input', () => update(r.value));
+    n.addEventListener('input', () => update(n.value));
+  };
+
+  sync('Brake');
+  sync('Accel');
+}
+
+function runSequenceSimulation() {
+  const presetSelect = document.getElementById('s-seqPreset');
+  const presetName = presetSelect ? presetSelect.value : 'MEDIUM';
+  if (typeof simulateSequence === 'function') {
+    const results = simulateSequence(sequenceSteps, presetName, {
+      brakeMarginMm: seqGlobalBrakeMargin,
+      accelMarginMm: seqGlobalAccelMargin
+    });
+    if (results) {
+      updateSequenceCharts(results);
+    }
+  }
+}
+
+function updateSequenceCharts(results) {
+  if (!seqLinVelChart) return;
+  const data = results.data;
+
+  seqLinVelChart.data = {
+    datasets: [{
+      label: 'Target Linear Vel (m/s)',
+      data: data.map(d => ({ x: d.x, y: d.yLinVel })),
+      borderColor: '#fca311',
+      borderWidth: 2,
+      pointRadius: 0
+    }]
+  };
+  seqLinVelChart.update();
+
+  seqAngVelChart.data = {
+    datasets: [{
+      label: 'Target Angular Vel (rad/s)',
+      data: data.map(d => ({ x: d.x, y: d.yAngVel })),
+      borderColor: '#00bbf9',
+      borderWidth: 2,
+      pointRadius: 0
+    }]
+  };
+  seqAngVelChart.update();
+
+  seqLinAccChart.data = {
+    datasets: [{
+      label: 'Target Linear Accel (m/s²)',
+      data: data.map(d => ({ x: d.x, y: d.yLinAcc })),
+      borderColor: '#ff0054',
+      borderWidth: 2,
+      pointRadius: 0
+    }]
+  };
+  seqLinAccChart.update();
+
+  seqAngAccChart.data = {
+    datasets: [{
+      label: 'Target Angular Accel (rad/s²)',
+      data: data.map(d => ({ x: d.x, y: d.yAngAcc })),
+      borderColor: '#9b5de5',
+      borderWidth: 2,
+      pointRadius: 0
+    }]
+  };
+  seqAngAccChart.update();
+
+  const sum = results.summary;
+  const elTime = document.getElementById('readout-seq-time');
+  const elSpeed = document.getElementById('readout-seq-speed');
+  const elOmega = document.getElementById('readout-seq-omega');
+  const elSteps = document.getElementById('readout-seq-steps');
+
+  if (elTime) elTime.textContent = sum.totalTimeMs.toFixed(1) + ' ms';
+  if (elSpeed) elSpeed.textContent = sum.maxLinSpeed.toFixed(2) + ' m/s';
+  if (elOmega) elOmega.textContent = sum.maxAngSpeed.toFixed(2) + ' rad/s';
+  if (elSteps) elSteps.textContent = sum.stepCount;
+}
+
+const sSeqPreset = document.getElementById('s-seqPreset');
+if (sSeqPreset) {
+  sSeqPreset.addEventListener('change', (e) => {
+    const isCustom = e.target.value === 'CUSTOM';
+    const customPanel = document.getElementById('seq-custom-params');
+    if (customPanel) customPanel.style.display = isCustom ? 'block' : 'none';
+    runSequenceSimulation();
+  });
+}
+
+const btnAddStep = document.getElementById('btn-add-step');
+if (btnAddStep) {
+  btnAddStep.addEventListener('click', () => {
+    const isLastStop = sequenceSteps.length > 0 && sequenceSteps[sequenceSteps.length - 1].name === 'STOP';
+    if (!isLastStop) {
+      sequenceSteps.push({ name: 'FORWARD', count: 1 });
+      renderSequenceSteps();
+      runSequenceSimulation();
+    }
+  });
+}
+
+const btnResetSeq = document.getElementById('btn-reset-seq');
+if (btnResetSeq) {
+  btnResetSeq.addEventListener('click', () => {
+    sequenceSteps = [
+      { name: 'START', count: 1 },
+      { name: 'FORWARD', count: 2 },
+      { name: 'TURN_RIGHT_90', count: 1 },
+      { name: 'FORWARD', count: 2 },
+      { name: 'STOP', count: 1 }
+    ];
+    renderSequenceSteps();
+    runSequenceSimulation();
+  });
+}
+
+const btnRunSeq = document.getElementById('btn-run-seq');
+if (btnRunSeq) {
+  btnRunSeq.addEventListener('click', () => {
+    runSequenceSimulation();
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initSequenceCharts();
+  initSeqMarginsUI();
+  renderSequenceSteps();
+  initCustomParamsUI();
+  runSequenceSimulation();
+});
+
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+  initSequenceCharts();
+  initSeqMarginsUI();
+  renderSequenceSteps();
+  initCustomParamsUI();
+  runSequenceSimulation();
+}
+
+
 

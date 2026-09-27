@@ -20,6 +20,7 @@
       <nav class="tabs-nav">
         <button class="tab-btn active" data-tab="angular">TURN PROFILE</button>
         <button class="tab-btn" data-tab="linear">LINEAR PROFILE</button>
+        <button class="tab-btn" data-tab="sequence">SEQUENCE PLANNER</button>
       </nav>
       <div class="sub">micromouse · motion planner · lab</div>
     </header>
@@ -468,9 +469,136 @@
       </section>
     </main>
   </div><!-- /#tab-linear -->
+  <!-- TAB 3: SEQUENCE PLANNER -->
+  <div id="tab-sequence" class="tab-view">
+    <aside id="sidebar-sequence" class="sidebar">
+      <div class="group on">
+        <div class="group-title">Firmware Parameters</div>
+        <div class="field">
+          <label><span>Preset Mode</span></label>
+          <div class="field-input-row">
+            <select id="s-seqPreset">
+              <option value="SLOW">SLOW</option>
+              <option value="SEARCH_SLOW">SEARCH_SLOW</option>
+              <option value="SEARCH_MEDIUM">SEARCH_MEDIUM</option>
+              <option value="SEARCH_FAST">SEARCH_FAST</option>
+              <option value="MEDIUM" selected>MEDIUM</option>
+              <option value="FAST">FAST</option>
+              <option value="SUPER">SUPER</option>
+              <option value="CUSTOM">CUSTOM</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field" style="margin-top: 12px;">
+          <label><span>Brake margin (mm)</span><span class="val mono" id="v-seqBrakeMargin">20.0</span></label>
+          <div class="field-input-row">
+            <input type="range" id="r-seqBrakeMargin" min="0" max="100" step="1" value="20">
+            <input type="number" id="n-seqBrakeMargin" min="0" max="100" step="0.5" value="20">
+          </div>
+        </div>
+
+        <div class="field">
+          <label><span>Accel margin (mm)</span><span class="val mono" id="v-seqAccelMargin">20.0</span></label>
+          <div class="field-input-row">
+            <input type="range" id="r-seqAccelMargin" min="0" max="100" step="1" value="20">
+            <input type="number" id="n-seqAccelMargin" min="0" max="100" step="0.5" value="20">
+          </div>
+        </div>
+
+        <div id="seq-custom-params" class="seq-custom-section" style="display: none;">
+          <div class="field">
+            <label><span>Load Baseline Preset</span></label>
+            <div class="field-input-row" style="gap: 4px;">
+              <select id="s-seqCustomBase">
+                <option value="MEDIUM" selected>MEDIUM</option>
+                <option value="FAST">FAST</option>
+                <option value="SUPER">SUPER</option>
+                <option value="SLOW">SLOW</option>
+                <option value="SEARCH_FAST">SEARCH_FAST</option>
+              </select>
+              <button id="btn-copy-custom-base" style="padding: 3px 8px; font-size: 11px; white-space: nowrap; font-family: 'IBM Plex Mono', monospace;">Load</button>
+            </div>
+          </div>
+
+          <div class="group-title" style="margin: 10px 0 6px 0; font-size: 9.5px;">General Jerk Limits</div>
+          <div class="seq-params-grid">
+            <div class="seq-param-item">
+              <label>Lin Acc Jerk</label>
+              <input type="number" id="inp-custom-lin-acc-jerk" step="25" value="625">
+            </div>
+            <div class="seq-param-item">
+              <label>Lin Brake Jerk</label>
+              <input type="number" id="inp-custom-lin-brk-jerk" step="25" value="625">
+            </div>
+          </div>
+
+          <div class="group-title" style="margin: 12px 0 6px 0; font-size: 9.5px;">Curve & Movement Tuning</div>
+          <div class="field">
+            <label><span>Select Movement</span></label>
+            <select id="s-custom-mov-select">
+              <!-- Dynamically populated -->
+            </select>
+          </div>
+
+          <div id="custom-movement-inputs">
+            <!-- Dynamically populated based on s-custom-mov-select -->
+          </div>
+        </div>
+      </div>
+
+      <div class="group on">
+        <div class="group-title">Movement Sequence</div>
+        <div id="seq-steps-container" style="display: flex; flex-direction: column;">
+          <!-- Dynamically populated sequence rows -->
+        </div>
+        <button id="btn-add-step" class="btn-add-step">+ Add Movement</button>
+        <div id="seq-stop-notice" style="display: none; font-size: 10.5px; color: var(--muted-dim); font-family: 'IBM Plex Mono', monospace; margin-top: 6px; text-align: center;">Sequence terminates at STOP</div>
+        <div style="display: flex; gap: 6px; margin-top: 10px;">
+          <button id="btn-run-seq" style="flex: 1; padding: 7px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: bold; background: var(--panel-raised); border: 1px solid var(--line-bright); color: var(--jerk); cursor: pointer; border-radius: 3px;">Run Simulation</button>
+          <button id="btn-reset-seq" style="padding: 7px 10px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; background: transparent; border: 1px solid var(--line); color: var(--muted); cursor: pointer; border-radius: 3px;" title="Reset Sequence">Reset</button>
+        </div>
+      </div>
+    </aside>
+
+    <main id="main-sequence">
+      <section class="panel" style="padding: 10px 16px;">
+        <div style="display: flex; gap: 24px; align-items: center; flex-wrap: wrap;" id="seq-readouts-bar">
+          <div><span style="color: var(--muted); font-size: 11px;">Total Time: </span><span id="readout-seq-time" class="mono" style="color: var(--text); font-weight: bold;">--</span></div>
+          <div><span style="color: var(--muted); font-size: 11px;">Max Speed: </span><span id="readout-seq-speed" class="mono" style="color: var(--trap); font-weight: bold;">--</span></div>
+          <div><span style="color: var(--muted); font-size: 11px;">Max Ang Speed: </span><span id="readout-seq-omega" class="mono" style="color: var(--ideal); font-weight: bold;">--</span></div>
+          <div><span style="color: var(--muted); font-size: 11px;">Steps Count: </span><span id="readout-seq-steps" class="mono" style="color: var(--jerk); font-weight: bold;">--</span></div>
+        </div>
+      </section>
+
+      <section class="charts-row">
+        <div class="panel">
+          <div class="panel-title">Target Linear Velocity &middot; m/s vs ms</div>
+          <div class="chart-wrap"><canvas id="chart-seq-lin-vel"></canvas></div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Target Angular Velocity &middot; rad/s vs ms</div>
+          <div class="chart-wrap"><canvas id="chart-seq-ang-vel"></canvas></div>
+        </div>
+      </section>
+
+      <section class="charts-row">
+        <div class="panel">
+          <div class="panel-title">Target Linear Acceleration &middot; m/s&sup2; vs ms</div>
+          <div class="chart-wrap"><canvas id="chart-seq-lin-acc"></canvas></div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Target Angular Acceleration &middot; rad/s&sup2; vs ms</div>
+          <div class="chart-wrap"><canvas id="chart-seq-ang-acc"></canvas></div>
+        </div>
+      </section>
+    </main>
+  </div><!-- /#tab-sequence -->
 </div><!-- /#app -->
 
+<script src="presets_data.js"></script>
 <script src="simulations.js"></script>
+<script src="sequence.js"></script>
 <script src="ui.js"></script>
 </body>
 

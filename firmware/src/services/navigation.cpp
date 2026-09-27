@@ -32,10 +32,13 @@ constexpr uint32_t WALL_BREAK_CONFIRM_COUNT = 4;
 constexpr float WALL_BREAK_MAX_CORRECTION_ERROR_MM = 40.0f;
 constexpr float LINEAR_BRAKE_MARGIN_MM = 20.0f;
 constexpr float LINEAR_ACCEL_MARGIN_MM = 20.0f;
+constexpr float FORWARD_WALL_PID_DISABLE_DISTANCE_MM = 70.0f;
 constexpr float DIAGONAL_PID_START_DISTANCE_MM = 50.0f;
 constexpr uint32_t STABILIZE_FORWARD_TIME_MS = 200;
 constexpr uint32_t STABILIZE_TURN_TIME_MS = 400;
 constexpr float MILLIMETERS_PER_METER = 1000.0f;
+constexpr uint8_t MIN_MOVEMENTS_FOR_SEAMLESS_START = 3;
+
 
 bool is_search_mode(services::Navigation::navigation_mode_t mode) {
     return mode == services::Navigation::SEARCH_FAST || mode == services::Navigation::SEARCH_MEDIUM ||
@@ -106,6 +109,7 @@ void Navigation::reset(navigation_mode_t mode) {
     complete_prev_move_travel = 0;
     waiting_for_fast_param = false;
     turn_end_correction_mm = 0.0f;
+    continuous_start_to_forward = false;
 
     current_direction = Direction::NORTH;
 
@@ -475,7 +479,7 @@ float Navigation::get_required_brake_distance(float control_linear_speed, float 
         return 0.0f;
     }
 
-    float brake_distance_mm = LINEAR_BRAKE_MARGIN_MM;
+    float brake_distance_mm = current_movement == Movement::START ? 0.0f : LINEAR_BRAKE_MARGIN_MM;
 
     if (current_linear_acceleration > 0.0f && general_params.max_linear_brake_jerk > 0.0f) {
         float brake_jerk = general_params.max_linear_brake_jerk;
@@ -498,8 +502,20 @@ float Navigation::get_required_brake_distance(float control_linear_speed, float 
 
 void Navigation::update_linear_target_speed(float& control_linear_speed, float max_speed, float max_acceleration,
                                             float deceleration, bool continuous_start_to_forward) {
-    const float accel_jerk = general_params.max_linear_acc_jerk;
-    const float brake_jerk = general_params.max_linear_brake_jerk;
+    float accel_jerk = general_params.max_linear_acc_jerk;
+    float brake_jerk = general_params.max_linear_brake_jerk;
+
+    if (current_movement == Movement::STOP) {
+        brake_jerk *= 2.0; 
+        accel_jerk *= 2.0; 
+    }
+
+    const bool is_start_or_after_start =
+        (current_movement == Movement::START) ||
+        ((current_movement == Movement::FORWARD || current_movement == Movement::DIAGONAL) &&
+         previous_movement == Movement::START);
+    const float accel_margin_mm = is_start_or_after_start ? 0.0f : LINEAR_ACCEL_MARGIN_MM;
+    
     const float required_brake_distance =
         get_required_brake_distance(control_linear_speed, deceleration, continuous_start_to_forward);
     const bool requires_turn_margin = (previous_movement != Movement::START) && (control_linear_speed >= 1.0f);
@@ -509,7 +525,7 @@ void Navigation::update_linear_target_speed(float& control_linear_speed, float m
         (continuous_start_to_forward || (std::abs(traveled_dist_mm) < (target_travel_mm - required_brake_distance)));
 
     if (should_accelerate) {
-        if (requires_turn_margin && std::abs(traveled_dist_mm) <= LINEAR_ACCEL_MARGIN_MM) {
+        if (requires_turn_margin && std::abs(traveled_dist_mm) <= accel_margin_mm) {
             return;
         }
 
@@ -547,14 +563,16 @@ void Navigation::update_linear_target_speed(float& control_linear_speed, float m
     }
 
     // else if !should_accelerate continues here...
-    if (continuous_start_to_forward || std::abs(traveled_dist_mm) <= LINEAR_ACCEL_MARGIN_MM) {
+    if (continuous_start_to_forward || std::abs(traveled_dist_mm) <= accel_margin_mm) {
         return;
     }
 
     is_braking = true;
 
-    if (control_linear_speed > forward_end_speed) {
-        if (start_brake_ramp_up(control_linear_speed, current_linear_acceleration, forward_end_speed, brake_jerk)) {
+    if (control_linear_speed > forward_end_speed || current_linear_acceleration < 0.0f) {
+        if (start_brake_ramp_up(control_linear_speed, current_linear_acceleration, forward_end_speed,
+                                brake_jerk) ||
+            control_linear_speed <= forward_end_speed) {
             current_linear_acceleration += brake_jerk / Config::CONTROL_FREQUENCY_HZ;
             current_linear_acceleration = std::min(current_linear_acceleration, 0.0f);
         } else {
@@ -567,6 +585,10 @@ void Navigation::update_linear_target_speed(float& control_linear_speed, float m
         if (forward_end_speed > 0.0f) {
             control_linear_speed = std::max(control_linear_speed, Config::min_move_speed);
         }
+    } else if (current_linear_acceleration > 0.0f) {
+        current_linear_acceleration -= brake_jerk / Config::CONTROL_FREQUENCY_HZ;
+        current_linear_acceleration = std::max(current_linear_acceleration, 0.0f);
+        control_linear_speed += current_linear_acceleration / Config::CONTROL_FREQUENCY_HZ;
     } else {
         current_linear_acceleration = 0.0f;
         control_linear_speed = std::min(control_linear_speed, forward_end_speed);
@@ -591,7 +613,15 @@ void Navigation::configure_linear_pid() {
         return;
     }
 
-    if (current_movement == Movement::FORWARD || current_movement == Movement::START) {
+    if (current_movement == Movement::FORWARD) {
+        const bool before_forward_end =
+            std::abs(traveled_dist_mm) < (target_travel_mm - FORWARD_WALL_PID_DISABLE_DISTANCE_MM);
+        control->set_wall_pid_enabled(before_forward_end);
+        control->set_diagonal_pid_enabled(false);
+        return;
+    }
+
+    if (current_movement == Movement::START) {
         control->set_wall_pid_enabled(true);
         control->set_diagonal_pid_enabled(false);
         return;
@@ -617,11 +647,12 @@ void Navigation::step_linear_movement() {
         forward_end_speed = 0.0f;
     }
 
-    const bool continuous_start_to_forward =
-        current_movement == Movement::START && forward_end_speed > forward_params[Movement::START].max_speed;
-
-    const float max_speed =
-        continuous_start_to_forward ? forward_end_speed : forward_params[current_movement].max_speed;
+    float max_speed = forward_params[current_movement].max_speed;
+    if (continuous_start_to_forward) {
+        max_speed = forward_end_speed;
+    } else if (current_movement == Movement::START && forward_end_speed > 0.0f) {
+        max_speed = std::min(max_speed, forward_end_speed);
+    }
     const float max_acceleration = forward_params[current_movement].acceleration;
     const float deceleration = forward_params[current_movement].deceleration;
     float control_linear_speed = control->get_target_linear_speed();
@@ -1026,8 +1057,14 @@ void Navigation::set_movement(Movement movement, Movement prev_movement, Movemen
     previous_movement = prev_movement;
     current_movement = movement;
 
-    bool continuous_start_to_forward = (prev_movement == Movement::START && movement == Movement::FORWARD && count > 3);
-    reset_movement_variables(!continuous_start_to_forward);
+    continuous_start_to_forward =
+        (movement == Movement::START && (next_movement == Movement::FORWARD || next_movement == Movement::DIAGONAL) &&
+         next_move_count >= MIN_MOVEMENTS_FOR_SEAMLESS_START);
+    const bool preserve_linear_accel =
+        (prev_movement == Movement::START && (movement == Movement::FORWARD || movement == Movement::DIAGONAL) &&
+         count >= MIN_MOVEMENTS_FOR_SEAMLESS_START);
+
+    reset_movement_variables(!preserve_linear_accel);
 
     if (movement == Movement::FORWARD || movement == Movement::DIAGONAL) {
         if (waiting_for_fast_param) {
@@ -1064,8 +1101,12 @@ void Navigation::set_movement(Movement movement, Movement prev_movement, Movemen
         forward_end_speed = 0;
         bsp::leds::stripe_set(Color::Blue);
     } else if (movement == Movement::START) {
-        if (next_movement == Movement::FORWARD && next_move_count > 3) { // continuous_start_to_forward condition
-            forward_end_speed = forward_params[Movement::FORWARD].max_speed;
+        if (continuous_start_to_forward) {
+            forward_end_speed = forward_params[next_movement].max_speed;
+        } else if (is_turn_movement(next_movement)) {
+            forward_end_speed = turn_params[next_movement].turn_linear_speed;
+        } else if (next_movement == Movement::STOP) {
+            forward_end_speed = 0.0f;
         } else {
             forward_end_speed = forward_params[Movement::START].max_speed;
         }

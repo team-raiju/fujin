@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cstdio>
 
 #include "bsp/analog_sensors.hpp"
@@ -12,6 +13,8 @@
 static constexpr float max_battery_voltage = 12.6;
 static constexpr float mot_kt = 0.0064; // motor torque constant [Nm/A]
 static constexpr float mot_ra = 2.5;    // armature resistance[Ohms]
+static constexpr float max_linear_accel_ff = 50.0f;     // max linear acceleration for feedforward [m/s^2]
+static constexpr float max_angular_accel_ff = 2000.0f;  // max angular acceleration for feedforward [rad/s^2]
 
 namespace services {
 
@@ -149,6 +152,8 @@ void Control::update() {
         // Angular Feed-Foward
         target_angular_acceleration =
             (target_angular_speed_rad_s - last_target_angular_speed_rad_s) * Config::CONTROL_FREQUENCY_HZ;
+        target_angular_acceleration =
+            std::clamp(target_angular_acceleration, -max_angular_accel_ff, max_angular_accel_ff);
 
         last_target_angular_acceleration = target_angular_acceleration;
 
@@ -190,6 +195,8 @@ void Control::update() {
         } else {
             target_linear_acceleration =
                 (target_linear_speed_m_s - last_target_linear_speed_m_s) * Config::CONTROL_FREQUENCY_HZ;
+            target_linear_acceleration =
+                std::clamp(target_linear_acceleration, -max_linear_accel_ff, max_linear_accel_ff);
 
             if (target_linear_acceleration >= 0.0f) {
                 linear_ff = target_linear_acceleration * params.linear_vel_acc_feed_forward_k;

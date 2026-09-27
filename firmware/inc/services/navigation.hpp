@@ -182,6 +182,7 @@ private:
 
     float current_angular_acceleration = 0.0f;
     float current_linear_acceleration = 0.0f;
+    bool continuous_start_to_forward = false;
 
     MiniFSMStates mini_fsm_state = MiniFSMStates::FORWARD_1;
 

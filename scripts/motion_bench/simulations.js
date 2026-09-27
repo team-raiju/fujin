@@ -593,6 +593,12 @@ function simulateLinearSCurve(p) {
     while (!isFinished && ticks < maxTicks) {
       ticks++;
 
+      const prevMoveName = (i > 0) ? sequence[i - 1].name : 'NONE';
+      const isStartMove = (move.name === 'START');
+      const isForwardAfterStart = (move.name === 'FORWARD' || move.name === 'DIAGONAL') && (prevMoveName === 'START');
+      const moveBrakeMarginMm = isStartMove ? 0.0 : brakeMarginMm;
+      const moveAccelMarginMm = (isStartMove || isForwardAfterStart) ? 0.0 : accelMarginMm;
+
       // Log current state
       const tMs = totalTimeS * 1000.0;
       times.push(tMs);
@@ -616,10 +622,10 @@ function simulateLinearSCurve(p) {
 
       const reqBrakeDist = move.seamlessToForward ? 0.0 : ((1000.0 * (dRampM + getSCurveBrakeDistance(
         vPeak, move.endSpeed, move.decel, brakeJerk
-      ))) + brakeMarginMm);
+      ))) + moveBrakeMarginMm);
 
       const isPostStraightStart = (i > 0 && sequence[i - 1].seamlessToForward);
-      const canAccelerate = isPostStraightStart || controlLinearSpeed < 1.0 || Math.abs(traveledDistMm) > accelMarginMm;
+      const canAccelerate = isPostStraightStart || controlLinearSpeed < 1.0 || Math.abs(traveledDistMm) > moveAccelMarginMm;
 
       if (!isBraking && (Math.abs(traveledDistMm) < (move.targetTravelMm - reqBrakeDist))) {
         if (canAccelerate) {
@@ -648,7 +654,7 @@ function simulateLinearSCurve(p) {
             controlLinearSpeed = Math.min(controlLinearSpeed, move.maxSpeed);
           }
         }
-      } else if (Math.abs(traveledDistMm) > accelMarginMm) {
+      } else if (Math.abs(traveledDistMm) > moveAccelMarginMm) {
         isBraking = true;
         if (controlLinearSpeed > move.endSpeed || currentLinearAccel < 0.0) {
           if (startBrakeRampUp(controlLinearSpeed, currentLinearAccel, move.endSpeed, brakeJerk) || controlLinearSpeed <= move.endSpeed) {
@@ -761,6 +767,12 @@ function simulateLinearTrapezoidal(p) {
     while (!isFinished && ticks < maxTicks) {
       ticks++;
 
+      const prevMoveName = (i > 0) ? sequence[i - 1].name : 'NONE';
+      const isStartMove = (move.name === 'START');
+      const isForwardAfterStart = (move.name === 'FORWARD' || move.name === 'DIAGONAL') && (prevMoveName === 'START');
+      const moveBrakeMarginMm = isStartMove ? 0.0 : brakeMarginMm;
+      const moveAccelMarginMm = (isStartMove || isForwardAfterStart) ? 0.0 : accelMarginMm;
+
       const tMs = totalTimeS * 1000.0;
       times.push(tMs);
       distances.push(totalTraveledDistMm);
@@ -772,7 +784,7 @@ function simulateLinearTrapezoidal(p) {
       prevAccel = currentLinearAccel;
 
       // Torricelli brake distance
-      let reqBrakeDist = brakeMarginMm;
+      let reqBrakeDist = moveBrakeMarginMm;
       if (controlLinearSpeed > move.endSpeed && move.decel > 0.0) {
         reqBrakeDist += 1000.0 * getTorricelliDistance(move.endSpeed, controlLinearSpeed, -move.decel);
       }
@@ -781,7 +793,7 @@ function simulateLinearTrapezoidal(p) {
       }
 
       const isPostStraightStart = (i > 0 && sequence[i - 1].seamlessToForward);
-      const canAccelerate = isPostStraightStart || controlLinearSpeed < 1.0 || Math.abs(traveledDistMm) > accelMarginMm;
+      const canAccelerate = isPostStraightStart || controlLinearSpeed < 1.0 || Math.abs(traveledDistMm) > moveAccelMarginMm;
 
       if (!isBraking && (Math.abs(traveledDistMm) < (move.targetTravelMm - reqBrakeDist))) {
         if (canAccelerate) {
@@ -800,7 +812,7 @@ function simulateLinearTrapezoidal(p) {
             }
           }
         }
-      } else if (Math.abs(traveledDistMm) > accelMarginMm) {
+      } else if (Math.abs(traveledDistMm) > moveAccelMarginMm) {
         isBraking = true;
         if (controlLinearSpeed > move.endSpeed) {
           currentLinearAccel = -move.decel;
