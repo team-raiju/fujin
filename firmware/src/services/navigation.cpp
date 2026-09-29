@@ -28,8 +28,7 @@ namespace {
 constexpr float FRONT_EMERGENCY_DISTANCE_MM = 70.0f;
 constexpr float WALL_BREAK_DEBUG_DISTANCE_MM = 90.0f;
 constexpr float SEARCH_WALL_BREAK_MIN_DISTANCE_MM = 35.0f;
-constexpr uint32_t WALL_BREAK_CONFIRM_COUNT = 4;
-constexpr float WALL_BREAK_MAX_CORRECTION_ERROR_MM = 50.0f;
+constexpr float WALL_BREAK_MAX_CORRECTION_ERROR_MM = 40.0f;
 constexpr float LINEAR_BRAKE_MARGIN_MM = 10.0f;
 constexpr float LINEAR_ACCEL_MARGIN_MM = 10.0f;
 constexpr float FORWARD_WALL_PID_DISABLE_DISTANCE_MM = 70.0f;
@@ -38,7 +37,6 @@ constexpr uint32_t STABILIZE_FORWARD_TIME_MS = 200;
 constexpr uint32_t STABILIZE_TURN_TIME_MS = 400;
 constexpr float MILLIMETERS_PER_METER = 1000.0f;
 constexpr uint8_t MIN_MOVEMENTS_FOR_SEAMLESS_START = 3;
-constexpr float NO_JERK_LIMIT = 50000.0f;
 
 bool is_search_mode(services::Navigation::navigation_mode_t mode) {
     return mode == services::Navigation::SEARCH_FAST || mode == services::Navigation::SEARCH_MEDIUM ||
@@ -485,10 +483,7 @@ float Navigation::get_required_brake_distance(float control_linear_speed, float 
     float brake_distance_mm = current_movement == Movement::START ? 0.0f : LINEAR_BRAKE_MARGIN_MM;
 
     float brake_jerk = general_params.max_linear_brake_jerk;
-    if ((current_movement == Movement::FORWARD) && current_movement_count == 1 &&
-        previous_movement != Movement::START) {
-        brake_jerk = NO_JERK_LIMIT;
-    } else if (current_movement == Movement::STOP) {
+    if (current_movement == Movement::STOP) {
         brake_jerk *= 2.0f;
     }
 
@@ -514,11 +509,7 @@ void Navigation::update_linear_target_speed(float& control_linear_speed, float m
     float accel_jerk = general_params.max_linear_acc_jerk;
     float brake_jerk = general_params.max_linear_brake_jerk;
 
-    if ((current_movement == Movement::FORWARD) && current_movement_count == 1 &&
-        previous_movement != Movement::START) {
-        accel_jerk = NO_JERK_LIMIT;
-        brake_jerk = NO_JERK_LIMIT;
-    } else if (current_movement == Movement::STOP) {
+    if (current_movement == Movement::STOP) {
         brake_jerk *= 2.0f;
         accel_jerk *= 2.0f;
     }

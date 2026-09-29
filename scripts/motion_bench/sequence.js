@@ -188,12 +188,9 @@ function simulateSequence(steps, presetName, options = {}) {
 
         maxLinSpeedObserved = Math.max(maxLinSpeedObserved, Math.abs(stateObj.controlLinearSpeed));
 
-      const isSingleCellLinear = (movement === 'FORWARD') && count === 1 && prevMovement !== 'START';
-      const stepGenParams = isSingleCellLinear
-        ? { ...genParams, max_linear_acc_jerk: 50000.0, max_linear_brake_jerk: 50000.0 }
-        : (movement === 'STOP'
-          ? { ...genParams, max_linear_acc_jerk: (genParams.max_linear_acc_jerk || 625.0) * 2.0, max_linear_brake_jerk: (genParams.max_linear_brake_jerk || 625.0) * 2.0 }
-          : genParams);
+      const stepGenParams = (movement === 'STOP'
+        ? { ...genParams, max_linear_acc_jerk: (genParams.max_linear_acc_jerk || 625.0) * 2.0, max_linear_brake_jerk: (genParams.max_linear_brake_jerk || 625.0) * 2.0 }
+        : genParams);
 
       // Update linear speed via updated S-curve function
       updateLinearTargetSpeedStep(stateObj, maxSpeed, maxAcceleration, deceleration, continuousStartToForward, forwardEndSpeed, targetTravelMm, stepGenParams, moveBrakeMarginMm, moveAccelMarginMm);

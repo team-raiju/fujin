@@ -1020,6 +1020,11 @@ function seqChartOptions(yTitle) {
         title: { display: true, text: yTitle, color: '#526059' },
         grid: { color: '#1c2622' },
         ticks: { color: '#7d9188' }
+      },
+      y2: {
+        type: 'linear',
+        display: false,
+        grid: { drawOnChartArea: false }
       }
     },
     plugins: {
@@ -1338,52 +1343,103 @@ function runSequenceSimulation() {
   }
 }
 
+let seqFaintMode = true;
+
 function updateSequenceCharts(results) {
   if (!seqLinVelChart) return;
   const data = results.data;
 
-  seqLinVelChart.data = {
-    datasets: [{
-      label: 'Target Linear Vel (m/s)',
-      data: data.map(d => ({ x: d.x, y: d.yLinVel })),
-      borderColor: '#fca311',
-      borderWidth: 2,
-      pointRadius: 0
-    }]
-  };
+  const linVelData = data.map(d => ({ x: d.x, y: d.yLinVel }));
+  const angVelData = data.map(d => ({ x: d.x, y: d.yAngVel }));
+  const linAccData = data.map(d => ({ x: d.x, y: d.yLinAcc }));
+  const angAccData = data.map(d => ({ x: d.x, y: d.yAngAcc }));
+
+  const linVelDatasets = [];
+  if (seqFaintMode) {
+    linVelDatasets.push({
+      label: 'Target Angular Vel (faint)',
+      data: angVelData,
+      borderColor: 'rgba(0, 187, 249, 0.25)',
+      borderWidth: 1.5,
+      pointRadius: 0,
+      yAxisID: 'y2'
+    });
+  }
+  linVelDatasets.push({
+    label: 'Target Linear Vel (m/s)',
+    data: linVelData,
+    borderColor: '#fca311',
+    borderWidth: 2,
+    pointRadius: 0,
+    yAxisID: 'y'
+  });
+  seqLinVelChart.data = { datasets: linVelDatasets };
   seqLinVelChart.update();
 
-  seqAngVelChart.data = {
-    datasets: [{
-      label: 'Target Angular Vel (rad/s)',
-      data: data.map(d => ({ x: d.x, y: d.yAngVel })),
-      borderColor: '#00bbf9',
-      borderWidth: 2,
-      pointRadius: 0
-    }]
-  };
+  const angVelDatasets = [];
+  if (seqFaintMode) {
+    angVelDatasets.push({
+      label: 'Target Linear Vel (faint)',
+      data: linVelData,
+      borderColor: 'rgba(252, 163, 17, 0.25)',
+      borderWidth: 1.5,
+      pointRadius: 0,
+      yAxisID: 'y2'
+    });
+  }
+  angVelDatasets.push({
+    label: 'Target Angular Vel (rad/s)',
+    data: angVelData,
+    borderColor: '#00bbf9',
+    borderWidth: 2,
+    pointRadius: 0,
+    yAxisID: 'y'
+  });
+  seqAngVelChart.data = { datasets: angVelDatasets };
   seqAngVelChart.update();
 
-  seqLinAccChart.data = {
-    datasets: [{
-      label: 'Target Linear Accel (m/s²)',
-      data: data.map(d => ({ x: d.x, y: d.yLinAcc })),
-      borderColor: '#ff0054',
-      borderWidth: 2,
-      pointRadius: 0
-    }]
-  };
+  const linAccDatasets = [];
+  if (seqFaintMode) {
+    linAccDatasets.push({
+      label: 'Target Angular Accel (faint)',
+      data: angAccData,
+      borderColor: 'rgba(155, 93, 229, 0.25)',
+      borderWidth: 1.5,
+      pointRadius: 0,
+      yAxisID: 'y2'
+    });
+  }
+  linAccDatasets.push({
+    label: 'Target Linear Accel (m/s²)',
+    data: linAccData,
+    borderColor: '#ff0054',
+    borderWidth: 2,
+    pointRadius: 0,
+    yAxisID: 'y'
+  });
+  seqLinAccChart.data = { datasets: linAccDatasets };
   seqLinAccChart.update();
 
-  seqAngAccChart.data = {
-    datasets: [{
-      label: 'Target Angular Accel (rad/s²)',
-      data: data.map(d => ({ x: d.x, y: d.yAngAcc })),
-      borderColor: '#9b5de5',
-      borderWidth: 2,
-      pointRadius: 0
-    }]
-  };
+  const angAccDatasets = [];
+  if (seqFaintMode) {
+    angAccDatasets.push({
+      label: 'Target Linear Accel (faint)',
+      data: linAccData,
+      borderColor: 'rgba(255, 0, 84, 0.25)',
+      borderWidth: 1.5,
+      pointRadius: 0,
+      yAxisID: 'y2'
+    });
+  }
+  angAccDatasets.push({
+    label: 'Target Angular Accel (rad/s²)',
+    data: angAccData,
+    borderColor: '#9b5de5',
+    borderWidth: 2,
+    pointRadius: 0,
+    yAxisID: 'y'
+  });
+  seqAngAccChart.data = { datasets: angAccDatasets };
   seqAngAccChart.update();
 
   const sum = results.summary;
@@ -1396,6 +1452,14 @@ function updateSequenceCharts(results) {
   if (elSpeed) elSpeed.textContent = sum.maxLinSpeed.toFixed(2) + ' m/s';
   if (elOmega) elOmega.textContent = sum.maxAngSpeed.toFixed(2) + ' rad/s';
   if (elSteps) elSteps.textContent = sum.stepCount;
+}
+
+const chkSeqFaintMode = document.getElementById('chk-seq-faint-mode');
+if (chkSeqFaintMode) {
+  chkSeqFaintMode.addEventListener('change', (e) => {
+    seqFaintMode = e.target.checked;
+    runSequenceSimulation();
+  });
 }
 
 const sSeqPreset = document.getElementById('s-seqPreset');
