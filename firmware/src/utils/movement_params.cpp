@@ -58,7 +58,7 @@ const std::map<Movement, ForwardParams> forward_params_search_medium = {
     {Movement::TURN_AROUND_INPLACE, {0.5, 3.0, 5.0, 80.0}},
 
     {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.5, 3.0, 5.0, 29.22}},
-    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.5, 3.0, 5.0, 29.22}},
+    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.5, 3.0, 5.0, 27.22}},
 };
 
 /// @section TURN_PARMS_SEARCH_FAST
