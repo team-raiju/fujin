@@ -283,9 +283,11 @@ function buildTrajectorySVG(runs) {
   const appY = startY - 200 * Math.cos(startTheta);
   const approachLine = `<line x1="${mapX(appX)}" y1="${mapY(appY)}" x2="${mapX(startX)}" y2="${mapY(startY)}" stroke="#dfe9e3" stroke-width="1.5" stroke-dasharray="3,3" opacity="0.35"/>`;
   const startPt = `<circle cx="${mapX(startX)}" cy="${mapY(startY)}" r="3" fill="#dfe9e3"/>`;
+  const target = getIdealTurnTarget(state.initialAngleDeg, state.turnAngleDeg);
+  const targetPt = `<circle cx="${mapX(target.x)}" cy="${mapY(target.y)}" r="4.5" fill="none" stroke="#dfe9e3" stroke-width="1.2" stroke-dasharray="2,2" opacity="0.45"/><circle cx="${mapX(target.x)}" cy="${mapY(target.y)}" r="1.5" fill="#dfe9e3" opacity="0.45"/>`;
 
   return `<svg width="${SVG_SIZE}" height="${SVG_SIZE}" viewBox="0 0 ${SVG_SIZE} ${SVG_SIZE}" style="background:#0b100e; border:1px solid #24322c; border-radius:3px;">
-${gridLines}${wallLines}${approachLine}${paths}${startPt}
+${gridLines}${wallLines}${approachLine}${targetPt}${paths}${startPt}
   </svg>`;
 }
 
@@ -297,9 +299,36 @@ function formatMs(v) {
   return step < 0.001 ? v.toFixed(1) : v.toFixed(0);
 }
 
-function computeTurnSuggestions(rawStart, rawFinal) {
+function getIdealTurnTarget(initDeg, turnDeg) {
+  const init = Math.round(initDeg || 0);
+  const turn = Math.round(turnDeg || 0);
+
+  if (init === 0) {
+    if (turn === 45 || turn === 90) {
+      return { x: 180.0, y: 90.0 };
+    }
+    if (turn === 135 || turn === 180) {
+      return { x: 270.0, y: 0.0 };
+    }
+  } else if (init === 45) {
+    if (turn === 45) {
+      return { x: 180.0, y: 90.0 };
+    }
+    if (turn === 90 || turn === 135) {
+      return { x: 270.0, y: 0.0 };
+    }
+  }
+
+  // Fallback defaults
+  if (turn >= 135) {
+    return { x: 270.0, y: 0.0 };
+  }
+  return { x: 180.0, y: 90.0 };
+}
+
+function computeTurnSuggestions(rawStart, rawFinal, initAngleDeg, turnAngleDeg) {
   if (!rawStart || !rawFinal) {
-    return { suggBefore: 0, suggAfter: 0, isPast180: false, offsetPast180: 0 };
+    return { suggBefore: 0, suggAfter: 0, target: { x: 180.0, y: 90.0 } };
   }
 
   const th0 = rawStart.theta;
@@ -307,8 +336,11 @@ function computeTurnSuggestions(rawStart, rawFinal) {
   const x_raw = rawFinal.x;
   const y_raw = rawFinal.y;
 
-  const targetX = 180.0;
-  const targetY = 90.0;
+  const initDeg = (initAngleDeg !== undefined) ? initAngleDeg : Math.round(th0 * R2D);
+  const turnDeg = (turnAngleDeg !== undefined) ? turnAngleDeg : Math.round((thf - th0) * R2D);
+  const target = getIdealTurnTarget(initDeg, turnDeg);
+  const targetX = target.x;
+  const targetY = target.y;
 
   const deltaX = targetX - x_raw;
   const deltaY = targetY - y_raw;
@@ -322,22 +354,19 @@ function computeTurnSuggestions(rawStart, rawFinal) {
   let d_before = 0;
   let d_after = 0;
 
-  if (Math.abs(D) > 1e-4) {
+  if (Math.abs(D) > 0.05) {
     d_before = (deltaX * Math.cos(thf) - deltaY * Math.sin(thf)) / D;
     d_after = (Math.sin(th0) * deltaY - Math.cos(th0) * deltaX) / D;
   } else {
-    d_before = targetY - y_raw;
+    // When initial and final directions are parallel (e.g. 180 deg turn or 0 deg):
+    d_before = deltaX * Math.sin(th0) + deltaY * Math.cos(th0);
     d_after = 0;
   }
-
-  const isPast180 = d_after < 0;
-  const offsetPast180 = x_raw - targetX;
 
   return {
     suggBefore: d_before,
     suggAfter: d_after,
-    isPast180,
-    offsetPast180
+    target
   };
 }
 
@@ -387,18 +416,26 @@ function fallbackCopy(text) {
 
 function buildReadoutCard(ch, res) {
   const meta = CH_META[ch];
-  const sugg = res.suggestions || { suggBefore: 0, suggAfter: 0, isPast180: false, offsetPast180: 0 };
-  const suggAfterHtml = sugg.isPast180
-    ? `+${sugg.offsetPast180.toFixed(2)}<span class="rc-unit">mm</span> <span style="font-size:9px; color:var(--muted)">(offset-180)</span>`
-    : `${sugg.suggAfter.toFixed(2)}<span class="rc-unit">mm</span>`;
+  const sugg = res.suggestions || { suggBefore: 0, suggAfter: 0 };
+  const suggAfterHtml = `${sugg.suggAfter >= 0 ? '+' : ''}${sugg.suggAfter.toFixed(2)}<span class="rc-unit">mm</span>`;
 
   let fwItemHtml = '';
   if (ch === 'jerk') {
-    const mmBefore = state.mmBeforeTurn || 0;
-    const startStr = mmBefore.toFixed(2);
+    const turnStart = state.mmBeforeTurn || 0;
+    const turnParamStart = turnStart > 0 ? 0 : turnStart;
+    const fwdTargetTravel = turnStart > 0 ? turnStart : 0;
+
+    const startStr = turnParamStart.toFixed(2);
+    const fwdTargetStr = fwdTargetTravel.toFixed(2);
+
     const mmAfterSlider = state.mmAfterTurn || 0;
     const finalX = res.final ? res.final.x : 0;
-    const mmAfterCalc = (finalX - mmAfterSlider) - 180;
+    const finalY = res.final ? res.final.y : 0;
+    const finalTheta = res.final ? res.final.theta : 0;
+    const turnEndX = finalX - mmAfterSlider * Math.sin(finalTheta);
+    const turnEndY = finalY - mmAfterSlider * Math.cos(finalTheta);
+    const target = (sugg && sugg.target) ? sugg.target : getIdealTurnTarget(state.initialAngleDeg, state.turnAngleDeg);
+    const mmAfterCalc = (turnEndX - target.x) * Math.sin(finalTheta) + (turnEndY - target.y) * Math.cos(finalTheta);
     const endStr = mmAfterCalc.toFixed(2);
     const linSpeedStr = (state.linearSpeed % 1 === 0 ? state.linearSpeed.toFixed(1) : Number(state.linearSpeed.toFixed(3)).toString());
     const accelStr = (res.peakAccel % 1 === 0 ? res.peakAccel.toFixed(1) : Number(res.peakAccel.toFixed(2)).toString());
@@ -411,15 +448,23 @@ function buildReadoutCard(ch, res) {
     const jerkStart = Math.round(state.jerkJerk || 0);
     const jerkAfter = Math.round(state.jerkJerkAfter || 0);
 
-    const fwLine = `{${startStr}, ${endStr}, ${linSpeedStr}, ${accelStr}, ${omegaStr}, T(${tStartDecel}), T(${tStop}), ${sign}, T(${tJerkDecel}), T(${tJerkAccel}), ${jerkStart}, ${jerkAfter}}`;
+    const fwTurnLine = `{${startStr}, ${endStr}, ${linSpeedStr}, ${accelStr}, ${omegaStr}, T(${tStartDecel}), T(${tStop}), ${sign}, T(${tJerkDecel}), T(${tJerkAccel}), ${jerkStart}, ${jerkAfter}}`;
+    const fwFwdLine = `{${linSpeedStr}, 20.0, 25.0, ${fwdTargetStr}}`;
 
     fwItemHtml = `
   <div class="rc-item wide fw-line-item" style="margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--line);">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
-      <span class="rc-label">firmware params</span>
-      <span class="fw-copy-btn" onclick="copyFirmwareParams(this, '${fwLine}')">copy</span>
+      <span class="rc-label">TurnParams</span>
+      <span class="fw-copy-btn" onclick="copyFirmwareParams(this, '${fwTurnLine}')">copy</span>
     </div>
-    <div class="rc-value fw-code" onclick="copyFirmwareParams(this, '${fwLine}')" title="Click to copy firmware line">${fwLine}</div>
+    <div class="rc-value fw-code" onclick="copyFirmwareParams(this, '${fwTurnLine}')" title="Click to copy TurnParams">${fwTurnLine}</div>
+  </div>
+  <div class="rc-item wide fw-line-item" style="margin-top: 4px; padding-top: 4px; border-top: 1px dashed var(--line);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+      <span class="rc-label">ForwardParams</span>
+      <span class="fw-copy-btn" onclick="copyFirmwareParams(this, '${fwFwdLine}')">copy</span>
+    </div>
+    <div class="rc-value fw-code" onclick="copyFirmwareParams(this, '${fwFwdLine}')" title="Click to copy ForwardParams">${fwFwdLine}</div>
   </div>`;
   }
 
@@ -487,7 +532,7 @@ function recomputeAndRender() {
     // Calculate suggestions from raw simulation before applying user offsets
     const rawStart = out.positions[0];
     const rawFinal = out.positions[out.positions.length - 1];
-    out.results.suggestions = computeTurnSuggestions(rawStart, rawFinal);
+    out.results.suggestions = computeTurnSuggestions(rawStart, rawFinal, state.initialAngleDeg, state.turnAngleDeg);
 
     // Apply before/after turn offsets to trajectory positions
     out.positions = applyBeforeAfterTurn(out.positions, mmBefore, mmAfter);

@@ -385,7 +385,7 @@ State* Run::react(Timeout const&) {
 
     navigation->update();
 
-    if (indicate_read && std::abs(navigation->get_robot_travelled_dist_mm()) >= 130.0f) {
+    if (indicate_read && std::abs(navigation->get_robot_travelled_dist_mm()) >= 90.0f) {
         bsp::leds::stripe_set(Color::Black);
         indicate_read = false;
     }

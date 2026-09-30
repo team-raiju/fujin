@@ -26,6 +26,7 @@ class Control {
         void set_wall_pid_enabled(bool enabled) { wall_pid_enabled = enabled; }
         void set_diagonal_pid_enabled(bool enabled) { diagonal_pid_enabled = enabled; }
         void set_motor_control_disabled(bool disabled) {motor_control_disabled = disabled;}
+        bool is_motor_control_disabled() const { return motor_control_disabled; }
         void set_use_inplace_friction(bool use) { use_inplace_friction = use; }
         void set_inplace_friction(bool use) { use_inplace_friction = use; }
         bool get_use_inplace_friction() const { return use_inplace_friction; }

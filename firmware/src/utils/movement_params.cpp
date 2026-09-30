@@ -42,20 +42,23 @@ const std::map<Movement, ForwardParams> forward_params_search_slow = {
 
 /// @section TURN_PARMS_SEARCH_MEDIUM
 const std::map<Movement, TurnParams> turn_params_search_medium = {
-    {Movement::TURN_AROUND, {0.0, 0.0, 0.5, 104.72, 10.47, T(301), T(401), -1, T(0), T(0), 0, 0}},
-    {Movement::TURN_AROUND_INPLACE, {0.0, 0.0, 0.5, 104.72, 10.47, T(301), T(401), -1, T(0), T(0), 0, 0}},
-    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.0, 0.0, 0.5, 139.62, 10.47, T(150), T(225), -1, T(0), T(0), 0, 0}},
-    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.0, 0.0, 0.5, 139.62, 10.47, T(150), T(225), 1, T(0), T(0), 0, 0}},
+    {Movement::TURN_AROUND, {0.00, 0.0, 0.5, 200.0, 11, T(285.5), T(380.5), -1, T(55.0), T(340.5), 5000, 5000}},
+    {Movement::TURN_AROUND_INPLACE, {0.00, 0.0, 0.5, 200.0, 11, T(285.5), T(380.5), -1, T(55.0), T(340.5), 5000, 5000}},
+
+    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.00, 0.00, 0.5, 250.0, 11.0, T(143.0), T(212.0), 1, T(44.0), T(187.0), 10000, 10000}},
+    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.00, 0.00, 0.5, 250.0, 11.0, T(143.0), T(212.0), 1, T(44.0), T(187.0), 10000, 10000}},
 };
 
 const std::map<Movement, ForwardParams> forward_params_search_medium = {
-    {Movement::START, {0.5, 3.0, 3.0, HALF_CELL_SIZE_MM + ROBOT_DIST_FROM_CENTER_START_MM}},
-    {Movement::FORWARD, {0.5, 3.0, 3.0, CELL_SIZE_MM}},
+    {Movement::START, {0.5, 3.0, 5.0, HALF_CELL_SIZE_MM + ROBOT_DIST_FROM_CENTER_START_MM}},
+    {Movement::FORWARD, {0.5, 3.0, 5.0, CELL_SIZE_MM}},
     {Movement::STOP, {0.5, 3.0, 5.0, (HALF_CELL_SIZE_MM)}},
+
     {Movement::TURN_AROUND, {0.5, 3.0, 5.0, 80.0}},
     {Movement::TURN_AROUND_INPLACE, {0.5, 3.0, 5.0, 80.0}},
-    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.5, 3.0, 3.0, 24.0}},
-    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.5, 3.0, 3.0, 27.0}},
+
+    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.5, 3.0, 5.0, 27.22}},
+    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.5, 3.0, 5.0, 27.22}},
 };
 
 /// @section TURN_PARMS_SEARCH_FAST
@@ -133,7 +136,7 @@ const std::map<Movement, TurnParams> turn_params_medium = {
     {Movement::TURN_LEFT_45_FROM_45, {0.00, 56.50, 1.25, 800.0, 18.4, T(43.0), T(86.0), 1, T(23.0), T(66.0), 40000, 40000}},      //ok
     {Movement::TURN_RIGHT_90_FROM_45, {0.00, -42.0, 1.25, 900.0, 25.1, T(63.0), T(109.0), -1, T(28.0), T(91.0), 50000, 50000}},   //ok
     {Movement::TURN_LEFT_90_FROM_45, {0.00, -43.0, 1.25, 900.0, 25.1, T(63.5), T(109.5), 1, T(28.0), T(91.5), 50000, 50000}},     //ok
-    {Movement::TURN_RIGHT_135_FROM_45, {0.00, 12.72, 1.25, 800.0, 19.0, T(122.5), T(166.5), -1, T(24.0), T(146.5), 40000, 40000}}, //ok
+    {Movement::TURN_RIGHT_135_FROM_45, {0.00, 12.72, 1.25, 800.0, 19.0, T(122.5), T(166.5), -1, T(24.0), T(146.5), 40000, 40000}},//ok
     {Movement::TURN_LEFT_135_FROM_45, {0.00, 14.0, 1.25, 800.0, 19.0, T(122.5), T(166.5), 1, T(24.0), T(146.5), 40000, 40000}},   //ok
 
     {Movement::TURN_AROUND, {0.00, 0.00, 1.0, 1000.0, 24.75, T(124.0), T(165.0), -1, T(21.0), T(152.5), 80000, 50000}},
@@ -153,7 +156,7 @@ const std::map<Movement, ForwardParams> forward_params_medium = {
     {Movement::TURN_RIGHT_180, {1.25, 15.0, 20.0, 0.0}},            //ok        
     {Movement::TURN_LEFT_180, {1.25, 15.0, 20.0, 0.0}},             //ok
     {Movement::TURN_RIGHT_45_FROM_45, {1.25, 15.0, 20.0, 72.65}},   //ok
-    {Movement::TURN_LEFT_45_FROM_45, {1.25, 15.0, 20.0, 72.65}},     //ok
+    {Movement::TURN_LEFT_45_FROM_45, {1.25, 15.0, 20.0, 72.65}},    //ok
     {Movement::TURN_RIGHT_90_FROM_45, {1.25, 15.0, 20.0, 50.59}},   //ok
     {Movement::TURN_LEFT_90_FROM_45, {1.25, 15.0, 20.0, 55.59}},    //ok
     {Movement::TURN_RIGHT_135_FROM_45, {1.25, 15.0, 20.0, 67.20}},  //ok 
@@ -333,24 +336,24 @@ const GeneralParams general_params_search_slow = {
 };
 
 const GeneralParams general_params_search_medium = {
-    150.0,                    // Fan speed
-    0.0550,  0.0045,  0.0000, // Angular P,I,D
-    0.00000, 0.00000, 0.0000, // Angular acc ff, Angular brake ff, Angular velocity ff
-    0.0,     0.0,     0.0,    // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
-    0.0020,  0.0000,  0.0080, // Wall P,I,D
-    8.0000,  0.0500,  0.0000, // Linear velocity P,I,D
-    0.0000,  0.0000,  0.0000, // Diagonal walls P,I,D
-    56.0,                     // Start wall break mm left
-    64.0,                     // Start wall break mm right
-    1.0,                      // Enable wall break correction
-    100.0,                    // Max linear acceleration jerk
-    100.0,                    // Max linear brake jerk
-    13.1,                     // Wheel radius mm
-    0.13,                     // Coulomb ff
-    0.0,                      // Angular Coulomb ff
-    0.0,                      // Angular Static ff
-    0.0,                      // Angular Coulomb ff Inplace
-    0.0                       // Angular Static ff Inplace
+    150.0,                     // Fan speed
+    0.06000, 0.00030, 0.0000,  // Angular P,I,D
+    0.00055, 0.00040, 0.0040,  // Angular acc ff, Angular brake ff, Angular velocity ff
+    0.01500, 0.0100,  0.0550,  // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
+    0.0100,  0.0000,  0.0000,  // Wall P,I,D
+    1.9000,  0.0020,  0.0000,  // Linear velocity P,I,D
+    0.0000,  0.0000,  0.0000,  // Diagonal walls P,I,D
+    56.0,                      // Start wall break mm left
+    64.0,                      // Start wall break mm right
+    1.0,                       // Enable wall break correction
+    40.0,                      // Max linear acceleration jerk
+    40.0,                      // Max linear brake jerk
+    13.25,                     // Wheel radius mm
+    0.13,                      // Coulomb ff
+    0.01,                      // Angular Coulomb ff
+    0.01,                      // Angular Static ff
+    0.12,                      // Angular Coulomb ff Inplace
+    0.14                       // Angular Static ff Inplace
 };
 
 const GeneralParams general_params_search_fast = {
