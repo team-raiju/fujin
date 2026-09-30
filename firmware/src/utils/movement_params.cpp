@@ -45,8 +45,8 @@ const std::map<Movement, TurnParams> turn_params_search_medium = {
     {Movement::TURN_AROUND, {0.00, 0.0, 0.5, 200.0, 11, T(285.5), T(380.5), -1, T(55.0), T(340.5), 5000, 5000}},
     {Movement::TURN_AROUND_INPLACE, {0.00, 0.0, 0.5, 200.0, 11, T(285.5), T(380.5), -1, T(55.0), T(340.5), 5000, 5000}},
 
-    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.00, 0.00, 0.5, 250.0, 11.0, T(143.0), T(212.0), 1, T(44.0), T(187.0), 10000, 10000}},
-    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.00, 0.00, 0.5, 250.0, 11.0, T(143.0), T(212.0), 1, T(44.0), T(187.0), 10000, 10000}},
+    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.00, -26.27, 0.5, 250.0, 11.0, T(143.0), T(212.0), -1, T(44.0), T(187.0), 10000, 10000}},
+    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.00, -26.27, 0.5, 250.0, 11.0, T(143.0), T(212.0), 1, T(44.0), T(187.0), 10000, 10000}},
 };
 
 const std::map<Movement, ForwardParams> forward_params_search_medium = {
@@ -57,8 +57,8 @@ const std::map<Movement, ForwardParams> forward_params_search_medium = {
     {Movement::TURN_AROUND, {0.5, 3.0, 5.0, 80.0}},
     {Movement::TURN_AROUND_INPLACE, {0.5, 3.0, 5.0, 80.0}},
 
-    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.5, 3.0, 5.0, 27.22}},
-    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.5, 3.0, 5.0, 27.22}},
+    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.5, 3.0, 5.0, 29.22}},
+    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.5, 3.0, 5.0, 29.22}},
 };
 
 /// @section TURN_PARMS_SEARCH_FAST

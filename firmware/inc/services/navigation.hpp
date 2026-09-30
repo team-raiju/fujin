@@ -27,6 +27,7 @@ public:
     Navigation(const Navigation&) = delete;
 
     void init();
+    void reset();
     void reset(navigation_mode_t mode);
     void update();
     bool step();
@@ -161,17 +162,17 @@ private:
     uint32_t reference_time;
     uint32_t turn_tick_counter = 0;
     float traveled_dist_mm = 0;
-    int32_t encoder_right_counter;
-    int32_t encoder_left_counter;
-    Point current_cell;
+    int32_t encoder_right_counter = 0;
+    int32_t encoder_left_counter = 0;
+    Point current_cell = {0, 0};
     Position current_position_mm = {0, 0};
     float current_angle_rad = 0;
-    Direction current_direction;
-    Movement current_movement;
-    Movement previous_movement;
+    Direction current_direction = Direction::NORTH;
+    Movement current_movement = Movement::START;
+    Movement previous_movement = Movement::START;
     uint8_t current_movement_count = 1;
-    Direction target_direction;
-    float complete_prev_move_travel;
+    Direction target_direction = Direction::NORTH;
+    float complete_prev_move_travel = 0;
 
     bool wall_right_was_confirmed = false;
     bool wall_left_was_confirmed = false;

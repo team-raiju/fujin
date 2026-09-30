@@ -33,8 +33,9 @@ constexpr float LINEAR_BRAKE_MARGIN_MM = 10.0f;
 constexpr float LINEAR_ACCEL_MARGIN_MM = 10.0f;
 constexpr float FORWARD_WALL_PID_DISABLE_DISTANCE_MM = 70.0f;
 constexpr float DIAGONAL_PID_START_DISTANCE_MM = 50.0f;
-constexpr uint32_t STABILIZE_FORWARD_TIME_MS = 200;
-constexpr uint32_t STABILIZE_TURN_TIME_MS = 400;
+constexpr uint32_t STABILIZE_FORWARD_TIME_MS = 175;
+constexpr uint32_t STABILIZE_TURN_TIME_MS = 175;
+constexpr float STABILIZE_VELOCITY_THRESHOLD_M_S = 0.02f;
 constexpr float MILLIMETERS_PER_METER = 1000.0f;
 constexpr uint8_t MIN_MOVEMENTS_FOR_SEAMLESS_START = 3;
 
@@ -98,6 +99,10 @@ void Navigation::init() {
     }
 }
 
+void Navigation::reset() {
+    reset(selected_mode);
+}
+
 void Navigation::reset(navigation_mode_t mode) {
 
     reset_movement_variables(true);
@@ -110,6 +115,7 @@ void Navigation::reset(navigation_mode_t mode) {
     continuous_start_to_forward = false;
 
     current_direction = Direction::NORTH;
+    target_direction = Direction::NORTH;
 
     bsp::encoders::reset();
     bsp::imu::reset();
@@ -124,6 +130,7 @@ void Navigation::reset(navigation_mode_t mode) {
     current_movement_count = 1;
     target_travel_mm = forward_params[Movement::START].target_travel_mm;
     forward_end_speed = forward_params[Movement::START].max_speed;
+    bsp::analog_sensors::ir_reset_all_wall_hysteresis();
 }
 
 void Navigation::configure_mode(navigation_mode_t mode) {
@@ -699,7 +706,8 @@ void Navigation::transition_after_turn_forward_1() {
     is_braking = false;
     if (is_turn_around_movement()) {
         control->set_target_linear_speed(0.0f);
-        control->set_motor_control_disabled(true);
+        control->set_target_angular_speed(0.0f);
+        control->set_motor_control_disabled(false);
         reference_time = bsp::get_tick_ms();
         mini_fsm_state = MiniFSMStates::STABILIZE_1;
         return;
@@ -807,8 +815,8 @@ void Navigation::transition_after_turn_rotation() {
 
     if (is_search_turn_movement()) {
         control->set_target_angular_speed(0.0f);
-        // target_travel_mm for FORWARD_2 is based on the calculated position
-        target_travel_mm = HALF_CELL_SIZE_MM - std::abs(current_position_mm.y);
+        target_travel_mm = -turn_params[current_movement].end;
+        // target_travel_mm = HALF_CELL_SIZE_MM - std::abs(current_position_mm.y);
         reference_time = bsp::get_tick_ms();
         traveled_dist_mm = 0;
         is_braking = false;
@@ -849,6 +857,22 @@ void Navigation::step_turn_stabilize_1() {
     control->set_wall_pid_enabled(false);
     control->set_diagonal_pid_enabled(false);
     control->set_use_inplace_friction(false);
+
+    if (!control->is_motor_control_disabled()) {
+        control->set_target_linear_speed(0.0f);
+        control->set_target_angular_speed(0.0f);
+
+        const uint32_t braking_time = bsp::get_tick_ms() - reference_time;
+        constexpr uint32_t MAX_BRAKE_TIMEOUT_MS = 500;
+        if (std::abs(bsp::encoders::get_filtered_velocity_m_s()) >= STABILIZE_VELOCITY_THRESHOLD_M_S &&
+            braking_time < MAX_BRAKE_TIMEOUT_MS) {
+            return;
+        }
+
+        control->set_motor_control_disabled(true);
+        reference_time = bsp::get_tick_ms();
+        return;
+    }
 
     const uint32_t elapsed_time = bsp::get_tick_ms() - reference_time;
     if (elapsed_time <= STABILIZE_FORWARD_TIME_MS) {
@@ -988,6 +1012,27 @@ Movement Navigation::get_movement(Direction target_dir, Direction current_dir, b
 }
 
 void Navigation::update_cell_position_and_dir() {
+    if (current_movement == Movement::TURN_AROUND_INPLACE) {
+        switch (current_direction) {
+        case Direction::NORTH:
+            current_direction = Direction::SOUTH;
+            break;
+        case Direction::SOUTH:
+            current_direction = Direction::NORTH;
+            break;
+        case Direction::EAST:
+            current_direction = Direction::WEST;
+            break;
+        case Direction::WEST:
+            current_direction = Direction::EAST;
+            break;
+        default:
+            break;
+        }
+        target_direction = current_direction;
+        return;
+    }
+
     current_direction = target_direction;
     switch (current_direction) {
     case Direction::NORTH:

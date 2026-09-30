@@ -6,6 +6,7 @@
 #include "bsp/buzzer.hpp"
 #include "bsp/core.hpp"
 #include "bsp/debug.hpp"
+#include "bsp/encoders.hpp"
 #include "bsp/fan.hpp"
 #include "bsp/imu.hpp"
 #include "bsp/leds.hpp"
@@ -259,11 +260,18 @@ void Search::enter() {
     bsp::delay_ms(2000);
     bsp::buzzer::stop();
 
+    navigation->reset();
+
     services::Control::instance()->start_fan();
     bsp::delay_ms(500);
 
+    bsp::encoders::reset();
+    bsp::imu::reset_angle();
+
     soft_timer::start(1, soft_timer::CONTINUOUS);
 
+    indicate_read = false;
+    last_indication = 0;
     maze->reset();
     returning = false;
     save_maze = false;
