@@ -63,22 +63,23 @@ const std::map<Movement, ForwardParams> forward_params_search_medium = {
 
 /// @section TURN_PARMS_SEARCH_FAST
 const std::map<Movement, TurnParams> turn_params_search_fast = {
-    {Movement::TURN_AROUND, {0.0, 0.0, 0.7, 104.72, 10.47, T(301), T(401), -1, T(0), T(0), 0, 0}},
-    {Movement::TURN_AROUND_INPLACE, {0.0, 0.0, 0.7, 104.72, 10.47, T(301), T(401), -1, T(0), T(0), 0, 0}},
-    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.0, 0.0, 0.7, 244.346, 17.453, T(96), T(164), -1, T(0), T(0), 0, 0}}, // -30.0
-    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.0, 0.0, 0.7, 244.346, 17.453, T(96), T(164), 1, T(0), T(0), 0, 0}},   // -30.0
-    {Movement::TURN_RIGHT_90, {0.0, -22.0, 0.7, 244.346, 15.708, T(0), T(0), -1, T(0), T(0), 0, 0}},
-    {Movement::TURN_LEFT_90, {0.0, -22.0, 0.7, 244.346, 15.708, T(0), T(0), 1, T(0), T(0), 0, 0}},
+    {Movement::TURN_AROUND, {0.00, 0.0, 0.75, 200.0, 11, T(285.5), T(380.5), -1, T(55.0), T(340.5), 5000, 5000}},
+    {Movement::TURN_AROUND_INPLACE, {0.00, 0.0, 0.75, 200.0, 11, T(284.5), T(379.5), -1, T(55.0), T(339.5), 5000, 5000}},
+
+    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.00, -13.84, 0.75, 400.0, 16.0, T(98.0), T(171.5), -1, T(40.0), T(138.0), 12000, 12000}},
+    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.00, -11.84, 0.75, 400.0, 16.0, T(98.0), T(171.5), 1, T(40.0), T(138.0), 12000, 12000}},
 };
 
 const std::map<Movement, ForwardParams> forward_params_search_fast = {
-    {Movement::START, {0.7, 4.0, 4.0, HALF_CELL_SIZE_MM + ROBOT_DIST_FROM_CENTER_START_MM}},
-    {Movement::FORWARD, {0.7, 4.0, 4.0, CELL_SIZE_MM}},
-    {Movement::STOP, {0.7, 4.0, 6.0, (HALF_CELL_SIZE_MM)}},
-    {Movement::TURN_AROUND, {0.7, 4.0, 6.0, 80.0}},
-    {Movement::TURN_AROUND_INPLACE, {0.7, 4.0, 6.0, 80.0}},
-    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.7, 4.0, 4.0, 22.0}},
-    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.7, 4.0, 4.0, 23.0}},
+    {Movement::START, {0.75, 5.0, 5.0, HALF_CELL_SIZE_MM + ROBOT_DIST_FROM_CENTER_START_MM}},
+    {Movement::FORWARD, {0.75, 5.0, 5.0, CELL_SIZE_MM}},
+    {Movement::STOP, {0.75, 5.0, 5.0, (HALF_CELL_SIZE_MM)}},
+
+    {Movement::TURN_AROUND, {0.75, 5.0, 5.0, 80.0}},
+    {Movement::TURN_AROUND_INPLACE, {0.75, 5.0, 5.0, 80.0}},
+
+    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.75, 5.0, 5.0, 13.00}},
+    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.75, 5.0, 5.0, 14.84}},
 };
 
 /// @section TURN_PARMS_SLOW
@@ -357,24 +358,24 @@ const GeneralParams general_params_search_medium = {
 };
 
 const GeneralParams general_params_search_fast = {
-    220.0,                    // Fan speed
-    0.0850,  0.0055,  0.0000, // Angular P,I,D
-    0.00000, 0.00000, 0.0000, // Angular acc ff, Angular brake ff, Angular velocity ff
-    0.0,     0.0,     0.0,    // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
-    0.0020,  0.0000,  0.0080, // Wall P,I,D
-    8.0000,  0.0500,  0.0000, // Linear velocity P,I,D
-    0.0000,  0.0000,  0.0000, // Diagonal walls P,I,D
-    56.0,                     // Start wall break mm left
-    64.0,                     // Start wall break mm right
-    1.0,                      // Enable wall break correction
-    100.0,                    // Max linear acceleration jerk
-    100.0,                    // Max linear brake jerk
-    13.1,                     // Wheel radius mm
-    0.13,                     // Coulomb ff
-    0.0,                      // Angular Coulomb ff
-    0.25,                     // Angular Static ff
-    0.0,                      // Angular Coulomb ff Inplace
-    0.0                       // Angular Static ff Inplace
+    150.0,                     // Fan speed
+    0.06000, 0.00030, 0.0000,  // Angular P,I,D
+    0.00055, 0.00040, 0.0040,  // Angular acc ff, Angular brake ff, Angular velocity ff
+    0.01500, 0.0100,  0.0550,  // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
+    0.0150,  0.0000,  0.0000,  // Wall P,I,D
+    1.9000,  0.0020,  0.0000,  // Linear velocity P,I,D
+    0.0000,  0.0000,  0.0000,  // Diagonal walls P,I,D
+    56.0,                      // Start wall break mm left
+    64.0,                      // Start wall break mm right
+    1.0,                       // Enable wall break correction
+    40.0,                      // Max linear acceleration jerk
+    40.0,                      // Max linear brake jerk
+    13.15,                     // Wheel radius mm
+    0.13,                      // Coulomb ff
+    0.01,                      // Angular Coulomb ff
+    0.01,                      // Angular Static ff
+    0.12,                      // Angular Coulomb ff Inplace
+    0.14                       // Angular Static ff Inplace
 };
 
 const GeneralParams general_params_slow = {

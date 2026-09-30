@@ -28,7 +28,6 @@ using services::Navigation;
 namespace fsm {
 
 static bool indicate_read = false;
-static uint32_t last_indication = 0;
 static bool full_explore = false;
 
 void PreSearch::enter() {
@@ -271,7 +270,6 @@ void Search::enter() {
     soft_timer::start(1, soft_timer::CONTINUOUS);
 
     indicate_read = false;
-    last_indication = 0;
     maze->reset();
     returning = false;
     save_maze = false;
@@ -308,7 +306,7 @@ State* Search::react(Timeout const&) {
     using bsp::analog_sensors::SensingDirection;
     using bsp::analog_sensors::SensingStatus;
 
-    if (indicate_read && ((bsp::get_tick_ms() - last_indication) > 100)) {
+    if (indicate_read && std::abs(navigation->get_robot_travelled_dist_mm()) >= 90.0f) {
         bsp::leds::stripe_set(Color::Black);
         indicate_read = false;
         bsp::buzzer::stop();
@@ -330,7 +328,6 @@ State* Search::react(Timeout const&) {
 
         SensingStatus sensingStatus = bsp::analog_sensors::ir_get_sensing_status();
 
-        last_indication = bsp::get_tick_ms();
         indicate_read = true;
         bsp::leds::stripe_set(Color::Black);
         bsp::leds::stripe_set(Color::Green);
