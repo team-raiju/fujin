@@ -335,6 +335,48 @@ function simulateSequence(steps, presetName, options = {}) {
           if (turnTickCounter >= tStopTicks) {
             controlAngularSpeed = 0.0;
             currentAngularAccel = 0.0;
+            if (movement === 'TURN_AROUND') {
+              miniFsmState = 'FORWARD_2';
+              traveledDistMm = 0.0;
+              targetTravelMm = fwdDef.target_travel_mm;
+              isBraking = false;
+            } else {
+              turnFinished = true;
+            }
+          }
+        } else if (miniFsmState === 'FORWARD_2') {
+          rawData.push({
+            x: tMs,
+            yLinVel: controlLinearSpeed,
+            yAngVel: 0.0,
+            yLinAcc: 0.0,
+            yAngAcc: 0.0
+          });
+
+          // update_turn_linear_speed matching Navigation::step_turn_forward_2
+          const maxSpeed = fwdDef.max_speed;
+          const acceleration = fwdDef.acceleration;
+          const deceleration = fwdDef.deceleration;
+          const finalSpeed = fwdDef.max_speed;
+
+          const brakingDistMm = 1000.0 * getTorricelliDistance(finalSpeed, controlLinearSpeed, -deceleration);
+          const beforeBrakingPoint = !isBraking && (Math.abs(traveledDistMm) < (targetTravelMm - brakingDistMm));
+
+          if (beforeBrakingPoint) {
+            if (controlLinearSpeed < maxSpeed) {
+              controlLinearSpeed += acceleration / Hz;
+              controlLinearSpeed = Math.min(controlLinearSpeed, maxSpeed);
+            }
+          } else if (controlLinearSpeed > finalSpeed) {
+            isBraking = true;
+            controlLinearSpeed -= deceleration / Hz;
+            controlLinearSpeed = Math.max(controlLinearSpeed, finalSpeed);
+          }
+
+          traveledDistMm += (controlLinearSpeed * 1000.0) / Hz;
+          totalTimeS += dt;
+
+          if (Math.abs(traveledDistMm) >= targetTravelMm) {
             turnFinished = true;
           }
         }
