@@ -624,9 +624,14 @@ void Navigation::configure_linear_pid() {
     }
 
     if (current_movement == Movement::FORWARD) {
-        const bool before_forward_end =
-            std::abs(traveled_dist_mm) < (target_travel_mm - FORWARD_WALL_PID_DISABLE_DISTANCE_MM);
-        control->set_wall_pid_enabled(before_forward_end);
+        if (!is_search_mode(selected_mode)) {
+            const bool before_forward_end =
+                std::abs(traveled_dist_mm) < (target_travel_mm - FORWARD_WALL_PID_DISABLE_DISTANCE_MM);
+            control->set_wall_pid_enabled(before_forward_end);
+        } else {
+            control->set_wall_pid_enabled(true);
+        }
+
         control->set_diagonal_pid_enabled(false);
         return;
     }
@@ -753,7 +758,8 @@ void Navigation::step_turn_forward_1() {
 
 void Navigation::step_turn_forward_2() {
     control->set_use_inplace_friction(false);
-    control->set_wall_pid_enabled(true);
+    // control->set_wall_pid_enabled(true);
+    control->set_wall_pid_enabled(false);
     control->set_diagonal_pid_enabled(false);
 
     const float max_speed = forward_params[current_movement].max_speed;
@@ -815,8 +821,12 @@ void Navigation::transition_after_turn_rotation() {
 
     if (is_search_turn_movement()) {
         control->set_target_angular_speed(0.0f);
-        target_travel_mm = -turn_params[current_movement].end;
-        // target_travel_mm = HALF_CELL_SIZE_MM - std::abs(current_position_mm.y);
+        float end_target = -turn_params[current_movement].end;
+        if (Config::enable_lateral_correction_90) {
+            end_target -= turn_end_correction_mm;
+            turn_end_correction_mm = 0.0f;
+        }
+        target_travel_mm = std::max(0.0f, end_target);
         reference_time = bsp::get_tick_ms();
         traveled_dist_mm = 0;
         is_braking = false;
@@ -980,6 +990,12 @@ void Navigation::set_movement(Direction dir) {
 
     target_travel_mm = forward_params[current_movement].target_travel_mm;
 
+    if (Config::enable_lateral_correction_90 && is_search_turn_movement()) {
+        turn_end_correction_mm = calculate_turn_end_offset(current_movement);
+    } else {
+        turn_end_correction_mm = 0.0f;
+    }
+
     if (current_movement == Movement::STOP) {
         forward_end_speed = 0;
     } else {
@@ -1061,7 +1077,7 @@ float Navigation::calculate_turn_end_offset(Movement movement) {
     constexpr float MAX_ALLOWED_OFFSET_MM = 10.0f;
     constexpr float DEG_TO_RAD = 3.14159265358979323846f / 180.0f;
 
-    if (movement == Movement::TURN_LEFT_90) {
+    if (movement == Movement::TURN_LEFT_90 || movement == Movement::TURN_LEFT_90_SEARCH_MODE) {
         // Turning Left: check opposite (Right) wall
         if (ir_reading_wall(SensingDirection::RIGHT)) {
             const float cos_theta = std::cos(Config::right_sensor_angle_deg * DEG_TO_RAD);
@@ -1069,7 +1085,7 @@ float Navigation::calculate_turn_end_offset(Movement movement) {
             float delta_l = measured_dist - Config::ir_wall_dist_ref_right; // positive when further from right wall
             lateral_error_mm = delta_l * cos_theta;
         }
-    } else if (movement == Movement::TURN_RIGHT_90) {
+    } else if (movement == Movement::TURN_RIGHT_90 || movement == Movement::TURN_RIGHT_90_SEARCH_MODE) {
         // Turning Right: check opposite (Left) wall
         if (ir_reading_wall(SensingDirection::LEFT)) {
             const float cos_theta = std::cos(Config::left_sensor_angle_deg * DEG_TO_RAD);

@@ -24,29 +24,29 @@ Turn Around Inplace | 0.0               | Will not do anything after turning 180
 
 /// @section TURN_PARMS_SEARCH_SLOW
 const std::map<Movement, TurnParams> turn_params_search_slow = {
-    {Movement::TURN_AROUND, {0.0, 0.0, 0.5, 150.0, 11.0, T(288), T(411), -1, T(73), T(361), 3000, 3000}},
-    {Movement::TURN_AROUND_INPLACE, {0.0, 0.0, 0.5, 150.0, 11.0, T(288), T(411), -1, T(73), T(361), 3000, 3000}},
-    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.0, 0.0, 0.5, 180, 11.0, T(143), T(240), -1, T(61), T(204), 5000, 5000}},
-    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.0, 0.0, 0.5, 180, 11.0, T(143), T(240), 1, T(61), T(204), 5000, 5000}},
+    {Movement::TURN_AROUND, {0.0, 0.0, 0.3, 150.0, 11.0, T(288), T(411), -1, T(73), T(361), 3000, 3000}},
+    {Movement::TURN_AROUND_INPLACE, {0.0, 0.0, 0.3, 150.0, 11.0, T(288), T(411), -1, T(73), T(361), 3000, 3000}},
+    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.00, -32.30, 0.3, 80.0, 8.0, T(196.5), T(323.0), -1, T(100.0), T(296.5), 3000, 3000}},
+    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.00, -32.30, 0.3, 80.0, 8.0, T(195.5), T(322.0), 1, T(100.0), T(295.5), 3000, 3000}},
 };
 
 const std::map<Movement, ForwardParams> forward_params_search_slow = {
-    {Movement::START, {0.5, 3.0, 3.0, HALF_CELL_SIZE_MM + ROBOT_DIST_FROM_CENTER_START_MM}},
-    {Movement::FORWARD, {0.5, 3.0, 3.0, CELL_SIZE_MM}},
-    {Movement::STOP, {0.5, 2.0, 2.0, (HALF_CELL_SIZE_MM)}},
-    {Movement::TURN_AROUND, {0.5, 3.0, 5.0, 80.0}},
-    {Movement::TURN_AROUND_INPLACE, {0.5, 3.0, 5.0, 80.0}},
-    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.5, 3.0, 3.0, 19.51}},
-    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.5, 3.0, 3.0, 19.51}},
+    {Movement::START, {0.3, 3.0, 3.0, HALF_CELL_SIZE_MM + ROBOT_DIST_FROM_CENTER_START_MM}},
+    {Movement::FORWARD, {0.3, 3.0, 3.0, CELL_SIZE_MM}},
+    {Movement::STOP, {0.3, 2.0, 2.0, (HALF_CELL_SIZE_MM)}},
+    {Movement::TURN_AROUND, {0.3, 3.0, 5.0, 80.0}},
+    {Movement::TURN_AROUND_INPLACE, {0.3, 3.0, 5.0, 80.0}},
+    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.3, 3.0, 3.0, 32.81}},
+    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.3, 3.0, 3.0, 30.81}},
 };
 
 /// @section TURN_PARMS_SEARCH_MEDIUM
 const std::map<Movement, TurnParams> turn_params_search_medium = {
     {Movement::TURN_AROUND, {0.00, 0.0, 0.5, 200.0, 11, T(285.5), T(380.5), -1, T(55.0), T(340.5), 5000, 5000}},
-    {Movement::TURN_AROUND_INPLACE, {0.00, 0.0, 0.5, 200.0, 11, T(285.5), T(380.5), -1, T(55.0), T(340.5), 5000, 5000}},
+    {Movement::TURN_AROUND_INPLACE, {0.00, 0.0, 0.5, 200.0, 11, T(284.5), T(379.5), -1, T(55.0), T(339.5), 5000, 5000}},
 
     {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.00, -26.27, 0.5, 250.0, 11.0, T(143.0), T(212.0), -1, T(44.0), T(187.0), 10000, 10000}},
-    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.00, -26.27, 0.5, 250.0, 11.0, T(143.0), T(212.0), 1, T(44.0), T(187.0), 10000, 10000}},
+    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.00, -26.27, 0.5, 250.0, 11.0, T(142.0), T(211.0), 1, T(44.0), T(186.0), 10000, 10000}},
 };
 
 const std::map<Movement, ForwardParams> forward_params_search_medium = {
@@ -316,13 +316,13 @@ std::map<Movement, ForwardParams> forward_params_custom = {
 // clang-format on
 
 const GeneralParams general_params_search_slow = {
-    0.0,                       // Fan speed
-    0.0420,  0.00021, 0.000,   // Angular P,I,D
-    0.00035, 0.0003,  0.003,   // Angular acc ff, Angular brake ff, Angular velocity ff
-    0.03125, 0.018,   0.105,   // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
-    0.0090,  0.0000,  0.0000,  // Wall P,I,D
-    2.5000,  0.0100,  25.0000, // Linear velocity P,I,D
-    0.0090,  0.0000,  0.0000,  // Diagonal walls P,I,D
+    0.0,                     // Fan speed
+    0.06000, 0.00030, 0.0000,  // Angular P,I,D
+    0.00055, 0.00040, 0.0040,  // Angular acc ff, Angular brake ff, Angular velocity ff
+    0.01500, 0.0100,  0.0550,  // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
+    0.0100,  0.0000,  0.0000,  // Wall P,I,D
+    1.6000,  0.0020,  0.0000,  // Linear velocity P,I,D
+    0.0000,  0.0000,  0.0000,  // Diagonal walls P,I,D
     56.0,                      // Start wall break mm left
     64.0,                      // Start wall break mm right
     1.0,                       // Enable wall break correction
@@ -332,8 +332,8 @@ const GeneralParams general_params_search_slow = {
     0.13,                      // Coulomb ff
     0.01,                      // Angular Coulomb ff
     0.01,                      // Angular Static ff
-    0.11,                      // Angular Coulomb ff Inplace
-    0.13                       // Angular Static ff Inplace
+    0.12,                      // Angular Coulomb ff Inplace
+    0.14                       // Angular Static ff Inplace
 };
 
 const GeneralParams general_params_search_medium = {
@@ -342,7 +342,7 @@ const GeneralParams general_params_search_medium = {
     0.00055, 0.00040, 0.0040,  // Angular acc ff, Angular brake ff, Angular velocity ff
     0.01500, 0.0100,  0.0550,  // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
     0.0100,  0.0000,  0.0000,  // Wall P,I,D
-    1.9000,  0.0020,  0.0000,  // Linear velocity P,I,D
+    1.6000,  0.0020,  0.0000,  // Linear velocity P,I,D
     0.0000,  0.0000,  0.0000,  // Diagonal walls P,I,D
     56.0,                      // Start wall break mm left
     64.0,                      // Start wall break mm right
