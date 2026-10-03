@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "algorithms/pid.hpp"
+#include "algorithms/movement_planner.hpp"
 #include "services/control.hpp"
 #include "utils/movement_params.hpp"
 
@@ -60,20 +61,6 @@ public:
     const std::array<TurnParams, MOVEMENT_COUNT>& get_turn_params() const;
 
 private:
-    enum class PathState {
-        Start,
-        Ortho_F,  // Moving straight
-        Ortho_R,  // Made a single Right 90 turn
-        Ortho_L,  // Made a single Left 90 turn
-        Ortho_RR, // Made two Right 90 turns (180)
-        Ortho_LL, // Made two Left 90 turns (180)
-        Diag_LR,  // On a diagonal path, last turn was Right
-        Diag_RL,  // On a diagonal path, last turn was Left
-        Diag_RR,  // In a diagonal turn sequence (R-R)
-        Diag_LL,  // In a diagonal turn sequence (L-L)
-        Stop,
-    };
-
     enum class MiniFSMStates {
         FORWARD_1,
         TURN,

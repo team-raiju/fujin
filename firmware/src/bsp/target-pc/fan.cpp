@@ -1,11 +1,16 @@
 #include "bsp/fan.hpp"
+#include "amaterasu/amaterasu.hpp"
+#include <algorithm>
 
 namespace bsp::fan {
 
-void init() {}
+void init() {
+    set(0);
+}
 
 void set(uint16_t speed) {
-    (void)speed;
+    float norm = std::clamp(speed / 1000.0f, 0.0f, 1.0f);
+    amaterasu::set_fan_pwm(norm);
 }
 
 float get_max_fan_voltage(void) {

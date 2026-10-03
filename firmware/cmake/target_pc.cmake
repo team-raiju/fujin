@@ -43,5 +43,10 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     ${BSP_PATH}/usb.cpp
 )
 
-target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
-)
+get_filename_component(AMATERASU_DIR "${CMAKE_SOURCE_DIR}/../../amaterasu" ABSOLUTE)
+if(EXISTS "${AMATERASU_DIR}/CMakeLists.txt")
+    add_subdirectory("${AMATERASU_DIR}" "${CMAKE_BINARY_DIR}/amaterasu")
+    target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE amaterasu)
+    target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE HAVE_AMATERASU=1)
+    message(STATUS "Found and linked amaterasu bridge library from ${AMATERASU_DIR}")
+endif()

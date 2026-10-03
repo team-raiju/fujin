@@ -21,7 +21,10 @@ message("CMAKE_BUILD_TYPE: " ${CMAKE_BUILD_TYPE})
 
 enable_language(C CXX ASM)
 
-if(PC_BUILD)
+if(WASM_BUILD)
+    include("cmake/target_wasm.cmake")
+    return()
+elseif(PC_BUILD)
     include("cmake/target_pc.cmake")
 else()
     include("cmake/target_stm32g4.cmake")
@@ -38,6 +41,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
 
     src/algorithms/pid.cpp
     src/algorithms/time_flood_fill.cpp
+    src/algorithms/movement_planner.cpp
 
     src/utils/soft_timer.cpp
     src/utils/movement_params.cpp

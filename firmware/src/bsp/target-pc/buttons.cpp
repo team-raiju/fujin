@@ -1,16 +1,9 @@
-#include <iostream>
-
 #include "bsp/buttons.hpp"
-#include "bsp/debug.hpp"
 
 namespace bsp::buttons {
 
-/// @section Private variables
-
-static ButtonCallback button_1_callback = NULL;
-static ButtonCallback button_2_callback = NULL;
-
-/// @section Interface implementation
+static ButtonCallback button_1_callback = nullptr;
+static ButtonCallback button_2_callback = nullptr;
 
 void init() {}
 
@@ -22,10 +15,16 @@ void register_callback_button2(ButtonCallback callback) {
     button_2_callback = callback;
 }
 
-void button_1_pressed() {
+void button_1_pressed(PressType type) {
     if (button_1_callback) {
-        button_1_callback(PressType::SHORT);
+        button_1_callback(type);
     }
 }
 
-} // namespace
+void button_2_pressed(PressType type) {
+    if (button_2_callback) {
+        button_2_callback(type);
+    }
+}
+
+} // namespace bsp::buttons

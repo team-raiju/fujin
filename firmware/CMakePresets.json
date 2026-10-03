@@ -38,6 +38,16 @@
                 "TARGET": "PC",
                 "CMAKE_BUILD_TYPE": "Debug"
             }
+        },
+        {
+            "name": "WASM",
+            "inherits": "default",
+            "toolchainFile": "/usr/lib/emscripten/cmake/Modules/Platform/Emscripten.cmake",
+            "cacheVariables": {
+                "WASM_BUILD": "true",
+                "TARGET": "WASM",
+                "CMAKE_BUILD_TYPE": "Release"
+            }
         }
     ]
 }
