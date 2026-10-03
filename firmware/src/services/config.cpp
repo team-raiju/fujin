@@ -74,6 +74,8 @@ float Config::start_wall_break_mm_right = 80.0; // 3.0m/s
 float Config::enable_wall_break_correction = 1.0;
 float Config::enable_lateral_correction_90 = 0.0f;
 float Config::enable_lateral_correction_wall = 0.0f;
+float Config::linear_accel_margin_mm = 10.0f;
+float Config::linear_brake_margin_mm = 10.0f;
 
 // All params
 static std::pair<float*, bsp::eeprom::param_addresses_t> params[] = {
@@ -123,6 +125,8 @@ static std::pair<float*, bsp::eeprom::param_addresses_t> params[] = {
     {&Config::angular_static_ff_inplace, bsp::eeprom::ADDR_ANGULAR_STATIC_FF_INPLACE},
     {&Config::enable_lateral_correction_90, bsp::eeprom::ADDR_ENABLE_LATERAL_CORRECTION_90},
     {&Config::enable_lateral_correction_wall, bsp::eeprom::ADDR_ENABLE_LATERAL_CORRECTION_WALL},
+    {&Config::linear_accel_margin_mm, bsp::eeprom::ADDR_LINEAR_ACCEL_MARGIN_MM},
+    {&Config::linear_brake_margin_mm, bsp::eeprom::ADDR_LINEAR_BRAKE_MARGIN_MM},
 };
 
 static const std::pair<float*, bsp::eeprom::param_addresses_t> general_params_eeprom[] = {
@@ -156,6 +160,8 @@ static const std::pair<float*, bsp::eeprom::param_addresses_t> general_params_ee
     {&Config::angular_static_ff, bsp::eeprom::ADDR_ANGULAR_STATIC_FF},
     {&Config::angular_coulomb_ff_inplace, bsp::eeprom::ADDR_ANGULAR_COULOMB_FF_INPLACE},
     {&Config::angular_static_ff_inplace, bsp::eeprom::ADDR_ANGULAR_STATIC_FF_INPLACE},
+    {&Config::linear_accel_margin_mm, bsp::eeprom::ADDR_LINEAR_ACCEL_MARGIN_MM},
+    {&Config::linear_brake_margin_mm, bsp::eeprom::ADDR_LINEAR_BRAKE_MARGIN_MM},
 };
 
 static const std::map<Movement, uint16_t> turn_address_map = {
@@ -403,6 +409,10 @@ void Config::print_parameters() {
     bsp::delay_ms(5);
     std::printf("    angular_static_ff_inplace = %f,\r\n", Config::angular_static_ff_inplace);
     bsp::delay_ms(5);
+    std::printf("    linear_accel_margin_mm = %f,\r\n", Config::linear_accel_margin_mm);
+    bsp::delay_ms(5);
+    std::printf("    linear_brake_margin_mm = %f,\r\n", Config::linear_brake_margin_mm);
+    bsp::delay_ms(5);
     std::printf("};\r\n");
     bsp::delay_ms(5);
 }
@@ -551,6 +561,8 @@ int Config::load_general_preset(uint8_t preset_id) {
     Config::angular_static_ff = gp.angular_static_ff;
     Config::angular_coulomb_ff_inplace = gp.angular_coulomb_ff_inplace;
     Config::angular_static_ff_inplace = gp.angular_static_ff_inplace;
+    Config::linear_accel_margin_mm = gp.linear_accel_margin_mm;
+    Config::linear_brake_margin_mm = gp.linear_brake_margin_mm;
 
     save_general_params_to_eeprom();
     send_parameters();

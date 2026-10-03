@@ -1360,8 +1360,8 @@ function renderCustomMovementInputs(movName) {
   }
 }
 
-let seqGlobalBrakeMargin = 20.0;
-let seqGlobalAccelMargin = 20.0;
+let seqGlobalBrakeMargin = 10.0;
+let seqGlobalAccelMargin = 10.0;
 
 function initSeqMarginsUI() {
   const sync = (type) => {

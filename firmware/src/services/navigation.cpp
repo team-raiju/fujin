@@ -29,8 +29,6 @@ constexpr float FRONT_EMERGENCY_DISTANCE_MM = 70.0f;
 constexpr float WALL_BREAK_DEBUG_DISTANCE_MM = 90.0f;
 constexpr float SEARCH_WALL_BREAK_MIN_DISTANCE_MM = 35.0f;
 constexpr float WALL_BREAK_MAX_CORRECTION_ERROR_MM = 40.0f;
-constexpr float LINEAR_BRAKE_MARGIN_MM = 10.0f;
-constexpr float LINEAR_ACCEL_MARGIN_MM = 10.0f;
 constexpr float FORWARD_WALL_PID_DISABLE_DISTANCE_MM = 70.0f;
 constexpr float DIAGONAL_PID_START_DISTANCE_MM = 50.0f;
 constexpr uint32_t STABILIZE_FORWARD_TIME_MS = 175;
@@ -76,6 +74,8 @@ GeneralParams make_custom_general_params() {
         services::Config::angular_static_ff,
         services::Config::angular_coulomb_ff_inplace,
         services::Config::angular_static_ff_inplace,
+        services::Config::linear_accel_margin_mm,
+        services::Config::linear_brake_margin_mm,
     };
 }
 
@@ -487,7 +487,7 @@ float Navigation::get_required_brake_distance(float control_linear_speed, float 
         return 0.0f;
     }
 
-    float brake_distance_mm = current_movement == Movement::START ? 0.0f : LINEAR_BRAKE_MARGIN_MM;
+    float brake_distance_mm = current_movement == Movement::START ? 0.0f : general_params.linear_brake_margin_mm;
 
     float brake_jerk = general_params.max_linear_brake_jerk;
     if (current_movement == Movement::STOP) {
@@ -525,7 +525,7 @@ void Navigation::update_linear_target_speed(float& control_linear_speed, float m
         (current_movement == Movement::START) ||
         ((current_movement == Movement::FORWARD || current_movement == Movement::DIAGONAL) &&
          previous_movement == Movement::START);
-    const float accel_margin_mm = is_start_or_after_start ? 0.0f : LINEAR_ACCEL_MARGIN_MM;
+    const float accel_margin_mm = is_start_or_after_start ? 0.0f : general_params.linear_accel_margin_mm;
 
     const float required_brake_distance =
         get_required_brake_distance(control_linear_speed, deceleration, continuous_start_to_forward);
@@ -1132,7 +1132,7 @@ void Navigation::set_movement(Movement movement, Movement prev_movement, Movemen
     reset_movement_variables(!preserve_linear_accel);
 
     if (movement == Movement::FORWARD || movement == Movement::DIAGONAL) {
-        if (waiting_for_fast_param) {
+        if (waiting_for_fast_param && count > 1) {
             waiting_for_fast_param = false;
             if (selected_mode == FAST || selected_mode == SUPER) {
                 configure_mode(selected_mode);

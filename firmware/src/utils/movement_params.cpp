@@ -214,25 +214,25 @@ const std::map<Movement, ForwardParams> forward_params_fast = {
 /// @section TURN_PARMS_SUPER
 const std::map<Movement, TurnParams> turn_params_super = {
     {Movement::TURN_RIGHT_45, {-71.07, -48.73, 2.2, 1200.0, 23.4, T(33.0), T(66.0), -1, T(18.0), T(54.0), 100000, 80000}},     
-    {Movement::TURN_LEFT_45, {-71.07, -48.73, 2.2, 1200.0, 23.4, T(33.0), T(66.0), 1, T(18.0), T(54.0), 100000, 80000}},  
+    {Movement::TURN_LEFT_45, {-71.07, -48.73, 2.2, 1200.0, 23.4, T(32.5), T(65.5), 1, T(18.0), T(53.5), 100000, 80000}},  
          
-    {Movement::TURN_RIGHT_90, {-38.58, 42.20, 2.5, 1300.0, 31.85, T(44.5), T(88.5), -1, T(18.0), T(75.5), 100000, 50000}},     
-    {Movement::TURN_LEFT_90, {-38.58, 42.20, 2.5, 1300.0, 31.85, T(44.5), T(88.5), 1, T(18.0), T(75.5), 100000, 50000}},       
+    {Movement::TURN_RIGHT_90, {-37.44, 29.91, 2.4, 1300.0, 31.85, T(44.5), T(88.5), -1, T(18.0), T(75.5), 100000, 50000}},     //ok
+    {Movement::TURN_LEFT_90, {-29.44, 32.91, 2.4, 1300.0, 31.85, T(44.0), T(88.0), 1, T(18.0), T(75.0), 100000, 50000}},       //ok
 
     {Movement::TURN_RIGHT_135, {-53.77, -16.75, 2.5, 1200.0, 36.0, T(62.0), T(111.5), -1, T(25.5), T(96.5), 80000, 50000}},   
-    {Movement::TURN_LEFT_135, {-53.77, -16.75, 2.5, 1200.0, 36.0, T(62.0), T(111.5), 1, T(25.5), T(96.5), 80000, 50000}},       
+    {Movement::TURN_LEFT_135, {-53.77, -16.75, 2.5, 1200.0, 36.0, T(61.0), T(110.5), 1, T(25.5), T(95.5), 80000, 50000}},       
 
-    {Movement::TURN_RIGHT_180, {-35.00, 39.48, 2.3, 1200.0, 26.1, T(116.0), T(156.0), -1, T(16.0), T(144.0), 100000, 50000}}, 
-    {Movement::TURN_LEFT_180, {-35.00, 39.48, 2.3, 1200.0, 26.1, T(116.0), T(156.0), 1, T(16.0), T(144.0), 100000, 50000}},  
+    {Movement::TURN_RIGHT_180, {-35.00, 39.48, 2.3, 1200.0, 26.1, T(116.0), T(156.0), -1, T(16.0), T(144.0), 100000, 50000}}, //ok
+    {Movement::TURN_LEFT_180, {-35.00, 39.48, 2.3, 1200.0, 26.1, T(114.0), T(154.0), 1, T(16.0), T(142.0), 100000, 50000}},  //ok
      
     {Movement::TURN_RIGHT_45_FROM_45, {0.00, 76.82, 2.2, 1200.0, 23.4, T(33.0), T(66.0), -1, T(18.0), T(54.0), 100000, 80000}},
-    {Movement::TURN_LEFT_45_FROM_45, {0.00, 76.82, 2.2, 1200.0, 23.4, T(33.0), T(66.0), 1, T(18.0), T(54.0), 100000, 80000}},  
+    {Movement::TURN_LEFT_45_FROM_45, {0.00, 76.82, 2.2, 1200.0, 23.4, T(32.5), T(65.5), 1, T(18.0), T(53.5), 100000, 80000}},  
 
     {Movement::TURN_RIGHT_90_FROM_45, {0.00, -12.38, 2.2, 1200.0, 33.0, T(46.5), T(87.5), -1, T(26.0), T(75.5), 100000, 80000}},
-    {Movement::TURN_LEFT_90_FROM_45, {0.00, -12.38, 2.2, 1200.0, 33.0, T(46.5), T(87.5), 1, T(26.0), T(75.5), 100000, 80000}},  
+    {Movement::TURN_LEFT_90_FROM_45, {0.00, -12.38, 2.2, 1200.0, 33.0, T(46.0), T(87.0), 1, T(26.0), T(75.0), 100000, 80000}},  
 
     {Movement::TURN_RIGHT_135_FROM_45, {0.00, 38.92, 2.3, 1200.0, 36.0, T(62.0), T(111.5), -1, T(25.5), T(96.5), 80000, 50000}},
-    {Movement::TURN_LEFT_135_FROM_45, {0.00, 38.92, 2.3, 1200.0, 36.0, T(62.0), T(111.5), 1, T(25.5), T(96.5), 80000, 50000}},   
+    {Movement::TURN_LEFT_135_FROM_45, {0.00, 38.92, 2.3, 1200.0, 36.0, T(61.0), T(110.5), 1, T(25.5), T(95.5), 80000, 50000}},   
 
     {Movement::TURN_AROUND, {0.00, 0.0, 0.75, 200.0, 11, T(285.5), T(380.5), -1, T(55.0), T(340.5), 5000, 5000}},
     {Movement::TURN_AROUND_INPLACE, {0.00, 0.0, 0.75, 200.0, 11, T(284.5), T(379.5), -1, T(55.0), T(339.5), 5000, 5000}},
@@ -245,12 +245,6 @@ const std::map<Movement, ForwardParams> forward_params_super = {
     {Movement::STOP, {2.2, 20.0, 40.0, (HALF_CELL_SIZE_MM + 5.0)}},                                 
     {Movement::TURN_AROUND, {0.75, 20.0, 40.0, 80.0}},
     {Movement::TURN_AROUND_INPLACE, {0.75, 20.0, 40.0, 80.0}},    
-
-    {Movement::TURN_RIGHT_90, {2.5, 30.0, 30.0, 0.0}},              
-    {Movement::TURN_LEFT_90, {2.5, 30.0, 30.0, 0.0}},    
-
-    {Movement::TURN_RIGHT_180, {2.3, 30.0, 30.0, 0.0}},            
-    {Movement::TURN_LEFT_180, {2.3, 30.0, 30.0, 0.0}},  
 
     {Movement::TURN_RIGHT_45_FROM_45, {2.2, 30.0, 30.0, 53.76}},    
     {Movement::TURN_LEFT_45_FROM_45, {2.2, 30.0, 30.0, 53.76}},     
@@ -337,7 +331,9 @@ const GeneralParams general_params_search_slow = {
     0.01,                      // Angular Coulomb ff
     0.01,                      // Angular Static ff
     0.12,                      // Angular Coulomb ff Inplace
-    0.14                       // Angular Static ff Inplace
+    0.14,                      // Angular Static ff Inplace
+    10.0,                      // Linear accel margin mm
+    10.0                       // Linear brake margin mm
 };
 
 const GeneralParams general_params_search_medium = {
@@ -358,7 +354,9 @@ const GeneralParams general_params_search_medium = {
     0.01,                      // Angular Coulomb ff
     0.01,                      // Angular Static ff
     0.12,                      // Angular Coulomb ff Inplace
-    0.14                       // Angular Static ff Inplace
+    0.14,                      // Angular Static ff Inplace
+    10.0,                      // Linear accel margin mm
+    10.0                       // Linear brake margin mm
 };
 
 const GeneralParams general_params_search_fast = {
@@ -379,7 +377,9 @@ const GeneralParams general_params_search_fast = {
     0.01,                      // Angular Coulomb ff
     0.01,                      // Angular Static ff
     0.12,                      // Angular Coulomb ff Inplace
-    0.14                       // Angular Static ff Inplace
+    0.14,                      // Angular Static ff Inplace
+    10.0,                      // Linear accel margin mm
+    10.0                       // Linear brake margin mm
 };
 
 const GeneralParams general_params_slow = {
@@ -400,7 +400,9 @@ const GeneralParams general_params_slow = {
     0.01,                      // Angular Coulomb ff
     0.01,                      // Angular Static ff
     0.11,                      // Angular Coulomb ff Inplace
-    0.13                       // Angular Static ff Inplace
+    0.13,                      // Angular Static ff Inplace
+    10.0,                      // Linear accel margin mm
+    10.0                       // Linear brake margin mm
 };
 
 const GeneralParams general_params_medium = {
@@ -421,7 +423,9 @@ const GeneralParams general_params_medium = {
     0.07,                   // Angular Coulomb ff
     0.25,                   // Angular Static ff
     0.0,                    // Angular Coulomb ff Inplace
-    0.0                     // Angular Static ff Inplace
+    0.0,                    // Angular Static ff Inplace
+    10.0,                   // Linear accel margin mm
+    10.0                    // Linear brake margin mm
 };
 
 const GeneralParams general_params_fast = {
@@ -442,28 +446,32 @@ const GeneralParams general_params_fast = {
     0.07,                   // Angular Coulomb ff
     0.25,                   // Angular Static ff
     0.0,                    // Angular Coulomb ff Inplace
-    0.0                     // Angular Static ff Inplace
+    0.0,                    // Angular Static ff Inplace
+    10.0,                   // Linear accel margin mm
+    10.0                    // Linear brake margin mm
 };
 
 const GeneralParams general_params_super = {
-    600.0,                  // Fan speed
+    675.0,                  // Fan speed
     0.0900, 0.0005, 0.0500, // Angular P,I,D
     0.0006, 0.0006, 0.0056, // Angular acc ff, Angular brake ff, Angular velocity ff
     0.033,  0.025,  0.1410, // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
-    0.010, 0.0000, 0.0000,  // Wall P,I,D
+    0.045,  0.0000, 0.0000, // Wall P,I,D
     2.500,  0.0100, 0.0000, // Linear velocity P,I,D
-    0.0010, 0.0000, 0.0040, // Diagonal walls P,I,D
+    0.032,  0.0000, 0.0040, // Diagonal walls P,I,D
     56.0,                   // Start wall break mm left
     64.0,                   // Start wall break mm right
     1.0,                    // Enable wall break correction
-    800.0,                  // Max linear acceleration jerk
+    1650.0,                  // Max linear acceleration jerk
     1650.0,                  // Max linear brake jerk
     13.1,                   // Wheel radius mm
     0.18,                   // Coulomb ff
     0.07,                   // Angular Coulomb ff
     0.25,                   // Angular Static ff
     0.0,                    // Angular Coulomb ff Inplace
-    0.0                     // Angular Static ff Inplace
+    0.0,                    // Angular Static ff Inplace
+    5.0,                   // Linear accel margin mm
+    5.0                    // Linear brake margin mm
 };
 
 const std::map<Movement, TurnParams>& get_turn_params(navigation_mode_t mode) {

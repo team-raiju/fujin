@@ -64,12 +64,12 @@ function simulateSequence(steps, presetName, options = {}) {
   const genParams = preset.general || {
     max_linear_acc_jerk: 625.0,
     max_linear_brake_jerk: 625.0,
-    accel_margin_mm: 20.0,
-    brake_margin_mm: 20.0
+    accel_margin_mm: 10.0,
+    brake_margin_mm: 10.0
   };
 
-  const brakeMarginMm = (options && options.brakeMarginMm !== undefined) ? options.brakeMarginMm : (genParams.brake_margin_mm ?? 20.0);
-  const accelMarginMm = (options && options.accelMarginMm !== undefined) ? options.accelMarginMm : (genParams.accel_margin_mm ?? 20.0);
+  const brakeMarginMm = (options && options.brakeMarginMm !== undefined) ? options.brakeMarginMm : (genParams.linear_brake_margin_mm ?? genParams.brake_margin_mm ?? 10.0);
+  const accelMarginMm = (options && options.accelMarginMm !== undefined) ? options.accelMarginMm : (genParams.linear_accel_margin_mm ?? genParams.accel_margin_mm ?? 10.0);
 
   const Hz = 2000.0;
   const dt = 1.0 / Hz;
@@ -434,8 +434,8 @@ function updateLinearTargetSpeedStep(state, maxSpeed, maxAcceleration, decelerat
   const Hz = 2000.0;
   const accelJerk = genParams.max_linear_acc_jerk || 625.0;
   const brakeJerk = genParams.max_linear_brake_jerk || 625.0;
-  const effAccelMarginMm = (accelMarginMm !== undefined) ? accelMarginMm : (genParams.accel_margin_mm ?? 20.0);
-  const effBrakeMarginMm = (brakeMarginMm !== undefined) ? brakeMarginMm : (genParams.brake_margin_mm ?? 20.0);
+  const effAccelMarginMm = (accelMarginMm !== undefined) ? accelMarginMm : (genParams.linear_accel_margin_mm ?? genParams.accel_margin_mm ?? 10.0);
+  const effBrakeMarginMm = (brakeMarginMm !== undefined) ? brakeMarginMm : (genParams.linear_brake_margin_mm ?? genParams.brake_margin_mm ?? 10.0);
   const minMoveSpeed = 0.2;
 
   let dRampM = 0.0;

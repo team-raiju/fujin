@@ -74,6 +74,8 @@ public:
     static float enable_wall_break_correction;
     static float enable_lateral_correction_90;
     static float enable_lateral_correction_wall;
+    static float linear_accel_margin_mm;
+    static float linear_brake_margin_mm;
 
     static void init();
     static int parse_packet(uint8_t packet[bsp::ble::max_packet_size]);
