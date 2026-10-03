@@ -13,8 +13,8 @@
 #include "bsp/motors.hpp"
 #include "bsp/timers.hpp"
 #include "fsm/state.hpp"
-#include "services/control.hpp"
 #include "services/config.hpp"
+#include "services/control.hpp"
 #include "services/maze.hpp"
 #include "services/navigation.hpp"
 #include "services/notification.hpp"
@@ -352,7 +352,6 @@ State* Search::react(Timeout const&) {
             save_maze = true;
             returning = true;
             maze->create_maze_backup();
-            targets = services::Maze::ORIGIN_ARRAY;
         }
 
         if (dir == Direction::STOP && targets.size() == 1 && targets[0] == services::Maze::ORIGIN) {
