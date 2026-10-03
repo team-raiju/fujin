@@ -204,12 +204,7 @@ std::vector<Direction> Maze::directions_to_goal(bool time_based, float* out_time
         auto nav = services::Navigation::instance();
         Point start_pos = {ORIGIN.x, ORIGIN.y + 1};
         auto path = algorithm::TimeFloodFill::find_fastest_path(
-            map,
-            start_pos,
-            GOAL_POSITIONS,
-            nav->get_forward_params(),
-            nav->get_turn_params(),
-            out_time_s);
+            map, start_pos, GOAL_POSITIONS, nav->get_forward_params(), nav->get_turn_params(), out_time_s);
         if (!path.empty()) {
             return path;
         }

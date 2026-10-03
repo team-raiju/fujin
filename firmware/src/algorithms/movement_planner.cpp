@@ -4,8 +4,10 @@ namespace algorithm {
 
 Movement MovementPlanner::get_movement(Direction target_dir, Direction current_dir, bool search_mode) {
     using enum Direction;
-    if (target_dir == Direction::STOP) return Movement::STOP;
-    if (target_dir == current_dir) return Movement::FORWARD;
+    if (target_dir == Direction::STOP)
+        return Movement::STOP;
+    if (target_dir == current_dir)
+        return Movement::FORWARD;
     if ((target_dir == NORTH && current_dir == WEST) || (target_dir == EAST && current_dir == NORTH) ||
         (target_dir == SOUTH && current_dir == EAST) || (target_dir == WEST && current_dir == SOUTH)) {
         return search_mode ? Movement::TURN_RIGHT_90_SEARCH_MODE : Movement::TURN_RIGHT_90;
@@ -19,19 +21,15 @@ Movement MovementPlanner::get_movement(Direction target_dir, Direction current_d
 
 std::vector<std::pair<Movement, uint8_t>>
 MovementPlanner::get_default_target_movements(const std::vector<Direction>& target_directions) {
-    std::vector<std::pair<Movement, uint8_t>> default_target_movements;
-    if (target_directions.empty()) {
-        default_target_movements.push_back({Movement::STOP, 1});
-        return default_target_movements;
-    }
+    std::vector<std::pair<Movement, uint8_t>> default_target_movements = {};
 
-    Direction robot_direction = target_directions[0];
+    Direction robot_direction = Direction::NORTH;
     default_target_movements.push_back({Movement::START, 1});
 
-    for (size_t i = 1; i < target_directions.size(); ++i) {
-        Movement movement = get_movement(target_directions[i], robot_direction, false);
+    for (auto target_dir : target_directions) {
+        Movement movement = get_movement(target_dir, robot_direction, false);
         default_target_movements.push_back({movement, 1});
-        robot_direction = target_directions[i];
+        robot_direction = target_dir;
     }
 
     default_target_movements.push_back({Movement::STOP, 1});
@@ -40,12 +38,11 @@ MovementPlanner::get_default_target_movements(const std::vector<Direction>& targ
 
 std::vector<std::pair<Movement, uint8_t>>
 MovementPlanner::get_smooth_movements(const std::vector<std::pair<Movement, uint8_t>>& default_target_movements) {
-    if (default_target_movements.size() < 2) return default_target_movements;
-    std::vector<std::pair<Movement, uint8_t>> smooth_movements;
+    std::vector<std::pair<Movement, uint8_t>> smooth_movements = {};
+
     smooth_movements.push_back(default_target_movements[0]);
     uint8_t forward_count = 1;
-
-    for (size_t i = 1; i < default_target_movements.size() - 1; i++) {
+    for (uint32_t i = 1; i < default_target_movements.size() - 1; i++) {
         Movement movement = default_target_movements[i].first;
         Movement next_movement = default_target_movements[i + 1].first;
         if (movement == Movement::TURN_LEFT_90 && next_movement == Movement::TURN_LEFT_90) {
