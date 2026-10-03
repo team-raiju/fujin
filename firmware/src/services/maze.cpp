@@ -106,10 +106,14 @@ void Maze::reset() {
     map[0][0].known_walls = 0b1111;
 }
 
-Direction Maze::next_step(Point const& current_position, uint8_t walls, Point const& target, bool search_mode) {
+Direction Maze::next_step(Point const& current_position, uint8_t walls, std::span<const Point> targets, bool search_mode) {
     algorithm::Cell& cell = map[current_position.x][current_position.y];
 
-    if (target == current_position) {
+    bool at_target = std::any_of(targets.begin(), targets.end(), [&](const Point& target) {
+        return target == current_position;
+    });
+
+    if (at_target) {
         if (search_mode) {
             cell.update_walls(walls);
         }
@@ -127,7 +131,7 @@ Direction Maze::next_step(Point const& current_position, uint8_t walls, Point co
     }
 
     // Recalculate the distances
-    algorithm::flood_fill(map, target, search_mode);
+    algorithm::flood_fill(map, targets, search_mode);
 
     if (map[current_position.x][current_position.y].distance == 255) {
         // Unreachable
@@ -179,7 +183,7 @@ Direction Maze::next_step(Point const& current_position, uint8_t walls, Point co
 }
 
 Point Maze::closest_unvisited(Point const& current_position) {
-    algorithm::flood_fill(map, current_position, true);
+    algorithm::flood_fill(map, std::span<const Point>(&current_position, 1), true);
 
     int closest_dist = 255;
     auto closest_point = ORIGIN;
@@ -216,7 +220,7 @@ std::vector<Direction> Maze::directions_to_goal(bool time_based, float* out_time
     bool goal_reached = false;
 
     while (!goal_reached) {
-        auto dir = next_step(pos, map[pos.x][pos.y].walls, services::Maze::GOAL_POSITIONS[0], false);
+        auto dir = next_step(pos, map[pos.x][pos.y].walls, GOAL_POSITIONS, false);
         target_directions.push_back(dir);
         switch (dir) {
         case Direction::NORTH:

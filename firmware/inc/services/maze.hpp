@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstdint>
+#include <span>
 #include <utility>
 #include <vector>
 
@@ -27,8 +28,9 @@ public:
     ///        the next cell that should be visited
     /// @param current_position Current cell coordinates
     /// @param walls Current cell wall information
+    /// @param targets Target coordinates
     /// @return Next cell to be visited
-    Direction next_step(Point const& current_position, uint8_t walls, Point const& target, bool search_mode = true);
+    Direction next_step(Point const& current_position, uint8_t walls, std::span<const Point> targets, bool search_mode = true);
 
     /// @brief Prints the maze for debugging purpose
     void print(Point const& curr);

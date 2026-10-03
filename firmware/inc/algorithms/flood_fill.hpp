@@ -128,10 +128,4 @@ void flood_fill(Grid<width, height>& grid, std::span<const Point> targets, bool 
     }
 }
 
-template <int width, int height>
-void flood_fill(Grid<width, height>& grid, Point const& target, bool search_mode = true) {
-    Point targets[1] = {target};
-    flood_fill(grid, std::span<const Point>(targets, 1), search_mode);
-}
-
 }
