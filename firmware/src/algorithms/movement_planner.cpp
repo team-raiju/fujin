@@ -284,6 +284,7 @@ MovementPlanner::plan_movements(const std::vector<Direction>& target_directions,
     case MovementMode::SMOOTH:
         return get_smooth_movements(default_moves);
     case MovementMode::DIAGONALS:
+    case MovementMode::TIME_BASED:
         return get_diagonal_movements(default_moves);
     case MovementMode::HARD_CODED:
     default:

@@ -21,6 +21,7 @@ public:
         NORMAL,
         SMOOTH,
         DIAGONALS,
+        TIME_BASED,
         HARD_CODED,
     };
 

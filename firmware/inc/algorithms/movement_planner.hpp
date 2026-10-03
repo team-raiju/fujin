@@ -14,7 +14,8 @@ enum class MovementMode {
     NORMAL = 0,
     SMOOTH = 1,
     DIAGONALS = 2,
-    HARD_CODED = 3
+    TIME_BASED = 3,
+    HARD_CODED = 4
 };
 
 enum class PathState {

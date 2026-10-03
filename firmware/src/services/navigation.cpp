@@ -1179,6 +1179,7 @@ std::vector<std::pair<Movement, uint8_t>> Navigation::get_movements_to_goal(std:
         movements = get_smooth_movements(get_default_target_movements(target_directions));
         break;
     case target_movement_mode_t::DIAGONALS:
+    case target_movement_mode_t::TIME_BASED:
         movements = get_diagonal_movements(get_default_target_movements(target_directions));
         break;
     case target_movement_mode_t::HARD_CODED:
