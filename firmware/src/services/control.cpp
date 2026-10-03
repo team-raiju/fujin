@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cstdio>
 
 #include "bsp/analog_sensors.hpp"
@@ -12,6 +13,8 @@
 static constexpr float max_battery_voltage = 12.6;
 static constexpr float mot_kt = 0.0064; // motor torque constant [Nm/A]
 static constexpr float mot_ra = 2.5;    // armature resistance[Ohms]
+static constexpr float max_linear_accel_ff = 50.0f;     // max linear acceleration for feedforward [m/s^2]
+static constexpr float max_angular_accel_ff = 2000.0f;  // max angular acceleration for feedforward [rad/s^2]
 
 namespace services {
 
@@ -27,6 +30,7 @@ void Control::init(void) {
         services::Config::angular_ki,
         services::Config::angular_kd,
         services::Config::angular_acc_feed_forward_k,
+        services::Config::angular_brake_feed_forward_k,
         services::Config::angular_vel_feed_forward_k,
         services::Config::linear_vel_acc_feed_forward_k,
         services::Config::linear_vel_brake_feed_forward_k,
@@ -45,8 +49,12 @@ void Control::init(void) {
         services::Config::enable_wall_break_correction,
         services::Config::max_linear_acc_jerk,
         services::Config::max_linear_brake_jerk,
+        services::Config::wheel_radius_mm,
         services::Config::coulomb_ff,
         services::Config::angular_coulomb_ff,
+        services::Config::angular_static_ff,
+        services::Config::angular_coulomb_ff_inplace,
+        services::Config::angular_static_ff_inplace,
     };
     reset(general_params);
 }
@@ -95,6 +103,9 @@ void Control::reset(GeneralParams general_params) {
 
     motor_control_disabled = false;
     emergency = false;
+    use_inplace_friction = false;
+    wall_pid_enabled = false;
+    diagonal_pid_enabled = false;
 }
 
 void Control::update() {
@@ -103,6 +114,12 @@ void Control::update() {
 
     if (motor_control_disabled) {
         bsp::motors::set(0, 0);
+        pwm_duty_l = 0.0f;
+        pwm_duty_r = 0.0f;
+        rotation_ff = 0.0f;
+        linear_ff = 0.0f;
+        linear_vel_pid.reset();
+        angular_vel_pid.reset();
         last_target_angular_speed_rad_s = target_angular_speed_rad_s;
         last_target_linear_speed_m_s = target_linear_speed_m_s;
         target_linear_acceleration = 0.0f;
@@ -116,7 +133,13 @@ void Control::update() {
         emergency = ((linear_speed_error > 0.5) || (angular_speed_error_raw > 6.0));
 
         if (wall_pid_enabled) {
-            target_angular_speed_rad_s += walls_pid.calculate(0.0, bsp::analog_sensors::ir_side_wall_error());
+            const float max_wall_ang_accel = (params.fan_speed > 0) ? 800.0f : 150.0f; // rad/s^2
+            const float max_step = max_wall_ang_accel / Config::CONTROL_FREQUENCY_HZ;
+
+            target_angular_speed_rad_s += walls_pid.calculate(0.0f, bsp::analog_sensors::ir_side_wall_error());
+            target_angular_speed_rad_s =
+                std::clamp(target_angular_speed_rad_s, (last_target_angular_speed_rad_s - max_step),
+                           (last_target_angular_speed_rad_s + max_step));
         }
 
         if (diagonal_pid_enabled) {
@@ -129,34 +152,66 @@ void Control::update() {
         // Angular Feed-Foward
         target_angular_acceleration =
             (target_angular_speed_rad_s - last_target_angular_speed_rad_s) * Config::CONTROL_FREQUENCY_HZ;
+        target_angular_acceleration =
+            std::clamp(target_angular_acceleration, -max_angular_accel_ff, max_angular_accel_ff);
 
         last_target_angular_acceleration = target_angular_acceleration;
 
-        rotation_ff = target_angular_acceleration * params.angular_acc_feed_forward_k;
+        bool is_accelerating = (target_angular_speed_rad_s * target_angular_acceleration) > 0.0f;
+        float dir = (target_angular_speed_rad_s > 0.0f) ? 1.0f : -1.0f;
+
+        if (is_accelerating) {
+            rotation_ff = target_angular_acceleration * params.angular_acc_feed_forward_k;
+        } else {
+            rotation_ff = target_angular_acceleration * params.angular_brake_feed_forward_k;
+        }
         rotation_ff += target_angular_speed_rad_s * params.angular_vel_feed_forward_k;
-        rotation_ff += params.angular_coulomb_ff;
-        
+
+        // Friction feedforward: in-place vs rolling (only enabled when not fixing walls, e.g. during turns)
+        if (!wall_pid_enabled && !diagonal_pid_enabled) {
+            const float static_ff = (use_inplace_friction && params.angular_static_ff_inplace > 0.0f)
+                                        ? params.angular_static_ff_inplace
+                                        : params.angular_static_ff;
+            const float coulomb_ff = (use_inplace_friction && params.angular_coulomb_ff_inplace > 0.0f)
+                                         ? params.angular_coulomb_ff_inplace
+                                         : params.angular_coulomb_ff;
+
+            // Static friction
+            if (is_accelerating && std::abs(bsp::imu::get_rad_per_s()) < 0.4f &&
+                std::abs(target_angular_acceleration) > 0.1f) {
+                rotation_ff += static_ff * dir;
+            } // Dynamic friction
+            else if (std::abs(target_angular_speed_rad_s) > 0.005f) {
+                rotation_ff += coulomb_ff * dir;
+            }
+        }
+
         last_target_angular_speed_rad_s = target_angular_speed_rad_s;
 
         // Linear Feed-Foward
-        target_linear_acceleration =
-            (target_linear_speed_m_s - last_target_linear_speed_m_s) * Config::CONTROL_FREQUENCY_HZ;
-
-        last_target_linear_acceleration = target_linear_acceleration;
-
-        if (target_linear_acceleration >= 0.0f) {
-            linear_ff = target_linear_acceleration * params.linear_vel_acc_feed_forward_k;
+        if (std::abs(target_linear_speed_m_s) <= 0.001f) {
+            target_linear_acceleration = 0.0f;
+            linear_ff = 0.0f;
         } else {
-            linear_ff = target_linear_acceleration * params.linear_vel_brake_feed_forward_k;
-        }
+            target_linear_acceleration =
+                (target_linear_speed_m_s - last_target_linear_speed_m_s) * Config::CONTROL_FREQUENCY_HZ;
+            target_linear_acceleration =
+                std::clamp(target_linear_acceleration, -max_linear_accel_ff, max_linear_accel_ff);
 
-        // Coulomb ff
-        if (std::abs(target_linear_speed_m_s) > 0.001f) {
+            if (target_linear_acceleration >= 0.0f) {
+                linear_ff = target_linear_acceleration * params.linear_vel_acc_feed_forward_k;
+            } else {
+                linear_ff = target_linear_acceleration * params.linear_vel_brake_feed_forward_k;
+            }
+
+            // Coulomb ff
             float direction = (target_linear_speed_m_s > 0.0f) ? 1.0f : -1.0f;
             linear_ff += params.coulomb_ff * direction;
+
+            linear_ff += target_linear_speed_m_s * params.linear_vel_feed_forward_k;
         }
 
-        linear_ff += target_linear_speed_m_s * params.linear_vel_feed_forward_k;
+        last_target_linear_acceleration = target_linear_acceleration;
         last_target_linear_speed_m_s = target_linear_speed_m_s;
 
         // Control

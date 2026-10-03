@@ -120,6 +120,14 @@ float get_filtered_velocity_m_s() {
     return filtered_velocity_m_s;
 }
 
+void set_wheel_radius_mm(float radius_mm) {
+    (void)radius_mm;
+}
+
+float get_wheel_radius_mm() {
+    return 13.25f;
+}
+
 float get_right_filtered_ang_vel_rad_s() {
     return right_filtered_ang_vel_rad_s;
 }

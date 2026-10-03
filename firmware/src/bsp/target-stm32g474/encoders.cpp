@@ -17,6 +17,7 @@ static constexpr float PULSES_PER_WHEEL_ROTATION = (WHEEL_TO_ENCODER_RATIO * ENC
 
 
 static float linear_velocity_m_s;
+static float wheel_radius_mm = 13.25f;
 
 static float filtered_velocity_m_s;
 static float last_velocity_m_s;
@@ -140,7 +141,7 @@ void update_velocities(float target_accel_m_s2) {
     uint32_t delta_time_tick_right = bsp::get_tick_us() - right_encoder.last_update_tick_time;
 
     float encoder_dist_mm_pulse = get_encoder_dist_mm_pulse();
-    float wheel_radius_m = services::Config::wheel_radius_mm / 1000.0f;
+    float wheel_radius_m = wheel_radius_mm / 1000.0f;
 
     /* Left wheel */
     if (delta_time_tick_left > MAX_TIME_WITHOUT_ENCODER_US) {
@@ -203,8 +204,16 @@ float get_left_filtered_ang_vel_rad_s() {
 }
 
 float get_encoder_dist_mm_pulse() {
-    float wheel_perimeter_mm = (M_TWOPI * services::Config::wheel_radius_mm);
+    float wheel_perimeter_mm = (M_TWOPI * wheel_radius_mm);
     return (wheel_perimeter_mm / PULSES_PER_WHEEL_ROTATION);
+}
+
+void set_wheel_radius_mm(float radius_mm) {
+    wheel_radius_mm = radius_mm;
+}
+
+float get_wheel_radius_mm() {
+    return wheel_radius_mm;
 }
 
 }

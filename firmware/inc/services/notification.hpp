@@ -1,6 +1,10 @@
 #pragma once
 
 #include <cstdint>
+#include <utility>
+#include <vector>
+
+#include "utils/types.hpp"
 
 namespace services {
 
@@ -12,6 +16,7 @@ public:
     void reset();
     void update(bool ignore_maze = false);
     void send_maze();
+    void send_target_movements(const std::vector<std::pair<Movement, uint8_t>>& movements);
 
     Notification(const Notification&) = delete;
 

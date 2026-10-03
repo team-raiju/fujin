@@ -29,7 +29,30 @@ void Idle::enter() {
     bsp::ble::unlock_config_rcv();
 }
 
-State* Idle::react(BleCommand const&) {
+State* Idle::react(BleCommand const& event) {
+    if (event.packet[1] == bsp::ble::BlePacketType::RequestIrCalibParams) {
+        CalibrationIRSensors::send_calib_params();
+        return nullptr;
+    }
+    if (event.packet[1] == bsp::ble::BlePacketType::RequestParameters) {
+        services::Config::send_parameters();
+        return nullptr;
+    }
+    if (event.packet[1] == bsp::ble::BlePacketType::LoadMovementPreset) {
+        bsp::buzzer::start();
+        bsp::delay_ms(100);
+        bsp::buzzer::stop();
+        services::Config::load_movement_preset(event.packet[2]);
+        return nullptr;
+    }
+    if (event.packet[1] == bsp::ble::BlePacketType::LoadGeneralPreset) {
+        bsp::buzzer::start();
+        bsp::delay_ms(100);
+        bsp::buzzer::stop();
+        services::Config::load_general_preset(event.packet[2]);
+        return nullptr;
+    }
+
     bsp::buzzer::start();
     bsp::delay_ms(100);
     bsp::buzzer::stop();
@@ -52,21 +75,26 @@ State* Idle::react(ButtonPressed const& event) {
 
     if (event.button == ButtonPressed::LONG2) {
         services::Config::send_parameters();
+    }
+    
+    if (event.button == ButtonPressed::LONG7) {
         auto maze = services::Maze::instance();
         std::printf("Maze backup: \r\n");
         bsp::delay_ms(5);
         maze->read_maze_from_memory(true);
         maze->print(maze->ORIGIN);
-
+    
         std::printf("Maze: \r\n");
         bsp::delay_ms(5);
         maze->read_maze_from_memory(false);
         maze->print(maze->ORIGIN);
-
+        
         auto target_directions = maze->directions_to_goal();
         auto target_movements = services::Navigation::instance()->get_movements_to_goal(
-            target_directions, services::Navigation::target_movement_mode_t::NORMAL);
-
+            target_directions, services::Navigation::target_movement_mode_t::DIAGONALS);
+        services::Notification::instance()->send_target_movements(target_movements);
+    
+        maze->print(maze->ORIGIN);
         bsp::delay_ms(5);
 
         services::Notification::instance()->send_maze();
@@ -82,6 +110,10 @@ State* Idle::react(ButtonPressed const& event) {
 
     if (event.button == ButtonPressed::LONG5) {
         services::Config::send_move_sequence();
+    }
+
+    if (event.button == ButtonPressed::LONG6) {
+        return &State::get<CalibrationIRSensors>();
     }
 
     return nullptr;

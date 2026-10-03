@@ -1,12 +1,13 @@
+#include <algorithm>
+#include <cmath>
 #include <cstdio>
+#include <map>
 #include <string>
 
 #include "bsp/analog_sensors.hpp"
-#include "bsp/buzzer.hpp"
 #include "bsp/encoders.hpp"
 #include "bsp/imu.hpp"
 #include "bsp/leds.hpp"
-#include "bsp/motors.hpp"
 #include "bsp/timers.hpp"
 #include "services/config.hpp"
 #include "services/navigation.hpp"
@@ -21,6 +22,64 @@ static std::array<ForwardParams, MOVEMENT_COUNT> forward_params;
 static GeneralParams general_params;
 
 using bsp::leds::Color;
+
+namespace {
+
+constexpr float FRONT_EMERGENCY_DISTANCE_MM = 70.0f;
+constexpr float WALL_BREAK_DEBUG_DISTANCE_MM = 90.0f;
+constexpr float SEARCH_WALL_BREAK_MIN_DISTANCE_MM = 35.0f;
+constexpr float WALL_BREAK_MAX_CORRECTION_ERROR_MM = 40.0f;
+constexpr float FORWARD_WALL_PID_DISABLE_DISTANCE_MM = 70.0f;
+constexpr float DIAGONAL_PID_START_DISTANCE_MM = 50.0f;
+constexpr uint32_t STABILIZE_FORWARD_TIME_MS = 175;
+constexpr uint32_t STABILIZE_TURN_TIME_MS = 175;
+constexpr float STABILIZE_VELOCITY_THRESHOLD_M_S = 0.02f;
+constexpr float MILLIMETERS_PER_METER = 1000.0f;
+constexpr uint8_t MIN_MOVEMENTS_FOR_SEAMLESS_START = 3;
+
+bool is_search_mode(services::Navigation::navigation_mode_t mode) {
+    return mode == services::Navigation::SEARCH_FAST || mode == services::Navigation::SEARCH_MEDIUM ||
+           mode == services::Navigation::SEARCH_SLOW;
+}
+
+GeneralParams make_custom_general_params() {
+    return {
+        services::Config::fan_speed,
+        services::Config::angular_kp,
+        services::Config::angular_ki,
+        services::Config::angular_kd,
+        services::Config::angular_acc_feed_forward_k,
+        services::Config::angular_brake_feed_forward_k,
+        services::Config::angular_vel_feed_forward_k,
+        services::Config::linear_vel_acc_feed_forward_k,
+        services::Config::linear_vel_brake_feed_forward_k,
+        services::Config::linear_vel_feed_forward_k,
+        services::Config::wall_kp,
+        services::Config::wall_ki,
+        services::Config::wall_kd,
+        services::Config::linear_vel_kp,
+        services::Config::linear_vel_ki,
+        services::Config::linear_vel_kd,
+        services::Config::diagonal_walls_kp,
+        services::Config::diagonal_walls_ki,
+        services::Config::diagonal_walls_kd,
+        services::Config::start_wall_break_mm_left,
+        services::Config::start_wall_break_mm_right,
+        services::Config::enable_wall_break_correction,
+        services::Config::max_linear_acc_jerk,
+        services::Config::max_linear_brake_jerk,
+        services::Config::wheel_radius_mm,
+        services::Config::coulomb_ff,
+        services::Config::angular_coulomb_ff,
+        services::Config::angular_static_ff,
+        services::Config::angular_coulomb_ff_inplace,
+        services::Config::angular_static_ff_inplace,
+        services::Config::linear_accel_margin_mm,
+        services::Config::linear_brake_margin_mm,
+    };
+}
+
+} // namespace
 
 /// @section Service implementation
 
@@ -48,6 +107,10 @@ const std::array<TurnParams, MOVEMENT_COUNT>& Navigation::get_turn_params() cons
     return turn_params;
 }
 
+void Navigation::reset() {
+    reset(selected_mode);
+}
+
 void Navigation::reset(navigation_mode_t mode) {
     reset_movement_variables(true);
     encoder_left_counter = 0;
@@ -55,88 +118,51 @@ void Navigation::reset(navigation_mode_t mode) {
     current_cell = {0, 0};
     complete_prev_move_travel = 0;
     waiting_for_fast_param = false;
+    turn_end_correction_mm = 0.0f;
+    continuous_start_to_forward = false;
 
     current_direction = Direction::NORTH;
+    target_direction = Direction::NORTH;
 
     bsp::encoders::reset();
     bsp::imu::reset();
 
     selected_mode = mode;
-    switch (mode) {
-    case SEARCH_SLOW:
-        turn_params = turn_params_search_slow;
-        forward_params = forward_params_search_slow;
-        general_params = general_params_search_slow;
-        break;
-    case SEARCH_MEDIUM:
-        turn_params = turn_params_search_medium;
-        forward_params = forward_params_search_medium;
-        general_params = general_params_search_medium;
-        break;
-    case SEARCH_FAST:
-        turn_params = turn_params_search_fast;
-        forward_params = forward_params_search_fast;
-        general_params = general_params_search_fast;
-        break;
-    case CUSTOM:
-        turn_params = turn_params_custom;
-        forward_params = forward_params_custom;
-        general_params = {
-            services::Config::fan_speed,
-            services::Config::angular_kp,
-            services::Config::angular_ki,
-            services::Config::angular_kd,
-            services::Config::angular_acc_feed_forward_k,
-            services::Config::angular_vel_feed_forward_k,
-            services::Config::linear_vel_acc_feed_forward_k,
-            services::Config::linear_vel_brake_feed_forward_k,
-            services::Config::linear_vel_feed_forward_k,
-            services::Config::wall_kp,
-            services::Config::wall_ki,
-            services::Config::wall_kd,
-            services::Config::linear_vel_kp,
-            services::Config::linear_vel_ki,
-            services::Config::linear_vel_kd,
-            services::Config::diagonal_walls_kp,
-            services::Config::diagonal_walls_ki,
-            services::Config::diagonal_walls_kd,
-            services::Config::start_wall_break_mm_left,
-            services::Config::start_wall_break_mm_right,
-            services::Config::enable_wall_break_correction,
-            services::Config::max_linear_acc_jerk,
-            services::Config::max_linear_brake_jerk,
-            services::Config::coulomb_ff,
-            services::Config::angular_coulomb_ff,
-        };
-        break;
-    case SLOW:
-        turn_params = turn_params_slow;
-        forward_params = forward_params_slow;
-        general_params = general_params_slow;
-        break;
-    case MEDIUM:
-        turn_params = turn_params_medium;
-        forward_params = forward_params_medium;
-        general_params = general_params_medium;
-        break;
-    case FAST:
-        turn_params = turn_params_fast;
-        forward_params = forward_params_fast;
-        general_params = general_params_fast;
-        break;
-    case SUPER:
-        turn_params = turn_params_super;
-        forward_params = forward_params_super;
-        general_params = general_params_super;
-        break;
-    }
+    configure_mode(mode);
 
     control->reset(general_params);
 
     current_movement = Movement::START;
     previous_movement = Movement::START;
+    current_movement_count = 1;
     target_travel_mm = forward_params[Movement::START].target_travel_mm;
     forward_end_speed = forward_params[Movement::START].max_speed;
+    bsp::analog_sensors::ir_reset_all_wall_hysteresis();
+}
+
+void Navigation::configure_mode(navigation_mode_t mode) {
+    if (mode == CUSTOM) {
+        turn_params = turn_params_custom;
+        forward_params = forward_params_custom;
+        general_params = make_custom_general_params();
+    } else {
+        turn_params = ::get_turn_params(mode);
+        forward_params = ::get_forward_params(mode);
+        general_params = get_general_params(mode);
+    }
+    bsp::encoders::set_wheel_radius_mm(general_params.wheel_radius_mm);
+}
+
+bool Navigation::is_front_emergency() const {
+    if (current_movement != Movement::FORWARD && current_movement != Movement::START) {
+        return false;
+    }
+
+    using bsp::analog_sensors::ir_distance_mm;
+    using bsp::analog_sensors::SensingDirection;
+
+    return ir_distance_mm(SensingDirection::FRONT_LEFT) < FRONT_EMERGENCY_DISTANCE_MM &&
+           ir_distance_mm(SensingDirection::FRONT_RIGHT) < FRONT_EMERGENCY_DISTANCE_MM;
 }
 
 void Navigation::reset_movement_variables(bool reset_linear_accel) {
@@ -155,6 +181,11 @@ void Navigation::reset_movement_variables(bool reset_linear_accel) {
     turn_tick_counter = 0;
     is_finished = false;
     is_braking = false;
+    control->set_use_inplace_friction(false);
+
+    if (!is_linear_movement(current_movement) || previous_movement != current_movement) {
+        bsp::analog_sensors::ir_reset_all_wall_hysteresis();
+    }
 }
 
 float Navigation::get_torricelli_distance(float final_speed, float initial_speed, float acceleration) {
@@ -216,35 +247,57 @@ float Navigation::get_effective_max_acceleration(float current_speed, float base
 }
 
 void Navigation::reset_wall_break() {
-    wall_right_counter_on = 0;
-    wall_left_counter_on = 0;
-
-    wall_right_counter_off = 0;
-    wall_left_counter_off = 0;
+    wall_right_was_confirmed = false;
+    wall_left_was_confirmed = false;
 
     wall_break_last_dist = 0.0f;
     current_wall_break_detected = false;
+    if (wall_break_debug_led_on) {
+        bsp::leds::stripe_set(Color::Black);
+        wall_break_debug_led_on = false;
+    }
 }
 
 Navigation::WallBreak Navigation::process_wall_break() {
-    if ((traveled_dist_mm - wall_break_last_dist) >= 180.0f && (traveled_dist_mm - wall_break_last_dist) < 187.5f) {
-        bsp::leds::stripe_set(Color::Black);
-    }
-
     if (current_movement != Movement::FORWARD) {
+        wall_left_was_confirmed = false;
+        wall_right_was_confirmed = false;
         return WallBreak::NONE;
     }
 
-    bool process = false;
-    if ((selected_mode == SEARCH_FAST) || (selected_mode == SEARCH_MEDIUM) || (selected_mode == SEARCH_SLOW)) {
-        bool valid_previous_move =
-            ((previous_movement == FORWARD) || (previous_movement == START) || (previous_movement == TURN_AROUND));
+    const float wall_break_distance = traveled_dist_mm - wall_break_last_dist;
+    if (wall_break_debug_led_on && wall_break_distance >= WALL_BREAK_DEBUG_DISTANCE_MM) {
+        bsp::leds::stripe_set(Color::Black);
+        wall_break_debug_led_on = false;
+    }
 
-        if (valid_previous_move && ((traveled_dist_mm - wall_break_last_dist) > 40.0f) &&
+    const bool right_is_confirmed =
+        bsp::analog_sensors::ir_is_wall_confirmed(bsp::analog_sensors::SensingDirection::RIGHT);
+    const bool left_is_confirmed =
+        bsp::analog_sensors::ir_is_wall_confirmed(bsp::analog_sensors::SensingDirection::LEFT);
+
+    const bool right_break = bsp::analog_sensors::ir_wall_break_condition(bsp::analog_sensors::SensingDirection::RIGHT);
+    const bool left_break = bsp::analog_sensors::ir_wall_break_condition(bsp::analog_sensors::SensingDirection::LEFT);
+
+    const bool falling_edge_right = wall_right_was_confirmed && right_break;
+    const bool falling_edge_left = wall_left_was_confirmed && left_break;
+
+    wall_right_was_confirmed = right_is_confirmed;
+    wall_left_was_confirmed = left_is_confirmed;
+
+    bool process = false;
+    if (is_search_mode(selected_mode)) {
+        bool valid_previous_move =
+            (previous_movement == FORWARD || previous_movement == START || previous_movement == TURN_AROUND ||
+             previous_movement == TURN_RIGHT_90_SEARCH_MODE || previous_movement == TURN_LEFT_90_SEARCH_MODE);
+
+        if (valid_previous_move && wall_break_distance > SEARCH_WALL_BREAK_MIN_DISTANCE_MM &&
             !current_wall_break_detected) {
             process = true;
         }
-    } else if ((traveled_dist_mm - wall_break_last_dist) > CELL_SIZE_MM) {
+    } else if (wall_break_distance > CELL_SIZE_MM) {
+        process = true;
+    } else if ((previous_movement == START) && (current_movement == FORWARD) && (wall_break_last_dist < 0.1)) {
         process = true;
     }
 
@@ -252,36 +305,102 @@ Navigation::WallBreak Navigation::process_wall_break() {
         return WallBreak::NONE;
     }
 
-    bool right_seeing = bsp::analog_sensors::ir_reading_wall(bsp::analog_sensors::SensingDirection::RIGHT);
-    bool left_seeing = bsp::analog_sensors::ir_reading_wall(bsp::analog_sensors::SensingDirection::LEFT);
-
-    if (right_seeing) {
-        wall_right_counter_on += 1;
-        wall_right_counter_off = 0;
-    } else {
-        wall_right_counter_off += 1;
-    }
-
-    if (left_seeing) {
-        wall_left_counter_on += 1;
-        wall_left_counter_off = 0;
-    } else {
-        wall_left_counter_off += 1;
-    }
-
-    if (wall_right_counter_on > 10 && wall_right_counter_off > 0) {
+    if (falling_edge_right) {
         wall_break_last_dist = traveled_dist_mm;
         current_wall_break_detected = true;
         return WallBreak::RIGHT;
     }
 
-    if (wall_left_counter_on > 10 && wall_left_counter_off > 0) {
+    if (falling_edge_left) {
         wall_break_last_dist = traveled_dist_mm;
         current_wall_break_detected = true;
         return WallBreak::LEFT;
     }
 
     return WallBreak::NONE;
+}
+void Navigation::apply_wall_break_correction() {
+    const WallBreak wall_break = process_wall_break();
+    if (wall_break == WallBreak::NONE) {
+        return;
+    }
+
+    using bsp::analog_sensors::ir_distance_mm;
+    using bsp::analog_sensors::ir_reading_wall;
+    using bsp::analog_sensors::SensingDirection;
+
+    constexpr float DEG_TO_RAD = 3.14159265358979323846f / 180.0f;
+    constexpr float MAX_LATERAL_OFFSET_MM = 10.0f;
+    constexpr float MAX_LONGITUDINAL_CORRECTION = 10.0f;
+
+    const float current_movement_traveled = traveled_dist_mm - complete_prev_move_travel;
+    const int cells_traveled = static_cast<int>(current_movement_traveled / CELL_SIZE_MM);
+
+    float base_offset_mm = 0.0f;
+    float longitudinal_correction_mm = 0.0f;
+
+    if (wall_break == WallBreak::LEFT) {
+        base_offset_mm = general_params.start_wall_break_mm_left;
+
+        // Left wall just broke: measure lateral displacement using opposite (Right) sensor
+        if (Config::enable_lateral_correction_wall && ir_reading_wall(SensingDirection::RIGHT)) {
+            const float cos_theta_r = std::cos(Config::right_sensor_angle_deg * DEG_TO_RAD);
+            const float tan_theta_l = std::tan(Config::left_sensor_angle_deg * DEG_TO_RAD);
+
+            const float measured_dist_r = ir_distance_mm(SensingDirection::RIGHT);
+            const float delta_l_r = measured_dist_r - Config::ir_wall_dist_ref_right;
+
+            // lateral_offset_mm > 0 means further from right wall => shifted toward the left wall
+            float lateral_offset_mm = delta_l_r * cos_theta_r;
+            lateral_offset_mm = std::clamp(lateral_offset_mm, -MAX_LATERAL_OFFSET_MM, MAX_LATERAL_OFFSET_MM);
+
+            // Closer to left wall means the beam caught the break later along the track (+dx)
+            longitudinal_correction_mm = lateral_offset_mm * tan_theta_l;
+            longitudinal_correction_mm =
+                std::clamp(longitudinal_correction_mm, -MAX_LONGITUDINAL_CORRECTION, MAX_LONGITUDINAL_CORRECTION);
+        }
+    } else if (wall_break == WallBreak::RIGHT) {
+        base_offset_mm = general_params.start_wall_break_mm_right;
+
+        // Right wall just broke: measure lateral displacement using opposite (Left) sensor
+        if (Config::enable_lateral_correction_wall && ir_reading_wall(SensingDirection::LEFT)) {
+            const float cos_theta_l = std::cos(Config::left_sensor_angle_deg * DEG_TO_RAD);
+            const float tan_theta_r = std::tan(Config::right_sensor_angle_deg * DEG_TO_RAD);
+
+            const float measured_dist_l = ir_distance_mm(SensingDirection::LEFT);
+            const float delta_l_l = measured_dist_l - Config::ir_wall_dist_ref_left;
+
+            // lateral_offset_mm > 0 means further from left wall => shifted toward the right wall
+            float lateral_offset_mm = delta_l_l * cos_theta_l;
+            lateral_offset_mm = std::clamp(lateral_offset_mm, -MAX_LATERAL_OFFSET_MM, MAX_LATERAL_OFFSET_MM);
+
+            // Closer to right wall means the beam caught the break later along the track (+dx)
+            longitudinal_correction_mm = lateral_offset_mm * tan_theta_r;
+            longitudinal_correction_mm =
+                std::clamp(longitudinal_correction_mm, -MAX_LONGITUDINAL_CORRECTION, MAX_LONGITUDINAL_CORRECTION);
+        }
+    }
+
+    const float corrected_distance_mm =
+        (cells_traveled * CELL_SIZE_MM) + base_offset_mm + longitudinal_correction_mm + complete_prev_move_travel;
+
+    const float distance_error_mm = current_movement_traveled - corrected_distance_mm;
+
+    if (std::abs(distance_error_mm) < WALL_BREAK_MAX_CORRECTION_ERROR_MM) {
+        traveled_dist_mm = corrected_distance_mm;
+        wall_break_last_dist = corrected_distance_mm;
+        bsp::leds::stripe_set(Color::Red);
+        wall_break_debug_led_on = true;
+    } else {
+        bsp::leds::stripe_set(Color::White);
+        wall_break_debug_led_on = true;
+    }
+}
+
+float Navigation::get_acceleration_ramp_distance_m(float current_speed, float acceleration, float brake_jerk) const {
+    const float ramp_time = acceleration / brake_jerk;
+    return (current_speed * ramp_time) +
+           (acceleration * acceleration * acceleration) / (3.0f * brake_jerk * brake_jerk);
 }
 
 void Navigation::update(void) {
@@ -313,6 +432,7 @@ void Navigation::update(void) {
     encoder_imu_diff = encoder_diff_mm - expected_diff_mm;
 
     traveled_dist_mm += delta_x_mm;
+    bsp::analog_sensors::ir_update_wall_hysteresis(delta_x_mm);
 
     Position rotated_delta;
     rotated_delta.x = delta_x_mm * std::cos(intermediate_angle_rad);
@@ -324,173 +444,26 @@ void Navigation::update(void) {
     bsp::encoders::clear_ticks();
 }
 
-bool Navigation::step() {
-    using bsp::analog_sensors::ir_side_wall_error;
-    using bsp::analog_sensors::SensingDirection;
+bool Navigation::is_linear_movement(Movement movement) const {
+    return movement == Movement::START || movement == Movement::FORWARD || movement == Movement::DIAGONAL ||
+           movement == Movement::STOP;
+}
 
-    switch (current_movement) {
-    case Movement::START:
-    case Movement::FORWARD:
-    case Movement::DIAGONAL:
-    case Movement::STOP: {
-        using bsp::analog_sensors::ir_reading;
+bool Navigation::is_turn_around_movement() const {
+    return current_movement == Movement::TURN_AROUND || current_movement == Movement::TURN_AROUND_INPLACE;
+}
 
-        bool front_emergency = ir_reading(SensingDirection::FRONT_LEFT) > 2850 &&
-                               ir_reading(SensingDirection::FRONT_RIGHT) > 2850 &&
-                               ir_reading(SensingDirection::LEFT) > 2470 && ir_reading(SensingDirection::RIGHT) > 2850;
+bool Navigation::is_search_turn_movement() const {
+    return current_movement == Movement::TURN_RIGHT_90_SEARCH_MODE ||
+           current_movement == Movement::TURN_LEFT_90_SEARCH_MODE;
+}
 
-        if (current_movement == Movement::STOP) {
-            forward_end_speed = 0.0;
-        }
+bool Navigation::is_turn_from_diagonal() const {
+    return current_movement == Movement::TURN_RIGHT_90_FROM_45 || current_movement == Movement::TURN_LEFT_90_FROM_45;
+}
 
-        bool seamless_start =
-            (current_movement == Movement::START && forward_end_speed > forward_params[Movement::START].max_speed);
-        float max_speed = seamless_start ? forward_end_speed : forward_params[current_movement].max_speed;
-        float max_acceleration = forward_params[current_movement].acceleration;
-        float deceleration = forward_params[current_movement].deceleration;
-        float control_linear_speed = control->get_target_linear_speed();
-
-        float max_linear_acc_jerk = general_params.max_linear_acc_jerk;
-        float max_linear_brake_jerk = general_params.max_linear_brake_jerk;
-
-        if (general_params.enable_wall_break_correction) {
-            WallBreak wall_break = process_wall_break();
-            if (wall_break != WallBreak::NONE) {
-                float current_movement_traveled = traveled_dist_mm - complete_prev_move_travel;
-                int cells_traveled = static_cast<int>(current_movement_traveled / CELL_SIZE_MM);
-
-                float corrected_distance_mm = 0;
-                if (wall_break == WallBreak::LEFT) {
-                    corrected_distance_mm = (cells_traveled * CELL_SIZE_MM) + general_params.start_wall_break_mm_left +
-                                            complete_prev_move_travel;
-                } else {
-                    corrected_distance_mm = (cells_traveled * CELL_SIZE_MM) + general_params.start_wall_break_mm_right +
-                                            complete_prev_move_travel;
-                }
-
-                float distance_error_mm = current_movement_traveled - corrected_distance_mm;
-                if (std::abs(distance_error_mm) < 60.0f) {
-                    traveled_dist_mm = corrected_distance_mm;
-                    // bsp::buzzer::start();
-                    bsp::leds::stripe_set(Color::Red);
-                } else {
-                    bsp::leds::stripe_set(Color::White);
-                }
-            }
-        }
-
-        float break_margin = 20.0f; // Final velocity reached on target_travel_mm - break_margin
-        float accel_margin = 20.0f; // Only accelerates after a accel_margin
-
-        float required_brake_distance = break_margin;
-        if (seamless_start) {
-            required_brake_distance = 0.0f;
-        } else if (current_linear_acceleration > 0.0f && max_linear_brake_jerk > 0.0f) {
-            float t_ramp = current_linear_acceleration / max_linear_brake_jerk;
-            float delta_v =
-                (current_linear_acceleration * current_linear_acceleration) / (2.0f * max_linear_brake_jerk);
-            float v_peak = control_linear_speed + delta_v;
-            float d_ramp_m = (control_linear_speed * t_ramp) +
-                             (current_linear_acceleration * current_linear_acceleration * current_linear_acceleration) /
-                                 (3.0f * max_linear_brake_jerk * max_linear_brake_jerk);
-            required_brake_distance +=
-                1000.0f *
-                (d_ramp_m + get_s_curve_brake_distance(v_peak, forward_end_speed, deceleration, max_linear_brake_jerk));
-        } else {
-            required_brake_distance += 1000.0f * get_s_curve_brake_distance(control_linear_speed, forward_end_speed,
-                                                                            deceleration, max_linear_brake_jerk);
-        }
-
-        bool requires_turn_margin = (previous_movement != Movement::START) && (control_linear_speed >= 1.0f);
-        bool traveled_break_distance = (std::abs(traveled_dist_mm) < (target_travel_mm - required_brake_distance));
-
-        if (!is_braking && (seamless_start || traveled_break_distance)) {
-            if (!requires_turn_margin || std::abs(traveled_dist_mm) > accel_margin) {
-                if (control_linear_speed >= max_speed) {
-                    if (current_linear_acceleration > 0.0f) {
-                        current_linear_acceleration -= (max_linear_acc_jerk / Config::CONTROL_FREQUENCY_HZ);
-                        current_linear_acceleration = std::max(current_linear_acceleration, 0.0f);
-                    } else {
-                        current_linear_acceleration = 0.0f;
-                    }
-                    control_linear_speed = max_speed;
-                } else if (start_accel_ramp_down(control_linear_speed, current_linear_acceleration, max_speed,
-                                                 max_linear_acc_jerk)) {
-                    current_linear_acceleration -= (max_linear_acc_jerk / Config::CONTROL_FREQUENCY_HZ);
-                    current_linear_acceleration = std::max(current_linear_acceleration, 0.0f);
-                    control_linear_speed += current_linear_acceleration / Config::CONTROL_FREQUENCY_HZ;
-                    control_linear_speed = std::min(control_linear_speed, max_speed);
-                } else {
-                    float eff_max_accel = get_effective_max_acceleration(control_linear_speed, max_acceleration);
-                    if (current_linear_acceleration < eff_max_accel) {
-                        current_linear_acceleration += (max_linear_acc_jerk / Config::CONTROL_FREQUENCY_HZ);
-                        current_linear_acceleration = std::min(current_linear_acceleration, eff_max_accel);
-                    } else if (current_linear_acceleration > eff_max_accel) {
-                        current_linear_acceleration -= (max_linear_acc_jerk / Config::CONTROL_FREQUENCY_HZ);
-                        current_linear_acceleration = std::max(current_linear_acceleration, eff_max_accel);
-                    }
-                    control_linear_speed += current_linear_acceleration / Config::CONTROL_FREQUENCY_HZ;
-                    control_linear_speed = std::min(control_linear_speed, max_speed);
-                }
-            }
-        } else if (!seamless_start && std::abs(traveled_dist_mm) > accel_margin) {
-            is_braking = true;
-            if (control_linear_speed > forward_end_speed) {
-                if (start_brake_ramp_up(control_linear_speed, current_linear_acceleration, forward_end_speed,
-                                        max_linear_brake_jerk)) {
-                    current_linear_acceleration += (max_linear_brake_jerk / Config::CONTROL_FREQUENCY_HZ);
-                    current_linear_acceleration = std::min(current_linear_acceleration, 0.0f);
-                } else {
-                    current_linear_acceleration -= (max_linear_brake_jerk / Config::CONTROL_FREQUENCY_HZ);
-                    current_linear_acceleration = std::max(current_linear_acceleration, -deceleration);
-                }
-
-                control_linear_speed += current_linear_acceleration / Config::CONTROL_FREQUENCY_HZ;
-                control_linear_speed = std::max(control_linear_speed, forward_end_speed);
-                if (forward_end_speed > 0.0f) {
-                    control_linear_speed = std::max(control_linear_speed, Config::min_move_speed);
-                }
-            } else {
-                current_linear_acceleration = 0.0f;
-                control_linear_speed = std::min(control_linear_speed, forward_end_speed);
-                if (forward_end_speed > 0.0f) {
-                    control_linear_speed = std::max(control_linear_speed, Config::min_move_speed);
-                }
-            }
-        }
-
-        control->set_target_linear_speed(control_linear_speed);
-        control->set_target_angular_speed(0);
-
-        if (current_movement == Movement::DIAGONAL) {
-            control->set_wall_pid_enabled(false);
-            // It is safer to disable diagonal pid when reaching diagonal end
-            if (std::abs(traveled_dist_mm) < (target_travel_mm - (CELL_DIAGONAL_SIZE_MM / 2.0f))) {
-                control->set_diagonal_pid_enabled(true);
-            } else {
-                control->set_diagonal_pid_enabled(false);
-            }
-            front_emergency = false;
-        } else if (current_movement == Movement::STOP) {
-            control->set_wall_pid_enabled(false);
-            control->set_diagonal_pid_enabled(false);
-            front_emergency = false;
-        } else if (current_movement == Movement::FORWARD || current_movement == Movement::START) {
-            control->set_wall_pid_enabled(true);
-            control->set_diagonal_pid_enabled(false);
-        } else {
-            control->set_wall_pid_enabled(false);
-            control->set_diagonal_pid_enabled(false);
-        }
-
-        if (std::abs(traveled_dist_mm) >= target_travel_mm || front_emergency ||
-            (current_movement == Movement::STOP && is_braking && control_linear_speed <= 0.0f)) {
-            is_finished = true;
-        }
-
-        break;
-    }
-
+bool Navigation::is_turn_movement(Movement movement) const {
+    switch (movement) {
     case Movement::TURN_LEFT_45:
     case Movement::TURN_RIGHT_45:
     case Movement::TURN_LEFT_90:
@@ -508,206 +481,486 @@ bool Navigation::step() {
     case Movement::TURN_RIGHT_135_FROM_45:
     case Movement::TURN_LEFT_135_FROM_45:
     case Movement::TURN_AROUND_INPLACE:
-    case Movement::TURN_AROUND: {
-        // Mini FSM
-        // 0. Move forward
-        // 1. Turn Desired degrees
-        // 2. Move forward
-        // 3. Stop and stabilize
-        // 4. Stop and stabilize
+    case Movement::TURN_AROUND:
+        return true;
+    default:
+        return false;
+    }
+}
 
-        if (mini_fsm_state == MiniFSMStates::FORWARD_1 || mini_fsm_state == MiniFSMStates::FORWARD_2) { // Move Forward
+float Navigation::get_required_brake_distance(float control_linear_speed, float deceleration,
+                                              bool continuous_start_to_forward) {
+    if (continuous_start_to_forward) {
+        return 0.0f;
+    }
 
-            // bool front_emergency =
-            //     ir_reading(SensingDirection::FRONT_LEFT) > 2850 && ir_reading(SensingDirection::FRONT_RIGHT) > 2850
-            //     && ir_reading(SensingDirection::LEFT) > 2470 && ir_reading(SensingDirection::RIGHT) > 2850;
+    float brake_distance_mm = current_movement == Movement::START ? 0.0f : general_params.linear_brake_margin_mm;
 
-            float max_speed = forward_params[current_movement].max_speed;
-            float acceleration = forward_params[current_movement].acceleration;
-            float deceleration = forward_params[current_movement].deceleration;
-            float final_speed = forward_params[current_movement].max_speed;
+    float brake_jerk = general_params.max_linear_brake_jerk;
+    if (current_movement == Movement::STOP) {
+        brake_jerk *= 2.0f;
+    }
 
-            // TODO: add first target travel based on sensors for turn around
-            if ((current_movement == Movement::TURN_AROUND || current_movement == Movement::TURN_AROUND_INPLACE) &&
-                mini_fsm_state == MiniFSMStates::FORWARD_1) {
-                final_speed = 0.0f;
-                control->set_wall_pid_enabled(false);
-            } else if (mini_fsm_state == MiniFSMStates::FORWARD_1) {
-                control->set_wall_pid_enabled(false);
-            } else if (mini_fsm_state == MiniFSMStates::FORWARD_2) {
-                control->set_wall_pid_enabled(true);
-            }
+    if (current_linear_acceleration > 0.0f && brake_jerk > 0.0f) {
+        float delta_v = (current_linear_acceleration * current_linear_acceleration) / (2.0f * brake_jerk);
+        float peak_speed = control_linear_speed + delta_v;
+        float ramp_distance_m =
+            get_acceleration_ramp_distance_m(control_linear_speed, current_linear_acceleration, brake_jerk);
 
-            if ((current_movement == Movement::TURN_RIGHT_90_FROM_45 ||
-                 current_movement == Movement::TURN_LEFT_90_FROM_45) &&
-                mini_fsm_state == MiniFSMStates::FORWARD_1) {
-                if (std::abs(traveled_dist_mm) < 50.0f) { // Only fix diagonal on the very begin of the movement
-                    control->set_diagonal_pid_enabled(true);
-                } else {
-                    control->set_diagonal_pid_enabled(false);
-                }
-            }
+        brake_distance_mm +=
+            MILLIMETERS_PER_METER *
+            (ramp_distance_m + get_s_curve_brake_distance(peak_speed, forward_end_speed, deceleration, brake_jerk));
+    } else {
+        brake_distance_mm += MILLIMETERS_PER_METER * get_s_curve_brake_distance(control_linear_speed, forward_end_speed,
+                                                                                deceleration, brake_jerk);
+    }
 
-            float control_linear_speed = control->get_target_linear_speed();
+    return brake_distance_mm;
+}
 
-            if (std::abs(traveled_dist_mm) <
-                (target_travel_mm -
-                 (1000.0f * get_torricelli_distance(final_speed, control_linear_speed, -deceleration)))) {
-                if (control_linear_speed < max_speed) {
-                    control_linear_speed += acceleration / Config::CONTROL_FREQUENCY_HZ;
-                    control_linear_speed = std::min(control_linear_speed, max_speed);
-                }
-            } else {
-                if (control_linear_speed > final_speed) {
-                    control_linear_speed -= deceleration / Config::CONTROL_FREQUENCY_HZ;
-                    control_linear_speed = std::max(control_linear_speed, Config::min_move_speed);
-                }
-            }
+void Navigation::update_linear_target_speed(float& control_linear_speed, float max_speed, float max_acceleration,
+                                            float deceleration, bool continuous_start_to_forward) {
+    float accel_jerk = general_params.max_linear_acc_jerk;
+    float brake_jerk = general_params.max_linear_brake_jerk;
 
-            control->set_target_linear_speed(control_linear_speed);
-            control->set_target_angular_speed(0);
+    if (current_movement == Movement::STOP) {
+        brake_jerk *= 2.0f;
+        accel_jerk *= 2.0f;
+    }
 
-            if (std::abs(traveled_dist_mm) >= target_travel_mm) {
-                if (current_movement == Movement::TURN_AROUND || current_movement == Movement::TURN_AROUND_INPLACE) {
-                    if (mini_fsm_state == MiniFSMStates::FORWARD_2) {
-                        is_finished = true;
-                        mini_fsm_state = MiniFSMStates::FORWARD_1;
-                    } else {
-                        control->set_target_linear_speed(0.0);
-                        control->set_motor_control_disabled(true);
-                        reference_time = bsp::get_tick_ms();
-                        mini_fsm_state = MiniFSMStates::STABILIZE_1;
-                    }
-                } else { // TURN_LEFT or TURN_RIGHT (45, 90, 135)
-                    if (mini_fsm_state == MiniFSMStates::FORWARD_1) {
-                        traveled_dist_mm = 0;
-                        reference_time = bsp::get_tick_ms();
-                        turn_tick_counter = 0;
-                        mini_fsm_state = MiniFSMStates::TURN;
-                        current_angular_acceleration = 0.0f;
-                        if ((selected_mode != SEARCH_FAST) && (selected_mode != SEARCH_MEDIUM) &&
-                            (selected_mode != SEARCH_SLOW)) {
-                            bsp::leds::stripe_set(Color::Blue);
-                        }
-                    } else {
-                        is_finished = true;
-                        mini_fsm_state = MiniFSMStates::FORWARD_1;
-                    }
-                }
-            }
+    const bool is_start_or_after_start =
+        (current_movement == Movement::START) ||
+        ((current_movement == Movement::FORWARD || current_movement == Movement::DIAGONAL) &&
+         previous_movement == Movement::START);
+    const float accel_margin_mm = is_start_or_after_start ? 0.0f : general_params.linear_accel_margin_mm;
 
-        } else if (mini_fsm_state == MiniFSMStates::TURN) {
-            auto current_turn_params = turn_params[current_movement];
+    const float required_brake_distance =
+        get_required_brake_distance(control_linear_speed, deceleration, continuous_start_to_forward);
+    const bool requires_turn_margin = (previous_movement != Movement::START) && (control_linear_speed >= 1.0f);
 
-            float angular_max_speed = current_turn_params.max_angular_speed;
-            float max_angular_acceleration = current_turn_params.angular_accel;
-            float max_angular_deceleration = -current_turn_params.angular_accel;
-            float control_angular_speed_abs = std::abs(control->get_target_angular_speed());
-            int turn_sign = current_turn_params.sign;
+    const bool should_accelerate =
+        !is_braking &&
+        (continuous_start_to_forward || (std::abs(traveled_dist_mm) < (target_travel_mm - required_brake_distance)));
 
-            // Jerk parameters read from TurnParams
-            uint16_t time_to_decrease_jerk_1 = current_turn_params.time_to_decrease_jerk_1;
-            uint16_t time_to_decrease_jerk_2 = current_turn_params.time_to_decrease_jerk_2;
-            float accel_ramp_up_jerk = current_turn_params.accel_ramp_up_jerk;
-            float accel_ramp_down_jerk = current_turn_params.accel_ramp_down_jerk;
-
-            uint32_t elapsed_time = turn_tick_counter;
-            turn_tick_counter++;
-
-            bool acceleration_condition = (elapsed_time <= current_turn_params.t_start_deccel);
-            bool stop_condition = (elapsed_time > current_turn_params.t_stop);
-
-            if (acceleration_condition) {
-                if (accel_ramp_up_jerk == 0 || time_to_decrease_jerk_1 == 0) {
-                    current_angular_acceleration = max_angular_acceleration;
-                } else if (elapsed_time <= time_to_decrease_jerk_1) {
-                    current_angular_acceleration += accel_ramp_up_jerk / Config::CONTROL_FREQUENCY_HZ;
-                    current_angular_acceleration = std::min(current_angular_acceleration, max_angular_acceleration);
-                } else {
-                    current_angular_acceleration -= accel_ramp_down_jerk / Config::CONTROL_FREQUENCY_HZ;
-                    current_angular_acceleration = std::max(current_angular_acceleration, 0.0f);
-                }
-            } else {
-                if (accel_ramp_down_jerk == 0 || time_to_decrease_jerk_2 == 0) {
-                    current_angular_acceleration = max_angular_deceleration;
-                } else if (elapsed_time <= time_to_decrease_jerk_2) {
-                    current_angular_acceleration -= accel_ramp_down_jerk / Config::CONTROL_FREQUENCY_HZ;
-                    current_angular_acceleration = std::max(current_angular_acceleration, max_angular_deceleration);
-                } else {
-                    current_angular_acceleration += accel_ramp_up_jerk / Config::CONTROL_FREQUENCY_HZ;
-                    current_angular_acceleration = std::min(current_angular_acceleration, 0.0f);
-                }
-            }
-
-            control_angular_speed_abs += current_angular_acceleration / Config::CONTROL_FREQUENCY_HZ;
-            control_angular_speed_abs = std::min(control_angular_speed_abs, angular_max_speed);
-            control_angular_speed_abs = std::max(control_angular_speed_abs, 0.0f);
-
-            control->set_target_angular_speed(control_angular_speed_abs * turn_sign);
-            control->set_wall_pid_enabled(false);
-            control->set_diagonal_pid_enabled(false);
-
-            if (stop_condition) {
-                if (current_movement == Movement::TURN_AROUND || current_movement == Movement::TURN_AROUND_INPLACE) {
-                    control->set_target_angular_speed(0.0);
-                    control->set_motor_control_disabled(true);
-                    reference_time = bsp::get_tick_ms();
-                    mini_fsm_state = MiniFSMStates::STABILIZE_2;
-                } else if (current_movement == Movement::TURN_RIGHT_90_SEARCH_MODE ||
-                           current_movement == Movement::TURN_LEFT_90_SEARCH_MODE) {
-                    control->set_target_angular_speed(0);
-                    // target_travel_mm for FORWARD_2 is based on the calculated position
-                    target_travel_mm = (HALF_CELL_SIZE_MM - std::abs(current_position_mm.y));
-                    reference_time = bsp::get_tick_ms();
-                    traveled_dist_mm = 0;
-                    mini_fsm_state = MiniFSMStates::FORWARD_2;
-                } else { // TURN LEFT (45, 90, 135) or RIGHT (45, 90, 135) from 45
-                    is_finished = true;
-                    mini_fsm_state = MiniFSMStates::FORWARD_1;
-                }
-            }
-        } else if (mini_fsm_state == MiniFSMStates::STABILIZE_1) { // Stop and stabilize
-            control->set_wall_pid_enabled(false);
-            control->set_diagonal_pid_enabled(false);
-
-            uint32_t elapsed_time = bsp::get_tick_ms() - reference_time;
-            if (elapsed_time > 200) {
-                reference_time = bsp::get_tick_ms();
-                control->reset(general_params);
-                control->set_motor_control_disabled(false);
-                traveled_dist_mm = 0;
-                turn_tick_counter = 0;
-                mini_fsm_state = MiniFSMStates::TURN;
-                current_angular_acceleration = 0.0f;
-            }
-        } else if (mini_fsm_state == MiniFSMStates::STABILIZE_2) { // Stop and stabilize
-            uint32_t elapsed_time = bsp::get_tick_ms() - reference_time;
-            control->set_wall_pid_enabled(false);
-            control->set_diagonal_pid_enabled(false);
-            if (elapsed_time > 400) {
-                reference_time = bsp::get_tick_ms();
-                control->reset(general_params);
-                control->set_motor_control_disabled(false);
-                traveled_dist_mm = 0;
-
-                if (current_movement == Movement::TURN_AROUND_INPLACE) {
-                    is_finished = true;
-                    mini_fsm_state = MiniFSMStates::FORWARD_1;
-                } else {
-                    // target_travel_mm for FORWARD_2 is based on the calculated position
-                    target_travel_mm = std::abs(current_position_mm.x);
-                    mini_fsm_state = MiniFSMStates::FORWARD_2;
-                }
-            }
-        } else { // Should not reach here
-            is_finished = true;
-            mini_fsm_state = MiniFSMStates::FORWARD_1;
+    if (should_accelerate) {
+        if (requires_turn_margin && std::abs(traveled_dist_mm) <= accel_margin_mm) {
+            return;
         }
 
+        if (control_linear_speed >= max_speed) {
+            if (current_linear_acceleration > 0.0f) {
+                current_linear_acceleration -= accel_jerk / Config::CONTROL_FREQUENCY_HZ;
+                current_linear_acceleration = std::max(current_linear_acceleration, 0.0f);
+            } else {
+                current_linear_acceleration = 0.0f;
+            }
+            control_linear_speed = max_speed;
+            return;
+        }
+
+        if (start_accel_ramp_down(control_linear_speed, current_linear_acceleration, max_speed, accel_jerk)) {
+            current_linear_acceleration -= accel_jerk / Config::CONTROL_FREQUENCY_HZ;
+            current_linear_acceleration = std::max(current_linear_acceleration, 0.0f);
+            control_linear_speed += current_linear_acceleration / Config::CONTROL_FREQUENCY_HZ;
+            control_linear_speed = std::min(control_linear_speed, max_speed);
+            return;
+        }
+
+        const float effective_max_acceleration = get_effective_max_acceleration(control_linear_speed, max_acceleration);
+        if (current_linear_acceleration < effective_max_acceleration) {
+            current_linear_acceleration += accel_jerk / Config::CONTROL_FREQUENCY_HZ;
+            current_linear_acceleration = std::min(current_linear_acceleration, effective_max_acceleration);
+        } else if (current_linear_acceleration > effective_max_acceleration) {
+            current_linear_acceleration -= accel_jerk / Config::CONTROL_FREQUENCY_HZ;
+            current_linear_acceleration = std::max(current_linear_acceleration, effective_max_acceleration);
+        }
+
+        control_linear_speed += current_linear_acceleration / Config::CONTROL_FREQUENCY_HZ;
+        control_linear_speed = std::min(control_linear_speed, max_speed);
+        return;
+    }
+
+    // else if !should_accelerate continues here...
+    if (continuous_start_to_forward || std::abs(traveled_dist_mm) <= accel_margin_mm) {
+        return;
+    }
+
+    is_braking = true;
+
+    if (control_linear_speed > forward_end_speed || current_linear_acceleration < 0.0f) {
+        if (start_brake_ramp_up(control_linear_speed, current_linear_acceleration, forward_end_speed, brake_jerk) ||
+            control_linear_speed <= forward_end_speed) {
+            current_linear_acceleration += brake_jerk / Config::CONTROL_FREQUENCY_HZ;
+            current_linear_acceleration = std::min(current_linear_acceleration, 0.0f);
+        } else {
+            current_linear_acceleration -= brake_jerk / Config::CONTROL_FREQUENCY_HZ;
+            current_linear_acceleration = std::max(current_linear_acceleration, -deceleration);
+        }
+
+        control_linear_speed += current_linear_acceleration / Config::CONTROL_FREQUENCY_HZ;
+        control_linear_speed = std::max(control_linear_speed, forward_end_speed);
+        if (forward_end_speed > 0.0f) {
+            control_linear_speed = std::max(control_linear_speed, Config::min_move_speed);
+        }
+    } else if (current_linear_acceleration > 0.0f) {
+        current_linear_acceleration -= brake_jerk / Config::CONTROL_FREQUENCY_HZ;
+        current_linear_acceleration = std::max(current_linear_acceleration, 0.0f);
+        control_linear_speed += current_linear_acceleration / Config::CONTROL_FREQUENCY_HZ;
+    } else {
+        current_linear_acceleration = 0.0f;
+        control_linear_speed = std::min(control_linear_speed, forward_end_speed);
+        if (forward_end_speed > 0.0f) {
+            control_linear_speed = std::max(control_linear_speed, Config::min_move_speed);
+        }
+    }
+}
+
+void Navigation::configure_linear_pid() {
+    if (current_movement == Movement::DIAGONAL) {
+        control->set_wall_pid_enabled(false);
+        const bool before_diagonal_end =
+            std::abs(traveled_dist_mm) < (target_travel_mm - (CELL_DIAGONAL_SIZE_MM / 2.0f));
+        control->set_diagonal_pid_enabled(before_diagonal_end);
+        return;
+    }
+
+    if (current_movement == Movement::STOP) {
+        control->set_wall_pid_enabled(false);
+        control->set_diagonal_pid_enabled(false);
+        return;
+    }
+
+    if (current_movement == Movement::FORWARD) {
+        if (!is_search_mode(selected_mode)) {
+            const bool before_forward_end =
+                std::abs(traveled_dist_mm) < (target_travel_mm - FORWARD_WALL_PID_DISABLE_DISTANCE_MM);
+            control->set_wall_pid_enabled(before_forward_end);
+        } else {
+            control->set_wall_pid_enabled(true);
+        }
+
+        control->set_diagonal_pid_enabled(false);
+        return;
+    }
+
+    if (current_movement == Movement::START) {
+        control->set_wall_pid_enabled(true);
+        control->set_diagonal_pid_enabled(false);
+        return;
+    }
+
+    control->set_wall_pid_enabled(false);
+    control->set_diagonal_pid_enabled(false);
+}
+
+void Navigation::finish_linear_movement(float control_linear_speed) {
+    const bool reached_target = std::abs(traveled_dist_mm) >= target_travel_mm;
+    const bool finished_stop = current_movement == Movement::STOP && is_braking && control_linear_speed <= 0.0f;
+
+    if (reached_target || finished_stop) {
+        is_finished = true;
+    }
+}
+
+void Navigation::step_linear_movement() {
+    control->set_use_inplace_friction(false);
+
+    if (current_movement == Movement::STOP) {
+        forward_end_speed = 0.0f;
+    }
+
+    float max_speed = forward_params[current_movement].max_speed;
+    if (continuous_start_to_forward) {
+        max_speed = forward_end_speed;
+    } else if (current_movement == Movement::START && forward_end_speed > 0.0f) {
+        max_speed = std::min(max_speed, forward_end_speed);
+    }
+    const float max_acceleration = forward_params[current_movement].acceleration;
+    const float deceleration = forward_params[current_movement].deceleration;
+    float control_linear_speed = control->get_target_linear_speed();
+
+    if (general_params.enable_wall_break_correction) {
+        apply_wall_break_correction();
+    }
+
+    update_linear_target_speed(control_linear_speed, max_speed, max_acceleration, deceleration,
+                               continuous_start_to_forward);
+
+    control->set_target_linear_speed(control_linear_speed);
+    control->set_target_angular_speed(0);
+    configure_linear_pid();
+    finish_linear_movement(control_linear_speed);
+}
+
+void Navigation::update_turn_linear_speed(float& control_linear_speed, float max_speed, float acceleration,
+                                          float deceleration, float final_speed) {
+    const float braking_distance_mm =
+        MILLIMETERS_PER_METER * get_torricelli_distance(final_speed, control_linear_speed, -deceleration);
+    const bool before_braking_point =
+        !is_braking && (std::abs(traveled_dist_mm) < (target_travel_mm - braking_distance_mm));
+
+    if (before_braking_point) {
+        if (control_linear_speed < max_speed) {
+            control_linear_speed += acceleration / Config::CONTROL_FREQUENCY_HZ;
+            control_linear_speed = std::min(control_linear_speed, max_speed);
+        }
+    } else if (control_linear_speed > final_speed) {
+        is_braking = true;
+        control_linear_speed -= deceleration / Config::CONTROL_FREQUENCY_HZ;
+        control_linear_speed = std::max(control_linear_speed, final_speed);
+        if (final_speed > 0.0f) {
+            control_linear_speed = std::max(control_linear_speed, Config::min_move_speed);
+        }
+    }
+}
+
+void Navigation::transition_after_turn_forward_1() {
+    is_braking = false;
+    if (is_turn_around_movement()) {
+        control->set_target_linear_speed(0.0f);
+        control->set_target_angular_speed(0.0f);
+        control->set_motor_control_disabled(false);
+        reference_time = bsp::get_tick_ms();
+        mini_fsm_state = MiniFSMStates::STABILIZE_1;
+        return;
+    }
+
+    traveled_dist_mm = 0;
+    reference_time = bsp::get_tick_ms();
+    turn_tick_counter = 0;
+    mini_fsm_state = MiniFSMStates::TURN;
+    current_angular_acceleration = 0.0f;
+}
+
+void Navigation::transition_after_turn_forward_2() {
+    is_braking = false;
+    is_finished = true;
+    mini_fsm_state = MiniFSMStates::FORWARD_1;
+}
+
+void Navigation::step_turn_forward_1() {
+    control->set_use_inplace_friction(false);
+    control->set_wall_pid_enabled(false);
+    control->set_diagonal_pid_enabled(false);
+
+    const float max_speed = forward_params[current_movement].max_speed;
+    const float acceleration = forward_params[current_movement].acceleration;
+    const float deceleration = forward_params[current_movement].deceleration;
+    const float final_speed = is_turn_around_movement() ? 0.0f : forward_params[current_movement].max_speed;
+
+    float control_linear_speed = control->get_target_linear_speed();
+    update_turn_linear_speed(control_linear_speed, max_speed, acceleration, deceleration, final_speed);
+
+    control->set_target_linear_speed(control_linear_speed);
+    control->set_target_angular_speed(0);
+
+    const bool is_turn_around_stop = is_turn_around_movement();
+    const bool reached_target = std::abs(traveled_dist_mm) >= target_travel_mm;
+    const bool should_transition = is_turn_around_stop ? (is_braking && control_linear_speed <= 0.0f) : reached_target;
+
+    if (should_transition) {
+        transition_after_turn_forward_1();
+    }
+}
+
+void Navigation::step_turn_forward_2() {
+    control->set_use_inplace_friction(false);
+    // control->set_wall_pid_enabled(true);
+    control->set_wall_pid_enabled(false);
+    control->set_diagonal_pid_enabled(false);
+
+    const float max_speed = forward_params[current_movement].max_speed;
+    const float acceleration = forward_params[current_movement].acceleration;
+    const float deceleration = forward_params[current_movement].deceleration;
+    const float final_speed = forward_params[current_movement].max_speed;
+
+    float control_linear_speed = control->get_target_linear_speed();
+    update_turn_linear_speed(control_linear_speed, max_speed, acceleration, deceleration, final_speed);
+
+    control->set_target_linear_speed(control_linear_speed);
+    control->set_target_angular_speed(0);
+
+    if (std::abs(traveled_dist_mm) >= target_travel_mm) {
+        transition_after_turn_forward_2();
+    }
+}
+
+void Navigation::update_turn_angular_acceleration(const TurnParams& turn, uint32_t elapsed_time) {
+    const float max_angular_acceleration = turn.angular_accel;
+    const float max_angular_deceleration = -turn.angular_accel;
+    const float control_frequency = Config::CONTROL_FREQUENCY_HZ;
+
+    if (elapsed_time < turn.t_start_deccel) {
+        if (turn.accel_ramp_up_jerk == 0 || turn.time_to_decrease_jerk_1 == 0) {
+            current_angular_acceleration = max_angular_acceleration;
+        } else if (elapsed_time < turn.time_to_decrease_jerk_1) {
+            current_angular_acceleration += turn.accel_ramp_up_jerk / control_frequency;
+            current_angular_acceleration = std::min(current_angular_acceleration, max_angular_acceleration);
+        } else {
+            current_angular_acceleration -= turn.accel_ramp_down_jerk / control_frequency;
+            current_angular_acceleration = std::max(current_angular_acceleration, 0.0f);
+        }
+        return;
+    }
+
+    if (turn.accel_ramp_down_jerk == 0 || turn.time_to_decrease_jerk_2 == 0) {
+        current_angular_acceleration = max_angular_deceleration;
+    } else if (elapsed_time < turn.time_to_decrease_jerk_2) {
+        current_angular_acceleration -= turn.accel_ramp_down_jerk / control_frequency;
+        current_angular_acceleration = std::max(current_angular_acceleration, max_angular_deceleration);
+    } else {
+        current_angular_acceleration += turn.accel_ramp_up_jerk / control_frequency;
+        current_angular_acceleration = std::min(current_angular_acceleration, 0.0f);
+    }
+}
+
+void Navigation::transition_after_turn_rotation() {
+    control->set_use_inplace_friction(false);
+
+    if (is_turn_around_movement()) {
+        control->set_target_angular_speed(0.0f);
+        control->set_motor_control_disabled(true);
+        reference_time = bsp::get_tick_ms();
+        is_braking = false;
+        mini_fsm_state = MiniFSMStates::STABILIZE_2;
+        return;
+    }
+
+    if (is_search_turn_movement()) {
+        control->set_target_angular_speed(0.0f);
+        float end_target = -turn_params[current_movement].end;
+        if (Config::enable_lateral_correction_90) {
+            end_target -= turn_end_correction_mm;
+            turn_end_correction_mm = 0.0f;
+        }
+        target_travel_mm = std::max(0.0f, end_target);
+        reference_time = bsp::get_tick_ms();
+        traveled_dist_mm = 0;
+        is_braking = false;
+        mini_fsm_state = MiniFSMStates::FORWARD_2;
+        return;
+    }
+
+    is_finished = true;
+    mini_fsm_state = MiniFSMStates::FORWARD_1;
+}
+
+void Navigation::step_turn_rotation() {
+    const auto current_turn_params = turn_params[current_movement];
+    const float angular_max_speed = current_turn_params.max_angular_speed;
+    float control_angular_speed_abs = std::abs(control->get_target_angular_speed());
+    const int turn_sign = current_turn_params.sign;
+
+    const uint32_t elapsed_time = turn_tick_counter;
+    turn_tick_counter++;
+
+    update_turn_angular_acceleration(current_turn_params, elapsed_time);
+
+    control_angular_speed_abs += current_angular_acceleration / Config::CONTROL_FREQUENCY_HZ;
+    control_angular_speed_abs = std::min(control_angular_speed_abs, angular_max_speed);
+    control_angular_speed_abs = std::max(control_angular_speed_abs, 0.0f);
+
+    control->set_target_angular_speed(control_angular_speed_abs * turn_sign);
+    control->set_wall_pid_enabled(false);
+    control->set_diagonal_pid_enabled(false);
+    control->set_use_inplace_friction(is_turn_around_movement());
+
+    if (turn_tick_counter >= turn_params[current_movement].t_stop) {
+        transition_after_turn_rotation();
+    }
+}
+
+void Navigation::step_turn_stabilize_1() {
+    control->set_wall_pid_enabled(false);
+    control->set_diagonal_pid_enabled(false);
+    control->set_use_inplace_friction(false);
+
+    if (!control->is_motor_control_disabled()) {
+        control->set_target_linear_speed(0.0f);
+        control->set_target_angular_speed(0.0f);
+
+        const uint32_t braking_time = bsp::get_tick_ms() - reference_time;
+        constexpr uint32_t MAX_BRAKE_TIMEOUT_MS = 500;
+        if (std::abs(bsp::encoders::get_filtered_velocity_m_s()) >= STABILIZE_VELOCITY_THRESHOLD_M_S &&
+            braking_time < MAX_BRAKE_TIMEOUT_MS) {
+            return;
+        }
+
+        control->set_motor_control_disabled(true);
+        reference_time = bsp::get_tick_ms();
+        return;
+    }
+
+    const uint32_t elapsed_time = bsp::get_tick_ms() - reference_time;
+    if (elapsed_time <= STABILIZE_FORWARD_TIME_MS) {
+        return;
+    }
+
+    reference_time = bsp::get_tick_ms();
+    control->reset(general_params);
+    control->set_motor_control_disabled(false);
+    traveled_dist_mm = 0;
+    turn_tick_counter = 0;
+    is_braking = false;
+    mini_fsm_state = MiniFSMStates::TURN;
+    current_angular_acceleration = 0.0f;
+}
+
+void Navigation::step_turn_stabilize_2() {
+    control->set_wall_pid_enabled(false);
+    control->set_diagonal_pid_enabled(false);
+    control->set_use_inplace_friction(false);
+
+    const uint32_t elapsed_time = bsp::get_tick_ms() - reference_time;
+    if (elapsed_time <= STABILIZE_TURN_TIME_MS) {
+        return;
+    }
+
+    reference_time = bsp::get_tick_ms();
+    control->reset(general_params);
+    control->set_motor_control_disabled(false);
+    traveled_dist_mm = 0;
+    is_braking = false;
+
+    if (current_movement == Movement::TURN_AROUND_INPLACE) {
+        is_finished = true;
+        mini_fsm_state = MiniFSMStates::FORWARD_1;
+    } else { // TURN_AROUND
+        target_travel_mm = std::abs(current_position_mm.x);
+        mini_fsm_state = MiniFSMStates::FORWARD_2;
+    }
+}
+
+void Navigation::step_turn_movement() {
+    // Mini FSM: FORWARD_1 -> TURN -> FORWARD_2, with stabilization when needed.
+    switch (mini_fsm_state) {
+    case MiniFSMStates::FORWARD_1:
+        step_turn_forward_1();
+        break;
+    case MiniFSMStates::FORWARD_2:
+        step_turn_forward_2();
+        break;
+    case MiniFSMStates::TURN:
+        step_turn_rotation();
+        break;
+    case MiniFSMStates::STABILIZE_1:
+        step_turn_stabilize_1();
+        break;
+    case MiniFSMStates::STABILIZE_2:
+        step_turn_stabilize_2();
+        break;
+    default:
+        is_finished = true;
+        mini_fsm_state = MiniFSMStates::FORWARD_1;
         break;
     }
-    default:
-        break;
+}
+
+bool Navigation::step() {
+    if (is_linear_movement(current_movement)) {
+        step_linear_movement();
+    } else if (is_turn_movement(current_movement)) {
+        step_turn_movement();
     }
 
     if (is_finished) {
@@ -715,7 +968,6 @@ bool Navigation::step() {
     }
 
     control->update();
-
     return is_finished;
 }
 
@@ -740,11 +992,15 @@ void Navigation::set_movement(Direction dir) {
 
     target_direction = dir;
     current_movement = get_movement(dir, current_direction, true);
-
-    bool continuous_start_to_forward = (previous_movement == Movement::START && current_movement == Movement::FORWARD);
-    reset_movement_variables(!continuous_start_to_forward);
+    reset_movement_variables();
 
     target_travel_mm = forward_params[current_movement].target_travel_mm;
+
+    if (Config::enable_lateral_correction_90 && is_search_turn_movement()) {
+        turn_end_correction_mm = calculate_turn_end_offset(current_movement);
+    } else {
+        turn_end_correction_mm = 0.0f;
+    }
 
     if (current_movement == Movement::STOP) {
         forward_end_speed = 0;
@@ -758,6 +1014,27 @@ Movement Navigation::get_movement(Direction target_dir, Direction current_dir, b
 }
 
 void Navigation::update_cell_position_and_dir() {
+    if (current_movement == Movement::TURN_AROUND_INPLACE) {
+        switch (current_direction) {
+        case Direction::NORTH:
+            current_direction = Direction::SOUTH;
+            break;
+        case Direction::SOUTH:
+            current_direction = Direction::NORTH;
+            break;
+        case Direction::EAST:
+            current_direction = Direction::WEST;
+            break;
+        case Direction::WEST:
+            current_direction = Direction::EAST;
+            break;
+        default:
+            break;
+        }
+        target_direction = current_direction;
+        return;
+    }
+
     current_direction = target_direction;
     switch (current_direction) {
     case Direction::NORTH:
@@ -777,39 +1054,83 @@ void Navigation::update_cell_position_and_dir() {
     }
 }
 
-void Navigation::set_movement(Movement movement, Movement prev_movement, Movement next_movement, uint8_t count) {
+float Navigation::calculate_turn_end_offset(Movement movement) {
+    using bsp::analog_sensors::ir_distance_mm;
+    using bsp::analog_sensors::ir_reading_wall;
+    using bsp::analog_sensors::SensingDirection;
+
+    float lateral_error_mm = 0.0f;
+    constexpr float MAX_ALLOWED_OFFSET_MM = 10.0f;
+    constexpr float DEG_TO_RAD = 3.14159265358979323846f / 180.0f;
+
+    if (movement == Movement::TURN_LEFT_90 || movement == Movement::TURN_LEFT_90_SEARCH_MODE) {
+        // Turning Left: check opposite (Right) wall
+        if (ir_reading_wall(SensingDirection::RIGHT)) {
+            const float cos_theta = std::cos(Config::right_sensor_angle_deg * DEG_TO_RAD);
+            float measured_dist = ir_distance_mm(SensingDirection::RIGHT);
+            float delta_l = measured_dist - Config::ir_wall_dist_ref_right; // positive when further from right wall
+            lateral_error_mm = delta_l * cos_theta;
+        }
+    } else if (movement == Movement::TURN_RIGHT_90 || movement == Movement::TURN_RIGHT_90_SEARCH_MODE) {
+        // Turning Right: check opposite (Left) wall
+        if (ir_reading_wall(SensingDirection::LEFT)) {
+            const float cos_theta = std::cos(Config::left_sensor_angle_deg * DEG_TO_RAD);
+            float measured_dist = ir_distance_mm(SensingDirection::LEFT);
+            float delta_l = measured_dist - Config::ir_wall_dist_ref_left; // positive when further from left wall
+            lateral_error_mm = delta_l * cos_theta;
+        }
+    }
+
+    // Clamp adjustment to guard against sensor anomalies
+    lateral_error_mm = std::clamp(lateral_error_mm, -MAX_ALLOWED_OFFSET_MM, MAX_ALLOWED_OFFSET_MM);
+
+    // If robot was further away from the opposite wall (+delta), the turn's ends +delta mm after
+    return lateral_error_mm;
+}
+
+void Navigation::set_movement(Movement movement, Movement prev_movement, Movement next_movement, uint8_t count,
+                              uint8_t next_move_count) {
     complete_prev_move_travel = -1 * turn_params[prev_movement].end;
+
+    if (Config::enable_lateral_correction_90) {
+        if (prev_movement == Movement::TURN_LEFT_90 || prev_movement == Movement::TURN_RIGHT_90) {
+            complete_prev_move_travel -= turn_end_correction_mm;
+            turn_end_correction_mm = 0.0f;
+        }
+
+        if (movement == Movement::TURN_LEFT_90 || movement == Movement::TURN_RIGHT_90) {
+            turn_end_correction_mm = calculate_turn_end_offset(movement);
+        }
+    }
+
     previous_movement = prev_movement;
     current_movement = movement;
+    current_movement_count = count;
 
-    bool continuous_start_to_forward = (prev_movement == Movement::START && movement == Movement::FORWARD);
-    reset_movement_variables(!continuous_start_to_forward);
+    continuous_start_to_forward =
+        (movement == Movement::START && (next_movement == Movement::FORWARD || next_movement == Movement::DIAGONAL) &&
+         next_move_count >= MIN_MOVEMENTS_FOR_SEAMLESS_START);
+    const bool preserve_linear_accel =
+        (prev_movement == Movement::START && (movement == Movement::FORWARD || movement == Movement::DIAGONAL) &&
+         count >= MIN_MOVEMENTS_FOR_SEAMLESS_START);
+
+    reset_movement_variables(!preserve_linear_accel);
 
     if (movement == Movement::FORWARD || movement == Movement::DIAGONAL) {
-        if (waiting_for_fast_param) {
+        if (waiting_for_fast_param && count > 1) {
             waiting_for_fast_param = false;
-            if (selected_mode == FAST) {
-                turn_params = turn_params_fast;
-                forward_params = forward_params_fast;
-                general_params = general_params_fast;
-            } else if (selected_mode == SUPER) {
-                turn_params = turn_params_super;
-                forward_params = forward_params_super;
-                general_params = general_params_super;
+            if (selected_mode == FAST || selected_mode == SUPER) {
+                configure_mode(selected_mode);
             }
         }
         target_travel_mm = complete_prev_move_travel + (forward_params[movement].target_travel_mm * count) +
                            turn_params[next_movement].start;
     } else if (movement == Movement::START) {
-        if (next_movement == Movement::TURN_LEFT_135 || next_movement == Movement::TURN_RIGHT_135 ||
-            next_movement == Movement::TURN_LEFT_45 || next_movement == Movement::TURN_RIGHT_45) {
-            if ((selected_mode == FAST) || (selected_mode == SUPER)) {
-                // This can happen if the robot is turning right afer the start movement.
-                // TODO: generalize this function, because now we are forcing medium parameters
+        if (is_turn_movement(next_movement)) {
+            if (selected_mode == FAST || selected_mode == SUPER) {
+                // This can happen if the robot is turning right after the start movement.
                 waiting_for_fast_param = true;
-                turn_params = turn_params_medium;
-                forward_params = forward_params_medium;
-                general_params = general_params_medium;
+                configure_mode(MEDIUM);
             }
         }
         target_travel_mm = forward_params[movement].target_travel_mm + turn_params[next_movement].start;
@@ -828,8 +1149,12 @@ void Navigation::set_movement(Movement movement, Movement prev_movement, Movemen
         forward_end_speed = 0;
         bsp::leds::stripe_set(Color::Blue);
     } else if (movement == Movement::START) {
-        if (next_movement == Movement::FORWARD) {
-            forward_end_speed = forward_params[Movement::FORWARD].max_speed;
+        if (continuous_start_to_forward) {
+            forward_end_speed = forward_params[next_movement].max_speed;
+        } else if (is_turn_movement(next_movement)) {
+            forward_end_speed = turn_params[next_movement].turn_linear_speed;
+        } else if (next_movement == Movement::STOP) {
+            forward_end_speed = 0.0f;
         } else {
             forward_end_speed = forward_params[Movement::START].max_speed;
         }

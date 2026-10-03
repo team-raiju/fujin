@@ -8,3 +8,5 @@ trigger: always_on
 cmake --preset STM32G474
 cmake --build build/STM32G474
 ```
+
+You don't need to compile for target-pc

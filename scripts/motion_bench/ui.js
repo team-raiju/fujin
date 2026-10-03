@@ -283,9 +283,11 @@ function buildTrajectorySVG(runs) {
   const appY = startY - 200 * Math.cos(startTheta);
   const approachLine = `<line x1="${mapX(appX)}" y1="${mapY(appY)}" x2="${mapX(startX)}" y2="${mapY(startY)}" stroke="#dfe9e3" stroke-width="1.5" stroke-dasharray="3,3" opacity="0.35"/>`;
   const startPt = `<circle cx="${mapX(startX)}" cy="${mapY(startY)}" r="3" fill="#dfe9e3"/>`;
+  const target = getIdealTurnTarget(state.initialAngleDeg, state.turnAngleDeg);
+  const targetPt = `<circle cx="${mapX(target.x)}" cy="${mapY(target.y)}" r="4.5" fill="none" stroke="#dfe9e3" stroke-width="1.2" stroke-dasharray="2,2" opacity="0.45"/><circle cx="${mapX(target.x)}" cy="${mapY(target.y)}" r="1.5" fill="#dfe9e3" opacity="0.45"/>`;
 
   return `<svg width="${SVG_SIZE}" height="${SVG_SIZE}" viewBox="0 0 ${SVG_SIZE} ${SVG_SIZE}" style="background:#0b100e; border:1px solid #24322c; border-radius:3px;">
-${gridLines}${wallLines}${approachLine}${paths}${startPt}
+${gridLines}${wallLines}${approachLine}${targetPt}${paths}${startPt}
   </svg>`;
 }
 
@@ -297,21 +299,190 @@ function formatMs(v) {
   return step < 0.001 ? v.toFixed(1) : v.toFixed(0);
 }
 
+function getIdealTurnTarget(initDeg, turnDeg) {
+  const init = Math.round(initDeg || 0);
+  const turn = Math.round(turnDeg || 0);
+
+  if (init === 0) {
+    if (turn === 45 || turn === 90) {
+      return { x: 180.0, y: 90.0 };
+    }
+    if (turn === 135 || turn === 180) {
+      return { x: 270.0, y: 0.0 };
+    }
+  } else if (init === 45) {
+    if (turn === 45) {
+      return { x: 180.0, y: 90.0 };
+    }
+    if (turn === 90 || turn === 135) {
+      return { x: 270.0, y: 0.0 };
+    }
+  }
+
+  // Fallback defaults
+  if (turn >= 135) {
+    return { x: 270.0, y: 0.0 };
+  }
+  return { x: 180.0, y: 90.0 };
+}
+
+function computeTurnSuggestions(rawStart, rawFinal, initAngleDeg, turnAngleDeg) {
+  if (!rawStart || !rawFinal) {
+    return { suggBefore: 0, suggAfter: 0, target: { x: 180.0, y: 90.0 } };
+  }
+
+  const th0 = rawStart.theta;
+  const thf = rawFinal.theta;
+  const x_raw = rawFinal.x;
+  const y_raw = rawFinal.y;
+
+  const initDeg = (initAngleDeg !== undefined) ? initAngleDeg : Math.round(th0 * R2D);
+  const turnDeg = (turnAngleDeg !== undefined) ? turnAngleDeg : Math.round((thf - th0) * R2D);
+  const target = getIdealTurnTarget(initDeg, turnDeg);
+  const targetX = target.x;
+  const targetY = target.y;
+
+  const deltaX = targetX - x_raw;
+  const deltaY = targetY - y_raw;
+
+  // System:
+  // d_before * sin(th0) + d_after * sin(thf) = deltaX
+  // d_before * cos(th0) + d_after * cos(thf) = deltaY
+  // D = sin(th0)*cos(thf) - cos(th0)*sin(thf) = sin(th0 - thf)
+  const D = Math.sin(th0 - thf);
+
+  let d_before = 0;
+  let d_after = 0;
+
+  if (Math.abs(D) > 0.05) {
+    d_before = (deltaX * Math.cos(thf) - deltaY * Math.sin(thf)) / D;
+    d_after = (Math.sin(th0) * deltaY - Math.cos(th0) * deltaX) / D;
+  } else {
+    // When initial and final directions are parallel (e.g. 180 deg turn or 0 deg):
+    d_before = deltaX * Math.sin(th0) + deltaY * Math.cos(th0);
+    d_after = 0;
+  }
+
+  return {
+    suggBefore: d_before,
+    suggAfter: d_after,
+    target
+  };
+}
+
+function copyFirmwareParams(targetEl, text) {
+  const container = targetEl.closest('.fw-line-item');
+  const btn = container ? container.querySelector('.fw-copy-btn') : null;
+  const doFeedback = () => {
+    if (btn) {
+      const orig = btn.textContent;
+      btn.textContent = 'COPIED!';
+      btn.style.color = 'var(--jerk)';
+      setTimeout(() => {
+        btn.textContent = orig;
+        btn.style.color = '';
+      }, 1500);
+    }
+  };
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(doFeedback).catch(() => {
+      fallbackCopy(text);
+      doFeedback();
+    });
+  } else {
+    fallbackCopy(text);
+    doFeedback();
+  }
+}
+if (typeof window !== 'undefined') {
+  window.copyFirmwareParams = copyFirmwareParams;
+}
+
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand('copy');
+  } catch (e) {
+    console.error('Copy failed', e);
+  }
+  document.body.removeChild(ta);
+}
+
 function buildReadoutCard(ch, res) {
   const meta = CH_META[ch];
+  const sugg = res.suggestions || { suggBefore: 0, suggAfter: 0 };
+  const suggAfterHtml = `${sugg.suggAfter >= 0 ? '+' : ''}${sugg.suggAfter.toFixed(2)}<span class="rc-unit">mm</span>`;
+
+  let fwItemHtml = '';
+  if (ch === 'jerk') {
+    const turnStart = state.mmBeforeTurn || 0;
+    const turnParamStart = turnStart > 0 ? 0 : turnStart;
+    const fwdTargetTravel = turnStart > 0 ? turnStart : 0;
+
+    const startStr = turnParamStart.toFixed(2);
+    const fwdTargetStr = fwdTargetTravel.toFixed(2);
+
+    const mmAfterSlider = state.mmAfterTurn || 0;
+    const finalX = res.final ? res.final.x : 0;
+    const finalY = res.final ? res.final.y : 0;
+    const finalTheta = res.final ? res.final.theta : 0;
+    const turnEndX = finalX - mmAfterSlider * Math.sin(finalTheta);
+    const turnEndY = finalY - mmAfterSlider * Math.cos(finalTheta);
+    const target = (sugg && sugg.target) ? sugg.target : getIdealTurnTarget(state.initialAngleDeg, state.turnAngleDeg);
+    const mmAfterCalc = (turnEndX - target.x) * Math.sin(finalTheta) + (turnEndY - target.y) * Math.cos(finalTheta);
+    const endStr = mmAfterCalc.toFixed(2);
+    const linSpeedStr = (state.linearSpeed % 1 === 0 ? state.linearSpeed.toFixed(1) : Number(state.linearSpeed.toFixed(3)).toString());
+    const accelStr = (res.peakAccel % 1 === 0 ? res.peakAccel.toFixed(1) : Number(res.peakAccel.toFixed(2)).toString());
+    const omegaStr = (res.peakOmega % 1 === 0 ? res.peakOmega.toFixed(1) : Number(res.peakOmega.toFixed(2)).toString());
+    const tStartDecel = formatMs(res.t1 + res.t2);
+    const tStop = formatMs(res.T);
+    const sign = 1;
+    const tJerkDecel = formatMs(res.t4 || 0);
+    const tJerkAccel = formatMs(res.t5 || 0);
+    const jerkStart = Math.round(state.jerkJerk || 0);
+    const jerkAfter = Math.round(state.jerkJerkAfter || 0);
+
+    const fwTurnLine = `{${startStr}, ${endStr}, ${linSpeedStr}, ${accelStr}, ${omegaStr}, T(${tStartDecel}), T(${tStop}), ${sign}, T(${tJerkDecel}), T(${tJerkAccel}), ${jerkStart}, ${jerkAfter}}`;
+    const fwFwdLine = `{${linSpeedStr}, 20.0, 25.0, ${fwdTargetStr}}`;
+
+    fwItemHtml = `
+  <div class="rc-item wide fw-line-item" style="margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--line);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+      <span class="rc-label">TurnParams</span>
+      <span class="fw-copy-btn" onclick="copyFirmwareParams(this, '${fwTurnLine}')">copy</span>
+    </div>
+    <div class="rc-value fw-code" onclick="copyFirmwareParams(this, '${fwTurnLine}')" title="Click to copy TurnParams">${fwTurnLine}</div>
+  </div>
+  <div class="rc-item wide fw-line-item" style="margin-top: 4px; padding-top: 4px; border-top: 1px dashed var(--line);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+      <span class="rc-label">ForwardParams</span>
+      <span class="fw-copy-btn" onclick="copyFirmwareParams(this, '${fwFwdLine}')">copy</span>
+    </div>
+    <div class="rc-value fw-code" onclick="copyFirmwareParams(this, '${fwFwdLine}')" title="Click to copy ForwardParams">${fwFwdLine}</div>
+  </div>`;
+  }
+
   return `<div class="readout-card" data-ch="${ch}">
 <div class="rc-head"><div class="led"></div><div class="rc-name">${meta.label}</div></div>
 <div class="rc-grid">
   <div class="rc-item"><span class="rc-label">t1 accel</span><span class="rc-value">${formatMs(res.t1)}<span class="rc-unit">ms</span></span></div>
   <div class="rc-item"><span class="rc-label">t2 cruise</span><span class="rc-value">${formatMs(res.t2)}<span class="rc-unit">ms</span></span></div>
   <div class="rc-item"><span class="rc-label">t3 decel</span><span class="rc-value">${formatMs(res.t3)}<span class="rc-unit">ms</span></span></div>
-  <div class="rc-item"><span class="rc-label">T total</span><span class="rc-value">${formatMs(res.T)}<span class="rc-unit">ms</span></span></div>
-  <div class="rc-item"><span class="rc-label">t1+t2</span><span class="rc-value">${formatMs(res.t1 + res.t2)}<span class="rc-unit">ms</span></span></div>
-  <div class="rc-item"><span class="rc-label">peak accel</span><span class="rc-value">${res.peakAccel.toFixed(1)}<span class="rc-unit">rad/s&sup2;</span></span></div>
-  <div class="rc-item"><span class="rc-label">peak speed</span><span class="rc-value">${res.peakOmega.toFixed(3)}<span class="rc-unit">rad/s</span></span></div>
-  <div class="rc-item"><span class="rc-label">final position</span><span class="rc-value">${res.final.x.toFixed(2)}, ${res.final.y.toFixed(2)}, ${(res.final.theta * R2D).toFixed(2)}&#176;</span></div>
-  <div class="rc-item"><span class="rc-label">t4 jerk decel</span><span class="rc-value">${formatMs(res.t4 || 0)}<span class="rc-unit">ms</span></span></div>
-  <div class="rc-item"><span class="rc-label">t5 jerk accel</span><span class="rc-value">${formatMs(res.t5 || 0)}<span class="rc-unit">ms</span></span></div>
+  <div class="rc-item"><span class="rc-label">T1 + T2 (t_start_deccel)</span><span class="rc-value">${formatMs(res.t1 + res.t2)}<span class="rc-unit">ms</span></span></div>
+  <div class="rc-item"><span class="rc-label">t4 jerk decel (time_to_decrease_jerk_1)</span><span class="rc-value">${formatMs(res.t4 || 0)}<span class="rc-unit">ms</span></span></div>
+  <div class="rc-item"><span class="rc-label">t5 jerk accel (time_to_decrease_jerk_2)</span><span class="rc-value">${formatMs(res.t5 || 0)}<span class="rc-unit">ms</span></span></div>
+  <div class="rc-item"><span class="rc-label">T total (t_stop)</span><span class="rc-value">${formatMs(res.T)}<span class="rc-unit">ms</span></span></div>
+  <div class="rc-item"><span class="rc-label">peak accel (angular_accel)</span><span class="rc-value">${res.peakAccel.toFixed(1)}<span class="rc-unit">rad/s&sup2;</span></span></div>
+  <div class="rc-item"><span class="rc-label">sugg. mm before</span><span class="rc-value">${sugg.suggBefore >= 0 ? '+' : ''}${sugg.suggBefore.toFixed(2)}<span class="rc-unit">mm</span></span></div>
+  <div class="rc-item"><span class="rc-label">sugg. mm after</span><span class="rc-value">${suggAfterHtml}</span></div>
+  <div class="rc-item"><span class="rc-label">peak speed (max_angular_speed)</span><span class="rc-value">${res.peakOmega.toFixed(3)}<span class="rc-unit">rad/s</span></span></div>
+  <div class="rc-item"><span class="rc-label">final position</span><span class="rc-value">${res.final.x.toFixed(2)}, ${res.final.y.toFixed(2)}, ${(res.final.theta * R2D).toFixed(2)}&#176;</span></div>${fwItemHtml}
 </div>
   </div>`;
 }
@@ -358,6 +529,11 @@ function recomputeAndRender() {
       console.error(ch, e);
       return;
     }
+    // Calculate suggestions from raw simulation before applying user offsets
+    const rawStart = out.positions[0];
+    const rawFinal = out.positions[out.positions.length - 1];
+    out.results.suggestions = computeTurnSuggestions(rawStart, rawFinal, state.initialAngleDeg, state.turnAngleDeg);
+
     // Apply before/after turn offsets to trajectory positions
     out.positions = applyBeforeAfterTurn(out.positions, mmBefore, mmAfter);
     // Update final position in results to reflect trajectory modification
@@ -431,6 +607,19 @@ tabButtons.forEach(btn => {
       recomputeAndRender();
       omegaChart.resize();
       alphaChart.resize();
+    } else if (targetTab === 'sequence') {
+      if (seqLinVelChart) {
+        seqLinVelChart.resize();
+        seqAngVelChart.resize();
+        seqLinAccChart.resize();
+        seqAngAccChart.resize();
+      }
+    } else if (targetTab === 'safety') {
+      runAndRenderSafetyTab();
+      if (safetyLinVelChart) {
+        safetyLinVelChart.resize();
+        safetyDynamicsChart.resize();
+      }
     }
   });
 });
@@ -841,4 +1030,1390 @@ function recomputeAndRenderLinear() {
 // Init linear field displays & initial render
 linFields.forEach(([id, key, decimals]) => syncLinFieldUI(id, decimals, key));
 recomputeAndRenderLinear();
+
+
+// ==========================================
+// SEQUENCE PLANNER TAB UI
+// ==========================================
+let seqLinVelChart, seqAngVelChart, seqLinAccChart, seqAngAccChart;
+
+let sequenceSteps = [
+  { name: 'START', count: 1 },
+  { name: 'FORWARD', count: 2 },
+  { name: 'TURN_RIGHT_90', count: 1 },
+  { name: 'FORWARD', count: 2 },
+  { name: 'STOP', count: 1 }
+];
+
+function seqChartOptions(yTitle) {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: false,
+    parsing: false,
+    elements: {
+      point: { radius: 0 },
+      line: { tension: 0 }
+    },
+    scales: {
+      x: {
+        type: 'linear',
+        title: { display: true, text: 'Time (ms)', color: '#526059' },
+        grid: { color: '#1c2622' },
+        ticks: {
+          color: '#7d9188',
+          callback: function(value) {
+            return Number(value).toFixed(1);
+          }
+        }
+      },
+      y: {
+        title: { display: true, text: yTitle, color: '#526059' },
+        grid: { color: '#1c2622' },
+        ticks: { color: '#7d9188' }
+      },
+      y2: {
+        type: 'linear',
+        display: false,
+        grid: { drawOnChartArea: false }
+      }
+    },
+    plugins: {
+      legend: {
+        labels: { color: '#dfe9e3', font: { family: "'IBM Plex Mono', monospace", size: 10.5 } }
+      },
+      tooltip: {
+        backgroundColor: 'rgba(18, 25, 23, 0.95)',
+        borderColor: '#34483f',
+        borderWidth: 1,
+        titleColor: '#dfe9e3',
+        bodyColor: '#7d9188',
+        callbacks: {
+          title: function(items) {
+            if (!items.length) return '';
+            return Number(items[0].parsed.x).toFixed(1) + ' ms';
+          },
+          label: function(item) {
+            return item.dataset.label + ': ' + Number(item.parsed.y).toFixed(3);
+          }
+        }
+      }
+    }
+  };
+}
+
+function initSequenceCharts() {
+  const ctxLinVel = document.getElementById('chart-seq-lin-vel');
+  if (ctxLinVel && !seqLinVelChart) {
+    seqLinVelChart = new Chart(ctxLinVel.getContext('2d'), {
+      type: 'line',
+      data: { datasets: [] },
+      options: seqChartOptions('Linear Vel (m/s)')
+    });
+  }
+
+  const ctxAngVel = document.getElementById('chart-seq-ang-vel');
+  if (ctxAngVel && !seqAngVelChart) {
+    seqAngVelChart = new Chart(ctxAngVel.getContext('2d'), {
+      type: 'line',
+      data: { datasets: [] },
+      options: seqChartOptions('Angular Vel (rad/s)')
+    });
+  }
+
+  const ctxLinAcc = document.getElementById('chart-seq-lin-acc');
+  if (ctxLinAcc && !seqLinAccChart) {
+    seqLinAccChart = new Chart(ctxLinAcc.getContext('2d'), {
+      type: 'line',
+      data: { datasets: [] },
+      options: seqChartOptions('Linear Acc (m/s²)')
+    });
+  }
+
+  const ctxAngAcc = document.getElementById('chart-seq-ang-acc');
+  if (ctxAngAcc && !seqAngAccChart) {
+    seqAngAccChart = new Chart(ctxAngAcc.getContext('2d'), {
+      type: 'line',
+      data: { datasets: [] },
+      options: seqChartOptions('Angular Acc (rad/s²)')
+    });
+  }
+}
+
+function renderSequenceSteps() {
+  const container = document.getElementById('seq-steps-container');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const isLastStop = sequenceSteps.length > 0 && sequenceSteps[sequenceSteps.length - 1].name === 'STOP';
+
+  sequenceSteps.forEach((step, idx) => {
+    const row = document.createElement('div');
+    row.className = 'seq-step-row';
+
+    const badge = document.createElement('span');
+    badge.className = 'seq-step-badge';
+    badge.textContent = `#${idx + 1}`;
+
+    const select = document.createElement('select');
+    select.className = 'seq-step-select';
+
+    ALL_MOVEMENTS.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m;
+      opt.textContent = m;
+      if (m === step.name) opt.selected = true;
+      select.appendChild(opt);
+    });
+
+    select.addEventListener('change', () => {
+      step.name = select.value;
+      if (step.name === 'STOP') {
+        // Stop sequence here
+        sequenceSteps = sequenceSteps.slice(0, idx + 1);
+        renderSequenceSteps();
+      } else if (idx === sequenceSteps.length - 1) {
+        // When adding new movement at end, new box appears below
+        sequenceSteps.push({ name: 'FORWARD', count: 1 });
+        renderSequenceSteps();
+      }
+      runSequenceSimulation();
+    });
+
+    const countInput = document.createElement('input');
+    countInput.type = 'number';
+    countInput.className = 'seq-step-count';
+    countInput.min = '1';
+    countInput.max = '50';
+    countInput.value = step.count || 1;
+    countInput.title = 'Count';
+
+    countInput.addEventListener('input', () => {
+      step.count = Math.max(1, parseInt(countInput.value) || 1);
+      runSequenceSimulation();
+    });
+
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'btn-remove-step';
+    removeBtn.textContent = '✕';
+    removeBtn.title = 'Remove Step';
+    removeBtn.addEventListener('click', () => {
+      if (sequenceSteps.length > 1) {
+        sequenceSteps.splice(idx, 1);
+        renderSequenceSteps();
+        runSequenceSimulation();
+      }
+    });
+
+    row.appendChild(badge);
+    row.appendChild(select);
+    row.appendChild(countInput);
+    if (sequenceSteps.length > 1) {
+      row.appendChild(removeBtn);
+    }
+
+    container.appendChild(row);
+  });
+
+  const addBtn = document.getElementById('btn-add-step');
+  const stopNotice = document.getElementById('seq-stop-notice');
+  if (addBtn) {
+    if (isLastStop) {
+      addBtn.disabled = true;
+      addBtn.style.display = 'none';
+      if (stopNotice) stopNotice.style.display = 'block';
+    } else {
+      addBtn.disabled = false;
+      addBtn.style.display = 'block';
+      if (stopNotice) stopNotice.style.display = 'none';
+    }
+  }
+}
+
+function initCustomParamsUI() {
+  const movSelect = document.getElementById('s-custom-mov-select');
+  if (!movSelect) return;
+  movSelect.innerHTML = '';
+
+  ALL_MOVEMENTS.forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m;
+    opt.textContent = m;
+    movSelect.appendChild(opt);
+  });
+
+  movSelect.addEventListener('change', () => {
+    renderCustomMovementInputs(movSelect.value);
+  });
+
+  const inpAccJerk = document.getElementById('inp-custom-lin-acc-jerk');
+  const inpBrkJerk = document.getElementById('inp-custom-lin-brk-jerk');
+  if (inpAccJerk && inpBrkJerk) {
+    inpAccJerk.value = customPreset.general.max_linear_acc_jerk;
+    inpBrkJerk.value = customPreset.general.max_linear_brake_jerk;
+
+    inpAccJerk.addEventListener('input', () => {
+      customPreset.general.max_linear_acc_jerk = parseFloat(inpAccJerk.value) || 625.0;
+      runSequenceSimulation();
+    });
+    inpBrkJerk.addEventListener('input', () => {
+      customPreset.general.max_linear_brake_jerk = parseFloat(inpBrkJerk.value) || 625.0;
+      runSequenceSimulation();
+    });
+  }
+
+  const chkSeqFallback = document.getElementById('chk-seq-fallback-medium');
+  if (chkSeqFallback) {
+    chkSeqFallback.addEventListener('change', () => {
+      runSequenceSimulation();
+    });
+  }
+
+  const copyBtn = document.getElementById('btn-copy-custom-base');
+  const baseSelect = document.getElementById('s-seqCustomBase');
+  if (copyBtn && baseSelect) {
+    copyBtn.addEventListener('click', () => {
+      copyPresetToCustom(baseSelect.value);
+      const isFastOrSuper = (baseSelect.value === 'FAST' || baseSelect.value === 'SUPER');
+      if (chkSeqFallback) chkSeqFallback.checked = isFastOrSuper;
+      if (inpAccJerk) inpAccJerk.value = customPreset.general.max_linear_acc_jerk;
+      if (inpBrkJerk) inpBrkJerk.value = customPreset.general.max_linear_brake_jerk;
+      renderCustomMovementInputs(movSelect.value);
+      runSequenceSimulation();
+    });
+  }
+
+  renderCustomMovementInputs(movSelect.value || 'START');
+}
+
+function renderCustomMovementInputs(movName) {
+  const container = document.getElementById('custom-movement-inputs');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const isLinear = isLinearMovement(movName);
+  const fwd = customPreset.forward[movName] || (isLinear
+    ? { max_speed: 2.0, acceleration: 20.0, deceleration: 25.0, target_travel_mm: 180.0 }
+    : { max_speed: 0.0, acceleration: 0.0, deceleration: 0.0, target_travel_mm: 0.0 });
+  customPreset.forward[movName] = fwd;
+  const turn = customPreset.turn[movName] || null;
+
+  let html = `<div style="font-size:10px; font-weight:bold; color:var(--text); margin-bottom:4px; font-family:'IBM Plex Mono',monospace;">Forward / Linear Kinematics:</div>`;
+  html += `<div class="seq-params-grid">`;
+  html += `
+    <div class="seq-param-item"><label>Max Speed (m/s)</label><input type="number" step="0.1" id="cf-max-speed" value="${fwd.max_speed}"></div>
+    <div class="seq-param-item"><label>Accel (m/s²)</label><input type="number" step="1" id="cf-accel" value="${fwd.acceleration}"></div>
+    <div class="seq-param-item"><label>Decel (m/s²)</label><input type="number" step="1" id="cf-decel" value="${fwd.deceleration}"></div>
+    <div class="seq-param-item"><label>Travel (mm)</label><input type="number" step="0.1" id="cf-travel" value="${fwd.target_travel_mm}"></div>
+  `;
+  html += `</div>`;
+
+  if (turn) {
+    html += `<div style="font-size:10px; font-weight:bold; color:var(--text); margin:10px 0 4px 0; font-family:'IBM Plex Mono',monospace;">Turn Kinematics:</div>`;
+    html += `<div class="seq-params-grid">`;
+    html += `
+      <div class="seq-param-item"><label>Turn Speed (m/s)</label><input type="number" step="0.1" id="ct-speed" value="${turn.turn_linear_speed}"></div>
+      <div class="seq-param-item"><label>Start Offset (mm)</label><input type="number" step="0.1" id="ct-start" value="${turn.start}"></div>
+      <div class="seq-param-item"><label>End Offset (mm)</label><input type="number" step="0.1" id="ct-end" value="${turn.end}"></div>
+      <div class="seq-param-item"><label>Max Ang Speed</label><input type="number" step="0.1" id="ct-max-omega" value="${turn.max_angular_speed}"></div>
+      <div class="seq-param-item"><label>Ang Accel</label><input type="number" step="10" id="ct-ang-accel" value="${turn.angular_accel}"></div>
+      <div class="seq-param-item"><label>t_start_decel (ms)</label><input type="number" step="0.5" id="ct-tsd" value="${turn.t_start_deccel}"></div>
+      <div class="seq-param-item"><label>t_stop (ms)</label><input type="number" step="0.5" id="ct-ts" value="${turn.t_stop}"></div>
+      <div class="seq-param-item"><label>Turn Sign (-1/+1)</label><input type="number" step="2" id="ct-sign" value="${turn.sign}"></div>
+      <div class="seq-param-item"><label>t_jerk_1 (ms)</label><input type="number" step="0.5" id="ct-tj1" value="${turn.time_to_decrease_jerk_1 || 0}"></div>
+      <div class="seq-param-item"><label>t_jerk_2 (ms)</label><input type="number" step="0.5" id="ct-tj2" value="${turn.time_to_decrease_jerk_2 || 0}"></div>
+      <div class="seq-param-item"><label>Ramp Up Jerk</label><input type="number" step="1000" id="ct-jup" value="${turn.accel_ramp_up_jerk || 0}"></div>
+      <div class="seq-param-item"><label>Ramp Down Jerk</label><input type="number" step="1000" id="ct-jdown" value="${turn.accel_ramp_down_jerk || 0}"></div>
+    `;
+    html += `</div>`;
+  }
+
+  container.innerHTML = html;
+
+  const bindInput = (id, obj, prop) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('input', () => {
+      obj[prop] = parseFloat(el.value) || 0.0;
+      runSequenceSimulation();
+    });
+  };
+
+  bindInput('cf-max-speed', fwd, 'max_speed');
+  bindInput('cf-accel', fwd, 'acceleration');
+  bindInput('cf-decel', fwd, 'deceleration');
+  bindInput('cf-travel', fwd, 'target_travel_mm');
+
+  if (turn) {
+    bindInput('ct-speed', turn, 'turn_linear_speed');
+    bindInput('ct-start', turn, 'start');
+    bindInput('ct-end', turn, 'end');
+    bindInput('ct-max-omega', turn, 'max_angular_speed');
+    bindInput('ct-ang-accel', turn, 'angular_accel');
+    bindInput('ct-tsd', turn, 't_start_deccel');
+    bindInput('ct-ts', turn, 't_stop');
+    bindInput('ct-sign', turn, 'sign');
+    bindInput('ct-tj1', turn, 'time_to_decrease_jerk_1');
+    bindInput('ct-tj2', turn, 'time_to_decrease_jerk_2');
+    bindInput('ct-jup', turn, 'accel_ramp_up_jerk');
+    bindInput('ct-jdown', turn, 'accel_ramp_down_jerk');
+  }
+}
+
+let seqGlobalBrakeMargin = 10.0;
+let seqGlobalAccelMargin = 10.0;
+
+function initSeqMarginsUI() {
+  const sync = (type) => {
+    const r = document.getElementById(`r-seq${type}Margin`);
+    const n = document.getElementById(`n-seq${type}Margin`);
+    const v = document.getElementById(`v-seq${type}Margin`);
+    if (!r || !n || !v) return;
+
+    const update = (val) => {
+      val = parseFloat(val);
+      if (isNaN(val)) val = 0.0;
+      r.value = val;
+      n.value = val;
+      v.textContent = val.toFixed(1);
+      if (type === 'Brake') seqGlobalBrakeMargin = val;
+      else seqGlobalAccelMargin = val;
+      runSequenceSimulation();
+    };
+
+    r.addEventListener('input', () => update(r.value));
+    n.addEventListener('input', () => update(n.value));
+  };
+
+  sync('Brake');
+  sync('Accel');
+}
+
+function runSequenceSimulation() {
+  const presetSelect = document.getElementById('s-seqPreset');
+  const presetName = presetSelect ? presetSelect.value : 'MEDIUM';
+  const chkSeqFallback = document.getElementById('chk-seq-fallback-medium');
+  const customFallbackToMedium = chkSeqFallback ? chkSeqFallback.checked : true;
+  if (typeof simulateSequence === 'function') {
+    const results = simulateSequence(sequenceSteps, presetName, {
+      brakeMarginMm: seqGlobalBrakeMargin,
+      accelMarginMm: seqGlobalAccelMargin,
+      customFallbackToMedium
+    });
+    if (results) {
+      updateSequenceCharts(results);
+    }
+  }
+}
+
+let seqFaintMode = true;
+
+function updateSequenceCharts(results) {
+  if (!seqLinVelChart) return;
+  const data = results.data;
+
+  const linVelData = data.map(d => ({ x: d.x, y: d.yLinVel }));
+  const angVelData = data.map(d => ({ x: d.x, y: d.yAngVel }));
+  const linAccData = data.map(d => ({ x: d.x, y: d.yLinAcc }));
+  const angAccData = data.map(d => ({ x: d.x, y: d.yAngAcc }));
+
+  const linVelDatasets = [];
+  if (seqFaintMode) {
+    linVelDatasets.push({
+      label: 'Target Angular Vel (faint)',
+      data: angVelData,
+      borderColor: 'rgba(0, 187, 249, 0.25)',
+      borderWidth: 1.5,
+      pointRadius: 0,
+      yAxisID: 'y2'
+    });
+  }
+  linVelDatasets.push({
+    label: 'Target Linear Vel (m/s)',
+    data: linVelData,
+    borderColor: '#fca311',
+    borderWidth: 2,
+    pointRadius: 0,
+    yAxisID: 'y'
+  });
+  seqLinVelChart.data = { datasets: linVelDatasets };
+  seqLinVelChart.update();
+
+  const angVelDatasets = [];
+  if (seqFaintMode) {
+    angVelDatasets.push({
+      label: 'Target Linear Vel (faint)',
+      data: linVelData,
+      borderColor: 'rgba(252, 163, 17, 0.25)',
+      borderWidth: 1.5,
+      pointRadius: 0,
+      yAxisID: 'y2'
+    });
+  }
+  angVelDatasets.push({
+    label: 'Target Angular Vel (rad/s)',
+    data: angVelData,
+    borderColor: '#00bbf9',
+    borderWidth: 2,
+    pointRadius: 0,
+    yAxisID: 'y'
+  });
+  seqAngVelChart.data = { datasets: angVelDatasets };
+  seqAngVelChart.update();
+
+  const linAccDatasets = [];
+  if (seqFaintMode) {
+    linAccDatasets.push({
+      label: 'Target Angular Accel (faint)',
+      data: angAccData,
+      borderColor: 'rgba(155, 93, 229, 0.25)',
+      borderWidth: 1.5,
+      pointRadius: 0,
+      yAxisID: 'y2'
+    });
+  }
+  linAccDatasets.push({
+    label: 'Target Linear Accel (m/s²)',
+    data: linAccData,
+    borderColor: '#ff0054',
+    borderWidth: 2,
+    pointRadius: 0,
+    yAxisID: 'y'
+  });
+  seqLinAccChart.data = { datasets: linAccDatasets };
+  seqLinAccChart.update();
+
+  const angAccDatasets = [];
+  if (seqFaintMode) {
+    angAccDatasets.push({
+      label: 'Target Linear Accel (faint)',
+      data: linAccData,
+      borderColor: 'rgba(255, 0, 84, 0.25)',
+      borderWidth: 1.5,
+      pointRadius: 0,
+      yAxisID: 'y2'
+    });
+  }
+  angAccDatasets.push({
+    label: 'Target Angular Accel (rad/s²)',
+    data: angAccData,
+    borderColor: '#9b5de5',
+    borderWidth: 2,
+    pointRadius: 0,
+    yAxisID: 'y'
+  });
+  seqAngAccChart.data = { datasets: angAccDatasets };
+  seqAngAccChart.update();
+
+  const sum = results.summary;
+  const elTime = document.getElementById('readout-seq-time');
+  const elSpeed = document.getElementById('readout-seq-speed');
+  const elOmega = document.getElementById('readout-seq-omega');
+  const elSteps = document.getElementById('readout-seq-steps');
+
+  if (elTime) elTime.textContent = sum.totalTimeMs.toFixed(1) + ' ms';
+  if (elSpeed) elSpeed.textContent = sum.maxLinSpeed.toFixed(2) + ' m/s';
+  if (elOmega) elOmega.textContent = sum.maxAngSpeed.toFixed(2) + ' rad/s';
+  if (elSteps) elSteps.textContent = sum.stepCount;
+}
+
+const chkSeqFaintMode = document.getElementById('chk-seq-faint-mode');
+if (chkSeqFaintMode) {
+  chkSeqFaintMode.addEventListener('change', (e) => {
+    seqFaintMode = e.target.checked;
+    runSequenceSimulation();
+  });
+}
+
+const sSeqPreset = document.getElementById('s-seqPreset');
+if (sSeqPreset) {
+  sSeqPreset.addEventListener('change', (e) => {
+    const isCustom = e.target.value === 'CUSTOM';
+    const customPanel = document.getElementById('seq-custom-params');
+    if (customPanel) customPanel.style.display = isCustom ? 'block' : 'none';
+    runSequenceSimulation();
+  });
+}
+
+const btnAddStep = document.getElementById('btn-add-step');
+if (btnAddStep) {
+  btnAddStep.addEventListener('click', () => {
+    const isLastStop = sequenceSteps.length > 0 && sequenceSteps[sequenceSteps.length - 1].name === 'STOP';
+    if (!isLastStop) {
+      sequenceSteps.push({ name: 'FORWARD', count: 1 });
+      renderSequenceSteps();
+      runSequenceSimulation();
+    }
+  });
+}
+
+const btnResetSeq = document.getElementById('btn-reset-seq');
+if (btnResetSeq) {
+  btnResetSeq.addEventListener('click', () => {
+    sequenceSteps = [
+      { name: 'START', count: 1 },
+      { name: 'FORWARD', count: 2 },
+      { name: 'TURN_RIGHT_90', count: 1 },
+      { name: 'FORWARD', count: 2 },
+      { name: 'STOP', count: 1 }
+    ];
+    renderSequenceSteps();
+    runSequenceSimulation();
+  });
+}
+
+const btnRunSeq = document.getElementById('btn-run-seq');
+if (btnRunSeq) {
+  btnRunSeq.addEventListener('click', () => {
+    runSequenceSimulation();
+  });
+}
+
+/* =========================================================
+   SAFETY VERIFIER & CHECKS TAB UI
+   ========================================================= */
+
+let safetyLinVelChart = null;
+let safetyDynamicsChart = null;
+let currentInspectedTestId = null;
+let lastSafetyRunReports = [];
+
+let safetyGlobalBrakeMargin = 10.0;
+let safetyGlobalAccelMargin = 10.0;
+
+let safetyCustomSteps = [
+  { name: 'START', count: 1 },
+  { name: 'FORWARD', count: 1 },
+  { name: 'TURN_RIGHT_45', count: 1 },
+  { name: 'DIAGONAL', count: 1 },
+  { name: 'TURN_LEFT_45_FROM_45', count: 1 },
+  { name: 'FORWARD', count: 1 },
+  { name: 'STOP', count: 1 }
+];
+
+function initSafetyCharts() {
+  const ctxLinVel = document.getElementById('chart-safety-lin-vel');
+  if (ctxLinVel && !safetyLinVelChart) {
+    safetyLinVelChart = new Chart(ctxLinVel.getContext('2d'), {
+      type: 'line',
+      data: { datasets: [] },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        parsing: false,
+        elements: {
+          point: { radius: 0 },
+          line: { tension: 0 }
+        },
+        scales: {
+          x: {
+            type: 'linear',
+            title: { display: true, text: 'Time (ms)', color: '#526059' },
+            grid: { color: '#1c2622' },
+            ticks: {
+              color: '#7d9188',
+              callback: function(val) { return Number(val).toFixed(1); }
+            }
+          },
+          y: {
+            title: { display: true, text: 'Linear Velocity (m/s)', color: '#526059' },
+            grid: { color: '#1c2622' },
+            ticks: { color: '#7d9188' }
+          }
+        },
+        plugins: {
+          legend: {
+            labels: { color: '#dfe9e3', font: { family: "'IBM Plex Mono', monospace", size: 10 } }
+          },
+          tooltip: {
+            backgroundColor: 'rgba(18, 25, 23, 0.95)',
+            borderColor: '#34483f',
+            borderWidth: 1,
+            titleColor: '#dfe9e3',
+            bodyColor: '#7d9188',
+            callbacks: {
+              title: function(items) {
+                if (!items.length) return '';
+                return Number(items[0].parsed.x).toFixed(1) + ' ms';
+              },
+              label: function(item) {
+                return item.dataset.label + ': ' + Number(item.parsed.y).toFixed(3);
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  const ctxDyn = document.getElementById('chart-safety-dynamics');
+  if (ctxDyn && !safetyDynamicsChart) {
+    safetyDynamicsChart = new Chart(ctxDyn.getContext('2d'), {
+      type: 'line',
+      data: { datasets: [] },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        parsing: false,
+        elements: {
+          point: { radius: 0 },
+          line: { tension: 0 }
+        },
+        scales: {
+          x: {
+            type: 'linear',
+            title: { display: true, text: 'Time (ms)', color: '#526059' },
+            grid: { color: '#1c2622' },
+            ticks: {
+              color: '#7d9188',
+              callback: function(val) { return Number(val).toFixed(1); }
+            }
+          },
+          y: {
+            type: 'linear',
+            position: 'left',
+            title: { display: true, text: 'Angular Vel (rad/s)', color: '#00bbf9' },
+            grid: { color: '#1c2622' },
+            ticks: { color: '#00bbf9' }
+          },
+          y2: {
+            type: 'linear',
+            position: 'right',
+            title: { display: true, text: 'Linear Acc (m/s²)', color: '#ff0054' },
+            grid: { drawOnChartArea: false },
+            ticks: { color: '#ff0054' }
+          }
+        },
+        plugins: {
+          legend: {
+            labels: { color: '#dfe9e3', font: { family: "'IBM Plex Mono', monospace", size: 10 } }
+          }
+        }
+      }
+    });
+  }
+}
+
+function runAndRenderSafetyTab() {
+  const presetSelect = document.getElementById('s-safetyPreset');
+  const presetName = presetSelect ? presetSelect.value : 'FAST';
+  const tolInput = document.getElementById('n-safetyTolerance');
+  const speedTolerance = tolInput ? (parseFloat(tolInput.value) || 0.05) : 0.05;
+
+  const isCustom = (presetName === 'CUSTOM');
+  const chkSafetyFallback = document.getElementById('chk-safety-fallback-medium');
+  const customFallbackToMedium = chkSafetyFallback ? chkSafetyFallback.checked : true;
+  const result = runAllSafetyChecks(presetName, {
+    speedTolerance,
+    brakeMarginMm: isCustom ? safetyGlobalBrakeMargin : undefined,
+    accelMarginMm: isCustom ? safetyGlobalAccelMargin : undefined,
+    customPreset: customPreset,
+    customFallbackToMedium: isCustom ? customFallbackToMedium : undefined
+  });
+
+  lastSafetyRunReports = result.reports;
+  renderSafetyOverview(result.summary, presetName);
+  filterAndRenderSafetyCards();
+
+  // If a test case was being inspected, refresh its chart
+  if (currentInspectedTestId) {
+    const inspected = lastSafetyRunReports.find(r => r.id === currentInspectedTestId);
+    if (inspected && inspected.valid) {
+      inspectSafetyTestCase(currentInspectedTestId, false);
+    }
+  }
+}
+
+function renderSafetyOverview(summary, presetName) {
+  const bar = document.getElementById('safety-overview-bar');
+  if (!bar) return;
+
+  const allPassed = summary.failed === 0 && summary.invalid === 0;
+  const hasInvalid = summary.invalid > 0;
+  const bannerClass = allPassed ? 'pass' : (summary.failed > 0 ? 'fail' : 'invalid');
+
+  let bannerIcon = allPassed ? '✓' : (summary.failed > 0 ? '✗' : '⚠');
+  let bannerText = '';
+  if (allPassed) {
+    bannerText = `ALL TESTS PASSED — Profile "${presetName}" is physically safe &amp; consistent!`;
+  } else if (summary.failed > 0) {
+    bannerText = `${summary.failed} PHYSICAL VIOLATION${summary.failed > 1 ? 'S' : ''} DETECTED in "${presetName}" profile`;
+  } else {
+    bannerText = `${summary.invalid} INVALID SEQUENCE${summary.invalid > 1 ? 'S' : ''} DETECTED`;
+  }
+
+  let html = `
+    <div class="safety-status-banner ${bannerClass}">
+      <div class="safety-banner-title">
+        <span style="font-size: 18px;">${bannerIcon}</span>
+        <span>${bannerText}</span>
+      </div>
+      <div class="safety-badge ${bannerClass}" style="font-size: 12px; padding: 4px 10px;">
+        ${summary.passed} / ${summary.total} PASSED (${summary.passRate}%)
+      </div>
+    </div>
+
+    <div class="safety-kpi-grid">
+      <div class="safety-kpi-tile">
+        <span class="safety-kpi-label">Pass Rate</span>
+        <span class="safety-kpi-val" style="color: ${allPassed ? 'var(--jerk)' : (summary.passRate >= 70 ? 'var(--trap)' : '#ff4757')};">
+          ${summary.passRate}%
+        </span>
+      </div>
+      <div class="safety-kpi-tile">
+        <span class="safety-kpi-label">Passing Tests</span>
+        <span class="safety-kpi-val" style="color: var(--jerk);">${summary.passed}</span>
+      </div>
+      <div class="safety-kpi-tile">
+        <span class="safety-kpi-label">Failing Tests</span>
+        <span class="safety-kpi-val" style="color: ${summary.failed > 0 ? '#ff4757' : 'var(--muted)'};">${summary.failed}</span>
+      </div>
+      <div class="safety-kpi-tile">
+        <span class="safety-kpi-label">Max Speed Error</span>
+        <span class="safety-kpi-val" style="color: ${Math.abs(summary.maxVelocityError) > 0.05 ? '#ff4757' : 'var(--jerk)'};">
+          ${summary.maxVelocityError > 0 ? '+' : ''}${summary.maxVelocityError.toFixed(2)} m/s
+        </span>
+      </div>
+      <div class="safety-kpi-tile">
+        <span class="safety-kpi-label">Tightest Margin</span>
+        <span class="safety-kpi-val" style="color: ${summary.minDistanceMargin < 0 ? '#ff4757' : 'var(--ideal)'};">
+          ${summary.minDistanceMargin.toFixed(1)} mm
+        </span>
+      </div>
+      <div class="safety-kpi-tile">
+        <span class="safety-kpi-label">Tested Preset</span>
+        <span class="safety-kpi-val" style="color: var(--trap); font-size: 13px; text-transform: uppercase;">
+          ${presetName}
+        </span>
+      </div>
+    </div>
+  `;
+
+  bar.innerHTML = html;
+}
+
+function filterAndRenderSafetyCards() {
+  const container = document.getElementById('safety-test-cards-container');
+  const countDisplay = document.getElementById('safety-filter-count');
+  if (!container) return;
+
+  const resultFilter = document.getElementById('s-safetyFilterResult') ? document.getElementById('s-safetyFilterResult').value : 'ALL';
+  const categoryFilter = document.getElementById('s-safetyFilterCategory') ? document.getElementById('s-safetyFilterCategory').value : 'ALL';
+
+  let filtered = lastSafetyRunReports.filter(r => {
+    if (resultFilter === 'PASS' && !r.overallPass) return false;
+    if (resultFilter === 'FAIL' && (r.overallPass || !r.valid)) return false;
+    if (resultFilter === 'INVALID' && r.valid) return false;
+
+    if (categoryFilter !== 'ALL' && r.category !== categoryFilter) return false;
+    return true;
+  });
+
+  if (countDisplay) {
+    countDisplay.textContent = `Showing ${filtered.length} of ${lastSafetyRunReports.length} tests`;
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = `<div style="padding: 24px; text-align: center; color: var(--muted); font-family: 'IBM Plex Mono', monospace;">No test cases match the selected filter.</div>`;
+    return;
+  }
+
+  let html = '';
+  filtered.forEach(report => {
+    const cardStatusClass = report.overallPass ? 'pass' : (report.valid ? 'fail' : 'invalid');
+    const badgeLabel = report.overallPass ? '✓ PASS' : (report.valid ? '✗ FAIL' : '⚠ INVALID');
+    const categoryLabel = report.category.replace('_', ' ').toUpperCase();
+
+    // Sequence breadcrumb trail
+    let trailHtml = '';
+    report.steps.forEach((step, idx) => {
+      const stepNum = idx + 1;
+      const isFailedStep = report.stepChecks.some(sc => sc.step === stepNum && sc.status !== 'PASS');
+      const nodeClass = isFailedStep ? 'fail-step' : (idx === 0 ? 'start-node' : (idx === report.steps.length - 1 ? 'stop-node' : ''));
+      const countLabel = (step.count && step.count > 1) ? `(${step.count})` : '';
+
+      trailHtml += `<span class="seq-node ${nodeClass}" title="Step ${stepNum}: ${step.name} ${countLabel}">${step.name}${countLabel}</span>`;
+      if (idx < report.steps.length - 1) {
+        trailHtml += `<span class="seq-arrow">→</span>`;
+      }
+    });
+
+    // Quick verdict text
+    let quickVerdictHtml = '';
+    if (report.overallPass) {
+      quickVerdictHtml = `<div class="safety-quick-verdict ok">✓ All curve entry speeds and stopping distance verified within tolerance.</div>`;
+    } else if (!report.valid) {
+      quickVerdictHtml = `<div class="safety-quick-verdict err">⚠ Illegal sequence transition for DIAGONAL state machine.</div>`;
+    } else {
+      const failingCheck = report.stepChecks.find(sc => sc.status !== 'PASS');
+      if (failingCheck) {
+        quickVerdictHtml = `<div class="safety-quick-verdict err">✗ Step ${failingCheck.step} (${failingCheck.movement}): ${failingCheck.message}</div>`;
+      } else {
+        quickVerdictHtml = `<div class="safety-quick-verdict err">✗ Velocity limits violated.</div>`;
+      }
+    }
+
+    // Step breakdown table HTML
+    let tableRows = '';
+    if (report.valid && report.stepChecks.length > 0) {
+      report.stepChecks.forEach(sc => {
+        const isFail = sc.status !== 'PASS';
+        const rowClass = isFail ? 'row-fail' : '';
+        const statusBadge = isFail 
+          ? `<span class="safety-badge fail">${sc.status}</span>` 
+          : `<span class="safety-badge pass">PASS</span>`;
+
+        const diffStr = (sc.speedDiff > 0 ? '+' : '') + sc.speedDiff.toFixed(2);
+        const diffColor = Math.abs(sc.speedDiff) > 0.05 ? '#ff6b81' : 'var(--jerk)';
+
+        tableRows += `
+          <tr class="${rowClass}">
+            <td style="color: var(--muted); text-align: center;">${sc.step}</td>
+            <td><strong>${sc.movement}</strong>${sc.count > 1 ? ` (${sc.count})` : ''}</td>
+            <td>${sc.targetTravelMm.toFixed(1)} mm</td>
+            <td>${sc.targetSpeed.toFixed(2)} m/s</td>
+            <td>${sc.actualSpeed.toFixed(2)} m/s</td>
+            <td style="color: ${diffColor}; font-weight: bold;">${diffStr}</td>
+            <td>${sc.reqDistanceMm !== undefined ? sc.reqDistanceMm.toFixed(1) + ' mm' : '--'}</td>
+            <td style="color: ${sc.marginMm < 0 ? '#ff4757' : 'var(--ideal)'}; font-weight: bold;">
+              ${sc.marginMm !== undefined ? (sc.marginMm > 0 ? '+' : '') + sc.marginMm.toFixed(1) + ' mm' : '--'}
+            </td>
+            <td>${statusBadge}</td>
+            <td style="font-size: 10px; color: ${isFail ? '#ff9d9d' : 'var(--muted)'}; max-width: 250px; white-space: normal;">
+              ${sc.message} ${isFail ? `<br><span style="color:var(--text); opacity:0.8;">💡 ${sc.recommendation}</span>` : ''}
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    let detailsContentHtml = '';
+    if (!report.valid) {
+      let issuesList = report.validationErrors.map(e => `<li><strong>Step ${e.step} (${e.move}):</strong> ${e.error} <br><em>Suggestion:</em> ${e.suggestion}</li>`).join('');
+      detailsContentHtml = `
+        <div class="safety-invalid-box">
+          <div><strong>DIAGONAL STATE MACHINE VIOLATION:</strong></div>
+          <ul style="margin: 4px 0 0 16px; padding: 0;">${issuesList}</ul>
+          <div style="font-size: 10px; color: var(--muted); margin-top: 4px;">
+            In firmware/src/services/navigation.cpp, DIAGONAL mode converts orthogonal path commands into diagonal runs. Orthogonal forward cannot be executed while angled at 45°.
+          </div>
+        </div>
+      `;
+    } else {
+      detailsContentHtml = `
+        <div class="safety-table-wrap">
+          <table class="safety-table">
+            <thead>
+              <tr>
+                <th style="width: 30px;">#</th>
+                <th>Movement</th>
+                <th>Available Travel</th>
+                <th>Target Speed</th>
+                <th>Actual Speed</th>
+                <th>Error Δv</th>
+                <th>Req. Distance</th>
+                <th>Margin</th>
+                <th>Status</th>
+                <th>Kinematic Diagnostics &amp; Advice</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tableRows}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    html += `
+      <div class="safety-test-card ${cardStatusClass}" id="card-test-${report.id}">
+        <div class="safety-card-header">
+          <div class="safety-card-title-group">
+            <span class="safety-badge ${cardStatusClass}">${badgeLabel}</span>
+            <span class="safety-badge category">${categoryLabel}</span>
+            <span class="safety-card-title">${report.name}</span>
+          </div>
+
+          <div class="safety-card-actions">
+            ${report.valid ? `<button class="btn-card-action" onclick="inspectSafetyTestCase('${report.id}', true)">📈 Inspect</button>` : ''}
+            <button class="btn-card-action" onclick="toggleSafetyDetails('${report.id}')" id="btn-toggle-${report.id}">Step Analysis ▼</button>
+          </div>
+        </div>
+
+        <div style="font-size: 11px; color: var(--muted);">${report.description}</div>
+
+        <div class="safety-seq-trail">
+          ${trailHtml}
+        </div>
+
+        ${quickVerdictHtml}
+
+        <div class="safety-details-panel" id="details-${report.id}" style="display: none;">
+          ${detailsContentHtml}
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+function toggleSafetyDetails(testId) {
+  const panel = document.getElementById(`details-${testId}`);
+  const btn = document.getElementById(`btn-toggle-${testId}`);
+  if (!panel || !btn) return;
+  const isHidden = panel.style.display === 'none';
+  panel.style.display = isHidden ? 'flex' : 'none';
+  btn.textContent = isHidden ? 'Step Analysis ▲' : 'Step Analysis ▼';
+  btn.classList.toggle('active', isHidden);
+}
+
+function inspectSafetyTestCase(testId, shouldScroll = true) {
+  currentInspectedTestId = testId;
+  const report = lastSafetyRunReports.find(r => r.id === testId);
+  if (!report || !report.valid) return;
+
+  const panel = document.getElementById('safety-inspector-panel');
+  const title = document.getElementById('safety-inspector-title');
+  if (panel) panel.style.display = 'block';
+  if (title) {
+    const verdictIcon = report.overallPass ? '✓ PASS' : '✗ FAIL';
+    title.textContent = `${report.name} (${verdictIcon}) · Total Time: ${report.totalTimeMs.toFixed(1)} ms`;
+    title.style.color = report.overallPass ? 'var(--jerk)' : '#ff4757';
+  }
+
+  // Update Linear Velocity Chart with target speed overlay
+  if (safetyLinVelChart) {
+    const linVelData = report.data.map(d => ({ x: d.x, y: d.yLinVel }));
+    const datasets = [
+      {
+        label: 'Actual Linear Velocity (m/s)',
+        data: linVelData,
+        borderColor: report.overallPass ? '#79ff9e' : '#ff4757',
+        borderWidth: 2,
+        pointRadius: 0,
+        yAxisID: 'y'
+      }
+    ];
+
+    // Add target speed reference points at each transition
+    const targetPoints = [];
+    report.stepChecks.forEach(sc => {
+      // Find the point in data corresponding to this step
+      const stepPts = report.data.filter(d => d.stepIndex === (sc.step - 1));
+      if (stepPts.length > 0) {
+        const lastPt = stepPts[stepPts.length - 1];
+        targetPoints.push({ x: lastPt.x, y: sc.targetSpeed });
+      }
+    });
+
+    if (targetPoints.length > 0) {
+      datasets.push({
+        label: 'Target Entry Speed (m/s)',
+        data: targetPoints,
+        borderColor: '#fca311',
+        backgroundColor: '#fca311',
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        showLine: false,
+        yAxisID: 'y'
+      });
+    }
+
+    safetyLinVelChart.data = { datasets };
+    safetyLinVelChart.update();
+  }
+
+  // Update Dynamics Chart (Angular Velocity & Linear Acceleration)
+  if (safetyDynamicsChart) {
+    const angVelData = report.data.map(d => ({ x: d.x, y: d.yAngVel }));
+    const linAccData = report.data.map(d => ({ x: d.x, y: d.yLinAcc }));
+
+    safetyDynamicsChart.data = {
+      datasets: [
+        {
+          label: 'Angular Velocity (rad/s)',
+          data: angVelData,
+          borderColor: '#00bbf9',
+          borderWidth: 1.8,
+          pointRadius: 0,
+          yAxisID: 'y'
+        },
+        {
+          label: 'Linear Accel (m/s²)',
+          data: linAccData,
+          borderColor: '#ff0054',
+          borderWidth: 1.5,
+          pointRadius: 0,
+          yAxisID: 'y2'
+        }
+      ]
+    };
+    safetyDynamicsChart.update();
+  }
+
+  if (shouldScroll && panel) {
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+function initSafetyCustomParamsUI() {
+  const movSelect = document.getElementById('s-safety-mov-select');
+  if (movSelect) {
+    movSelect.innerHTML = '';
+    ALL_MOVEMENTS.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m;
+      opt.textContent = m;
+      movSelect.appendChild(opt);
+    });
+
+    movSelect.addEventListener('change', () => {
+      renderSafetyCustomMovementInputs(movSelect.value);
+    });
+  }
+
+  const inpAccJerk = document.getElementById('inp-safety-acc-jerk');
+  const inpBrkJerk = document.getElementById('inp-safety-brk-jerk');
+  if (inpAccJerk && inpBrkJerk) {
+    inpAccJerk.value = customPreset.general.max_linear_acc_jerk;
+    inpBrkJerk.value = customPreset.general.max_linear_brake_jerk;
+
+    inpAccJerk.addEventListener('input', () => {
+      customPreset.general.max_linear_acc_jerk = parseFloat(inpAccJerk.value) || 625.0;
+      runAndRenderSafetyTab();
+    });
+    inpBrkJerk.addEventListener('input', () => {
+      customPreset.general.max_linear_brake_jerk = parseFloat(inpBrkJerk.value) || 625.0;
+      runAndRenderSafetyTab();
+    });
+  }
+
+  const chkSafetyFallback = document.getElementById('chk-safety-fallback-medium');
+  if (chkSafetyFallback) {
+    chkSafetyFallback.addEventListener('change', () => {
+      runAndRenderSafetyTab();
+    });
+  }
+
+  const copyBtn = document.getElementById('btn-safety-copy-base');
+  const baseSelect = document.getElementById('s-safetyCustomBase');
+  if (copyBtn && baseSelect) {
+    copyBtn.addEventListener('click', () => {
+      copyPresetToCustom(baseSelect.value);
+      const isFastOrSuper = (baseSelect.value === 'FAST' || baseSelect.value === 'SUPER');
+      if (chkSafetyFallback) chkSafetyFallback.checked = isFastOrSuper;
+      if (inpAccJerk) inpAccJerk.value = customPreset.general.max_linear_acc_jerk;
+      if (inpBrkJerk) inpBrkJerk.value = customPreset.general.max_linear_brake_jerk;
+      renderSafetyCustomMovementInputs(movSelect ? movSelect.value : 'START');
+      runAndRenderSafetyTab();
+    });
+  }
+
+  const tweakBtn = document.getElementById('btn-safety-tweak-custom');
+  const presetSelect = document.getElementById('s-safetyPreset');
+  if (tweakBtn && presetSelect) {
+    tweakBtn.addEventListener('click', () => {
+      const current = presetSelect.value;
+      if (current !== 'CUSTOM') {
+        copyPresetToCustom(current);
+        const isFastOrSuper = (current === 'FAST' || current === 'SUPER');
+        if (chkSafetyFallback) chkSafetyFallback.checked = isFastOrSuper;
+        presetSelect.value = 'CUSTOM';
+      }
+      const customPanel = document.getElementById('safety-custom-params');
+      if (customPanel) customPanel.style.display = 'block';
+      if (inpAccJerk) inpAccJerk.value = customPreset.general.max_linear_acc_jerk;
+      if (inpBrkJerk) inpBrkJerk.value = customPreset.general.max_linear_brake_jerk;
+      renderSafetyCustomMovementInputs(movSelect ? movSelect.value : 'START');
+      runAndRenderSafetyTab();
+    });
+  }
+
+  renderSafetyCustomMovementInputs(movSelect ? movSelect.value : 'START');
+}
+
+function renderSafetyCustomMovementInputs(movName) {
+  const container = document.getElementById('safety-movement-inputs');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const isLinear = isLinearMove(movName);
+  const fwd = customPreset.forward[movName] || (isLinear
+    ? { max_speed: 2.0, acceleration: 20.0, deceleration: 25.0, target_travel_mm: 180.0 }
+    : { max_speed: 0.0, acceleration: 0.0, deceleration: 0.0, target_travel_mm: 0.0 });
+  customPreset.forward[movName] = fwd;
+  const turn = customPreset.turn[movName] || null;
+
+  let html = `<div style="font-size:10px; font-weight:bold; color:var(--text); margin-bottom:4px; font-family:'IBM Plex Mono',monospace;">Forward / Linear Kinematics:</div>`;
+  html += `<div class="seq-params-grid">`;
+  html += `
+    <div class="seq-param-item"><label>Max Speed (m/s)</label><input type="number" step="0.1" id="scf-max-speed" value="${fwd.max_speed}"></div>
+    <div class="seq-param-item"><label>Accel (m/s²)</label><input type="number" step="1" id="scf-accel" value="${fwd.acceleration}"></div>
+    <div class="seq-param-item"><label>Decel (m/s²)</label><input type="number" step="1" id="scf-decel" value="${fwd.deceleration}"></div>
+    <div class="seq-param-item"><label>Travel (mm)</label><input type="number" step="0.1" id="scf-travel" value="${fwd.target_travel_mm}"></div>
+  `;
+  html += `</div>`;
+
+  if (turn) {
+    html += `<div style="font-size:10px; font-weight:bold; color:var(--text); margin:10px 0 4px 0; font-family:'IBM Plex Mono',monospace;">Turn Kinematics:</div>`;
+    html += `<div class="seq-params-grid">`;
+    html += `
+      <div class="seq-param-item"><label>Turn Speed (m/s)</label><input type="number" step="0.1" id="sct-speed" value="${turn.turn_linear_speed}"></div>
+      <div class="seq-param-item"><label>Start Offset (mm)</label><input type="number" step="0.1" id="sct-start" value="${turn.start}"></div>
+      <div class="seq-param-item"><label>End Offset (mm)</label><input type="number" step="0.1" id="sct-end" value="${turn.end}"></div>
+      <div class="seq-param-item"><label>Max Ang Speed</label><input type="number" step="0.1" id="sct-max-omega" value="${turn.max_angular_speed}"></div>
+      <div class="seq-param-item"><label>Ang Accel</label><input type="number" step="10" id="sct-ang-accel" value="${turn.angular_accel}"></div>
+    `;
+    html += `</div>`;
+  }
+
+  container.innerHTML = html;
+
+  const bind = (id, obj, prop) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('input', () => {
+      obj[prop] = parseFloat(el.value) || 0.0;
+      runAndRenderSafetyTab();
+    });
+  };
+
+  bind('scf-max-speed', fwd, 'max_speed');
+  bind('scf-accel', fwd, 'acceleration');
+  bind('scf-decel', fwd, 'deceleration');
+  bind('scf-travel', fwd, 'target_travel_mm');
+
+  if (turn) {
+    bind('sct-speed', turn, 'turn_linear_speed');
+    bind('sct-start', turn, 'start');
+    bind('sct-end', turn, 'end');
+    bind('sct-max-omega', turn, 'max_angular_speed');
+    bind('sct-ang-accel', turn, 'angular_accel');
+  }
+}
+
+function initSafetyMarginsUI() {
+  const sync = (type) => {
+    const r = document.getElementById(`r-safety${type}Margin`);
+    const n = document.getElementById(`n-safety${type}Margin`);
+    const v = document.getElementById(`v-safety${type}Margin`);
+    if (!r || !n || !v) return;
+
+    const update = (val) => {
+      val = parseFloat(val);
+      if (isNaN(val)) val = 0.0;
+      r.value = val;
+      n.value = val;
+      v.textContent = val.toFixed(1);
+      if (type === 'Brake') safetyGlobalBrakeMargin = val;
+      else safetyGlobalAccelMargin = val;
+      runAndRenderSafetyTab();
+    };
+
+    r.addEventListener('input', () => update(r.value));
+    n.addEventListener('input', () => update(n.value));
+  };
+
+  sync('Brake');
+  sync('Accel');
+}
+
+function initSafetyCustomBuilderUI() {
+  const container = document.getElementById('safety-custom-steps-container');
+  const addBtn = document.getElementById('btn-safety-add-step');
+  const addTestBtn = document.getElementById('btn-safety-add-test');
+
+  const renderSteps = () => {
+    if (!container) return;
+    container.innerHTML = '';
+
+    safetyCustomSteps.forEach((step, idx) => {
+      const row = document.createElement('div');
+      row.className = 'seq-step-row';
+
+      const badge = document.createElement('span');
+      badge.className = 'seq-step-badge';
+      badge.textContent = `#${idx + 1}`;
+
+      const select = document.createElement('select');
+      select.className = 'seq-step-select';
+
+      ALL_MOVEMENTS.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m;
+        opt.textContent = m;
+        if (m === step.name) opt.selected = true;
+        select.appendChild(opt);
+      });
+
+      select.addEventListener('change', () => {
+        step.name = select.value;
+        renderSteps();
+        updateCustomValidationBadge();
+      });
+
+      const countInput = document.createElement('input');
+      countInput.type = 'number';
+      countInput.className = 'seq-step-count';
+      countInput.min = '1';
+      countInput.max = '50';
+      countInput.value = step.count || 1;
+      countInput.addEventListener('input', () => {
+        step.count = Math.max(1, parseInt(countInput.value) || 1);
+        updateCustomValidationBadge();
+      });
+
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'btn-remove-step';
+      removeBtn.textContent = '✕';
+      removeBtn.addEventListener('click', () => {
+        if (safetyCustomSteps.length > 1) {
+          safetyCustomSteps.splice(idx, 1);
+          renderSteps();
+          updateCustomValidationBadge();
+        }
+      });
+
+      row.appendChild(badge);
+      row.appendChild(select);
+      row.appendChild(countInput);
+      if (safetyCustomSteps.length > 1) {
+        row.appendChild(removeBtn);
+      }
+
+      container.appendChild(row);
+    });
+
+    updateCustomValidationBadge();
+  };
+
+  const updateCustomValidationBadge = () => {
+    const valMsg = document.getElementById('safety-custom-validation-msg');
+    if (!valMsg) return;
+
+    const val = validateDiagonalSequence(safetyCustomSteps);
+    valMsg.style.display = 'block';
+
+    if (val.valid) {
+      valMsg.style.background = 'rgba(121, 255, 158, 0.1)';
+      valMsg.style.border = '1px solid rgba(121, 255, 158, 0.3)';
+      valMsg.style.color = 'var(--jerk)';
+      valMsg.textContent = '✓ Valid Diagonal Mode Sequence (Ready to test)';
+    } else {
+      valMsg.style.background = 'rgba(255, 165, 2, 0.1)';
+      valMsg.style.border = '1px solid rgba(255, 165, 2, 0.3)';
+      valMsg.style.color = '#ffa502';
+      const firstIssue = val.issues[0];
+      valMsg.textContent = `⚠ Step ${firstIssue.step}: ${firstIssue.error}`;
+    }
+  };
+
+  if (addBtn) {
+    addBtn.addEventListener('click', () => {
+      safetyCustomSteps.push({ name: 'FORWARD', count: 1 });
+      renderSteps();
+    });
+  }
+
+  if (addTestBtn) {
+    addTestBtn.addEventListener('click', () => {
+      const nameInput = document.getElementById('inp-custom-test-name');
+      const testName = (nameInput && nameInput.value.trim()) ? nameInput.value.trim() : `Custom Test ${Date.now() % 1000}`;
+      
+      const newTestCase = {
+        id: 'custom_' + Date.now(),
+        name: testName,
+        category: 'user',
+        description: 'User-defined sequence test created in Motion Bench.',
+        steps: JSON.parse(JSON.stringify(safetyCustomSteps))
+      };
+
+      addCustomSafetyTest(newTestCase);
+      runAndRenderSafetyTab();
+
+      // Scroll to newly added test card
+      setTimeout(() => {
+        const newCard = document.getElementById(`card-test-${newTestCase.id}`);
+        if (newCard) newCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    });
+  }
+
+  renderSteps();
+}
+
+function initSafetyTab() {
+  initSafetyCharts();
+  initSafetyMarginsUI();
+  initSafetyCustomParamsUI();
+  initSafetyCustomBuilderUI();
+
+  const presetSelect = document.getElementById('s-safetyPreset');
+  if (presetSelect) {
+    presetSelect.addEventListener('change', () => {
+      const isCustom = presetSelect.value === 'CUSTOM';
+      const customPanel = document.getElementById('safety-custom-params');
+      if (customPanel) customPanel.style.display = isCustom ? 'block' : 'none';
+      runAndRenderSafetyTab();
+    });
+  }
+
+  const tolInput = document.getElementById('n-safetyTolerance');
+  if (tolInput) {
+    tolInput.addEventListener('input', () => {
+      runAndRenderSafetyTab();
+    });
+  }
+
+  const filterRes = document.getElementById('s-safetyFilterResult');
+  if (filterRes) {
+    filterRes.addEventListener('change', () => filterAndRenderSafetyCards());
+  }
+
+  const filterCat = document.getElementById('s-safetyFilterCategory');
+  if (filterCat) {
+    filterCat.addEventListener('change', () => filterAndRenderSafetyCards());
+  }
+
+  const btnReRun = document.getElementById('btn-run-all-safety');
+  if (btnReRun) {
+    btnReRun.addEventListener('click', () => runAndRenderSafetyTab());
+  }
+
+  const btnCloseInspector = document.getElementById('btn-close-inspector');
+  if (btnCloseInspector) {
+    btnCloseInspector.addEventListener('click', () => {
+      const panel = document.getElementById('safety-inspector-panel');
+      if (panel) panel.style.display = 'none';
+    });
+  }
+
+  runAndRenderSafetyTab();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initSequenceCharts();
+  initSeqMarginsUI();
+  renderSequenceSteps();
+  initCustomParamsUI();
+  runSequenceSimulation();
+
+  initSafetyTab();
+});
+
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+  initSequenceCharts();
+  initSeqMarginsUI();
+  renderSequenceSteps();
+  initCustomParamsUI();
+  runSequenceSimulation();
+
+  initSafetyTab();
+}
+
+
+
 

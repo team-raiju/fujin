@@ -48,8 +48,8 @@ void update_led_progress(float progress, uint32_t& last_toggle_time, bool& led_s
 const Logger::ParamInfo paramInfoArray[] = {
     {32767, -5, 10, 2184.0f},     // velocity_ms
     {32767, -5, 10, 2184.0f},     // target_velocity_ms
-    {65535, -45, 5, 1310.0f},     // angular_speed_rad_s
-    {65535, -45, 5, 1310.0f},     // target_rad_s
+    {65535, -45, 45, 728.0f},     // angular_speed_rad_s
+    {65535, -45, 45, 728.0f},     // target_rad_s
     {1023, -1000, 1000, 0.5115f}, // pwm_left
     {1023, -1000, 1000, 0.5115f}, // pwm_right
     {1023, -5, 5, 102.3f},        // encoder_imu_diff
@@ -59,21 +59,25 @@ const Logger::ParamInfo paramInfoArray[] = {
     {4095, -2, 2, 1023.0f},       // ang_i
     {1023, -2, 2, 255.0f},        // rotation_ff
     {1023, -4, 4, 127.0f},        // linear_ff
+    {255, 0, 13000, 0.0195f},     // battery
 };
 #else
 const Logger::ParamInfo paramInfoArray[] = {
     {32767, -5, 10, 2184.0f},       // velocity_ms
     {32767, -5, 10, 2184.0f},       // target_velocity_ms
-    {65535, -45, 5, 1310.0f},       // angular_speed_rad_s
-    {65535, -45, 5, 1310.0f},       // target_rad_s
+    {65535, -45, 45, 728.0f},       // angular_speed_rad_s
+    {65535, -45, 45, 728.0f},       // target_rad_s
     {1023, -1000, 1000, 0.5115f},   // pwm_left
     {1023, -1000, 1000, 0.5115f},   // pwm_right
     {1023, -5, 5, 102.3f},          // encoder_imu_diff
-    {255, 0, 13000, 0.0195f},       // battery
     {65535, -250, 250, 131.0f},     // position_mm_x
     {65535, -250, 250, 131.0f},     // position_mm_y
     {16383, -180, 180, 45.5083f},   // angle
     {16383, -500, 12600, 1.25061f}, // distance_mm
+    {1023, 0, 270, 3.7889f},        // sensor_distance_l
+    {1023, 0, 270, 3.7889f},        // sensor_distance_fl
+    {1023, 0, 270, 3.7889f},        // sensor_distance_fr
+    {1023, 0, 270, 3.7889f},        // sensor_distance_r
 };
 #endif
 
@@ -147,9 +151,9 @@ void Logger::update() {
 
     current_log_entry.linear_ff =
         encode_value(control->get_linear_ff(), paramInfoArray[static_cast<size_t>(ParamIndex::LinearFF)]);
-#else
     current_log_entry.battery = encode_value(bsp::analog_sensors::battery_latest_reading_mv(),
                                              paramInfoArray[static_cast<size_t>(ParamIndex::Battery)]);
+#else
     current_log_entry.position_mm_x =
         encode_value(nav->get_robot_position_mm().x, paramInfoArray[static_cast<size_t>(ParamIndex::PositionX)]);
     current_log_entry.position_mm_y =
@@ -159,6 +163,19 @@ void Logger::update() {
 
     current_log_entry.distance =
         encode_value(nav->get_robot_travelled_dist_mm(), paramInfoArray[static_cast<size_t>(ParamIndex::Distance)]);
+
+    current_log_entry.sensor_distance_l = encode_value(
+        bsp::analog_sensors::ir_distance_mm(bsp::analog_sensors::SensingDirection::LEFT),
+        paramInfoArray[static_cast<size_t>(ParamIndex::SensorDistanceLeft)]);
+    current_log_entry.sensor_distance_fl = encode_value(
+        bsp::analog_sensors::ir_distance_mm(bsp::analog_sensors::SensingDirection::FRONT_LEFT),
+        paramInfoArray[static_cast<size_t>(ParamIndex::SensorDistanceFrontLeft)]);
+    current_log_entry.sensor_distance_fr = encode_value(
+        bsp::analog_sensors::ir_distance_mm(bsp::analog_sensors::SensingDirection::FRONT_RIGHT),
+        paramInfoArray[static_cast<size_t>(ParamIndex::SensorDistanceFrontRight)]);
+    current_log_entry.sensor_distance_r = encode_value(
+        bsp::analog_sensors::ir_distance_mm(bsp::analog_sensors::SensingDirection::RIGHT),
+        paramInfoArray[static_cast<size_t>(ParamIndex::SensorDistanceRight)]);
 #endif
 
     // --- Buffer Management ---
@@ -173,14 +190,14 @@ void Logger::update() {
 void Logger::print_log() {
 
     uint32_t last_toggle_time = bsp::get_tick_ms();
-    bool led_state = true;
+    bool led_state = false;
 
     // Print current params
     services::Config::print_parameters();
 #if CONTROL_LOG_MODE
-    std::printf("t;Vel;TgtVel;AngVel;TgtAngVel;PWM_L;PWM_R;ImuDiff;VelP;VelI;AngP;AngI;RotFF;LinFF\r\n");
+    std::printf("t;Vel;TgtVel;AngVel;TgtAngVel;PWM_L;PWM_R;ImuDiff;VelP;VelI;AngP;AngI;RotFF;LinFF;Batt_mV\r\n");
 #else
-    std::printf("t;Vel;TgtVel;AngVel;TgtAngVel;PWM_L;PWM_R;ImuDiff;Batt_mV;PosX;PosY;Angle;Dist\r\n");
+    std::printf("t;Vel;TgtVel;AngVel;TgtAngVel;PWM_L;PWM_R;ImuDiff;PosX;PosY;Angle;Dist;SensL;SensFL;SensFR;SensR\r\n");
 #endif
     bsp::delay_ms(5);
 
@@ -201,7 +218,7 @@ void Logger::print_log() {
 
 #if CONTROL_LOG_MODE
         std::printf(
-            "%0.1f;%0.4f;%0.4f;%0.4f;%0.4f;%0.f;%0.f;%0.4f;%0.4f;%0.4f;%0.4f;%0.4f;%0.4f;%0.4f\r\n", time_ms,
+            "%0.1f;%0.4f;%0.4f;%0.4f;%0.4f;%0.f;%0.f;%0.4f;%0.4f;%0.4f;%0.4f;%0.4f;%0.4f;%0.4f;%0.f\r\n", time_ms,
             decode_value(read_logdata.fields.velocity_ms, paramInfoArray[static_cast<size_t>(ParamIndex::VelocityMS)]),
             decode_value(read_logdata.fields.target_velocity_ms,
                          paramInfoArray[static_cast<size_t>(ParamIndex::TargetVelocityMS)]),
@@ -217,10 +234,11 @@ void Logger::print_log() {
             decode_value(read_logdata.fields.ang_p, paramInfoArray[static_cast<size_t>(ParamIndex::AngP)]),
             decode_value(read_logdata.fields.ang_i, paramInfoArray[static_cast<size_t>(ParamIndex::AngI)]),
             decode_value(read_logdata.fields.rotation_ff, paramInfoArray[static_cast<size_t>(ParamIndex::RotationFF)]),
-            decode_value(read_logdata.fields.linear_ff, paramInfoArray[static_cast<size_t>(ParamIndex::LinearFF)]));
+            decode_value(read_logdata.fields.linear_ff, paramInfoArray[static_cast<size_t>(ParamIndex::LinearFF)]),
+            decode_value(read_logdata.fields.battery, paramInfoArray[static_cast<size_t>(ParamIndex::Battery)]));
 #else
         std::printf(
-            "%d;%0.4f;%0.4f;%0.4f;%0.4f;%0.f;%0.f;%0.f;%0.4f;%0.4f;%0.4f;%0.4f;%0.4f\r\n", idx,
+            "%0.1f;%0.4f;%0.4f;%0.4f;%0.4f;%0.f;%0.f;%0.4f;%0.4f;%0.4f;%0.4f;%0.4f;%0.1f;%0.1f;%0.1f;%0.1f\r\n", time_ms,
             decode_value(read_logdata.fields.velocity_ms, paramInfoArray[static_cast<size_t>(ParamIndex::VelocityMS)]),
             decode_value(read_logdata.fields.target_velocity_ms,
                          paramInfoArray[static_cast<size_t>(ParamIndex::TargetVelocityMS)]),
@@ -231,11 +249,18 @@ void Logger::print_log() {
             decode_value(read_logdata.fields.pwm_right, paramInfoArray[static_cast<size_t>(ParamIndex::PwmRight)]),
             decode_value(read_logdata.fields.encoder_imu_diff,
                          paramInfoArray[static_cast<size_t>(ParamIndex::EncoderImuDiff)]),
-            decode_value(read_logdata.fields.battery, paramInfoArray[static_cast<size_t>(ParamIndex::Battery)]),
             decode_value(read_logdata.fields.position_mm_x, paramInfoArray[static_cast<size_t>(ParamIndex::PositionX)]),
             decode_value(read_logdata.fields.position_mm_y, paramInfoArray[static_cast<size_t>(ParamIndex::PositionY)]),
             decode_value(read_logdata.fields.angle, paramInfoArray[static_cast<size_t>(ParamIndex::Angle)]),
-            decode_value(read_logdata.fields.distance, paramInfoArray[static_cast<size_t>(ParamIndex::Distance)]));
+            decode_value(read_logdata.fields.distance, paramInfoArray[static_cast<size_t>(ParamIndex::Distance)]),
+            decode_value(read_logdata.fields.sensor_distance_l,
+                         paramInfoArray[static_cast<size_t>(ParamIndex::SensorDistanceLeft)]),
+            decode_value(read_logdata.fields.sensor_distance_fl,
+                         paramInfoArray[static_cast<size_t>(ParamIndex::SensorDistanceFrontLeft)]),
+            decode_value(read_logdata.fields.sensor_distance_fr,
+                         paramInfoArray[static_cast<size_t>(ParamIndex::SensorDistanceFrontRight)]),
+            decode_value(read_logdata.fields.sensor_distance_r,
+                         paramInfoArray[static_cast<size_t>(ParamIndex::SensorDistanceRight)]));
 #endif
 
         bsp::delay_ms(3);
@@ -248,22 +273,43 @@ void Logger::send_log_ble() {
 
 #if CONTROL_LOG_MODE
 #else
+    uint32_t last_toggle_time = bsp::get_tick_ms();
+    bool led_state = false;
+
     uint32_t saved_size = addr_offset;
-    uint8_t packet[19] = {0};
+    uint8_t packet[18] = {0};
     packet[0] = bsp::ble::header;
     packet[1] = bsp::ble::BlePacketType::RequestLogData;
 
-    for (uint16_t i = 0; i < saved_size; i += sizeof(LogData)) {
+    for (uint32_t i = 0; i < saved_size; i += sizeof(LogData)) {
         LogData read_logdata;
         if (i + sizeof(read_logdata.data) > sizeof(ram_logger)) {
             break;
         }
 
-        memcpy(packet + 2, ram_logger + i, 17);
+        float progress = (saved_size > 0) ? (static_cast<float>(i) / static_cast<float>(saved_size)) : 1.0f;
+        update_led_progress(progress, last_toggle_time, led_state);
+
+        memcpy(read_logdata.data, ram_logger + i, sizeof(read_logdata.data));
+
+        bsp::ble::BleLogData ble_data = {
+            .velocity_ms = static_cast<uint16_t>(read_logdata.fields.velocity_ms),
+            .target_velocity_ms = static_cast<uint16_t>(read_logdata.fields.target_velocity_ms),
+            .angular_speed_rad_s = static_cast<uint16_t>(read_logdata.fields.angular_speed_rad_s),
+            .target_rad_s = static_cast<uint16_t>(read_logdata.fields.target_rad_s),
+            .pwm_left = static_cast<uint16_t>(read_logdata.fields.pwm_left),
+            .pwm_right = static_cast<uint16_t>(read_logdata.fields.pwm_right),
+            .angle = static_cast<uint16_t>(read_logdata.fields.angle),
+            .distance = static_cast<uint16_t>(read_logdata.fields.distance),
+        };
+
+        memcpy(packet + 2, &ble_data, sizeof(ble_data));
 
         bsp::ble::transmit(packet, sizeof(packet));
         bsp::delay_ms(5);
     }
+
+    bsp::leds::stripe_set(bsp::leds::Color::Black);
 #endif
 }
 }

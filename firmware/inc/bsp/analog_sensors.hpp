@@ -27,22 +27,17 @@ struct SensingStatus {
 };
 
 struct SensingPattern {
-    uint32_t L;
-    uint32_t FL;
-    uint32_t FR;
-    uint32_t R;
+    float L;
+    float FL;
+    float FR;
+    float R;
 };
-/// @brief Sensor raw values in every wall combination
-constexpr std::array<SensingPattern, 8> ir_wall_patterns = {{
-    {1119, 850, 1290, 1460}, // F-L-R
-    {960, 820, 1200, 880},  // F-L
-    {500, 700, 1160, 1460}, // F-R
-    {520, 755, 1200, 870},  // F
-    {900, 67, 246, 1460},   // L-R
-    {900, 28, 230, 870},     // L
-    {530, 35, 261, 1300},   // R
-    {180, 66, 238, 800}     // None
-}};
+
+SensingPattern get_wall_pattern(uint8_t index);
+void set_wall_pattern(uint8_t index, const SensingPattern& pattern);
+void reset_wall_pattern(uint8_t index);
+void reset_all_wall_patterns();
+const std::array<SensingPattern, 8>& get_all_wall_patterns();
 
 typedef void (*bsp_analog_ready_callback_t)(void);
 
@@ -56,21 +51,49 @@ void stop(void);
 void register_callback(bsp_analog_ready_callback_t callback);
 
 uint32_t* ir_latest_reading(void);
+float* ir_latest_distance(void);
 uint32_t battery_latest_reading(void);
 uint32_t* current_latest_reading(void);
 float battery_latest_reading_mv(void);
 float battery_latest_reading_volts(void);
+float battery_latest_reading_mv_real(void);
+float battery_latest_reading_volts_real(void);
 bool battery_low();
 
-uint32_t ir_reading(SensingDirection direction);
+/// @brief Alias for ir_reading: returns sensor reading distance in mm
+float ir_distance_mm(SensingDirection direction);
+/// @brief Returns raw ADC sensor reading
+uint32_t ir_raw_reading(SensingDirection direction);
+
 bool ir_reading_wall(SensingDirection direction);
+bool ir_is_wall_confirmed(SensingDirection direction);
+bool ir_wall_break_condition(SensingDirection direction);
+void ir_update_wall_hysteresis(float delta_traveled_mm);
+void ir_reset_wall_hysteresis(SensingDirection direction);
+void ir_reset_all_wall_hysteresis();
+float ir_slope_value(SensingDirection direction);
+
+bool ir_start_condition();
+
 
 /// @brief compares the readings to a known pattern and calculates the sensing status
 SensingStatus ir_get_sensing_status();
 
 int32_t ir_side_wall_error();
 int32_t ir_diagonal_error();
-bool ir_wall_control_valid(SensingDirection direction);
+bool ir_diagonal_control_valid(SensingDirection direction);
 void enable_modulation(bool enable = true);
+
+struct IrCalibParams {
+    float a;
+    float b;
+    float c;
+};
+
+IrCalibParams get_calib_params(SensingDirection direction);
+void set_calib_params(SensingDirection direction, const IrCalibParams& params);
+void reset_calib_params(SensingDirection direction);
+void reset_all_calib_params();
+float raw_to_distance_mm(SensingDirection direction, uint32_t raw);
 
 }

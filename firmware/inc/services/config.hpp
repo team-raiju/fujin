@@ -1,5 +1,6 @@
 #pragma once
 
+#include "bsp/analog_sensors.hpp"
 #include "bsp/ble.hpp"
 
 namespace services {
@@ -22,6 +23,7 @@ public:
     static float angular_ki;
     static float angular_kd;
     static float angular_acc_feed_forward_k;
+    static float angular_brake_feed_forward_k;
     static float angular_vel_feed_forward_k;
 
     static float linear_vel_acc_feed_forward_k;
@@ -32,6 +34,9 @@ public:
     static float wheel_radius_mm;
     static float coulomb_ff;
     static float angular_coulomb_ff;
+    static float angular_static_ff;
+    static float angular_coulomb_ff_inplace;
+    static float angular_static_ff_inplace;
 
     static float wall_kp;
     static float wall_ki;
@@ -47,32 +52,39 @@ public:
 
     static float min_move_speed;
 
-    static float ir_wall_dist_ref_right;
-    static float ir_wall_dist_ref_front_left;
-    static float ir_wall_dist_ref_front_right;
     static float ir_wall_dist_ref_left;
-
-    static float ir_wall_control_th_right;
-    static float ir_wall_control_th_front_left;
-    static float ir_wall_control_th_front_right;
-    static float ir_wall_control_th_left;
-
-    static float ir_wall_detect_th_right;
-    static float ir_wall_detect_th_front_left;
-    static float ir_wall_detect_th_front_right;
+    static float ir_wall_dist_ref_right;
     static float ir_wall_detect_th_left;
+    static float ir_wall_detect_th_right;
+
+    static float ir_diagonal_ref_fl;
+    static float ir_diagonal_ref_fr;
+    static float ir_diagonal_control_th_fl;
+    static float ir_diagonal_control_th_fr;
+
+    static float sensor_r_slope_max_th;
+    static float sensor_l_slope_max_th;
+    static float right_sensor_angle_deg;
+    static float left_sensor_angle_deg;
 
     static float z_imu_bias;
 
     static float start_wall_break_mm_left;
     static float start_wall_break_mm_right;
     static float enable_wall_break_correction;
+    static float enable_lateral_correction_90;
+    static float enable_lateral_correction_wall;
+    static float linear_accel_margin_mm;
+    static float linear_brake_margin_mm;
 
     static void init();
     static int parse_packet(uint8_t packet[bsp::ble::max_packet_size]);
     static int parse_movement_packet(uint8_t packet[bsp::ble::max_packet_size]);
+    static int load_movement_preset(uint8_t preset_id);
+    static int load_general_preset(uint8_t preset_id);
     static int parse_move_sequence_packet(uint8_t packet[bsp::ble::max_packet_size]);
     static int write_default_params();
+    static int save_general_params_to_eeprom();
     static int write_all_move_params_to_eeprom();
     static int write_turn_param_to_eeprom(Movement movement_id);
     static int write_forward_param_to_eeprom(Movement movement_id);
@@ -83,6 +95,13 @@ public:
     static int save_z_bias();
     static void load_custom_movements_from_eeprom();
     static void load_movement_sequence_from_eeprom();
+    static void load_ir_calib_from_eeprom();
+    static int save_ir_calib_to_eeprom(bsp::analog_sensors::SensingDirection direction);
+    static int save_all_ir_calib_to_eeprom();
+    static void load_ir_wall_patterns_from_eeprom();
+    static int save_ir_wall_pattern_to_eeprom(uint8_t pattern_idx);
+    static int save_all_ir_wall_patterns_to_eeprom();
+    static int reset_ir_wall_patterns_in_eeprom();
 };
 
 }

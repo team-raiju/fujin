@@ -7,8 +7,8 @@
 static constexpr float CELL_SIZE_MM = 180.0;
 static constexpr float HALF_CELL_SIZE_MM = 90.0;
 static constexpr float CELL_DIAGONAL_SIZE_MM = 127.27922;
-static constexpr float ROBOT_DIST_FROM_CENTER_START_MM_FAST = 21.0; // To account for slippery when fast mode
-static constexpr float ROBOT_DIST_FROM_CENTER_START_MM = 19.0;  // Actually 15.5, But also account for slippery
+static constexpr float ROBOT_DIST_FROM_CENTER_START_MM_FAST = 17.5; // To account for slippery when fast mode this can be adjusted
+static constexpr float ROBOT_DIST_FROM_CENTER_START_MM = 17.5;  // Actually 17.5 with 6mm wall, and 14.5mm with 12mm wall
 
 /**
  * @struct TurnParams
@@ -87,6 +87,7 @@ struct GeneralParams {
     float angular_ki;
     float angular_kd;
     float angular_acc_feed_forward_k;
+    float angular_brake_feed_forward_k;
     float angular_vel_feed_forward_k;
 
     float linear_vel_acc_feed_forward_k;
@@ -110,31 +111,45 @@ struct GeneralParams {
     float enable_wall_break_correction;
     float max_linear_acc_jerk;
     float max_linear_brake_jerk;
+    float wheel_radius_mm;
     float coulomb_ff;
     float angular_coulomb_ff;
+    float angular_static_ff;
+    float angular_coulomb_ff_inplace;
+    float angular_static_ff_inplace;
+    float linear_accel_margin_mm;
+    float linear_brake_margin_mm;
 
     GeneralParams()
         : fan_speed(0), angular_kp(0), angular_ki(0), angular_kd(0), angular_acc_feed_forward_k(0),
-          angular_vel_feed_forward_k(0), linear_vel_acc_feed_forward_k(0), linear_vel_brake_feed_forward_k(0),
-          linear_vel_feed_forward_k(0),
+          angular_brake_feed_forward_k(0), angular_vel_feed_forward_k(0), linear_vel_acc_feed_forward_k(0),
+          linear_vel_brake_feed_forward_k(0), linear_vel_feed_forward_k(0),
           wall_kp(0), wall_ki(0), wall_kd(0),
           linear_vel_kp(0), linear_vel_ki(0), linear_vel_kd(0), diagonal_walls_kp(0), diagonal_walls_ki(0),
           diagonal_walls_kd(0), start_wall_break_mm_left(0), start_wall_break_mm_right(0),
-          enable_wall_break_correction(0), max_linear_acc_jerk(0), max_linear_brake_jerk(0), coulomb_ff(0),
-          angular_coulomb_ff(0) {}
+          enable_wall_break_correction(0), max_linear_acc_jerk(0), max_linear_brake_jerk(0),
+          wheel_radius_mm(0), coulomb_ff(0),
+          angular_coulomb_ff(0), angular_static_ff(0),
+          angular_coulomb_ff_inplace(0), angular_static_ff_inplace(0),
+          linear_accel_margin_mm(10.0f), linear_brake_margin_mm(10.0f) {}
 
-    GeneralParams(float fan, float akp, float aki, float akd, float aaff, float avff, float lvaff, float lvbff, float lvff, float wkp, float wki,
+    GeneralParams(float fan, float akp, float aki, float akd, float aaff, float abff, float avff, float lvaff, float lvbff, float lvff, float wkp, float wki,
                   float wkd, float lvkp, float lvki, float lvkd, float dwkp, float dwki, float dwkd, float swbcl,
-                  float swbcr, float ewbc, float mlaj, float mlbj, float c_ff, float angular_c_ff )
+                  float swbcr, float ewbc, float mlaj, float mlbj, float wr, float c_ff, float angular_c_ff, float angular_s_ff,
+                  float angular_c_ff_inplace = 0.0f, float angular_s_ff_inplace = 0.0f,
+                  float linear_accel_margin = 10.0f, float linear_brake_margin = 10.0f)
         : fan_speed(fan), angular_kp(akp), angular_ki(aki), angular_kd(akd), angular_acc_feed_forward_k(aaff),
+          angular_brake_feed_forward_k(abff),
           angular_vel_feed_forward_k(avff), linear_vel_acc_feed_forward_k(lvaff), linear_vel_brake_feed_forward_k(lvbff),
           linear_vel_feed_forward_k(lvff),
           wall_kp(wkp), wall_ki(wki),
           wall_kd(wkd), linear_vel_kp(lvkp), linear_vel_ki(lvki), linear_vel_kd(lvkd), diagonal_walls_kp(dwkp),
           diagonal_walls_ki(dwki), diagonal_walls_kd(dwkd), start_wall_break_mm_left(swbcl),
           start_wall_break_mm_right(swbcr), enable_wall_break_correction(ewbc),
-          max_linear_acc_jerk(mlaj), max_linear_brake_jerk(mlbj), coulomb_ff(c_ff),
-          angular_coulomb_ff(angular_c_ff) {}
+          max_linear_acc_jerk(mlaj), max_linear_brake_jerk(mlbj), wheel_radius_mm(wr), coulomb_ff(c_ff),
+          angular_coulomb_ff(angular_c_ff), angular_static_ff(angular_s_ff),
+          angular_coulomb_ff_inplace(angular_c_ff_inplace), angular_static_ff_inplace(angular_s_ff_inplace),
+          linear_accel_margin_mm(linear_accel_margin), linear_brake_margin_mm(linear_brake_margin) {}
 };
 
 extern const std::array<TurnParams, MOVEMENT_COUNT> turn_params_search_slow;
@@ -160,3 +175,19 @@ extern const GeneralParams general_params_slow;
 extern const GeneralParams general_params_medium;
 extern const GeneralParams general_params_fast;
 extern const GeneralParams general_params_super;
+
+enum navigation_mode_t : uint8_t {
+    SEARCH_SLOW = 0,
+    SEARCH_MEDIUM = 1,
+    SEARCH_FAST = 2,
+    SLOW = 3,
+    MEDIUM = 4,
+    FAST = 5,
+    SUPER = 6,
+    CUSTOM = 7,
+};
+
+const std::array<TurnParams, MOVEMENT_COUNT>& get_turn_params(navigation_mode_t mode);
+const std::array<ForwardParams, MOVEMENT_COUNT>& get_forward_params(navigation_mode_t mode);
+const GeneralParams& get_general_params(navigation_mode_t mode);
+bool load_movement_preset_to_custom(navigation_mode_t preset);

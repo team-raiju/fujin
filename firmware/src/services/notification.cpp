@@ -1,4 +1,6 @@
 #include <cstdio>
+#include <algorithm>
+#include <cmath>
 
 #include "bsp/analog_sensors.hpp"
 #include "bsp/ble.hpp"
@@ -58,8 +60,39 @@ void Notification::send_maze() {
             data[9] = maze->map[x][y].distance;
 
             bsp::ble::transmit(data, sizeof(data));
-            bsp::delay_ms(5);
+            bsp::delay_ms(10);
         }
+    }
+}
+
+void Notification::send_target_movements(const std::vector<std::pair<Movement, uint8_t>>& movements) {
+    constexpr uint8_t entries_per_packet = 8;
+    const uint8_t packet_count =
+        static_cast<uint8_t>((movements.size() + entries_per_packet - 1) / entries_per_packet);
+
+    if (packet_count == 0) {
+        uint8_t data[bsp::ble::max_packet_size] = {bsp::ble::header,
+                                                    bsp::ble::BlePacketType::TargetMovementSequence, 0, 0};
+        bsp::ble::transmit(data, sizeof(data));
+        return;
+    }
+
+    for (uint8_t packet_index = 0; packet_index < packet_count; packet_index++) {
+        uint8_t data[bsp::ble::max_packet_size] = {
+            bsp::ble::header,
+            bsp::ble::BlePacketType::TargetMovementSequence,
+            packet_index,
+            packet_count,
+        };
+        const size_t first = packet_index * entries_per_packet;
+        const size_t last = std::min(first + entries_per_packet, movements.size());
+        for (size_t i = first; i < last; i++) {
+            const size_t offset = 4 + ((i - first) * 2);
+            data[offset] = static_cast<uint8_t>(movements[i].first);
+            data[offset + 1] = movements[i].second;
+        }
+        bsp::ble::transmit(data, sizeof(data));
+        bsp::delay_ms(5);
     }
 }
 
@@ -125,7 +158,9 @@ void Notification::update(bool ignore_maze) {
     case SEND_SENSORS: {
         using namespace bsp::analog_sensors;
         auto sensors = ir_latest_reading();
-        uint8_t data[] = {
+        auto distances = ir_latest_distance();
+        const SensingDirection wire_order[] = {LEFT, FRONT_LEFT, FRONT_RIGHT, RIGHT};
+        uint8_t data[18] = {
             bsp::ble::header,
             bsp::ble::BlePacketType::SensorData,
             uint8_t((sensors[SensingDirection::LEFT] & 0xFF00) >> 8),
@@ -138,13 +173,20 @@ void Notification::update(bool ignore_maze) {
             uint8_t(sensors[SensingDirection::RIGHT] & 0x00FF),
         };
 
+        for (uint8_t i = 0; i < 4; i++) {
+            long distance_tenths = std::clamp(std::lround(distances[wire_order[i]] * 10.0f), -32768L, 32767L);
+            uint16_t encoded = static_cast<uint16_t>(static_cast<int16_t>(distance_tenths));
+            data[10 + (i * 2)] = static_cast<uint8_t>((encoded >> 8) & 0xFF);
+            data[11 + (i * 2)] = static_cast<uint8_t>(encoded & 0xFF);
+        }
+
         bsp::ble::transmit(data, sizeof(data));
         state = SEND_BATTERY;
         break;
     }
 
     case SEND_BATTERY: {
-        uint32_t bat = bsp::analog_sensors::battery_latest_reading_mv();
+        uint32_t bat = bsp::analog_sensors::battery_latest_reading_mv_real();
 
         uint8_t data[] = {
             bsp::ble::header,

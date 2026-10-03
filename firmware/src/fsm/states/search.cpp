@@ -6,6 +6,7 @@
 #include "bsp/buzzer.hpp"
 #include "bsp/core.hpp"
 #include "bsp/debug.hpp"
+#include "bsp/encoders.hpp"
 #include "bsp/fan.hpp"
 #include "bsp/imu.hpp"
 #include "bsp/leds.hpp"
@@ -27,7 +28,6 @@ using services::Navigation;
 namespace fsm {
 
 static bool indicate_read = false;
-static uint32_t last_indication = 0;
 static bool full_explore = false;
 
 void PreSearch::enter() {
@@ -199,13 +199,13 @@ void SearchWaitStart::enter() {
     bsp::fan::set(0);
 
     /* Only start IR if powered by the battery */
-    if (bsp::analog_sensors::battery_latest_reading_mv() > 7000) {
+    if (bsp::analog_sensors::battery_latest_reading_mv_real() > 7000) {
         soft_timer::start(services::Config::ms_to_ticks(100), soft_timer::SINGLE);
     }
 }
 
 State* SearchWaitStart::react(Timeout const&) {
-    using bsp::analog_sensors::ir_reading_wall;
+    using bsp::analog_sensors::ir_start_condition;
     using bsp::analog_sensors::SensingDirection;
 
     bsp::leds::ir_emitter_on(bsp::leds::LEFT_FRONT);
@@ -214,7 +214,7 @@ State* SearchWaitStart::react(Timeout const&) {
     bsp::delay_ms(5);
 
     for (int i = 0; i < 400; i++) {
-        if (!ir_reading_wall(SensingDirection::FRONT_LEFT) || !ir_reading_wall(SensingDirection::FRONT_RIGHT)) {
+        if (!ir_start_condition()) {
             soft_timer::start(services::Config::ms_to_ticks(100), soft_timer::SINGLE);
             bsp::leds::ir_emitter_all_off();
             bsp::analog_sensors::enable_modulation(false);
@@ -259,11 +259,17 @@ void Search::enter() {
     bsp::delay_ms(2000);
     bsp::buzzer::stop();
 
+    navigation->reset();
+
     services::Control::instance()->start_fan();
     bsp::delay_ms(500);
 
+    bsp::encoders::reset();
+    bsp::imu::reset_angle();
+
     soft_timer::start(1, soft_timer::CONTINUOUS);
 
+    indicate_read = false;
     maze->reset();
     returning = false;
     save_maze = false;
@@ -297,11 +303,10 @@ State* Search::react(ButtonPressed const& event) {
 }
 
 State* Search::react(Timeout const&) {
-    using bsp::analog_sensors::ir_reading_wall;
     using bsp::analog_sensors::SensingDirection;
     using bsp::analog_sensors::SensingStatus;
 
-    if (indicate_read && ((bsp::get_tick_ms() - last_indication) > 100)) {
+    if (indicate_read && std::abs(navigation->get_robot_travelled_dist_mm()) >= 90.0f) {
         bsp::leds::stripe_set(Color::Black);
         indicate_read = false;
         bsp::buzzer::stop();
@@ -316,12 +321,13 @@ State* Search::react(Timeout const&) {
             return &State::get<Idle>();
             // stop_next_move = false;
             // returning = false;
+            // target = services::Maze::GOAL_POSITIONS[0];
+            // save_maze = false;
             // maze->reset();
         }
 
         SensingStatus sensingStatus = bsp::analog_sensors::ir_get_sensing_status();
 
-        last_indication = bsp::get_tick_ms();
         indicate_read = true;
         bsp::leds::stripe_set(Color::Black);
         bsp::leds::stripe_set(Color::Green);
@@ -348,7 +354,7 @@ State* Search::react(Timeout const&) {
         }
 
         if (dir == Direction::STOP && target == services::Maze::ORIGIN) {
-            navigation->set_movement(Movement::TURN_AROUND_INPLACE, Movement::FORWARD, Movement::STOP, 1);
+            navigation->set_movement(Movement::TURN_AROUND_INPLACE, Movement::FORWARD, Movement::STOP, 1, 1);
             // navigation->set_movement(Direction::NORTH);
             stop_next_move = true;
         } else if (dir == Direction::STOP) {
@@ -357,7 +363,7 @@ State* Search::react(Timeout const&) {
                 if (target == services::Maze::ORIGIN) { // Maze fully explored
                     bsp::buzzer::start();
                     bsp::leds::stripe_set(Color::White);
-                    navigation->set_movement(Movement::TURN_AROUND_INPLACE, Movement::FORWARD, Movement::STOP, 1);
+                    navigation->set_movement(Movement::TURN_AROUND_INPLACE, Movement::FORWARD, Movement::STOP, 1, 1);
                     stop_next_move = true;
                 }
             } else {

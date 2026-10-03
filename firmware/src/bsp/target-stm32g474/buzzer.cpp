@@ -2,6 +2,7 @@
 
 #include "bsp/buzzer.hpp"
 #include "utils/math.hpp"
+#include "bsp/timers.hpp"
 
 namespace bsp::buzzer {
 
@@ -34,6 +35,18 @@ void set_volume(uint8_t volume) {
 void set_frequency(uint16_t hz) {
     uint16_t preescaler_value = ((CPU_FREQUENCY / COUNTER_PERIOD) / hz) - 1;
     __HAL_TIM_SET_PRESCALER(&htim8, preescaler_value);
+}
+
+void beep(uint32_t duration_ms) {
+    bsp::buzzer::start();
+    bsp::delay_ms(duration_ms);
+    bsp::buzzer::stop();
+}
+ 
+void beep_double(uint32_t first_ms, uint32_t gap_ms, uint32_t second_ms) {
+    beep(first_ms);
+    bsp::delay_ms(gap_ms);
+    beep(second_ms);
 }
 
 } // namespace

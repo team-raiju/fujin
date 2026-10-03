@@ -14,7 +14,8 @@ namespace services {
 
 class Navigation {
 public:
-    enum navigation_mode_t { SEARCH_SLOW, SEARCH_MEDIUM, SEARCH_FAST, CUSTOM, SLOW, MEDIUM, FAST, SUPER };
+    using navigation_mode_t = ::navigation_mode_t;
+    using enum ::navigation_mode_t;
 
     enum target_movement_mode_t {
         NORMAL,
@@ -28,6 +29,7 @@ public:
     Navigation(const Navigation&) = delete;
 
     void init();
+    void reset();
     void reset(navigation_mode_t mode);
     void update();
     bool step();
@@ -47,7 +49,7 @@ public:
     /// @param prev_movement The previous movement
     /// @param next_movement The next movement
     /// @param count The number of steps to take on the current movement
-    void set_movement(Movement movement, Movement prev_movement, Movement next_movement, uint8_t count);
+    void set_movement(Movement movement, Movement prev_movement, Movement next_movement, uint8_t count, uint8_t next_move_count);
 
     std::vector<std::pair<Movement, uint8_t>> get_movements_to_goal(std::vector<Direction> target_directions,
                                                                     target_movement_mode_t mode);
@@ -59,6 +61,7 @@ public:
 
     const std::array<ForwardParams, MOVEMENT_COUNT>& get_forward_params() const;
     const std::array<TurnParams, MOVEMENT_COUNT>& get_turn_params() const;
+    bool is_front_emergency() const;
 
 private:
     enum class MiniFSMStates {
@@ -72,7 +75,43 @@ private:
     enum class WallBreak { LEFT, RIGHT, NONE };
 
     Navigation() {}
+
+    // Lifecycle / configuration
+    void configure_mode(navigation_mode_t mode);
     void update_cell_position_and_dir();
+
+    // Main movement state handlers
+    bool is_linear_movement(Movement movement) const;
+    bool is_turn_movement(Movement movement) const;
+    bool is_turn_around_movement() const;
+    bool is_search_turn_movement() const;
+    bool is_turn_from_diagonal() const;
+    void step_linear_movement();
+    void step_turn_movement();
+
+    // Linear movement helpers
+    void apply_wall_break_correction();
+    float get_acceleration_ramp_distance_m(float current_speed, float acceleration, float brake_jerk) const;
+    float get_required_brake_distance(float control_linear_speed, float deceleration,
+                                      bool continuous_start_to_forward);
+    void update_linear_target_speed(float& control_linear_speed, float max_speed, float max_acceleration,
+                                    float deceleration, bool continuous_start_to_forward);
+    void configure_linear_pid();
+    void finish_linear_movement(float control_linear_speed);
+
+    // Turn movement helpers
+    void step_turn_forward_1();
+    void step_turn_forward_2();
+    void step_turn_rotation();
+    void step_turn_stabilize_1();
+    void step_turn_stabilize_2();
+    void update_turn_linear_speed(float& control_linear_speed, float max_speed, float acceleration,
+                                  float deceleration, float final_speed);
+    void transition_after_turn_forward_1();
+    void transition_after_turn_forward_2();
+    void update_turn_angular_acceleration(const TurnParams& turn, uint32_t elapsed_time);
+    void transition_after_turn_rotation();
+
 
     /// @brief Get the movement type to go to a target direction, based on the current direction and search mode
     /// @param target_dir The target direction
@@ -87,6 +126,7 @@ private:
     bool start_brake_ramp_up(float current_speed, float current_accel, float final_speed, float jerk);
     float get_effective_max_acceleration(float current_speed, float base_max_accel);
     WallBreak process_wall_break();
+    float calculate_turn_end_offset(Movement movement);
     void reset_wall_break();
     void reset_movement_variables(bool reset_linear_accel = true);
 
@@ -107,32 +147,34 @@ private:
 
     bool is_initialized = false;
     bool is_finished = false;
+    float turn_end_correction_mm = 0.0f;
 
     uint32_t reference_time;
     uint32_t turn_tick_counter = 0;
     float traveled_dist_mm = 0;
-    int32_t encoder_right_counter;
-    int32_t encoder_left_counter;
-    Point current_cell;
+    int32_t encoder_right_counter = 0;
+    int32_t encoder_left_counter = 0;
+    Point current_cell = {0, 0};
     Position current_position_mm = {0, 0};
     float current_angle_rad = 0;
-    Direction current_direction;
-    Movement current_movement;
-    Movement previous_movement;
-    Direction target_direction;
-    float complete_prev_move_travel;
+    Direction current_direction = Direction::NORTH;
+    Movement current_movement = Movement::START;
+    Movement previous_movement = Movement::START;
+    uint8_t current_movement_count = 1;
+    Direction target_direction = Direction::NORTH;
+    float complete_prev_move_travel = 0;
 
-    uint32_t wall_right_counter_on = 0;
-    uint32_t wall_left_counter_on = 0;
-    uint32_t wall_right_counter_off = 0;
-    uint32_t wall_left_counter_off = 0;
+    bool wall_right_was_confirmed = false;
+    bool wall_left_was_confirmed = false;
     float wall_break_last_dist = 0;
     bool current_wall_break_detected = false;
+    bool wall_break_debug_led_on = false;
     bool is_braking = false;
     float encoder_imu_diff = 0;
 
     float current_angular_acceleration = 0.0f;
     float current_linear_acceleration = 0.0f;
+    bool continuous_start_to_forward = false;
 
     MiniFSMStates mini_fsm_state = MiniFSMStates::FORWARD_1;
 

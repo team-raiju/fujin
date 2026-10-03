@@ -1,3 +1,4 @@
+#include <cstring>
 #include <map>
 #include <variant>
 
@@ -42,7 +43,9 @@ void FSM::start() {
 
         if (packet[1] == bsp::ble::BlePacketType::UpdateParameters && !bsp::ble::is_config_locked()) {
             services::Config::parse_packet(packet);
-            dispatch(BleCommand());
+            BleCommand cmd;
+            std::memcpy(cmd.packet, packet, bsp::ble::max_packet_size);
+            dispatch(cmd);
         }
 
         if (packet[1] == bsp::ble::BlePacketType::UpdateMovementParameters && !bsp::ble::is_config_locked()) {
@@ -50,9 +53,27 @@ void FSM::start() {
             dispatch(BleCommand());
         }
 
+        if ((packet[1] == bsp::ble::BlePacketType::LoadMovementPreset ||
+             packet[1] == bsp::ble::BlePacketType::LoadGeneralPreset) &&
+            !bsp::ble::is_config_locked()) {
+            BleCommand cmd;
+            std::memcpy(cmd.packet, packet, bsp::ble::max_packet_size);
+            dispatch(cmd);
+        }
+
         if (packet[1] == bsp::ble::BlePacketType::UpdateMoveSequence && !bsp::ble::is_config_locked()) {
             services::Config::parse_move_sequence_packet(packet);
             dispatch(BleCommand());
+        }
+
+        if (packet[1] == bsp::ble::BlePacketType::RequestParameters ||
+            packet[1] == bsp::ble::BlePacketType::RequestIrCalibParams ||
+            packet[1] == bsp::ble::BlePacketType::CalibrateIrSample ||
+            packet[1] == bsp::ble::BlePacketType::RequestIrWallPatterns ||
+            packet[1] == bsp::ble::BlePacketType::CalibrateIrWallPattern) {
+            BleCommand cmd;
+            std::memcpy(cmd.packet, packet, bsp::ble::max_packet_size);
+            dispatch(cmd);
         }
 
         if (packet[1] == bsp::ble::BlePacketType::Command) {
@@ -65,6 +86,8 @@ void FSM::start() {
                 {bsp::ble::BleCommands::ButtonMovementParameters, ButtonPressed::LONG3},
                 {bsp::ble::BleCommands::ButtonLogDump, ButtonPressed::LONG4},
                 {bsp::ble::BleCommands::ButtonRequestMoveSequence, ButtonPressed::LONG5},
+                {bsp::ble::BleCommands::ButtonEnterIrCalib, ButtonPressed::LONG6},
+                {bsp::ble::BleCommands::ButtonRequestMaze, ButtonPressed::LONG7},
             };
 
             dispatch(ButtonPressed{.button = b[packet[2]]});

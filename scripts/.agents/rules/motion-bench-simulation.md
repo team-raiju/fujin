@@ -1,0 +1,1 @@
+../../.agents/rules/motion-bench-simulation.md

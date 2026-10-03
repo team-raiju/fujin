@@ -45,5 +45,7 @@ float get_filtered_velocity_m_s();
 float get_right_filtered_ang_vel_rad_s();
 float get_left_filtered_ang_vel_rad_s();
 float get_encoder_dist_mm_pulse();
+void set_wheel_radius_mm(float radius_mm);
+float get_wheel_radius_mm();
 
 }

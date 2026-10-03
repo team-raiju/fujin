@@ -25,6 +25,13 @@ enum BlePacketType : uint8_t {
     RequestLogData = 0x08,
     RequestMoveSequence = 0x09,
     UpdateMoveSequence = 0x0A,
+    RequestIrCalibParams = 0x0B,
+    CalibrateIrSample = 0x0C,
+    RequestIrWallPatterns = 0x0D,
+    CalibrateIrWallPattern = 0x0E,
+    TargetMovementSequence = 0x0F,
+    LoadMovementPreset = 0x10,
+    LoadGeneralPreset = 0x11,
 };
 
 enum BleCommands : uint8_t {
@@ -36,6 +43,8 @@ enum BleCommands : uint8_t {
     ButtonMovementParameters = 0x05,
     ButtonLogDump = 0x06,
     ButtonRequestMoveSequence = 0x07,
+    ButtonEnterIrCalib = 0x08,
+    ButtonRequestMaze = 0x09,
 };
 
 enum ForwardParamID : uint8_t {
@@ -59,6 +68,19 @@ enum TurnParamID : uint8_t {
     ACCEL_RAMP_UP_JERK = 0x0A,
     ACCEL_RAMP_DOWN_JERK = 0x0B,
 };
+
+struct BleLogData {
+    uint16_t velocity_ms;
+    uint16_t target_velocity_ms;
+    uint16_t angular_speed_rad_s;
+    uint16_t target_rad_s;
+    uint16_t pwm_left;
+    uint16_t pwm_right;
+    uint16_t angle;
+    uint16_t distance;
+} __attribute__((packed));
+
+static_assert(sizeof(BleLogData) == 16, "BleLogData size must be exactly 16 bytes!");
 
 /// @brief callback function for BLE received data
 typedef std::function<void(uint8_t[receive_packet_size])> BleCallback;

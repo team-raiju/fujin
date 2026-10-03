@@ -25,7 +25,6 @@ using bsp::leds::Color;
 namespace fsm {
 
 static bool indicate_read = false;
-static uint32_t last_indication = 0;
 static services::Navigation::target_movement_mode_t move_mode = services::Navigation::SMOOTH;
 static bool map_backup = false;
 
@@ -210,7 +209,6 @@ State* RunMoveModeSelect::react(ButtonPressed const& event) {
 
 RunMapSelect::RunMapSelect() {
     map_backup = false;
-
 }
 
 void RunMapSelect::enter() {
@@ -265,13 +263,13 @@ void RunWaitStart::enter() {
     bsp::fan::set(0);
 
     /* Only start IR if powered by the battery */
-    if (bsp::analog_sensors::battery_latest_reading_mv() > 7000) {
+    if (bsp::analog_sensors::battery_latest_reading_mv_real() > 7000) {
         soft_timer::start(services::Config::ms_to_ticks(100), soft_timer::SINGLE);
     }
 }
 
 State* RunWaitStart::react(Timeout const&) {
-    using bsp::analog_sensors::ir_reading_wall;
+    using bsp::analog_sensors::ir_start_condition;
     using bsp::analog_sensors::SensingDirection;
 
     bsp::leds::ir_emitter_on(bsp::leds::LEFT_FRONT);
@@ -280,7 +278,7 @@ State* RunWaitStart::react(Timeout const&) {
     bsp::delay_ms(5);
 
     for (int i = 0; i < 400; i++) {
-        if (!ir_reading_wall(SensingDirection::FRONT_LEFT) || !ir_reading_wall(SensingDirection::FRONT_RIGHT)) {
+        if (!ir_start_condition()) {
             soft_timer::start(services::Config::ms_to_ticks(100), soft_timer::SINGLE);
             bsp::leds::ir_emitter_all_off();
             bsp::analog_sensors::enable_modulation(false);
@@ -333,12 +331,9 @@ void Run::enter() {
     logger->init();
     
     maze->read_maze_from_memory(map_backup);
-    float estimated_time_s = 0.0f;
-    target_directions = maze->directions_to_goal(true, &estimated_time_s);
-    std::printf("Time-based path: %u directions, est. time: %.3f s\r\n",
-                static_cast<unsigned int>(target_directions.size()),
-                static_cast<double>(estimated_time_s));
-    maze->print(maze->ORIGIN);
+    // maze->print(maze->ORIGIN);
+    target_directions = maze->directions_to_goal();
+    // maze->print(maze->ORIGIN);
 
     services::Control::instance()->start_fan();
     bsp::delay_ms(200);
@@ -360,12 +355,17 @@ void Run::enter() {
 
     move_count = 0;
     emergency = false;
+    indicate_read = false;
 
     auto movement = target_movements[0].first;
     auto prev_movement = target_movements[0].first;
     auto next_movement = target_movements[1].first;
+    auto next_movement_count = target_movements[1].second;
 
-    navigation->set_movement(movement, prev_movement, next_movement, target_movements[0].second);
+    navigation->set_movement(movement, prev_movement, next_movement, 1, next_movement_count);
+
+    bsp::leds::stripe_set(Color::Black);
+    bsp::delay_ms(250);
 }
 
 State* Run::react(ButtonPressed const& event) {
@@ -393,22 +393,31 @@ State* Run::react(BleCommand const&) {
 }
 
 State* Run::react(Timeout const&) {
-    using bsp::analog_sensors::ir_reading_wall;
     using bsp::analog_sensors::SensingDirection;
 
-    if (emergency || target_movements.size() < 2) {
-        return &State::get<Idle>();
-    }
+    navigation->update();
 
-    if (indicate_read && bsp::get_tick_ms() - last_indication > 75) {
+    if (indicate_read && std::abs(navigation->get_robot_travelled_dist_mm()) >= 90.0f) {
         bsp::leds::stripe_set(Color::Black);
         indicate_read = false;
     }
 
-    navigation->update();
     bool done = navigation->step();
 
     logger->update();
+
+    if (navigation->is_front_emergency() ||
+        ((bsp::imu::is_imu_emergency() || services::Control::instance()->is_emergency()) && move_count >= 1)) {
+        emergency = true;
+        soft_timer::stop();
+        bsp::motors::set(0, 0);
+        bsp::fan::set(0);
+        bsp::leds::stripe_set(Color::Orange);
+        bsp::buzzer::start();
+        bsp::delay_ms(500);
+        bsp::buzzer::stop();
+        return &State::get<Idle>();
+    }
 
     if (done) {
 
@@ -417,7 +426,6 @@ State* Run::react(Timeout const&) {
             return &State::get<Idle>();
         }
 
-        last_indication = bsp::get_tick_ms();
         indicate_read = true;
         bsp::leds::stripe_set(Color::Green);
 
@@ -428,21 +436,12 @@ State* Run::react(Timeout const&) {
         auto next_movement =
             ((move_count + 1) < target_movements.size()) ? target_movements[move_count + 1].first : Movement::STOP;
 
+        auto next_movement_count =
+            ((move_count + 1) < target_movements.size()) ? target_movements[move_count + 1].second : 1;
+
         auto cells = target_movements[move_count].second;
 
-        navigation->set_movement(movement, prev_movement, next_movement, cells);
-    }
-
-    if ((bsp::imu::is_imu_emergency() || services::Control::instance()->is_emergency()) && move_count > 1) {
-        emergency = true;
-        soft_timer::stop();
-        bsp::motors::set(0, 0);
-        bsp::fan::set(0);
-        bsp::leds::stripe_set(Color::Orange);
-        bsp::buzzer::start();
-        bsp::delay_ms(500);
-        bsp::buzzer::stop();
-        return &State::get<Idle>();
+        navigation->set_movement(movement, prev_movement, next_movement, cells, next_movement_count);
     }
 
     return nullptr;
