@@ -223,14 +223,14 @@ const std::array<ForwardParams, MOVEMENT_COUNT> forward_params_fast = make_movem
 
 /// @section TURN_PARMS_SUPER
 const std::array<TurnParams, MOVEMENT_COUNT> turn_params_super = make_movement_array<TurnParams, MOVEMENT_COUNT>({
-    {Movement::TURN_RIGHT_45, {-71.07, -48.73, 2.2, 1200.0, 23.4, T(33.0), T(66.0), -1, T(18.0), T(54.0), 100000, 80000}},     
-    {Movement::TURN_LEFT_45, {-71.07, -48.73, 2.2, 1200.0, 23.4, T(32.5), T(65.5), 1, T(18.0), T(53.5), 100000, 80000}},  
+    {Movement::TURN_RIGHT_45, {-75.47, -47.11, 2.1, 1100.0, 18.0, T(39.0), T(71.0), -1, T(10.0), T(62.0), 120000, 50000}}, //ok    
+    {Movement::TURN_LEFT_45, {-70.47, -47.11, 2.1, 1100.0, 18.0, T(37.5), T(69.5), 1, T(10.0), T(60.5), 120000, 50000}},  //ok
          
     {Movement::TURN_RIGHT_90, {-37.44, 29.91, 2.4, 1300.0, 31.85, T(44.5), T(88.5), -1, T(18.0), T(75.5), 100000, 50000}},     //ok
     {Movement::TURN_LEFT_90, {-29.44, 32.91, 2.4, 1300.0, 31.85, T(44.0), T(88.0), 1, T(18.0), T(75.0), 100000, 50000}},       //ok
 
-    {Movement::TURN_RIGHT_135, {-53.77, -16.75, 2.5, 1200.0, 36.0, T(62.0), T(111.5), -1, T(25.5), T(96.5), 80000, 50000}},   
-    {Movement::TURN_LEFT_135, {-53.77, -16.75, 2.5, 1200.0, 36.0, T(61.0), T(110.5), 1, T(25.5), T(95.5), 80000, 50000}},       
+    {Movement::TURN_RIGHT_135, {-59.77, -16.75, 2.5, 1200.0, 36.0, T(62.0), T(111.5), -1, T(25.5), T(96.5), 80000, 50000}},   //ok
+    {Movement::TURN_LEFT_135, {-49.77, -20.75, 2.5, 1200.0, 36.0, T(60.5), T(110.0), 1, T(25.5), T(95.0), 80000, 50000}},     //ok
 
     {Movement::TURN_RIGHT_180, {-35.00, 39.48, 2.3, 1200.0, 26.1, T(116.0), T(156.0), -1, T(16.0), T(144.0), 100000, 50000}}, //ok
     {Movement::TURN_LEFT_180, {-35.00, 39.48, 2.3, 1200.0, 26.1, T(114.0), T(154.0), 1, T(16.0), T(142.0), 100000, 50000}},  //ok
@@ -238,8 +238,8 @@ const std::array<TurnParams, MOVEMENT_COUNT> turn_params_super = make_movement_a
     {Movement::TURN_RIGHT_45_FROM_45, {0.00, 76.82, 2.2, 1200.0, 23.4, T(33.0), T(66.0), -1, T(18.0), T(54.0), 100000, 80000}},
     {Movement::TURN_LEFT_45_FROM_45, {0.00, 76.82, 2.2, 1200.0, 23.4, T(32.5), T(65.5), 1, T(18.0), T(53.5), 100000, 80000}},  
 
-    {Movement::TURN_RIGHT_90_FROM_45, {0.00, -12.38, 2.2, 1200.0, 33.0, T(46.5), T(87.5), -1, T(26.0), T(75.5), 100000, 80000}},
-    {Movement::TURN_LEFT_90_FROM_45, {0.00, -12.38, 2.2, 1200.0, 33.0, T(46.0), T(87.0), 1, T(26.0), T(75.0), 100000, 80000}},  
+    {Movement::TURN_RIGHT_90_FROM_45, {0.00, -12.38, 2.2, 1200.0, 33.0, T(46.5), T(87.5), -1, T(26.0), T(75.5), 100000, 80000}}, //ok
+    {Movement::TURN_LEFT_90_FROM_45, {0.00, -12.38, 2.2, 1200.0, 33.0, T(46.0), T(87.0), 1, T(26.0), T(75.0), 100000, 80000}},   //ok
 
     {Movement::TURN_RIGHT_135_FROM_45, {0.00, 38.92, 2.3, 1200.0, 36.0, T(62.0), T(111.5), -1, T(25.5), T(96.5), 80000, 50000}},
     {Movement::TURN_LEFT_135_FROM_45, {0.00, 38.92, 2.3, 1200.0, 36.0, T(61.0), T(110.5), 1, T(25.5), T(95.5), 80000, 50000}},   
@@ -259,8 +259,8 @@ const std::array<ForwardParams, MOVEMENT_COUNT> forward_params_super = make_move
     {Movement::TURN_RIGHT_45_FROM_45, {2.2, 30.0, 30.0, 53.76}},    
     {Movement::TURN_LEFT_45_FROM_45, {2.2, 30.0, 30.0, 53.76}},     
 
-    {Movement::TURN_RIGHT_90_FROM_45, {2.2, 30.0, 30.0, 16.33}},     
-    {Movement::TURN_LEFT_90_FROM_45, {2.2, 30.0, 30.0, 16.33}},      
+    {Movement::TURN_RIGHT_90_FROM_45, {2.2, 30.0, 30.0, 16.33}},     //ok
+    {Movement::TURN_LEFT_90_FROM_45, {2.2, 30.0, 30.0, 16.33}},      //ok
 
     {Movement::TURN_RIGHT_135_FROM_45, {2.3, 30.0, 30.0, 39.29}},   
     {Movement::TURN_LEFT_135_FROM_45, {2.3, 30.0, 30.0, 39.29}},    
