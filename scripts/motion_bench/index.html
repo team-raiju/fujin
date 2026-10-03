@@ -21,6 +21,7 @@
         <button class="tab-btn active" data-tab="angular">TURN PROFILE</button>
         <button class="tab-btn" data-tab="linear">LINEAR PROFILE</button>
         <button class="tab-btn" data-tab="sequence">SEQUENCE PLANNER</button>
+        <button class="tab-btn" data-tab="safety">SAFETY CHECKS</button>
       </nav>
       <div class="sub">micromouse · motion planner · lab</div>
     </header>
@@ -75,22 +76,22 @@
         <div class="field">
           <label><span>Linear speed</span><span class="val mono" id="v-linSpeed">0.500</span></label>
           <div class="field-input-row">
-            <input type="range" id="r-linSpeed" min="0" max="5" step="0.001" value="0.5">
-            <input type="number" id="n-linSpeed" min="0" max="5" step="any" value="0.5">
+            <input type="range" id="r-linSpeed" min="0" max="5" step="0.01" value="0.5">
+            <input type="number" id="n-linSpeed" min="0" max="5" step="0.1" value="0.5">
           </div>
         </div>
         <div class="field">
           <label><span>mm Before Turn</span><span class="val mono" id="v-mmBefore">0</span></label>
           <div class="field-input-row">
             <input type="range" id="r-mmBefore" min="-200" max="200" step="0.1" value="0">
-            <input type="number" id="n-mmBefore" min="-200" max="200" step="any" value="0">
+            <input type="number" id="n-mmBefore" min="-200" max="200" step="0.1" value="0">
           </div>
         </div>
         <div class="field">
           <label><span>mm After Turn</span><span class="val mono" id="v-mmAfter">0</span></label>
           <div class="field-input-row">
             <input type="range" id="r-mmAfter" min="0" max="300" step="0.5" value="0">
-            <input type="number" id="n-mmAfter" min="0" max="300" step="any" value="0">
+            <input type="number" id="n-mmAfter" min="0" max="300" step="0.1" value="0">
           </div>
         </div>
         <div class="field">
@@ -523,6 +524,13 @@
             </div>
           </div>
 
+          <div class="field" style="margin-top: 6px;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; text-transform: none;">
+              <input type="checkbox" id="chk-seq-fallback-medium" checked style="cursor: pointer; accent-color: var(--primary);">
+              <span style="font-size: 10.5px; color: var(--text);">Fallback to MEDIUM on START &rarr; Curve</span>
+            </label>
+          </div>
+
           <div class="group-title" style="margin: 10px 0 6px 0; font-size: 9.5px;">General Jerk Limits</div>
           <div class="seq-params-grid">
             <div class="seq-param-item">
@@ -602,11 +610,218 @@
       </section>
     </main>
   </div><!-- /#tab-sequence -->
+
+  <!-- TAB 4: SAFETY CHECKS -->
+  <div id="tab-safety" class="tab-view">
+    <aside id="sidebar-safety" class="sidebar">
+      <div class="group on">
+        <div class="group-title">Profile Configuration</div>
+        <div class="field">
+          <label><span>Preset Mode</span></label>
+          <div class="field-input-row">
+            <select id="s-safetyPreset">
+              <option value="SLOW">SLOW</option>
+              <option value="SEARCH_SLOW">SEARCH_SLOW</option>
+              <option value="SEARCH_MEDIUM">SEARCH_MEDIUM</option>
+              <option value="SEARCH_FAST">SEARCH_FAST</option>
+              <option value="MEDIUM">MEDIUM</option>
+              <option value="FAST" selected>FAST</option>
+              <option value="SUPER">SUPER</option>
+              <option value="CUSTOM">CUSTOM</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 6px; margin-top: 8px;">
+          <button id="btn-safety-tweak-custom" class="btn-safety-action" style="flex: 1; padding: 6px 8px; font-size: 11px; background: var(--panel-raised); border: 1px solid var(--line-bright); color: var(--text); border-radius: 3px; cursor: pointer; font-family: 'IBM Plex Mono', monospace;">
+            ⚙ Tweak in CUSTOM
+          </button>
+        </div>
+
+        <div id="safety-custom-params" class="seq-custom-section" style="display: none; margin-top: 10px;">
+          <div class="field">
+            <label><span>Load Baseline Preset</span></label>
+            <div class="field-input-row" style="gap: 4px;">
+              <select id="s-safetyCustomBase">
+                <option value="MEDIUM">MEDIUM</option>
+                <option value="FAST" selected>FAST</option>
+                <option value="SUPER">SUPER</option>
+                <option value="SLOW">SLOW</option>
+                <option value="SEARCH_SLOW">SEARCH_SLOW</option>
+                <option value="SEARCH_MEDIUM">SEARCH_MEDIUM</option>
+                <option value="SEARCH_FAST">SEARCH_FAST</option>
+              </select>
+              <button id="btn-safety-copy-base" style="padding: 3px 8px; font-size: 11px; white-space: nowrap; font-family: 'IBM Plex Mono', monospace;">Load</button>
+            </div>
+          </div>
+
+          <div class="field" style="margin-top: 6px;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; text-transform: none;">
+              <input type="checkbox" id="chk-safety-fallback-medium" checked style="cursor: pointer; accent-color: var(--primary);">
+              <span style="font-size: 10.5px; color: var(--text);">Fallback to MEDIUM on START &rarr; Curve</span>
+            </label>
+          </div>
+
+          <div class="group-title" style="margin: 10px 0 6px 0; font-size: 9.5px;">General Jerk &amp; Margins</div>
+          <div class="seq-params-grid">
+            <div class="seq-param-item">
+              <label>Lin Acc Jerk</label>
+              <input type="number" id="inp-safety-acc-jerk" step="25" value="625">
+            </div>
+            <div class="seq-param-item">
+              <label>Lin Brake Jerk</label>
+              <input type="number" id="inp-safety-brk-jerk" step="25" value="625">
+            </div>
+          </div>
+
+          <div class="field" style="margin-top: 8px;">
+            <label><span>Brake Margin (mm)</span><span class="val mono" id="v-safetyBrakeMargin">10.0</span></label>
+            <div class="field-input-row">
+              <input type="range" id="r-safetyBrakeMargin" min="0" max="100" step="1" value="10">
+              <input type="number" id="n-safetyBrakeMargin" min="0" max="100" step="0.5" value="10">
+            </div>
+          </div>
+
+          <div class="field">
+            <label><span>Accel Margin (mm)</span><span class="val mono" id="v-safetyAccelMargin">10.0</span></label>
+            <div class="field-input-row">
+              <input type="range" id="r-safetyAccelMargin" min="0" max="100" step="1" value="10">
+              <input type="number" id="n-safetyAccelMargin" min="0" max="100" step="0.5" value="10">
+            </div>
+          </div>
+
+          <div class="group-title" style="margin: 12px 0 6px 0; font-size: 9.5px;">Kinematics Tuner</div>
+          <div class="field">
+            <label><span>Select Movement</span></label>
+            <select id="s-safety-mov-select">
+              <!-- Dynamically populated -->
+            </select>
+          </div>
+
+          <div id="safety-movement-inputs">
+            <!-- Dynamically populated based on s-safety-mov-select -->
+          </div>
+        </div>
+      </div>
+
+      <div class="group on">
+        <div class="group-title">Verification Settings</div>
+        <div class="field">
+          <label><span>Speed Tolerance (m/s)</span></label>
+          <div class="field-input-row">
+            <input type="number" id="n-safetyTolerance" min="0.01" max="0.50" step="0.01" value="0.05">
+          </div>
+        </div>
+        <div style="font-size: 10px; color: var(--muted-dim); font-family: 'IBM Plex Mono', monospace; margin-top: 6px; line-height: 1.4;">
+          <span style="color: var(--jerk);">● DIAGONAL MODE ONLY</span><br>
+          Enforces navigation FSM transitions and S-curve deceleration limits.
+        </div>
+      </div>
+
+      <div class="group on">
+        <div class="group-title">Test Filters</div>
+        <div class="field">
+          <label><span>Filter by Result</span></label>
+          <select id="s-safetyFilterResult">
+            <option value="ALL" selected>All Tests</option>
+            <option value="FAIL">Failing Only</option>
+            <option value="PASS">Passing Only</option>
+            <option value="INVALID">Invalid Sequences</option>
+          </select>
+        </div>
+        <div class="field">
+          <label><span>Filter by Category</span></label>
+          <select id="s-safetyFilterCategory">
+            <option value="ALL" selected>All Categories</option>
+            <option value="user">User Scenarios</option>
+            <option value="tight_transition">Tight Transitions</option>
+            <option value="diagonal_maneuver">Diagonal Maneuvers</option>
+            <option value="sprint">High-Speed Sprints</option>
+            <option value="stop">Stop Scenarios</option>
+          </select>
+        </div>
+        <button id="btn-run-all-safety" style="width: 100%; margin-top: 8px; padding: 7px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: bold; background: var(--panel-raised); border: 1px solid var(--line-bright); color: var(--jerk); cursor: pointer; border-radius: 3px;">
+          ↻ Re-run All Safety Checks
+        </button>
+      </div>
+
+      <div class="group on">
+        <div class="group-title">Custom Sequence Test</div>
+        <div id="safety-custom-seq-builder" style="display: flex; flex-direction: column;">
+          <div class="field">
+            <label><span>Test Label</span></label>
+            <input type="text" id="inp-custom-test-name" value="Custom Sequence Test" style="width: 100%; font-family: 'IBM Plex Mono', monospace; font-size: 11px; background: var(--bg); border: 1px solid var(--line); color: var(--text); padding: 4px 6px; border-radius: 2px;">
+          </div>
+          <div id="safety-custom-steps-container" style="display: flex; flex-direction: column; margin-top: 6px;">
+            <!-- Custom test steps -->
+          </div>
+          <button id="btn-safety-add-step" class="btn-add-step">+ Add Step</button>
+          
+          <div id="safety-custom-validation-msg" style="margin-top: 8px; padding: 6px 8px; border-radius: 3px; font-size: 10.5px; font-family: 'IBM Plex Mono', monospace; display: none;">
+          </div>
+
+          <div style="display: flex; gap: 6px; margin-top: 8px;">
+            <button id="btn-safety-add-test" style="flex: 1; padding: 6px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: bold; background: var(--panel-raised); border: 1px solid var(--line-bright); color: var(--ideal); cursor: pointer; border-radius: 3px;">
+              + Add to Test Suite
+            </button>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <main id="main-safety">
+      <!-- SUMMARY & KPI BAR -->
+      <section class="panel" style="padding: 14px 18px;">
+        <div id="safety-overview-bar" class="safety-overview-bar">
+          <!-- Dynamically populated overview verdict and metrics -->
+        </div>
+      </section>
+
+      <!-- TEST SUITE RESULTS CONTAINER -->
+      <section class="panel" style="padding: 14px 18px; display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line); padding-bottom: 8px;">
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: bold; color: var(--text); letter-spacing: 0.05em;">
+            DIAGONAL MODE SAFETY VERIFICATION SUITE
+          </div>
+          <div id="safety-filter-count" class="mono" style="font-size: 11px; color: var(--muted);">
+            Showing all tests
+          </div>
+        </div>
+
+        <div id="safety-test-cards-container" style="display: flex; flex-direction: column; gap: 10px;">
+          <!-- Test result cards dynamically rendered -->
+        </div>
+      </section>
+
+      <!-- TRAJECTORY INSPECTOR PANEL -->
+      <section class="panel" id="safety-inspector-panel" style="padding: 14px 18px; display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid var(--line); padding-bottom: 8px;">
+          <div style="display: flex; align-items: baseline; gap: 10px;">
+            <span class="panel-title" style="margin: 0;">Trajectory Inspector:</span>
+            <span id="safety-inspector-title" class="mono" style="font-weight: bold; color: var(--jerk); font-size: 12px;">--</span>
+          </div>
+          <button id="btn-close-inspector" style="padding: 3px 8px; font-size: 11px; background: transparent; border: 1px solid var(--line); color: var(--muted); cursor: pointer; border-radius: 2px;">✕ Close</button>
+        </div>
+
+        <div class="charts-row">
+          <div class="panel" style="flex: 2;">
+            <div class="panel-title">Linear Velocity (m/s) vs Time (ms) &middot; Target Turn Entry Speeds</div>
+            <div class="chart-wrap" style="height: 280px;"><canvas id="chart-safety-lin-vel"></canvas></div>
+          </div>
+          <div class="panel" style="flex: 1;">
+            <div class="panel-title">Angular Velocity (rad/s) &amp; Linear Accel (m/s²)</div>
+            <div class="chart-wrap" style="height: 280px;"><canvas id="chart-safety-dynamics"></canvas></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div><!-- /#tab-safety -->
 </div><!-- /#app -->
 
 <script src="presets_data.js"></script>
 <script src="simulations.js"></script>
 <script src="sequence.js"></script>
+<script src="safety_checker.js"></script>
 <script src="ui.js"></script>
 </body>
 

@@ -85,6 +85,12 @@ function simulateSequence(steps, presetName, options = {}) {
   let maxLinSpeedObserved = 0.0;
   let maxAngSpeedObserved = 0.0;
 
+  let waitingForFastParam = false;
+  let activePresetMode = presetName;
+  const customFallbackToMedium = (options.customFallbackToMedium !== undefined)
+    ? options.customFallbackToMedium
+    : true;
+
   for (let i = 0; i < steps.length; i++) {
     const move = steps[i];
     const movement = move.name;
@@ -93,21 +99,43 @@ function simulateSequence(steps, presetName, options = {}) {
     const nextMovement = (i + 1 < steps.length) ? steps[i + 1].name : 'STOP';
     const nextMoveCount = (i + 1 < steps.length) ? Math.max(1, steps[i + 1].count || 1) : 1;
 
+    // Fallback matching Navigation::set_movement
+    const shouldFallback = (presetName === 'FAST' || presetName === 'SUPER') ||
+      (presetName === 'CUSTOM' && customFallbackToMedium);
+    if (movement === 'START') {
+      const isNextTurn = !isLinearMovement(nextMovement);
+      if (isNextTurn && shouldFallback) {
+        waitingForFastParam = true;
+        activePresetMode = 'MEDIUM';
+      }
+    } else if (movement === 'FORWARD' || movement === 'DIAGONAL') {
+      if (waitingForFastParam && count > 1) {
+        waitingForFastParam = false;
+        activePresetMode = presetName;
+      }
+    }
+
+    const currentPreset = (activePresetMode === 'CUSTOM' && options.customPreset)
+      ? options.customPreset
+      : getActivePreset(activePresetMode);
+
     // Movement configuration matching Navigation::set_movement
-    const prevTurn = preset.turn[prevMovement] || { end: 0 };
+    const prevTurn = currentPreset.turn[prevMovement] || { end: 0 };
     completePrevMoveTravel = -1.0 * (prevTurn.end || 0.0);
 
     const isLinear = isLinearMovement(movement);
-    const fwdDef = preset.forward[movement] || (isLinear
+    const fwdDef = currentPreset.forward[movement] || (isLinear
       ? { max_speed: 1.0, acceleration: 10.0, deceleration: 10.0, target_travel_mm: 180.0 }
       : { max_speed: 0.0, acceleration: 0.0, deceleration: 0.0, target_travel_mm: 0.0 });
-    const nextTurn = preset.turn[nextMovement] || { start: 0.0 };
+    const nextTurn = currentPreset.turn[nextMovement] || { start: 0.0 };
 
     let targetTravelMm = 0.0;
     if (movement === 'FORWARD' || movement === 'DIAGONAL') {
       targetTravelMm = completePrevMoveTravel + (fwdDef.target_travel_mm * count) + (nextTurn.start || 0.0);
     } else if (movement === 'START') {
       targetTravelMm = fwdDef.target_travel_mm + (nextTurn.start || 0.0);
+    } else if (movement === 'STOP') {
+      targetTravelMm = fwdDef.target_travel_mm;
     } else {
       targetTravelMm = completePrevMoveTravel + fwdDef.target_travel_mm;
     }
@@ -123,20 +151,20 @@ function simulateSequence(steps, presetName, options = {}) {
       forwardEndSpeed = 0.0;
     } else if (movement === 'START') {
       if (continuousStartToForward) {
-        forwardEndSpeed = preset.forward[nextMovement] ? preset.forward[nextMovement].max_speed : 0.0;
-      } else if (preset.turn && preset.turn[nextMovement]) {
-        forwardEndSpeed = preset.turn[nextMovement].turn_linear_speed;
+        forwardEndSpeed = currentPreset.forward[nextMovement] ? currentPreset.forward[nextMovement].max_speed : 0.0;
+      } else if (currentPreset.turn && currentPreset.turn[nextMovement]) {
+        forwardEndSpeed = currentPreset.turn[nextMovement].turn_linear_speed;
       } else if (nextMovement === 'STOP') {
         forwardEndSpeed = 0.0;
       } else {
-        forwardEndSpeed = preset.forward['START'] ? preset.forward['START'].max_speed : 0.0;
+        forwardEndSpeed = currentPreset.forward['START'] ? currentPreset.forward['START'].max_speed : 0.0;
       }
     } else if (nextMovement === 'FORWARD' || nextMovement === 'DIAGONAL') {
-      forwardEndSpeed = preset.forward[nextMovement] ? preset.forward[nextMovement].max_speed : 0.0;
+      forwardEndSpeed = currentPreset.forward[nextMovement] ? currentPreset.forward[nextMovement].max_speed : 0.0;
     } else if (nextMovement === 'STOP') {
-      forwardEndSpeed = preset.forward['STOP'] ? preset.forward['STOP'].max_speed : 0.0;
+      forwardEndSpeed = currentPreset.forward['STOP'] ? currentPreset.forward['STOP'].max_speed : 0.0;
     } else {
-      const turnDef = preset.turn[nextMovement];
+      const turnDef = currentPreset.turn[nextMovement];
       forwardEndSpeed = turnDef ? turnDef.turn_linear_speed : 0.0;
     }
 
@@ -152,15 +180,16 @@ function simulateSequence(steps, presetName, options = {}) {
 
     if (isLinearMovement(movement)) {
       // LINEAR EXECUTION
+      const isStartMove = (movement === 'START');
+      const isStopMove = (movement === 'STOP');
       const maxSpeed = (movement === 'START' && continuousStartToForward)
         ? forwardEndSpeed
-        : ((movement === 'START' && forwardEndSpeed > 0.0) ? Math.min(fwdDef.max_speed, forwardEndSpeed) : fwdDef.max_speed);
-      const maxAcceleration = fwdDef.acceleration;
+        : (isStopMove ? Math.min(fwdDef.max_speed, controlLinearSpeed) : ((movement === 'START' && forwardEndSpeed > 0.0) ? Math.min(fwdDef.max_speed, forwardEndSpeed) : fwdDef.max_speed));
+      const maxAcceleration = isStopMove ? 0.0 : fwdDef.acceleration;
       const deceleration = fwdDef.deceleration;
-      const isStartMove = (movement === 'START');
       const isForwardAfterStart = (movement === 'FORWARD' || movement === 'DIAGONAL') && (prevMovement === 'START');
-      const moveBrakeMarginMm = isStartMove ? 0.0 : brakeMarginMm;
-      const moveAccelMarginMm = (isStartMove || isForwardAfterStart) ? 0.0 : accelMarginMm;
+      const moveBrakeMarginMm = (isStartMove || isStopMove) ? 0.0 : brakeMarginMm;
+      const moveAccelMarginMm = (isStartMove || isForwardAfterStart || isStopMove) ? 0.0 : accelMarginMm;
 
       const stateObj = {
         controlLinearSpeed,
@@ -214,7 +243,7 @@ function simulateSequence(steps, presetName, options = {}) {
 
     } else {
       // TURN EXECUTION
-      const turnParams = preset.turn[movement];
+      const turnParams = currentPreset.turn[movement];
       if (!turnParams) {
         continue;
       }

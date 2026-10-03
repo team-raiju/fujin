@@ -614,6 +614,12 @@ tabButtons.forEach(btn => {
         seqLinAccChart.resize();
         seqAngAccChart.resize();
       }
+    } else if (targetTab === 'safety') {
+      runAndRenderSafetyTab();
+      if (safetyLinVelChart) {
+        safetyLinVelChart.resize();
+        safetyDynamicsChart.resize();
+      }
     }
   });
 });
@@ -1256,11 +1262,20 @@ function initCustomParamsUI() {
     });
   }
 
+  const chkSeqFallback = document.getElementById('chk-seq-fallback-medium');
+  if (chkSeqFallback) {
+    chkSeqFallback.addEventListener('change', () => {
+      runSequenceSimulation();
+    });
+  }
+
   const copyBtn = document.getElementById('btn-copy-custom-base');
   const baseSelect = document.getElementById('s-seqCustomBase');
   if (copyBtn && baseSelect) {
     copyBtn.addEventListener('click', () => {
       copyPresetToCustom(baseSelect.value);
+      const isFastOrSuper = (baseSelect.value === 'FAST' || baseSelect.value === 'SUPER');
+      if (chkSeqFallback) chkSeqFallback.checked = isFastOrSuper;
       if (inpAccJerk) inpAccJerk.value = customPreset.general.max_linear_acc_jerk;
       if (inpBrkJerk) inpBrkJerk.value = customPreset.general.max_linear_brake_jerk;
       renderCustomMovementInputs(movSelect.value);
@@ -1377,10 +1392,13 @@ function initSeqMarginsUI() {
 function runSequenceSimulation() {
   const presetSelect = document.getElementById('s-seqPreset');
   const presetName = presetSelect ? presetSelect.value : 'MEDIUM';
+  const chkSeqFallback = document.getElementById('chk-seq-fallback-medium');
+  const customFallbackToMedium = chkSeqFallback ? chkSeqFallback.checked : true;
   if (typeof simulateSequence === 'function') {
     const results = simulateSequence(sequenceSteps, presetName, {
       brakeMarginMm: seqGlobalBrakeMargin,
-      accelMarginMm: seqGlobalAccelMargin
+      accelMarginMm: seqGlobalAccelMargin,
+      customFallbackToMedium
     });
     if (results) {
       updateSequenceCharts(results);
@@ -1551,12 +1569,839 @@ if (btnRunSeq) {
   });
 }
 
+/* =========================================================
+   SAFETY VERIFIER & CHECKS TAB UI
+   ========================================================= */
+
+let safetyLinVelChart = null;
+let safetyDynamicsChart = null;
+let currentInspectedTestId = null;
+let lastSafetyRunReports = [];
+
+let safetyGlobalBrakeMargin = 10.0;
+let safetyGlobalAccelMargin = 10.0;
+
+let safetyCustomSteps = [
+  { name: 'START', count: 1 },
+  { name: 'FORWARD', count: 1 },
+  { name: 'TURN_RIGHT_45', count: 1 },
+  { name: 'DIAGONAL', count: 1 },
+  { name: 'TURN_LEFT_45_FROM_45', count: 1 },
+  { name: 'FORWARD', count: 1 },
+  { name: 'STOP', count: 1 }
+];
+
+function initSafetyCharts() {
+  const ctxLinVel = document.getElementById('chart-safety-lin-vel');
+  if (ctxLinVel && !safetyLinVelChart) {
+    safetyLinVelChart = new Chart(ctxLinVel.getContext('2d'), {
+      type: 'line',
+      data: { datasets: [] },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        parsing: false,
+        elements: {
+          point: { radius: 0 },
+          line: { tension: 0 }
+        },
+        scales: {
+          x: {
+            type: 'linear',
+            title: { display: true, text: 'Time (ms)', color: '#526059' },
+            grid: { color: '#1c2622' },
+            ticks: {
+              color: '#7d9188',
+              callback: function(val) { return Number(val).toFixed(1); }
+            }
+          },
+          y: {
+            title: { display: true, text: 'Linear Velocity (m/s)', color: '#526059' },
+            grid: { color: '#1c2622' },
+            ticks: { color: '#7d9188' }
+          }
+        },
+        plugins: {
+          legend: {
+            labels: { color: '#dfe9e3', font: { family: "'IBM Plex Mono', monospace", size: 10 } }
+          },
+          tooltip: {
+            backgroundColor: 'rgba(18, 25, 23, 0.95)',
+            borderColor: '#34483f',
+            borderWidth: 1,
+            titleColor: '#dfe9e3',
+            bodyColor: '#7d9188',
+            callbacks: {
+              title: function(items) {
+                if (!items.length) return '';
+                return Number(items[0].parsed.x).toFixed(1) + ' ms';
+              },
+              label: function(item) {
+                return item.dataset.label + ': ' + Number(item.parsed.y).toFixed(3);
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  const ctxDyn = document.getElementById('chart-safety-dynamics');
+  if (ctxDyn && !safetyDynamicsChart) {
+    safetyDynamicsChart = new Chart(ctxDyn.getContext('2d'), {
+      type: 'line',
+      data: { datasets: [] },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        parsing: false,
+        elements: {
+          point: { radius: 0 },
+          line: { tension: 0 }
+        },
+        scales: {
+          x: {
+            type: 'linear',
+            title: { display: true, text: 'Time (ms)', color: '#526059' },
+            grid: { color: '#1c2622' },
+            ticks: {
+              color: '#7d9188',
+              callback: function(val) { return Number(val).toFixed(1); }
+            }
+          },
+          y: {
+            type: 'linear',
+            position: 'left',
+            title: { display: true, text: 'Angular Vel (rad/s)', color: '#00bbf9' },
+            grid: { color: '#1c2622' },
+            ticks: { color: '#00bbf9' }
+          },
+          y2: {
+            type: 'linear',
+            position: 'right',
+            title: { display: true, text: 'Linear Acc (m/s²)', color: '#ff0054' },
+            grid: { drawOnChartArea: false },
+            ticks: { color: '#ff0054' }
+          }
+        },
+        plugins: {
+          legend: {
+            labels: { color: '#dfe9e3', font: { family: "'IBM Plex Mono', monospace", size: 10 } }
+          }
+        }
+      }
+    });
+  }
+}
+
+function runAndRenderSafetyTab() {
+  const presetSelect = document.getElementById('s-safetyPreset');
+  const presetName = presetSelect ? presetSelect.value : 'FAST';
+  const tolInput = document.getElementById('n-safetyTolerance');
+  const speedTolerance = tolInput ? (parseFloat(tolInput.value) || 0.05) : 0.05;
+
+  const isCustom = (presetName === 'CUSTOM');
+  const chkSafetyFallback = document.getElementById('chk-safety-fallback-medium');
+  const customFallbackToMedium = chkSafetyFallback ? chkSafetyFallback.checked : true;
+  const result = runAllSafetyChecks(presetName, {
+    speedTolerance,
+    brakeMarginMm: isCustom ? safetyGlobalBrakeMargin : undefined,
+    accelMarginMm: isCustom ? safetyGlobalAccelMargin : undefined,
+    customPreset: customPreset,
+    customFallbackToMedium: isCustom ? customFallbackToMedium : undefined
+  });
+
+  lastSafetyRunReports = result.reports;
+  renderSafetyOverview(result.summary, presetName);
+  filterAndRenderSafetyCards();
+
+  // If a test case was being inspected, refresh its chart
+  if (currentInspectedTestId) {
+    const inspected = lastSafetyRunReports.find(r => r.id === currentInspectedTestId);
+    if (inspected && inspected.valid) {
+      inspectSafetyTestCase(currentInspectedTestId, false);
+    }
+  }
+}
+
+function renderSafetyOverview(summary, presetName) {
+  const bar = document.getElementById('safety-overview-bar');
+  if (!bar) return;
+
+  const allPassed = summary.failed === 0 && summary.invalid === 0;
+  const hasInvalid = summary.invalid > 0;
+  const bannerClass = allPassed ? 'pass' : (summary.failed > 0 ? 'fail' : 'invalid');
+
+  let bannerIcon = allPassed ? '✓' : (summary.failed > 0 ? '✗' : '⚠');
+  let bannerText = '';
+  if (allPassed) {
+    bannerText = `ALL TESTS PASSED — Profile "${presetName}" is physically safe &amp; consistent!`;
+  } else if (summary.failed > 0) {
+    bannerText = `${summary.failed} PHYSICAL VIOLATION${summary.failed > 1 ? 'S' : ''} DETECTED in "${presetName}" profile`;
+  } else {
+    bannerText = `${summary.invalid} INVALID SEQUENCE${summary.invalid > 1 ? 'S' : ''} DETECTED`;
+  }
+
+  let html = `
+    <div class="safety-status-banner ${bannerClass}">
+      <div class="safety-banner-title">
+        <span style="font-size: 18px;">${bannerIcon}</span>
+        <span>${bannerText}</span>
+      </div>
+      <div class="safety-badge ${bannerClass}" style="font-size: 12px; padding: 4px 10px;">
+        ${summary.passed} / ${summary.total} PASSED (${summary.passRate}%)
+      </div>
+    </div>
+
+    <div class="safety-kpi-grid">
+      <div class="safety-kpi-tile">
+        <span class="safety-kpi-label">Pass Rate</span>
+        <span class="safety-kpi-val" style="color: ${allPassed ? 'var(--jerk)' : (summary.passRate >= 70 ? 'var(--trap)' : '#ff4757')};">
+          ${summary.passRate}%
+        </span>
+      </div>
+      <div class="safety-kpi-tile">
+        <span class="safety-kpi-label">Passing Tests</span>
+        <span class="safety-kpi-val" style="color: var(--jerk);">${summary.passed}</span>
+      </div>
+      <div class="safety-kpi-tile">
+        <span class="safety-kpi-label">Failing Tests</span>
+        <span class="safety-kpi-val" style="color: ${summary.failed > 0 ? '#ff4757' : 'var(--muted)'};">${summary.failed}</span>
+      </div>
+      <div class="safety-kpi-tile">
+        <span class="safety-kpi-label">Max Speed Error</span>
+        <span class="safety-kpi-val" style="color: ${Math.abs(summary.maxVelocityError) > 0.05 ? '#ff4757' : 'var(--jerk)'};">
+          ${summary.maxVelocityError > 0 ? '+' : ''}${summary.maxVelocityError.toFixed(2)} m/s
+        </span>
+      </div>
+      <div class="safety-kpi-tile">
+        <span class="safety-kpi-label">Tightest Margin</span>
+        <span class="safety-kpi-val" style="color: ${summary.minDistanceMargin < 0 ? '#ff4757' : 'var(--ideal)'};">
+          ${summary.minDistanceMargin.toFixed(1)} mm
+        </span>
+      </div>
+      <div class="safety-kpi-tile">
+        <span class="safety-kpi-label">Tested Preset</span>
+        <span class="safety-kpi-val" style="color: var(--trap); font-size: 13px; text-transform: uppercase;">
+          ${presetName}
+        </span>
+      </div>
+    </div>
+  `;
+
+  bar.innerHTML = html;
+}
+
+function filterAndRenderSafetyCards() {
+  const container = document.getElementById('safety-test-cards-container');
+  const countDisplay = document.getElementById('safety-filter-count');
+  if (!container) return;
+
+  const resultFilter = document.getElementById('s-safetyFilterResult') ? document.getElementById('s-safetyFilterResult').value : 'ALL';
+  const categoryFilter = document.getElementById('s-safetyFilterCategory') ? document.getElementById('s-safetyFilterCategory').value : 'ALL';
+
+  let filtered = lastSafetyRunReports.filter(r => {
+    if (resultFilter === 'PASS' && !r.overallPass) return false;
+    if (resultFilter === 'FAIL' && (r.overallPass || !r.valid)) return false;
+    if (resultFilter === 'INVALID' && r.valid) return false;
+
+    if (categoryFilter !== 'ALL' && r.category !== categoryFilter) return false;
+    return true;
+  });
+
+  if (countDisplay) {
+    countDisplay.textContent = `Showing ${filtered.length} of ${lastSafetyRunReports.length} tests`;
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = `<div style="padding: 24px; text-align: center; color: var(--muted); font-family: 'IBM Plex Mono', monospace;">No test cases match the selected filter.</div>`;
+    return;
+  }
+
+  let html = '';
+  filtered.forEach(report => {
+    const cardStatusClass = report.overallPass ? 'pass' : (report.valid ? 'fail' : 'invalid');
+    const badgeLabel = report.overallPass ? '✓ PASS' : (report.valid ? '✗ FAIL' : '⚠ INVALID');
+    const categoryLabel = report.category.replace('_', ' ').toUpperCase();
+
+    // Sequence breadcrumb trail
+    let trailHtml = '';
+    report.steps.forEach((step, idx) => {
+      const stepNum = idx + 1;
+      const isFailedStep = report.stepChecks.some(sc => sc.step === stepNum && sc.status !== 'PASS');
+      const nodeClass = isFailedStep ? 'fail-step' : (idx === 0 ? 'start-node' : (idx === report.steps.length - 1 ? 'stop-node' : ''));
+      const countLabel = (step.count && step.count > 1) ? `(${step.count})` : '';
+
+      trailHtml += `<span class="seq-node ${nodeClass}" title="Step ${stepNum}: ${step.name} ${countLabel}">${step.name}${countLabel}</span>`;
+      if (idx < report.steps.length - 1) {
+        trailHtml += `<span class="seq-arrow">→</span>`;
+      }
+    });
+
+    // Quick verdict text
+    let quickVerdictHtml = '';
+    if (report.overallPass) {
+      quickVerdictHtml = `<div class="safety-quick-verdict ok">✓ All curve entry speeds and stopping distance verified within tolerance.</div>`;
+    } else if (!report.valid) {
+      quickVerdictHtml = `<div class="safety-quick-verdict err">⚠ Illegal sequence transition for DIAGONAL state machine.</div>`;
+    } else {
+      const failingCheck = report.stepChecks.find(sc => sc.status !== 'PASS');
+      if (failingCheck) {
+        quickVerdictHtml = `<div class="safety-quick-verdict err">✗ Step ${failingCheck.step} (${failingCheck.movement}): ${failingCheck.message}</div>`;
+      } else {
+        quickVerdictHtml = `<div class="safety-quick-verdict err">✗ Velocity limits violated.</div>`;
+      }
+    }
+
+    // Step breakdown table HTML
+    let tableRows = '';
+    if (report.valid && report.stepChecks.length > 0) {
+      report.stepChecks.forEach(sc => {
+        const isFail = sc.status !== 'PASS';
+        const rowClass = isFail ? 'row-fail' : '';
+        const statusBadge = isFail 
+          ? `<span class="safety-badge fail">${sc.status}</span>` 
+          : `<span class="safety-badge pass">PASS</span>`;
+
+        const diffStr = (sc.speedDiff > 0 ? '+' : '') + sc.speedDiff.toFixed(2);
+        const diffColor = Math.abs(sc.speedDiff) > 0.05 ? '#ff6b81' : 'var(--jerk)';
+
+        tableRows += `
+          <tr class="${rowClass}">
+            <td style="color: var(--muted); text-align: center;">${sc.step}</td>
+            <td><strong>${sc.movement}</strong>${sc.count > 1 ? ` (${sc.count})` : ''}</td>
+            <td>${sc.targetTravelMm.toFixed(1)} mm</td>
+            <td>${sc.targetSpeed.toFixed(2)} m/s</td>
+            <td>${sc.actualSpeed.toFixed(2)} m/s</td>
+            <td style="color: ${diffColor}; font-weight: bold;">${diffStr}</td>
+            <td>${sc.reqDistanceMm !== undefined ? sc.reqDistanceMm.toFixed(1) + ' mm' : '--'}</td>
+            <td style="color: ${sc.marginMm < 0 ? '#ff4757' : 'var(--ideal)'}; font-weight: bold;">
+              ${sc.marginMm !== undefined ? (sc.marginMm > 0 ? '+' : '') + sc.marginMm.toFixed(1) + ' mm' : '--'}
+            </td>
+            <td>${statusBadge}</td>
+            <td style="font-size: 10px; color: ${isFail ? '#ff9d9d' : 'var(--muted)'}; max-width: 250px; white-space: normal;">
+              ${sc.message} ${isFail ? `<br><span style="color:var(--text); opacity:0.8;">💡 ${sc.recommendation}</span>` : ''}
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    let detailsContentHtml = '';
+    if (!report.valid) {
+      let issuesList = report.validationErrors.map(e => `<li><strong>Step ${e.step} (${e.move}):</strong> ${e.error} <br><em>Suggestion:</em> ${e.suggestion}</li>`).join('');
+      detailsContentHtml = `
+        <div class="safety-invalid-box">
+          <div><strong>DIAGONAL STATE MACHINE VIOLATION:</strong></div>
+          <ul style="margin: 4px 0 0 16px; padding: 0;">${issuesList}</ul>
+          <div style="font-size: 10px; color: var(--muted); margin-top: 4px;">
+            In firmware/src/services/navigation.cpp, DIAGONAL mode converts orthogonal path commands into diagonal runs. Orthogonal forward cannot be executed while angled at 45°.
+          </div>
+        </div>
+      `;
+    } else {
+      detailsContentHtml = `
+        <div class="safety-table-wrap">
+          <table class="safety-table">
+            <thead>
+              <tr>
+                <th style="width: 30px;">#</th>
+                <th>Movement</th>
+                <th>Available Travel</th>
+                <th>Target Speed</th>
+                <th>Actual Speed</th>
+                <th>Error Δv</th>
+                <th>Req. Distance</th>
+                <th>Margin</th>
+                <th>Status</th>
+                <th>Kinematic Diagnostics &amp; Advice</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tableRows}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    html += `
+      <div class="safety-test-card ${cardStatusClass}" id="card-test-${report.id}">
+        <div class="safety-card-header">
+          <div class="safety-card-title-group">
+            <span class="safety-badge ${cardStatusClass}">${badgeLabel}</span>
+            <span class="safety-badge category">${categoryLabel}</span>
+            <span class="safety-card-title">${report.name}</span>
+          </div>
+
+          <div class="safety-card-actions">
+            ${report.valid ? `<button class="btn-card-action" onclick="inspectSafetyTestCase('${report.id}', true)">📈 Inspect</button>` : ''}
+            <button class="btn-card-action" onclick="toggleSafetyDetails('${report.id}')" id="btn-toggle-${report.id}">Step Analysis ▼</button>
+          </div>
+        </div>
+
+        <div style="font-size: 11px; color: var(--muted);">${report.description}</div>
+
+        <div class="safety-seq-trail">
+          ${trailHtml}
+        </div>
+
+        ${quickVerdictHtml}
+
+        <div class="safety-details-panel" id="details-${report.id}" style="display: none;">
+          ${detailsContentHtml}
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+function toggleSafetyDetails(testId) {
+  const panel = document.getElementById(`details-${testId}`);
+  const btn = document.getElementById(`btn-toggle-${testId}`);
+  if (!panel || !btn) return;
+  const isHidden = panel.style.display === 'none';
+  panel.style.display = isHidden ? 'flex' : 'none';
+  btn.textContent = isHidden ? 'Step Analysis ▲' : 'Step Analysis ▼';
+  btn.classList.toggle('active', isHidden);
+}
+
+function inspectSafetyTestCase(testId, shouldScroll = true) {
+  currentInspectedTestId = testId;
+  const report = lastSafetyRunReports.find(r => r.id === testId);
+  if (!report || !report.valid) return;
+
+  const panel = document.getElementById('safety-inspector-panel');
+  const title = document.getElementById('safety-inspector-title');
+  if (panel) panel.style.display = 'block';
+  if (title) {
+    const verdictIcon = report.overallPass ? '✓ PASS' : '✗ FAIL';
+    title.textContent = `${report.name} (${verdictIcon}) · Total Time: ${report.totalTimeMs.toFixed(1)} ms`;
+    title.style.color = report.overallPass ? 'var(--jerk)' : '#ff4757';
+  }
+
+  // Update Linear Velocity Chart with target speed overlay
+  if (safetyLinVelChart) {
+    const linVelData = report.data.map(d => ({ x: d.x, y: d.yLinVel }));
+    const datasets = [
+      {
+        label: 'Actual Linear Velocity (m/s)',
+        data: linVelData,
+        borderColor: report.overallPass ? '#79ff9e' : '#ff4757',
+        borderWidth: 2,
+        pointRadius: 0,
+        yAxisID: 'y'
+      }
+    ];
+
+    // Add target speed reference points at each transition
+    const targetPoints = [];
+    report.stepChecks.forEach(sc => {
+      // Find the point in data corresponding to this step
+      const stepPts = report.data.filter(d => d.stepIndex === (sc.step - 1));
+      if (stepPts.length > 0) {
+        const lastPt = stepPts[stepPts.length - 1];
+        targetPoints.push({ x: lastPt.x, y: sc.targetSpeed });
+      }
+    });
+
+    if (targetPoints.length > 0) {
+      datasets.push({
+        label: 'Target Entry Speed (m/s)',
+        data: targetPoints,
+        borderColor: '#fca311',
+        backgroundColor: '#fca311',
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        showLine: false,
+        yAxisID: 'y'
+      });
+    }
+
+    safetyLinVelChart.data = { datasets };
+    safetyLinVelChart.update();
+  }
+
+  // Update Dynamics Chart (Angular Velocity & Linear Acceleration)
+  if (safetyDynamicsChart) {
+    const angVelData = report.data.map(d => ({ x: d.x, y: d.yAngVel }));
+    const linAccData = report.data.map(d => ({ x: d.x, y: d.yLinAcc }));
+
+    safetyDynamicsChart.data = {
+      datasets: [
+        {
+          label: 'Angular Velocity (rad/s)',
+          data: angVelData,
+          borderColor: '#00bbf9',
+          borderWidth: 1.8,
+          pointRadius: 0,
+          yAxisID: 'y'
+        },
+        {
+          label: 'Linear Accel (m/s²)',
+          data: linAccData,
+          borderColor: '#ff0054',
+          borderWidth: 1.5,
+          pointRadius: 0,
+          yAxisID: 'y2'
+        }
+      ]
+    };
+    safetyDynamicsChart.update();
+  }
+
+  if (shouldScroll && panel) {
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+function initSafetyCustomParamsUI() {
+  const movSelect = document.getElementById('s-safety-mov-select');
+  if (movSelect) {
+    movSelect.innerHTML = '';
+    ALL_MOVEMENTS.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m;
+      opt.textContent = m;
+      movSelect.appendChild(opt);
+    });
+
+    movSelect.addEventListener('change', () => {
+      renderSafetyCustomMovementInputs(movSelect.value);
+    });
+  }
+
+  const inpAccJerk = document.getElementById('inp-safety-acc-jerk');
+  const inpBrkJerk = document.getElementById('inp-safety-brk-jerk');
+  if (inpAccJerk && inpBrkJerk) {
+    inpAccJerk.value = customPreset.general.max_linear_acc_jerk;
+    inpBrkJerk.value = customPreset.general.max_linear_brake_jerk;
+
+    inpAccJerk.addEventListener('input', () => {
+      customPreset.general.max_linear_acc_jerk = parseFloat(inpAccJerk.value) || 625.0;
+      runAndRenderSafetyTab();
+    });
+    inpBrkJerk.addEventListener('input', () => {
+      customPreset.general.max_linear_brake_jerk = parseFloat(inpBrkJerk.value) || 625.0;
+      runAndRenderSafetyTab();
+    });
+  }
+
+  const chkSafetyFallback = document.getElementById('chk-safety-fallback-medium');
+  if (chkSafetyFallback) {
+    chkSafetyFallback.addEventListener('change', () => {
+      runAndRenderSafetyTab();
+    });
+  }
+
+  const copyBtn = document.getElementById('btn-safety-copy-base');
+  const baseSelect = document.getElementById('s-safetyCustomBase');
+  if (copyBtn && baseSelect) {
+    copyBtn.addEventListener('click', () => {
+      copyPresetToCustom(baseSelect.value);
+      const isFastOrSuper = (baseSelect.value === 'FAST' || baseSelect.value === 'SUPER');
+      if (chkSafetyFallback) chkSafetyFallback.checked = isFastOrSuper;
+      if (inpAccJerk) inpAccJerk.value = customPreset.general.max_linear_acc_jerk;
+      if (inpBrkJerk) inpBrkJerk.value = customPreset.general.max_linear_brake_jerk;
+      renderSafetyCustomMovementInputs(movSelect ? movSelect.value : 'START');
+      runAndRenderSafetyTab();
+    });
+  }
+
+  const tweakBtn = document.getElementById('btn-safety-tweak-custom');
+  const presetSelect = document.getElementById('s-safetyPreset');
+  if (tweakBtn && presetSelect) {
+    tweakBtn.addEventListener('click', () => {
+      const current = presetSelect.value;
+      if (current !== 'CUSTOM') {
+        copyPresetToCustom(current);
+        const isFastOrSuper = (current === 'FAST' || current === 'SUPER');
+        if (chkSafetyFallback) chkSafetyFallback.checked = isFastOrSuper;
+        presetSelect.value = 'CUSTOM';
+      }
+      const customPanel = document.getElementById('safety-custom-params');
+      if (customPanel) customPanel.style.display = 'block';
+      if (inpAccJerk) inpAccJerk.value = customPreset.general.max_linear_acc_jerk;
+      if (inpBrkJerk) inpBrkJerk.value = customPreset.general.max_linear_brake_jerk;
+      renderSafetyCustomMovementInputs(movSelect ? movSelect.value : 'START');
+      runAndRenderSafetyTab();
+    });
+  }
+
+  renderSafetyCustomMovementInputs(movSelect ? movSelect.value : 'START');
+}
+
+function renderSafetyCustomMovementInputs(movName) {
+  const container = document.getElementById('safety-movement-inputs');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const isLinear = isLinearMove(movName);
+  const fwd = customPreset.forward[movName] || (isLinear
+    ? { max_speed: 2.0, acceleration: 20.0, deceleration: 25.0, target_travel_mm: 180.0 }
+    : { max_speed: 0.0, acceleration: 0.0, deceleration: 0.0, target_travel_mm: 0.0 });
+  customPreset.forward[movName] = fwd;
+  const turn = customPreset.turn[movName] || null;
+
+  let html = `<div style="font-size:10px; font-weight:bold; color:var(--text); margin-bottom:4px; font-family:'IBM Plex Mono',monospace;">Forward / Linear Kinematics:</div>`;
+  html += `<div class="seq-params-grid">`;
+  html += `
+    <div class="seq-param-item"><label>Max Speed (m/s)</label><input type="number" step="0.1" id="scf-max-speed" value="${fwd.max_speed}"></div>
+    <div class="seq-param-item"><label>Accel (m/s²)</label><input type="number" step="1" id="scf-accel" value="${fwd.acceleration}"></div>
+    <div class="seq-param-item"><label>Decel (m/s²)</label><input type="number" step="1" id="scf-decel" value="${fwd.deceleration}"></div>
+    <div class="seq-param-item"><label>Travel (mm)</label><input type="number" step="0.1" id="scf-travel" value="${fwd.target_travel_mm}"></div>
+  `;
+  html += `</div>`;
+
+  if (turn) {
+    html += `<div style="font-size:10px; font-weight:bold; color:var(--text); margin:10px 0 4px 0; font-family:'IBM Plex Mono',monospace;">Turn Kinematics:</div>`;
+    html += `<div class="seq-params-grid">`;
+    html += `
+      <div class="seq-param-item"><label>Turn Speed (m/s)</label><input type="number" step="0.1" id="sct-speed" value="${turn.turn_linear_speed}"></div>
+      <div class="seq-param-item"><label>Start Offset (mm)</label><input type="number" step="0.1" id="sct-start" value="${turn.start}"></div>
+      <div class="seq-param-item"><label>End Offset (mm)</label><input type="number" step="0.1" id="sct-end" value="${turn.end}"></div>
+      <div class="seq-param-item"><label>Max Ang Speed</label><input type="number" step="0.1" id="sct-max-omega" value="${turn.max_angular_speed}"></div>
+      <div class="seq-param-item"><label>Ang Accel</label><input type="number" step="10" id="sct-ang-accel" value="${turn.angular_accel}"></div>
+    `;
+    html += `</div>`;
+  }
+
+  container.innerHTML = html;
+
+  const bind = (id, obj, prop) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('input', () => {
+      obj[prop] = parseFloat(el.value) || 0.0;
+      runAndRenderSafetyTab();
+    });
+  };
+
+  bind('scf-max-speed', fwd, 'max_speed');
+  bind('scf-accel', fwd, 'acceleration');
+  bind('scf-decel', fwd, 'deceleration');
+  bind('scf-travel', fwd, 'target_travel_mm');
+
+  if (turn) {
+    bind('sct-speed', turn, 'turn_linear_speed');
+    bind('sct-start', turn, 'start');
+    bind('sct-end', turn, 'end');
+    bind('sct-max-omega', turn, 'max_angular_speed');
+    bind('sct-ang-accel', turn, 'angular_accel');
+  }
+}
+
+function initSafetyMarginsUI() {
+  const sync = (type) => {
+    const r = document.getElementById(`r-safety${type}Margin`);
+    const n = document.getElementById(`n-safety${type}Margin`);
+    const v = document.getElementById(`v-safety${type}Margin`);
+    if (!r || !n || !v) return;
+
+    const update = (val) => {
+      val = parseFloat(val);
+      if (isNaN(val)) val = 0.0;
+      r.value = val;
+      n.value = val;
+      v.textContent = val.toFixed(1);
+      if (type === 'Brake') safetyGlobalBrakeMargin = val;
+      else safetyGlobalAccelMargin = val;
+      runAndRenderSafetyTab();
+    };
+
+    r.addEventListener('input', () => update(r.value));
+    n.addEventListener('input', () => update(n.value));
+  };
+
+  sync('Brake');
+  sync('Accel');
+}
+
+function initSafetyCustomBuilderUI() {
+  const container = document.getElementById('safety-custom-steps-container');
+  const addBtn = document.getElementById('btn-safety-add-step');
+  const addTestBtn = document.getElementById('btn-safety-add-test');
+
+  const renderSteps = () => {
+    if (!container) return;
+    container.innerHTML = '';
+
+    safetyCustomSteps.forEach((step, idx) => {
+      const row = document.createElement('div');
+      row.className = 'seq-step-row';
+
+      const badge = document.createElement('span');
+      badge.className = 'seq-step-badge';
+      badge.textContent = `#${idx + 1}`;
+
+      const select = document.createElement('select');
+      select.className = 'seq-step-select';
+
+      ALL_MOVEMENTS.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m;
+        opt.textContent = m;
+        if (m === step.name) opt.selected = true;
+        select.appendChild(opt);
+      });
+
+      select.addEventListener('change', () => {
+        step.name = select.value;
+        renderSteps();
+        updateCustomValidationBadge();
+      });
+
+      const countInput = document.createElement('input');
+      countInput.type = 'number';
+      countInput.className = 'seq-step-count';
+      countInput.min = '1';
+      countInput.max = '50';
+      countInput.value = step.count || 1;
+      countInput.addEventListener('input', () => {
+        step.count = Math.max(1, parseInt(countInput.value) || 1);
+        updateCustomValidationBadge();
+      });
+
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'btn-remove-step';
+      removeBtn.textContent = '✕';
+      removeBtn.addEventListener('click', () => {
+        if (safetyCustomSteps.length > 1) {
+          safetyCustomSteps.splice(idx, 1);
+          renderSteps();
+          updateCustomValidationBadge();
+        }
+      });
+
+      row.appendChild(badge);
+      row.appendChild(select);
+      row.appendChild(countInput);
+      if (safetyCustomSteps.length > 1) {
+        row.appendChild(removeBtn);
+      }
+
+      container.appendChild(row);
+    });
+
+    updateCustomValidationBadge();
+  };
+
+  const updateCustomValidationBadge = () => {
+    const valMsg = document.getElementById('safety-custom-validation-msg');
+    if (!valMsg) return;
+
+    const val = validateDiagonalSequence(safetyCustomSteps);
+    valMsg.style.display = 'block';
+
+    if (val.valid) {
+      valMsg.style.background = 'rgba(121, 255, 158, 0.1)';
+      valMsg.style.border = '1px solid rgba(121, 255, 158, 0.3)';
+      valMsg.style.color = 'var(--jerk)';
+      valMsg.textContent = '✓ Valid Diagonal Mode Sequence (Ready to test)';
+    } else {
+      valMsg.style.background = 'rgba(255, 165, 2, 0.1)';
+      valMsg.style.border = '1px solid rgba(255, 165, 2, 0.3)';
+      valMsg.style.color = '#ffa502';
+      const firstIssue = val.issues[0];
+      valMsg.textContent = `⚠ Step ${firstIssue.step}: ${firstIssue.error}`;
+    }
+  };
+
+  if (addBtn) {
+    addBtn.addEventListener('click', () => {
+      safetyCustomSteps.push({ name: 'FORWARD', count: 1 });
+      renderSteps();
+    });
+  }
+
+  if (addTestBtn) {
+    addTestBtn.addEventListener('click', () => {
+      const nameInput = document.getElementById('inp-custom-test-name');
+      const testName = (nameInput && nameInput.value.trim()) ? nameInput.value.trim() : `Custom Test ${Date.now() % 1000}`;
+      
+      const newTestCase = {
+        id: 'custom_' + Date.now(),
+        name: testName,
+        category: 'user',
+        description: 'User-defined sequence test created in Motion Bench.',
+        steps: JSON.parse(JSON.stringify(safetyCustomSteps))
+      };
+
+      addCustomSafetyTest(newTestCase);
+      runAndRenderSafetyTab();
+
+      // Scroll to newly added test card
+      setTimeout(() => {
+        const newCard = document.getElementById(`card-test-${newTestCase.id}`);
+        if (newCard) newCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    });
+  }
+
+  renderSteps();
+}
+
+function initSafetyTab() {
+  initSafetyCharts();
+  initSafetyMarginsUI();
+  initSafetyCustomParamsUI();
+  initSafetyCustomBuilderUI();
+
+  const presetSelect = document.getElementById('s-safetyPreset');
+  if (presetSelect) {
+    presetSelect.addEventListener('change', () => {
+      const isCustom = presetSelect.value === 'CUSTOM';
+      const customPanel = document.getElementById('safety-custom-params');
+      if (customPanel) customPanel.style.display = isCustom ? 'block' : 'none';
+      runAndRenderSafetyTab();
+    });
+  }
+
+  const tolInput = document.getElementById('n-safetyTolerance');
+  if (tolInput) {
+    tolInput.addEventListener('input', () => {
+      runAndRenderSafetyTab();
+    });
+  }
+
+  const filterRes = document.getElementById('s-safetyFilterResult');
+  if (filterRes) {
+    filterRes.addEventListener('change', () => filterAndRenderSafetyCards());
+  }
+
+  const filterCat = document.getElementById('s-safetyFilterCategory');
+  if (filterCat) {
+    filterCat.addEventListener('change', () => filterAndRenderSafetyCards());
+  }
+
+  const btnReRun = document.getElementById('btn-run-all-safety');
+  if (btnReRun) {
+    btnReRun.addEventListener('click', () => runAndRenderSafetyTab());
+  }
+
+  const btnCloseInspector = document.getElementById('btn-close-inspector');
+  if (btnCloseInspector) {
+    btnCloseInspector.addEventListener('click', () => {
+      const panel = document.getElementById('safety-inspector-panel');
+      if (panel) panel.style.display = 'none';
+    });
+  }
+
+  runAndRenderSafetyTab();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   initSequenceCharts();
   initSeqMarginsUI();
   renderSequenceSteps();
   initCustomParamsUI();
   runSequenceSimulation();
+
+  initSafetyTab();
 });
 
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
@@ -1565,7 +2410,10 @@ if (document.readyState === 'complete' || document.readyState === 'interactive')
   renderSequenceSteps();
   initCustomParamsUI();
   runSequenceSimulation();
+
+  initSafetyTab();
 }
+
 
 
 

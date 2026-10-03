@@ -1141,11 +1141,9 @@ void Navigation::set_movement(Movement movement, Movement prev_movement, Movemen
         target_travel_mm = complete_prev_move_travel + (forward_params[movement].target_travel_mm * count) +
                            turn_params[next_movement].start;
     } else if (movement == Movement::START) {
-        if (next_movement == Movement::TURN_LEFT_135 || next_movement == Movement::TURN_RIGHT_135 ||
-            next_movement == Movement::TURN_LEFT_45 || next_movement == Movement::TURN_RIGHT_45) {
+        if (is_turn_movement(next_movement)) {
             if (selected_mode == FAST || selected_mode == SUPER) {
-                // This can happen if the robot is turning right afer the start movement.
-                // TODO: generalize this function, because now we are forcing medium parameters
+                // This can happen if the robot is turning right after the start movement.
                 waiting_for_fast_param = true;
                 configure_mode(MEDIUM);
             }
