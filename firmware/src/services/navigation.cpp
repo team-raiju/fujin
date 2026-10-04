@@ -28,7 +28,7 @@ namespace {
 constexpr float FRONT_EMERGENCY_DISTANCE_MM = 70.0f;
 constexpr float WALL_BREAK_DEBUG_DISTANCE_MM = 90.0f;
 constexpr float SEARCH_WALL_BREAK_MIN_DISTANCE_MM = 35.0f;
-constexpr float WALL_BREAK_MAX_CORRECTION_ERROR_MM = 40.0f;
+constexpr float WALL_BREAK_MAX_CORRECTION_ERROR_MM = 30.0f;
 constexpr float FORWARD_WALL_PID_DISABLE_DISTANCE_MM = 70.0f;
 constexpr float DIAGONAL_PID_START_DISTANCE_MM = 50.0f;
 constexpr uint32_t STABILIZE_FORWARD_TIME_MS = 175;
