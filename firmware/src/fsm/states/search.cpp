@@ -3,6 +3,7 @@
 #include "algorithms/pid.hpp"
 #include "bsp/analog_sensors.hpp"
 #include "bsp/ble.hpp"
+#include "bsp/buttons.hpp"
 #include "bsp/buzzer.hpp"
 #include "bsp/core.hpp"
 #include "bsp/debug.hpp"
@@ -13,8 +14,8 @@
 #include "bsp/motors.hpp"
 #include "bsp/timers.hpp"
 #include "fsm/state.hpp"
-#include "services/control.hpp"
 #include "services/config.hpp"
+#include "services/control.hpp"
 #include "services/maze.hpp"
 #include "services/navigation.hpp"
 #include "services/notification.hpp"
@@ -246,9 +247,11 @@ Search::Search() {
     navigation = services::Navigation::instance();
     maze = services::Maze::instance();
     notification = services::Notification::instance();
+    targets = services::Maze::GOAL_POSITIONS;
 }
 
 void Search::enter() {
+    bsp::buttons::enable(false);
     bsp::debug::print("state:Search");
     bsp::leds::indication_on();
     bsp::leds::stripe_set(Color::Red);
@@ -275,7 +278,7 @@ void Search::enter() {
     save_maze = false;
     stop_next_move = false;
     emergency = false;
-    target = services::Maze::GOAL_POSITIONS[0];
+    targets = services::Maze::GOAL_POSITIONS;
 }
 
 State* Search::react(BleCommand const&) {
@@ -339,7 +342,7 @@ State* Search::react(Timeout const&) {
             (sensingStatus.front_seeing * N | sensingStatus.right_seeing * E | sensingStatus.left_seeing * W)
             << robot_dir;
 
-        auto dir = maze->next_step(robot_cell_pos, walls, target, true);
+        auto dir = maze->next_step(robot_cell_pos, walls, targets, true);
 
         bool main_goal_reached =
             std::any_of(std::begin(services::Maze::GOAL_POSITIONS), std::end(services::Maze::GOAL_POSITIONS),
@@ -353,25 +356,27 @@ State* Search::react(Timeout const&) {
             maze->create_maze_backup();
         }
 
-        if (dir == Direction::STOP && target == services::Maze::ORIGIN) {
+        if (dir == Direction::STOP && targets.size() == 1 && targets[0] == services::Maze::ORIGIN) {
             navigation->set_movement(Movement::TURN_AROUND_INPLACE, Movement::FORWARD, Movement::STOP, 1, 1);
             // navigation->set_movement(Direction::NORTH);
             stop_next_move = true;
         } else if (dir == Direction::STOP) {
             if (full_explore) {
-                target = maze->closest_unvisited(robot_cell_pos);
-                if (target == services::Maze::ORIGIN) { // Maze fully explored
+                unvisited_target = maze->closest_unvisited(robot_cell_pos);
+                if (unvisited_target == services::Maze::ORIGIN) { // Maze fully explored
                     bsp::buzzer::start();
                     bsp::leds::stripe_set(Color::White);
                     navigation->set_movement(Movement::TURN_AROUND_INPLACE, Movement::FORWARD, Movement::STOP, 1, 1);
                     stop_next_move = true;
+                } else {
+                    targets = std::span<const Point>(&unvisited_target, 1);
                 }
             } else {
-                target = services::Maze::ORIGIN;
+                targets = services::Maze::ORIGIN_ARRAY;
             }
 
             if (!stop_next_move) {
-                auto dir = maze->next_step(robot_cell_pos, walls, target, true);
+                auto dir = maze->next_step(robot_cell_pos, walls, targets, true);
                 navigation->set_movement(dir);
             }
         } else {
@@ -410,6 +415,7 @@ void Search::exit() {
         bsp::delay_ms(500);
         bsp::buzzer::stop();
     }
+    bsp::buttons::enable(true);
 }
 
 }

@@ -1,119 +1,6 @@
 ########################
 ## Params Search Slow ##
 ########################
-MOTOR: Coreless 1022
-ADDR_ANGULAR_KP: 0.035000
-ADDR_ANGULAR_KI: 0.002000
-ADDR_ANGULAR_KD: 0.000000
-ADDR_WALL_KP: 0.001200
-ADDR_WALL_KI: 0.000000
-ADDR_WALL_KD: 0.0020000
-ADDR_LINEAR_VEL_KP: 3.00000
-ADDR_LINEAR_VEL_KI: 0.03600
-ADDR_LINEAR_VEL_KD: 0.000000
-ADDR_DIAGONAL_WALLS_KP: 0.000000
-ADDR_DIAGONAL_WALLS_KI: 0.000000
-ADDR_DIAGONAL_WALLS_KD: 0.000000
-ADDR_FAN_SPEED: 0
-
-#########################
-## Params Search Medium #
-#########################
-MOTOR: Coreless 1022
-ADDR_ANGULAR_KP: 0.050
-ADDR_ANGULAR_KI: 0.009
-ADDR_ANGULAR_KD: 0.000000
-ADDR_WALL_KP: 0.0020000
-ADDR_WALL_KI: 0.000000
-ADDR_WALL_KD: 0.0040000
-ADDR_LINEAR_VEL_KP: 8.000000
-ADDR_LINEAR_VEL_KI: 0.10000
-ADDR_LINEAR_VEL_KD: 0.000000
-ADDR_DIAGONAL_WALLS_KP: 0.000000
-ADDR_DIAGONAL_WALLS_KI: 0.000000
-ADDR_DIAGONAL_WALLS_KD: 0.000000
-ADDR_FAN_SPEED: 150
-
-########################
-##    Params Search   ##
-########################
-ADDR_ANGULAR_KP: 0.085
-ADDR_ANGULAR_KI: 0.011
-ADDR_ANGULAR_KD: 0.000000
-ADDR_WALL_KP: 0.0020000
-ADDR_WALL_KI: 0.000000
-ADDR_WALL_KD: 0.0040000
-ADDR_LINEAR_VEL_KP: 8.000000
-ADDR_LINEAR_VEL_KI: 0.10000
-ADDR_LINEAR_VEL_KD: 0.000000
-ADDR_DIAGONAL_WALLS_KP: 0.000000
-ADDR_DIAGONAL_WALLS_KI: 0.000000
-ADDR_DIAGONAL_WALLS_KD: 0.000000
-ADDR_FAN_SPEED: 220
-
-########################
-##     Params SLOW    ##
-########################
-MOTOR: Coreless 1022
-ADDR_ANGULAR_KP: 0.048000
-ADDR_ANGULAR_KI: 0.0004200
-ADDR_ANGULAR_KD: 0.000000
-ADDR_WALL_KP: 0.001500
-ADDR_WALL_KI: 0.000000
-ADDR_WALL_KD: 0.0025000
-ADDR_LINEAR_VEL_KP: 5.00000
-ADDR_LINEAR_VEL_KI: 0.06000
-ADDR_LINEAR_VEL_KD: 0.000000
-ADDR_DIAGONAL_WALLS_KP: 0.004500
-ADDR_DIAGONAL_WALLS_KI: 0.000000
-ADDR_DIAGONAL_WALLS_KD: 0.004500
-ACC_FEED_FOWARD: 0.00041;
-BREAK_FEED_FOWARD: 0.00044;
-ANG_VEL_FEED_FOWARD: 0.0035;
-ADDR_FAN_SPEED: 0
-ADDR_START_WALL_BREAK_MM_LEFT: 61.0
-ADDR_START_WALL_BREAK_MM_RIGHT: 75.0
-
-########################
-## Params Medium ##
-########################
-ADDR_ANGULAR_KP: 0.105
-ADDR_ANGULAR_KI: 0.0009
-ADDR_ANGULAR_KD: 0.0
-ADDR_WALL_KP: 0.002500
-ADDR_WALL_KI: 0.000000
-ADDR_WALL_KD: 0.005000
-ADDR_LINEAR_VEL_KP: 8.000000
-ADDR_LINEAR_VEL_KI: 0.10000
-ADDR_LINEAR_VEL_KD: 0.000000
-ADDR_DIAGONAL_WALLS_KP: 0.004500
-ADDR_DIAGONAL_WALLS_KI: 0.000000
-ADDR_DIAGONAL_WALLS_KD: 0.004500
-ADDR_FAN_SPEED: 600
-ADDR_START_WALL_BREAK_MM_LEFT: 65.0
-ADDR_START_WALL_BREAK_MM_RIGHT: 80.0
-
-########################
-## Params Fast ##
-########################
-ADDR_ANGULAR_KP: 0.095
-ADDR_ANGULAR_KI: 0.001
-ADDR_ANGULAR_KD: 0.000
-ADDR_WALL_KP: 0.002500
-ADDR_WALL_KI: 0.000000
-ADDR_WALL_KD: 0.005000
-ADDR_LINEAR_VEL_KP: 11.55
-ADDR_LINEAR_VEL_KI: 0.144
-ADDR_LINEAR_VEL_KD: 0.000000
-ADDR_DIAGONAL_WALLS_KP: 0.004500
-ADDR_DIAGONAL_WALLS_KI: 0.000000
-ADDR_DIAGONAL_WALLS_KD: 0.004500
-ACC_FEED_FOWARD: 0.00055;
-BREAK_FEED_FOWARD: 0.00055;
-ANG_VEL_FEED_FOWARD: 0.006;
-ADDR_FAN_SPEED: 600
-ADDR_START_WALL_BREAK_MM_LEFT: 65.0
-ADDR_START_WALL_BREAK_MM_RIGHT: 80.0
 
 
 ########################
@@ -177,30 +64,19 @@ normal: approx 630g
 ##########################
 ## Calibration Test Map ##
 ##########################
-ir_wall_dist_ref_right = 1391
-ir_diagonal_ref_fl = 200
-ir_diagonal_ref_fr = 200
-ir_wall_dist_ref_left = 800
-
-ir_diagonal_control_th_fl = 500
-ir_diagonal_control_th_fr = 500
-
-ir_wall_detect_th_right = 1200
-ir_wall_detect_th_front_left = 500 
-ir_wall_detect_th_front_right =  800
-ir_wall_detect_th_left =  700
-
-constexpr std::array<SensingPattern, 8> ir_wall_patterns = {{
-    {900, 800, 1300, 1415}, // F-L-R
-    {903, 820, 1207, 800},  // F-L
-    {500, 685, 1247, 1367}, // F-R
-    {500, 710, 1200, 600},  // F
-    {805, 67, 246, 1336},   // L-R
-    {741, 28, 37, 800},     // L
-    {349, 35, 261, 1326},   // R
-    {357, 66, 238, 800}     // None
-}};
-
 min_move_speed = 0.2
-z_imu_bias = -0.4905
-
+ir_diagonal_control_th_fl = 240
+ir_diagonal_control_th_fr = 240
+ir_diagonal_ref_fl = 260
+ir_diagonal_ref_fr = 260
+ir_wall_dist_ref_left = 193.39
+ir_wall_dist_ref_right = 182.37
+ir_wall_detect_th_left = 240
+ir_wall_detect_th_right = 240
+sensor_r_slope_max_th = 90
+sensor_l_slope_max_th = 90
+right_sensor_angle_deg = 58.9
+left_sensor_angle_deg = 59.4
+z_imu_bias = -0.55137
+enable_lateral_correction_90 = 1
+enable_lateral_correction_wall =0 

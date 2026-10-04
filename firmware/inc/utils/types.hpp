@@ -50,10 +50,11 @@ enum Movement {
     TURN_LEFT_90_SEARCH_MODE,
     TURN_AROUND_INPLACE,
     STOP,
+    MOVEMENT_COUNT
 };
 
 // Initialize the array with address-name pairs
-const std::pair<Movement, const char*> movementInfoMap[] = {
+inline constexpr std::pair<Movement, const char*> movementInfoMap[] = {
     {START, "START"},
     {FORWARD, "FORWARD"},
     {DIAGONAL, "DIAGONAL"},
@@ -72,6 +73,9 @@ const std::pair<Movement, const char*> movementInfoMap[] = {
     {TURN_RIGHT_135_FROM_45, "TURN_RIGHT_135_FROM_45"},
     {TURN_LEFT_135_FROM_45, "TURN_LEFT_135_FROM_45"},
     {TURN_AROUND, "TURN_AROUND"},
+    {TURN_RIGHT_90_SEARCH_MODE, "TURN_RIGHT_90_SEARCH_MODE"},
+    {TURN_LEFT_90_SEARCH_MODE, "TURN_LEFT_90_SEARCH_MODE"},
+    {TURN_AROUND_INPLACE, "TURN_AROUND_INPLACE"},
     {STOP, "STOP"},
 };
 

@@ -119,3 +119,7 @@ _deps
 .ionide
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,c,c++,cmake
+
+# clangd compilation database (symlinked by CMake)
+compile_commands.json
+.cache/

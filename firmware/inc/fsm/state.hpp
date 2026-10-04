@@ -121,7 +121,8 @@ private:
     services::Notification* notification;
     services::Maze* maze;
     bool returning;
-    Point target;
+    std::span<const Point> targets;
+    Point unvisited_target;
     bool save_maze;
     bool stop_next_move;
     bool emergency = false;

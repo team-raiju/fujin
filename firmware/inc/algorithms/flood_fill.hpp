@@ -23,7 +23,7 @@ struct Cell {
     uint8_t walls;
     uint8_t known_walls;
 
-    bool visited() { return known_walls == 0b1111; }
+    bool visited() const { return known_walls == 0b1111; }
 
     Cell* north;
     Cell* east;
@@ -72,7 +72,7 @@ template <int width, int height>
 using Grid = Cell[width][height];
 
 template <int width, int height>
-void flood_fill(Grid<width, height>& grid, Point const& target, bool search_mode = true) {
+void flood_fill(Grid<width, height>& grid, std::span<const Point> targets, bool search_mode = true) {
     // 1. Reset the distance of every cell
     for (int x = 0; x < width; x++) {
         for (int y = 0; y < height; y++) {
@@ -80,10 +80,14 @@ void flood_fill(Grid<width, height>& grid, Point const& target, bool search_mode
         }
     }
 
-    RingBuffer<Point, 32> to_visit;
+    RingBuffer<Point, 128> to_visit;
 
-    grid[target.x][target.y].distance = 0;
-    to_visit.put(target);
+    for (const auto& target : targets) {
+        if (target.x >= 0 && target.x < width && target.y >= 0 && target.y < height) {
+            grid[target.x][target.y].distance = 0;
+            to_visit.put(target);
+        }
+    }
 
     static constexpr Point Δ[4] = {{0, 1}, {-1, 0}, {0, -1}, {1, 0}};
 

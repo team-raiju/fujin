@@ -1,4 +1,5 @@
 #include "utils/math.hpp"
+#include <algorithm>
 #include <array>
 #include <cstdio>
 #include <cstring>

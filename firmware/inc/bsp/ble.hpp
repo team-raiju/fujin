@@ -32,6 +32,7 @@ enum BlePacketType : uint8_t {
     TargetMovementSequence = 0x0F,
     LoadMovementPreset = 0x10,
     LoadGeneralPreset = 0x11,
+    TargetMovementSequenceTimeBased = 0x12,
 };
 
 enum BleCommands : uint8_t {
@@ -45,6 +46,7 @@ enum BleCommands : uint8_t {
     ButtonRequestMoveSequence = 0x07,
     ButtonEnterIrCalib = 0x08,
     ButtonRequestMaze = 0x09,
+    ButtonRequestMazeBackup = 0x0A,
 };
 
 enum ForwardParamID : uint8_t {

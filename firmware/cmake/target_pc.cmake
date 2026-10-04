@@ -1,12 +1,3 @@
-set(TOOLCHAIN_PREFIX                )
-
-set(CMAKE_C_COMPILER                ${TOOLCHAIN_PREFIX}gcc)
-set(CMAKE_ASM_COMPILER              ${CMAKE_C_COMPILER})
-set(CMAKE_CXX_COMPILER              ${TOOLCHAIN_PREFIX}g++)
-set(CMAKE_LINKER                    ${TOOLCHAIN_PREFIX}g++)
-set(CMAKE_OBJCOPY                   ${TOOLCHAIN_PREFIX}objcopy)
-set(CMAKE_SIZE                      ${TOOLCHAIN_PREFIX}size)
-
 set(CMAKE_EXECUTABLE_SUFFIX_ASM     ".out")
 set(CMAKE_EXECUTABLE_SUFFIX_C       ".out")
 set(CMAKE_EXECUTABLE_SUFFIX_CXX     ".out")
@@ -52,5 +43,10 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     ${BSP_PATH}/usb.cpp
 )
 
-target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
-)
+get_filename_component(AMATERASU_DIR "${CMAKE_SOURCE_DIR}/../../amaterasu" ABSOLUTE)
+if(EXISTS "${AMATERASU_DIR}/CMakeLists.txt")
+    add_subdirectory("${AMATERASU_DIR}" "${CMAKE_BINARY_DIR}/amaterasu")
+    target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE amaterasu)
+    target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE HAVE_AMATERASU=1)
+    message(STATUS "Found and linked amaterasu bridge library from ${AMATERASU_DIR}")
+endif()

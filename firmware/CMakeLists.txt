@@ -13,6 +13,9 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Debug")
 endif()
 
+# Always generate compile_commands.json for clangd
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 
 #### Project ####
 project(fujin)
@@ -21,11 +24,22 @@ message("CMAKE_BUILD_TYPE: " ${CMAKE_BUILD_TYPE})
 
 enable_language(C CXX ASM)
 
-if(PC_BUILD)
+if(WASM_BUILD)
+    include("cmake/target_wasm.cmake")
+    return()
+elseif(PC_BUILD)
     include("cmake/target_pc.cmake")
 else()
     include("cmake/target_stm32g4.cmake")
 endif()
+
+# Link the last configured firmware build's compile_commands.json to the source root,
+# where clangd looks for it (WASM is skipped so it doesn't hijack firmware intellisense)
+file(CREATE_LINK
+    ${CMAKE_BINARY_DIR}/compile_commands.json
+    ${CMAKE_SOURCE_DIR}/compile_commands.json
+    SYMBOLIC
+)
 
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     src/main.cpp
@@ -37,6 +51,8 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     src/fsm/states/calib.cpp
 
     src/algorithms/pid.cpp
+    src/algorithms/time_flood_fill.cpp
+    src/algorithms/movement_planner.cpp
 
     src/utils/soft_timer.cpp
     src/utils/movement_params.cpp

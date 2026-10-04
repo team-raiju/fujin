@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstdint>
+#include <span>
 #include <utility>
 #include <vector>
 
@@ -18,8 +19,8 @@ public:
 
     static constexpr Point ORIGIN = {0, 0};
     static constexpr std::array<Point, 1> ORIGIN_ARRAY = {{ORIGIN}};
-    // static constexpr std::array<Point, 4> GOAL_POSITIONS = {{{8, 8}, {8, 7}, {7, 8}, {7, 7}}};
-    static constexpr std::array<Point, 1> GOAL_POSITIONS = {{{8, 8}}};
+    static constexpr std::array<Point, 4> GOAL_POSITIONS = {{{8, 8}, {8, 7}, {7, 8}, {7, 7}}};
+    //static constexpr std::array<Point, 4> GOAL_POSITIONS = {{{0, 6}, {0, 5}, {1, 6}, {1, 5}}};
 
     static Maze* instance();
 
@@ -27,8 +28,9 @@ public:
     ///        the next cell that should be visited
     /// @param current_position Current cell coordinates
     /// @param walls Current cell wall information
+    /// @param targets Target coordinates
     /// @return Next cell to be visited
-    Direction next_step(Point const& current_position, uint8_t walls, Point const& target, bool search_mode = true);
+    Direction next_step(Point const& current_position, uint8_t walls, std::span<const Point> targets, bool search_mode = true);
 
     /// @brief Prints the maze for debugging purpose
     void print(Point const& curr);
@@ -39,7 +41,11 @@ public:
 
     algorithm::Grid<CELLS_X, CELLS_Y> map_backup;
 
-    std::vector<Direction> directions_to_goal();
+    std::vector<Direction> directions_to_goal(
+        bool time_based,
+        float* out_time_s = nullptr,
+        const std::array<ForwardParams, MOVEMENT_COUNT>* custom_fwd = nullptr,
+        const std::array<TurnParams, MOVEMENT_COUNT>* custom_trn = nullptr);
 
     Point closest_unvisited(Point const& current_position);
 
