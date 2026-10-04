@@ -223,26 +223,20 @@ const std::array<ForwardParams, MOVEMENT_COUNT> forward_params_fast = make_movem
 
 /// @section TURN_PARMS_SUPER
 const std::array<TurnParams, MOVEMENT_COUNT> turn_params_super = make_movement_array<TurnParams, MOVEMENT_COUNT>({
-    {Movement::TURN_RIGHT_45, {-75.47, -47.11, 2.1, 1100.0, 18.0, T(39.0), T(71.0), -1, T(10.0), T(62.0), 120000, 50000}}, //ok    
-    {Movement::TURN_LEFT_45, {-70.47, -47.11, 2.1, 1100.0, 18.0, T(37.5), T(69.5), 1, T(10.0), T(60.5), 120000, 50000}},  //ok
-         
-    {Movement::TURN_RIGHT_90, {-37.44, 29.91, 2.4, 1300.0, 31.85, T(44.5), T(88.5), -1, T(18.0), T(75.5), 100000, 50000}},     //ok
-    {Movement::TURN_LEFT_90, {-29.44, 32.91, 2.4, 1300.0, 31.85, T(44.0), T(88.0), 1, T(18.0), T(75.0), 100000, 50000}},       //ok
-
-    {Movement::TURN_RIGHT_135, {-59.77, -16.75, 2.5, 1200.0, 36.0, T(62.0), T(111.5), -1, T(25.5), T(96.5), 80000, 50000}},   //ok
-    {Movement::TURN_LEFT_135, {-49.77, -20.75, 2.5, 1200.0, 36.0, T(60.5), T(110.0), 1, T(25.5), T(95.0), 80000, 50000}},     //ok
-
-    {Movement::TURN_RIGHT_180, {-35.00, 39.48, 2.3, 1200.0, 26.1, T(116.0), T(156.0), -1, T(16.0), T(144.0), 100000, 50000}}, //ok
-    {Movement::TURN_LEFT_180, {-35.00, 39.48, 2.3, 1200.0, 26.1, T(114.0), T(154.0), 1, T(16.0), T(142.0), 100000, 50000}},  //ok
-     
-    {Movement::TURN_RIGHT_45_FROM_45, {0.00, 76.82, 2.2, 1200.0, 23.4, T(33.0), T(66.0), -1, T(18.0), T(54.0), 100000, 80000}},
-    {Movement::TURN_LEFT_45_FROM_45, {0.00, 76.82, 2.2, 1200.0, 23.4, T(32.5), T(65.5), 1, T(18.0), T(53.5), 100000, 80000}},  
-
+    {Movement::TURN_RIGHT_45, {-75.47, -47.11, 2.1, 1100.0, 18.0, T(39.0), T(71.0), -1, T(10.0), T(62.0), 120000, 50000}},   //ok    
+    {Movement::TURN_LEFT_45, {-70.47, -47.11, 2.1, 1100.0, 18.0, T(37.5), T(69.5), 1, T(10.0), T(60.5), 120000, 50000}},     //ok 
+    {Movement::TURN_RIGHT_90, {-37.44, 29.91, 2.4, 1300.0, 31.85, T(44.5), T(88.5), -1, T(18.0), T(75.5), 100000, 50000}},   //ok
+    {Movement::TURN_LEFT_90, {-29.44, 32.91, 2.4, 1300.0, 31.85, T(44.0), T(88.0), 1, T(18.0), T(75.0), 100000, 50000}},     //ok
+    {Movement::TURN_RIGHT_135, {-59.77, -16.75, 2.5, 1200.0, 36.0, T(62.0), T(111.5), -1, T(25.5), T(96.5), 80000, 50000}},  //ok
+    {Movement::TURN_LEFT_135, {-49.77, -20.75, 2.5, 1200.0, 36.0, T(60.5), T(110.0), 1, T(25.5), T(95.0), 80000, 50000}},    //ok
+    {Movement::TURN_RIGHT_180, {-35.00, 39.48, 2.3, 1200.0, 26.1, T(116.0), T(156.0), -1, T(16.0), T(144.0), 100000, 50000}},   //ok
+    {Movement::TURN_LEFT_180, {-35.00, 39.48, 2.3, 1200.0, 26.1, T(114.0), T(154.0), 1, T(16.0), T(142.0), 100000, 50000}},     //ok
+    {Movement::TURN_RIGHT_45_FROM_45, {0.00, 76.06, 2.2, 1250.0, 22.0, T(33.0), T(65.0), -1, T(14.0), T(54.5), 120000, 70000}}, //ok
+    {Movement::TURN_LEFT_45_FROM_45, {0.00, 76.06, 2.2, 1250.0, 22.0, T(31.5), T(63.5), 1, T(14.0), T(53.0), 120000, 70000}},   //ok
     {Movement::TURN_RIGHT_90_FROM_45, {0.00, -12.38, 2.2, 1200.0, 33.0, T(46.5), T(87.5), -1, T(26.0), T(75.5), 100000, 80000}}, //ok
     {Movement::TURN_LEFT_90_FROM_45, {0.00, -12.38, 2.2, 1200.0, 33.0, T(46.0), T(87.0), 1, T(26.0), T(75.0), 100000, 80000}},   //ok
-
-    {Movement::TURN_RIGHT_135_FROM_45, {0.00, 38.92, 2.3, 1200.0, 36.0, T(62.0), T(111.5), -1, T(25.5), T(96.5), 80000, 50000}},
-    {Movement::TURN_LEFT_135_FROM_45, {0.00, 38.92, 2.3, 1200.0, 36.0, T(61.0), T(110.5), 1, T(25.5), T(95.5), 80000, 50000}},   
+    {Movement::TURN_RIGHT_135_FROM_45, {0.00, 38.92, 2.3, 1200.0, 36.0, T(62.0), T(111.5), -1, T(25.5), T(96.5), 80000, 50000}}, //ok
+    {Movement::TURN_LEFT_135_FROM_45, {0.00, 38.92, 2.3, 1200.0, 36.0, T(61.0), T(110.5), 1, T(25.5), T(95.5), 80000, 50000}},   //ok
 
     {Movement::TURN_AROUND, {0.00, 0.0, 0.75, 200.0, 11, T(285.5), T(380.5), -1, T(55.0), T(340.5), 5000, 5000}},
     {Movement::TURN_AROUND_INPLACE, {0.00, 0.0, 0.75, 200.0, 11, T(284.5), T(379.5), -1, T(55.0), T(339.5), 5000, 5000}},
@@ -256,14 +250,12 @@ const std::array<ForwardParams, MOVEMENT_COUNT> forward_params_super = make_move
     {Movement::TURN_AROUND, {0.75, 20.0, 40.0, 80.0}},
     {Movement::TURN_AROUND_INPLACE, {0.75, 20.0, 40.0, 80.0}},    
 
-    {Movement::TURN_RIGHT_45_FROM_45, {2.2, 30.0, 30.0, 53.76}},    
-    {Movement::TURN_LEFT_45_FROM_45, {2.2, 30.0, 30.0, 53.76}},     
-
+    {Movement::TURN_RIGHT_45_FROM_45, {2.2, 30.0, 30.0, 52.00}},     //ok
+    {Movement::TURN_LEFT_45_FROM_45, {2.2, 30.0, 30.0, 62.29}},      //ok
     {Movement::TURN_RIGHT_90_FROM_45, {2.2, 30.0, 30.0, 16.33}},     //ok
     {Movement::TURN_LEFT_90_FROM_45, {2.2, 30.0, 30.0, 16.33}},      //ok
-
-    {Movement::TURN_RIGHT_135_FROM_45, {2.3, 30.0, 30.0, 39.29}},   
-    {Movement::TURN_LEFT_135_FROM_45, {2.3, 30.0, 30.0, 39.29}},    
+    {Movement::TURN_RIGHT_135_FROM_45, {2.3, 30.0, 30.0, 39.29}},    //ok
+    {Movement::TURN_LEFT_135_FROM_45, {2.3, 30.0, 30.0, 39.29}},     //ok
 });
 
 /// @section TURN_PARMS_CUSTOM
@@ -445,7 +437,7 @@ const GeneralParams general_params_fast = {
     0.033,  0.025,  0.1410, // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
     0.045,  0.0000, 0.0000,  // Wall P,I,D
     2.500,  0.0100, 0.0000, // Linear velocity P,I,D
-    0.032,  0.0000, 0.0040, // Diagonal walls P,I,D
+    0.032,  0.0000, 0.0000, // Diagonal walls P,I,D
     56.0,                   // Start wall break mm left
     64.0,                   // Start wall break mm right
     1.0,                    // Enable wall break correction
@@ -466,9 +458,9 @@ const GeneralParams general_params_super = {
     0.0900, 0.0005, 0.0500, // Angular P,I,D
     0.0006, 0.0006, 0.0056, // Angular acc ff, Angular brake ff, Angular velocity ff
     0.033,  0.025,  0.1410, // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
-    0.045,  0.0000, 0.0000, // Wall P,I,D
+    0.048,  0.0000, 0.0000, // Wall P,I,D
     2.500,  0.0100, 0.0000, // Linear velocity P,I,D
-    0.032,  0.0000, 0.0040, // Diagonal walls P,I,D
+    0.032,  0.0000, 0.0000, // Diagonal walls P,I,D
     56.0,                   // Start wall break mm left
     64.0,                   // Start wall break mm right
     1.0,                    // Enable wall break correction

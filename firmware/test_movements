@@ -143,6 +143,23 @@
 {Movement::FORWARD, 1},
 {Movement::STOP, 1},
 
+------------------------------------------------
+{Movement::START, 1},
+{Movement::FORWARD, 1},
+{Movement::TURN_RIGHT_45, 1},
+{Movement::TURN_LEFT_90_FROM_45, 1},
+{Movement::TURN_RIGHT_90_FROM_45, 1},
+{Movement::DIAGONAL, 3},
+{Movement::TURN_RIGHT_135_FROM_45, 1},
+{Movement::FORWARD, 5},
+{Movement::TURN_RIGHT_90, 1},
+{Movement::FORWARD, 1},
+{Movement::TURN_RIGHT_90, 1},
+{Movement::FORWARD, 1},
+{Movement::TURN_LEFT_180, 1},
+{Movement::FORWARD, 1},
+{Movement::STOP, 1},
+
 
 
 -------------------------------------------------

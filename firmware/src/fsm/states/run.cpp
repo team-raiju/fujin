@@ -3,6 +3,7 @@
 #include "algorithms/pid.hpp"
 #include "bsp/analog_sensors.hpp"
 #include "bsp/ble.hpp"
+#include "bsp/buttons.hpp"
 #include "bsp/buzzer.hpp"
 #include "bsp/core.hpp"
 #include "bsp/debug.hpp"
@@ -323,6 +324,7 @@ Run::Run() {
 }
 
 void Run::enter() {
+    bsp::buttons::enable(false);
     bsp::debug::print("state:Run");
     bsp::leds::indication_on();
     bsp::leds::stripe_set(Color::Red);
@@ -360,6 +362,7 @@ void Run::enter() {
         bsp::buzzer::start();
         bsp::delay_ms(500);
         bsp::buzzer::stop();
+        bsp::buttons::enable(true);
         return;
     }
 
@@ -470,6 +473,7 @@ void Run::exit() {
     bsp::leds::indication_off();
     logger->save_size();
     bsp::buzzer::stop();
+    bsp::buttons::enable(true);
 }
 
 }

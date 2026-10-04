@@ -3,6 +3,7 @@
 #include "algorithms/pid.hpp"
 #include "bsp/analog_sensors.hpp"
 #include "bsp/ble.hpp"
+#include "bsp/buttons.hpp"
 #include "bsp/buzzer.hpp"
 #include "bsp/core.hpp"
 #include "bsp/debug.hpp"
@@ -250,6 +251,7 @@ Search::Search() {
 }
 
 void Search::enter() {
+    bsp::buttons::enable(false);
     bsp::debug::print("state:Search");
     bsp::leds::indication_on();
     bsp::leds::stripe_set(Color::Red);
@@ -413,6 +415,7 @@ void Search::exit() {
         bsp::delay_ms(500);
         bsp::buzzer::stop();
     }
+    bsp::buttons::enable(true);
 }
 
 }

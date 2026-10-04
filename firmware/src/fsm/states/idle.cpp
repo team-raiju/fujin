@@ -1,5 +1,6 @@
 #include "bsp/analog_sensors.hpp"
 #include "bsp/ble.hpp"
+#include "bsp/buttons.hpp"
 #include "bsp/buzzer.hpp"
 #include "bsp/debug.hpp"
 #include "bsp/fan.hpp"
@@ -27,6 +28,7 @@ void Idle::enter() {
     bsp::motors::set(0, 0);
     bsp::fan::set(0);
     bsp::ble::unlock_config_rcv();
+    bsp::buttons::enable(true);
 }
 
 State* Idle::react(BleCommand const& event) {
