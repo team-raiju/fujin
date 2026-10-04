@@ -114,7 +114,7 @@ private:
     LogData logdata[7];
     uint8_t log_data_idx;
     uint32_t addr_offset;
-    uint8_t ram_logger[80000]; // Max log number is 80000 / sizeof(LogData)
+    uint8_t ram_logger[70000]; // Max log number is 80000 / sizeof(LogData)
 };
 
 }

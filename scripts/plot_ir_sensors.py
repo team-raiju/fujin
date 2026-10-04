@@ -21,12 +21,12 @@ import numpy as np
 
 # --- Wall Control & Detection Constants ---
 # Default reference distances (mm) when robot is centered in the maze cell
-IR_WALL_DIST_REF_LEFT = 180.0   # Left reference distance (mm)
-IR_WALL_DIST_REF_RIGHT = 165.0  # Right reference distance (mm)
+IR_WALL_DIST_REF_LEFT = 193.39   # Left reference distance (mm)
+IR_WALL_DIST_REF_RIGHT = 182.37  # Right reference distance (mm)
 
 # Thresholds (mm) below which wall control is valid (must be greater than reference distance)
-IR_WALL_CONTROL_TH_LEFT = 225.0  # Left wall control threshold (mm)
-IR_WALL_CONTROL_TH_RIGHT = 225.0 # Right wall control threshold (mm)
+IR_WALL_CONTROL_TH_LEFT = 240.0  # Left wall control threshold (mm)
+IR_WALL_CONTROL_TH_RIGHT = 240.0 # Right wall control threshold (mm)
 IR_SLOPE_THRESHOLD = 90.0        # Wall control is valid when abs(slope) is below this value
 IR_MAX_DISTANCE_MM = 270.0       # Maximum sensor distance (mm)
 

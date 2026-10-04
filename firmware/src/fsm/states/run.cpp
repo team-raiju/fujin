@@ -3,6 +3,7 @@
 #include "algorithms/pid.hpp"
 #include "bsp/analog_sensors.hpp"
 #include "bsp/ble.hpp"
+#include "bsp/buttons.hpp"
 #include "bsp/buzzer.hpp"
 #include "bsp/core.hpp"
 #include "bsp/debug.hpp"
@@ -159,6 +160,9 @@ State* RunMoveModeSelect::react(ButtonPressed const& event) {
             move_mode = services::Navigation::DIAGONALS;
             bsp::leds::stripe_set(bsp::leds::Color::Pink, bsp::leds::Color::Pink);
         } else if (move_mode == services::Navigation::DIAGONALS) {
+            move_mode = services::Navigation::TIME_BASED;
+            bsp::leds::stripe_set(bsp::leds::Color::Cyan, bsp::leds::Color::Cyan);
+        } else if (move_mode == services::Navigation::TIME_BASED) {
             move_mode = services::Navigation::HARD_CODED;
             bsp::leds::stripe_set(bsp::leds::Color::Red, bsp::leds::Color::Black);
         } else { // move_mode == services::Navigation::HARD_CODED
@@ -173,6 +177,9 @@ State* RunMoveModeSelect::react(ButtonPressed const& event) {
             move_mode = services::Navigation::HARD_CODED;
             bsp::leds::stripe_set(bsp::leds::Color::Red, bsp::leds::Color::Black);
         } else if (move_mode == services::Navigation::HARD_CODED) {
+            move_mode = services::Navigation::TIME_BASED;
+            bsp::leds::stripe_set(bsp::leds::Color::Cyan, bsp::leds::Color::Cyan);
+        } else if (move_mode == services::Navigation::TIME_BASED) {
             move_mode = services::Navigation::DIAGONALS;
             bsp::leds::stripe_set(bsp::leds::Color::Pink, bsp::leds::Color::Pink);
         } else { // move_mode == services::Navigation::DIAGONALS
@@ -190,6 +197,9 @@ State* RunMoveModeSelect::react(ButtonPressed const& event) {
             break;
         case services::Navigation::DIAGONALS:
             std::printf("DIAGONALS\r\n");
+            break;
+        case services::Navigation::TIME_BASED:
+            std::printf("TIME_BASED\r\n");
             break;
         case services::Navigation::HARD_CODED:
             std::printf("HARD_CODED\r\n");
@@ -314,6 +324,7 @@ Run::Run() {
 }
 
 void Run::enter() {
+    bsp::buttons::enable(false);
     bsp::debug::print("state:Run");
     bsp::leds::indication_on();
     bsp::leds::stripe_set(Color::Red);
@@ -332,7 +343,8 @@ void Run::enter() {
     
     maze->read_maze_from_memory(map_backup);
     // maze->print(maze->ORIGIN);
-    target_directions = maze->directions_to_goal();
+    const bool is_time_based = (move_mode == services::Navigation::TIME_BASED);
+    target_directions = maze->directions_to_goal(is_time_based);
     // maze->print(maze->ORIGIN);
 
     services::Control::instance()->start_fan();
@@ -340,6 +352,19 @@ void Run::enter() {
     target_movements.clear();
     
     target_movements = navigation->get_movements_to_goal(target_directions, move_mode);
+
+    if (target_movements.size() < 2) {
+        emergency = true;
+        soft_timer::stop();
+        bsp::motors::set(0, 0);
+        bsp::fan::set(0);
+        bsp::leds::stripe_set(Color::Orange);
+        bsp::buzzer::start();
+        bsp::delay_ms(500);
+        bsp::buzzer::stop();
+        bsp::buttons::enable(true);
+        return;
+    }
 
     move_count = 0;
     emergency = false;
@@ -448,6 +473,7 @@ void Run::exit() {
     bsp::leds::indication_off();
     logger->save_size();
     bsp::buzzer::stop();
+    bsp::buttons::enable(true);
 }
 
 }
