@@ -41,7 +41,11 @@ public:
 
     algorithm::Grid<CELLS_X, CELLS_Y> map_backup;
 
-    std::vector<Direction> directions_to_goal(bool time_based = true, float* out_time_s = nullptr);
+    std::vector<Direction> directions_to_goal(
+        bool time_based,
+        float* out_time_s = nullptr,
+        const std::array<ForwardParams, MOVEMENT_COUNT>* custom_fwd = nullptr,
+        const std::array<TurnParams, MOVEMENT_COUNT>* custom_trn = nullptr);
 
     Point closest_unvisited(Point const& current_position);
 

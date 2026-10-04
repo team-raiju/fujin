@@ -65,14 +65,17 @@ void Notification::send_maze() {
     }
 }
 
-void Notification::send_target_movements(const std::vector<std::pair<Movement, uint8_t>>& movements) {
+void Notification::send_target_movements(const std::vector<std::pair<Movement, uint8_t>>& movements, bool time_based) {
     constexpr uint8_t entries_per_packet = 8;
     const uint8_t packet_count =
         static_cast<uint8_t>((movements.size() + entries_per_packet - 1) / entries_per_packet);
 
+    const auto packet_type = time_based ? bsp::ble::BlePacketType::TargetMovementSequenceTimeBased
+                                        : bsp::ble::BlePacketType::TargetMovementSequence;
+
     if (packet_count == 0) {
         uint8_t data[bsp::ble::max_packet_size] = {bsp::ble::header,
-                                                    bsp::ble::BlePacketType::TargetMovementSequence, 0, 0};
+                                                    packet_type, 0, 0};
         bsp::ble::transmit(data, sizeof(data));
         return;
     }
@@ -80,7 +83,7 @@ void Notification::send_target_movements(const std::vector<std::pair<Movement, u
     for (uint8_t packet_index = 0; packet_index < packet_count; packet_index++) {
         uint8_t data[bsp::ble::max_packet_size] = {
             bsp::ble::header,
-            bsp::ble::BlePacketType::TargetMovementSequence,
+            packet_type,
             packet_index,
             packet_count,
         };

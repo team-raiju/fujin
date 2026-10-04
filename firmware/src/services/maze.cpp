@@ -203,12 +203,18 @@ Point Maze::closest_unvisited(Point const& current_position) {
     return closest_point;
 }
 
-std::vector<Direction> Maze::directions_to_goal(bool time_based, float* out_time_s) {
+std::vector<Direction> Maze::directions_to_goal(
+    bool time_based,
+    float* out_time_s,
+    const std::array<ForwardParams, MOVEMENT_COUNT>* custom_fwd,
+    const std::array<TurnParams, MOVEMENT_COUNT>* custom_trn) {
     if (time_based) {
         auto nav = services::Navigation::instance();
+        const auto& fwd = custom_fwd ? *custom_fwd : nav->get_forward_params();
+        const auto& trn = custom_trn ? *custom_trn : nav->get_turn_params();
         Point start_pos = {ORIGIN.x, ORIGIN.y + 1};
         auto path = algorithm::TimeFloodFill::find_fastest_path(
-            map, start_pos, GOAL_POSITIONS, nav->get_forward_params(), nav->get_turn_params(), out_time_s);
+            map, start_pos, GOAL_POSITIONS, fwd, trn, out_time_s);
         if (!path.empty()) {
             return path;
         }
