@@ -333,8 +333,8 @@ void Navigation::apply_wall_break_correction() {
     constexpr float MAX_LATERAL_OFFSET_MM = 10.0f;
     constexpr float MAX_LONGITUDINAL_CORRECTION = 10.0f;
 
-    const float current_movement_traveled = traveled_dist_mm - complete_prev_move_travel;
-    const int cells_traveled = static_cast<int>(current_movement_traveled / CELL_SIZE_MM);
+    const float corridor_distance_mm = traveled_dist_mm - complete_prev_move_travel;
+    const int cells_traveled = static_cast<int>(corridor_distance_mm / CELL_SIZE_MM);
 
     float base_offset_mm = 0.0f;
     float longitudinal_correction_mm = 0.0f;
@@ -381,14 +381,19 @@ void Navigation::apply_wall_break_correction() {
         }
     }
 
-    const float corrected_distance_mm =
-        (cells_traveled * CELL_SIZE_MM) + base_offset_mm + longitudinal_correction_mm + complete_prev_move_travel;
+    // Expected position where wall break should occur along the corridor
+    const float expected_corridor_dist_mm =
+        (cells_traveled * CELL_SIZE_MM) + base_offset_mm + longitudinal_correction_mm;
 
-    const float distance_error_mm = current_movement_traveled - corrected_distance_mm;
+    // Error between estimated corridor position and nominal wall break position
+    const float distance_error_mm = corridor_distance_mm - expected_corridor_dist_mm;
+
+    // Convert expected corridor distance to the wheel odometer frame for traveled_dist_mm
+    const float corrected_traveled_dist_mm = expected_corridor_dist_mm + complete_prev_move_travel;
 
     if (std::abs(distance_error_mm) < WALL_BREAK_MAX_CORRECTION_ERROR_MM) {
-        traveled_dist_mm = corrected_distance_mm;
-        wall_break_last_dist = corrected_distance_mm;
+        traveled_dist_mm = corrected_traveled_dist_mm;
+        wall_break_last_dist = corrected_traveled_dist_mm;
         bsp::leds::stripe_set(Color::Red);
         wall_break_debug_led_on = true;
     } else {
