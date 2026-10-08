@@ -21,6 +21,17 @@
             }
         },
         {
+            "name": "STM32G474-Competition",
+            "inherits": "default",
+            "toolchainFile": "${sourceDir}/cmake/arm-none-eabi.cmake",
+            "cacheVariables": {
+                "PC_BUILD": "false",
+                "TARGET": "STM32G474",
+                "CMAKE_BUILD_TYPE": "Release",
+                "COMPETITION_MODE": "ON"
+            }
+        },
+        {
             "name": "STM32G474-Debug",
             "inherits": "default",
             "toolchainFile": "${sourceDir}/cmake/arm-none-eabi.cmake",

@@ -96,7 +96,13 @@ add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
     COMMENT "Displaying compile flags"
 )
 
+option(COMPETITION_MODE "Enable competition mode" OFF)
+if(COMPETITION_MODE)
+    message(STATUS "Competition Mode: ENABLED")
+endif()
+
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
     $<$<CONFIG:Debug>:DEBUG>
     TARGET=${TARGET}
+    $<$<BOOL:${COMPETITION_MODE}>:COMPETITION_MODE=1>
 )

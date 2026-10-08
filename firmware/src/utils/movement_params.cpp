@@ -43,7 +43,7 @@ const std::array<TurnParams, MOVEMENT_COUNT> turn_params_search_slow = make_move
 const std::array<ForwardParams, MOVEMENT_COUNT> forward_params_search_slow = make_movement_array<ForwardParams, MOVEMENT_COUNT>({
     {Movement::START, {0.3, 3.0, 3.0, HALF_CELL_SIZE_MM + ROBOT_DIST_FROM_CENTER_START_MM}},
     {Movement::FORWARD, {0.3, 3.0, 3.0, CELL_SIZE_MM}},
-    {Movement::STOP, {0.3, 2.0, 2.0, (HALF_CELL_SIZE_MM)}},
+    {Movement::STOP, {0.3, 2.0, 2.0, (HALF_CELL_SIZE_MM + STOP_EXTRA_TRAVEL_MM)}},
     {Movement::TURN_AROUND, {0.3, 3.0, 5.0, 80.0}},
     {Movement::TURN_AROUND_INPLACE, {0.3, 3.0, 5.0, 80.0}},
     {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.3, 3.0, 3.0, 32.81}},
@@ -62,7 +62,7 @@ const std::array<TurnParams, MOVEMENT_COUNT> turn_params_search_medium = make_mo
 const std::array<ForwardParams, MOVEMENT_COUNT> forward_params_search_medium = make_movement_array<ForwardParams, MOVEMENT_COUNT>({
     {Movement::START, {0.5, 3.0, 5.0, HALF_CELL_SIZE_MM + ROBOT_DIST_FROM_CENTER_START_MM}},
     {Movement::FORWARD, {0.5, 3.0, 5.0, CELL_SIZE_MM}},
-    {Movement::STOP, {0.5, 3.0, 5.0, (HALF_CELL_SIZE_MM)}},
+    {Movement::STOP, {0.5, 3.0, 5.0, (HALF_CELL_SIZE_MM + STOP_EXTRA_TRAVEL_MM)}},
 
     {Movement::TURN_AROUND, {0.5, 3.0, 5.0, 80.0}},
     {Movement::TURN_AROUND_INPLACE, {0.5, 3.0, 5.0, 80.0}},
@@ -83,7 +83,7 @@ const std::array<TurnParams, MOVEMENT_COUNT> turn_params_search_fast = make_move
 const std::array<ForwardParams, MOVEMENT_COUNT> forward_params_search_fast = make_movement_array<ForwardParams, MOVEMENT_COUNT>({
     {Movement::START, {0.75, 5.0, 5.0, HALF_CELL_SIZE_MM + ROBOT_DIST_FROM_CENTER_START_MM}},
     {Movement::FORWARD, {0.75, 5.0, 5.0, CELL_SIZE_MM}},
-    {Movement::STOP, {0.75, 5.0, 5.0, (HALF_CELL_SIZE_MM)}},
+    {Movement::STOP, {0.75, 5.0, 5.0, (HALF_CELL_SIZE_MM + STOP_EXTRA_TRAVEL_MM)}},
 
     {Movement::TURN_AROUND, {0.75, 5.0, 5.0, 80.0}},
     {Movement::TURN_AROUND_INPLACE, {0.75, 5.0, 5.0, 80.0}},
@@ -116,7 +116,7 @@ const std::array<ForwardParams, MOVEMENT_COUNT> forward_params_slow = make_movem
     {Movement::START, {0.5, 3.0, 3.0, HALF_CELL_SIZE_MM + ROBOT_DIST_FROM_CENTER_START_MM}},   //ok
     {Movement::FORWARD, {3.0, 8.0, 8.0, CELL_SIZE_MM}},             //ok
     {Movement::DIAGONAL, {2.0, 5.0, 5.0, CELL_DIAGONAL_SIZE_MM}},   //ok
-    {Movement::STOP, {0.5, 3.0, 3.0, (HALF_CELL_SIZE_MM - 10.0)}},  //ok
+    {Movement::STOP, {0.5, 3.0, 3.0, (HALF_CELL_SIZE_MM - 10.0 + STOP_EXTRA_TRAVEL_MM)}},  //ok
     {Movement::TURN_AROUND, {0.5, 3.0, 5.0, 80.0}},                 //ok
     {Movement::TURN_AROUND_INPLACE, {0.5, 3.0, 5.0, 80.0}},         //ok
 
@@ -158,7 +158,7 @@ const std::array<ForwardParams, MOVEMENT_COUNT> forward_params_medium = make_mov
     {Movement::START, {1.25, 20.0, 25.0, HALF_CELL_SIZE_MM + ROBOT_DIST_FROM_CENTER_START_MM_FAST}}, //ok
     {Movement::FORWARD, {4.0, 20.0, 25.0, CELL_SIZE_MM}},              //ok                                    
     {Movement::DIAGONAL, {3.0, 20.0, 25.0, CELL_DIAGONAL_SIZE_MM}},    //ok                             
-    {Movement::STOP, {1.25, 20.0, 35.0, (HALF_CELL_SIZE_MM + 5.0)}},   //ok                              
+    {Movement::STOP, {1.25, 20.0, 35.0, (HALF_CELL_SIZE_MM + 5.0 + STOP_EXTRA_TRAVEL_MM)}},   //ok                              
     {Movement::TURN_AROUND, {0.75, 20.0, 25.0, 80.0}},
     {Movement::TURN_AROUND_INPLACE, {0.75, 20.0, 25.0, 80.0}},    
 
@@ -200,10 +200,10 @@ const std::array<TurnParams, MOVEMENT_COUNT> turn_params_fast = make_movement_ar
 });
 
 const std::array<ForwardParams, MOVEMENT_COUNT> forward_params_fast = make_movement_array<ForwardParams, MOVEMENT_COUNT>({
-    {Movement::START, {2.0, 20.0, 25.0, HALF_CELL_SIZE_MM + ROBOT_DIST_FROM_CENTER_START_MM_FAST}}, //ok
+    {Movement::START, {2.0, 20.0, 25.0, HALF_CELL_SIZE_MM + ROBOT_DIST_FROM_CENTER_START_MM_FAST}},      //ok
     {Movement::FORWARD, {5.0, 25.0, 25.0, CELL_SIZE_MM}},                                           //ok
     {Movement::DIAGONAL, {4.0, 20.0, 25.0, CELL_DIAGONAL_SIZE_MM}},                                 //ok
-    {Movement::STOP, {2.0, 20.0, 35.0, (HALF_CELL_SIZE_MM + 5.0)}},                                 //ok
+    {Movement::STOP, {2.0, 20.0, 35.0, (HALF_CELL_SIZE_MM + 5.0 + STOP_EXTRA_TRAVEL_MM)}},                                 //ok
     {Movement::TURN_AROUND, {0.75, 20.0, 35.0, 80.0}},
     {Movement::TURN_AROUND_INPLACE, {0.75, 20.0, 35.0, 80.0}},     
 
@@ -246,7 +246,7 @@ const std::array<ForwardParams, MOVEMENT_COUNT> forward_params_super = make_move
     {Movement::START, {2.0, 20.0, 25.0, HALF_CELL_SIZE_MM + ROBOT_DIST_FROM_CENTER_START_MM_FAST}}, 
     {Movement::FORWARD, {6.5, 35.0, 35.0, CELL_SIZE_MM}},                                           
     {Movement::DIAGONAL, {4.5, 30.0, 30.0, CELL_DIAGONAL_SIZE_MM}},                                 
-    {Movement::STOP, {2.2, 20.0, 40.0, (HALF_CELL_SIZE_MM + 5.0)}},                                 
+    {Movement::STOP, {2.2, 20.0, 40.0, (HALF_CELL_SIZE_MM + 5.0 + STOP_EXTRA_TRAVEL_MM)}},                                 
     {Movement::TURN_AROUND, {0.75, 20.0, 40.0, 80.0}},
     {Movement::TURN_AROUND_INPLACE, {0.75, 20.0, 40.0, 80.0}},    
 
@@ -288,7 +288,7 @@ std::array<ForwardParams, MOVEMENT_COUNT> forward_params_custom = make_movement_
     {Movement::START, {1.5, 12.0, 20.0, HALF_CELL_SIZE_MM + ROBOT_DIST_FROM_CENTER_START_MM_FAST}},
     {Movement::FORWARD, {3.5, 15.0, 20.0, CELL_SIZE_MM}},
     {Movement::DIAGONAL, {3.0, 15.0, 20.0, CELL_DIAGONAL_SIZE_MM}},
-    {Movement::STOP, {1.0, 2.0, 30.0, (HALF_CELL_SIZE_MM - 10.0)}},
+    {Movement::STOP, {1.0, 2.0, 30.0, (HALF_CELL_SIZE_MM - 10.0 + STOP_EXTRA_TRAVEL_MM)}},
     {Movement::TURN_AROUND, {1.5, 12.0, 20.0, 79.0}},
 
     {Movement::TURN_RIGHT_90, {1.3, 12.0, 20.0, 5.0}},

@@ -4,11 +4,23 @@
 #include <cstdint>
 #include <map>
 
+#ifndef COMPETITION_MODE
+#define COMPETITION_MODE 0
+#endif
+
 static constexpr float CELL_SIZE_MM = 180.0;
 static constexpr float HALF_CELL_SIZE_MM = 90.0;
 static constexpr float CELL_DIAGONAL_SIZE_MM = 127.27922;
-static constexpr float ROBOT_DIST_FROM_CENTER_START_MM_FAST = 17.5; // To account for slippery when fast mode this can be adjusted
+
+#if COMPETITION_MODE
+static constexpr float ROBOT_DIST_FROM_CENTER_START_MM = 14.5;
+static constexpr float ROBOT_DIST_FROM_CENTER_START_MM_FAST = 14.5;
+static constexpr float STOP_EXTRA_TRAVEL_MM = HALF_CELL_SIZE_MM;
+#else
 static constexpr float ROBOT_DIST_FROM_CENTER_START_MM = 17.5;  // Actually 17.5 with 6mm wall, and 14.5mm with 12mm wall
+static constexpr float ROBOT_DIST_FROM_CENTER_START_MM_FAST = 17.5; // To account for slippery when fast mode this can be adjusted
+static constexpr float STOP_EXTRA_TRAVEL_MM = 0.0;
+#endif
 
 /**
  * @struct TurnParams
