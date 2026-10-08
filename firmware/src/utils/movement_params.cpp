@@ -178,14 +178,14 @@ const std::array<ForwardParams, MOVEMENT_COUNT> forward_params_medium = make_mov
 const std::array<TurnParams, MOVEMENT_COUNT> turn_params_fast = make_movement_array<TurnParams, MOVEMENT_COUNT>({
     {Movement::TURN_RIGHT_45, {-61.89, -56.43, 1.7, 1095.0, 19.83, T(37.0), T(73.0), -1, T(14.0), T(59.5), 80000, 50000}},      //ok
     {Movement::TURN_LEFT_45, {-61.89, -61.43, 1.7, 1095.0, 19.83, T(36.5), T(72.5), 1, T(14.0), T(59.0), 80000, 50000}},        //ok
-    {Movement::TURN_RIGHT_90, {-25.34, 37.06, 2.0, 1000.0, 26.66, T(56.5), T(101.5), -1, T(25.0), T(85.0), 60000, 50000}},      //ok
-    {Movement::TURN_LEFT_90, {-21.34, 32.06, 2.0, 1000.0, 26.66, T(56.5), T(101.5), 1, T(25.0), T(85.0), 60000, 50000}},        //ok
+    {Movement::TURN_RIGHT_90, {-27.29, 26.65, 1.9, 1000.0, 25.0, T(58.0), T(102.0), -1, T(19.0), T(89.5), 80000, 40000}},      //ok
+    {Movement::TURN_LEFT_90, {-21.00, 26.65, 1.9, 1000.0, 25.0, T(56.5), T(100.5), 1, T(19.0), T(88.0), 80000, 40000}},        //ok
 
     {Movement::TURN_RIGHT_135, {-12.52, -59.0, 1.7, 900.0, 26.66, T(85.5), T(130.0), -1, T(26.5), T(118.5), 80000, 50000}},    //ok
     {Movement::TURN_LEFT_135, {-8.5, -61.28, 1.7, 900.0, 26.66, T(85.0), T(129.5), 1, T(26.5), T(118.0), 80000, 50000}},        //ok
 
-    {Movement::TURN_RIGHT_180, {-50.00, 53.26, 2.18, 1000.0, 24.75, T(124.0), T(165.0), -1, T(21.0), T(152.5), 80000, 50000}},  //ok
-    {Movement::TURN_LEFT_180, {-50.00, 53.26, 2.18, 1000.0, 24.75, T(123.0), T(164.0), 1, T(21.0), T(151.5), 80000, 50000}},    //ok
+    {Movement::TURN_RIGHT_180, {-35.00, 36.92, 1.85, 960.0, 20.74, T(148.5), T(185.5),-1, T(18.0), T(173.5), 80000, 50000}},  //ok
+    {Movement::TURN_LEFT_180, {-35.00, 36.92, 1.85, 960.0, 20.74, T(146.5), T(183.5), 1, T(18.0), T(171.5), 80000, 50000}},    //ok
     {Movement::TURN_RIGHT_45_FROM_45, {0.00, 65.89, 1.7, 1095.0, 19.83, T(37.0), T(73.0), -1, T(14.0), T(59.5), 80000, 50000}}, //ok
     {Movement::TURN_LEFT_45_FROM_45, {0.00, 70.89, 1.7, 1095.0, 19.83, T(36.0), T(72.0), 1, T(14.0), T(58.5), 80000, 50000}},   //ok
 
@@ -207,10 +207,10 @@ const std::array<ForwardParams, MOVEMENT_COUNT> forward_params_fast = make_movem
     {Movement::TURN_AROUND, {0.75, 20.0, 35.0, 80.0}},
     {Movement::TURN_AROUND_INPLACE, {0.75, 20.0, 35.0, 80.0}},     
 
-    {Movement::TURN_RIGHT_90, {2.0, 20.0, 25.0, 0.0}},              //ok
-    {Movement::TURN_LEFT_90, {2.0, 20.0, 25.0, 0.0}},               //ok
-    {Movement::TURN_RIGHT_180, {2.18, 15.0, 20.0, 0.0}},            //ok
-    {Movement::TURN_LEFT_180, {2.18, 15.0, 20.0, 0.0}},             //ok
+    {Movement::TURN_RIGHT_90, {1.9, 20.0, 25.0, 0.0}},              //ok
+    {Movement::TURN_LEFT_90, {1.9, 20.0, 25.0, 0.0}},               //ok
+    {Movement::TURN_RIGHT_180, {1.85, 15.0, 20.0, 0.0}},            //ok
+    {Movement::TURN_LEFT_180, {1.85, 15.0, 20.0, 0.0}},             //ok
     {Movement::TURN_RIGHT_45_FROM_45, {1.7, 15.0, 20.0, 67.50}},    //ok
     {Movement::TURN_LEFT_45_FROM_45, {1.7, 15.0, 20.0, 73.00}},     //ok
 
