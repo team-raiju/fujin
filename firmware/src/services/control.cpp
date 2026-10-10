@@ -10,11 +10,23 @@
 #include "services/config.hpp"
 #include "services/control.hpp"
 
+#ifndef COMPETITION_MODE
+#define COMPETITION_MODE 0
+#endif
+
+#if COMPETITION_MODE
+static constexpr float MAX_LINEAR_SPEED_ERROR = 1.0f;
+static constexpr float MAX_ANGULAR_SPEED_ERROR = 12.0f;
+#else
+static constexpr float MAX_LINEAR_SPEED_ERROR = 0.5f;
+static constexpr float MAX_ANGULAR_SPEED_ERROR = 6.0f;
+#endif
+
 static constexpr float max_battery_voltage = 12.6;
-static constexpr float mot_kt = 0.0064; // motor torque constant [Nm/A]
-static constexpr float mot_ra = 2.5;    // armature resistance[Ohms]
-static constexpr float max_linear_accel_ff = 50.0f;     // max linear acceleration for feedforward [m/s^2]
-static constexpr float max_angular_accel_ff = 2000.0f;  // max angular acceleration for feedforward [rad/s^2]
+static constexpr float mot_kt = 0.0064;                // motor torque constant [Nm/A]
+static constexpr float mot_ra = 2.5;                   // armature resistance[Ohms]
+static constexpr float max_linear_accel_ff = 50.0f;    // max linear acceleration for feedforward [m/s^2]
+static constexpr float max_angular_accel_ff = 2000.0f; // max angular acceleration for feedforward [rad/s^2]
 
 namespace services {
 
@@ -130,7 +142,8 @@ void Control::update() {
         float mean_velocity_m_s = bsp::encoders::get_filtered_velocity_m_s();
         auto angular_speed_error_raw = std::abs(target_angular_speed_rad_s - bsp::imu::get_rad_per_s());
         auto linear_speed_error = std::abs(target_linear_speed_m_s - mean_velocity_m_s);
-        emergency = ((linear_speed_error > 0.5) || (angular_speed_error_raw > 6.0));
+        emergency =
+            ((linear_speed_error > MAX_LINEAR_SPEED_ERROR) || (angular_speed_error_raw > MAX_ANGULAR_SPEED_ERROR));
 
         if (wall_pid_enabled) {
             const float max_wall_ang_accel = (params.fan_speed > 0) ? 800.0f : 150.0f; // rad/s^2
