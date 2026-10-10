@@ -43,7 +43,7 @@ static constexpr T map(T former_value, T former_min, T former_max, T new_min, T 
 }
 
 static constexpr double deg2rad(double const& degrees) {
-    static constexpr double pi_on_180 = M_PI / 180.0;
+    static constexpr double pi_on_180 = M_PI / 180.0f;
     return degrees * pi_on_180;
 }
 
