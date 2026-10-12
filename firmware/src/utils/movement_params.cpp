@@ -323,8 +323,8 @@ const GeneralParams general_params_search_slow = {
     0.0100,  0.0000,  0.0000,  // Wall P,I,D
     1.6000,  0.0020,  0.0000,  // Linear velocity P,I,D
     0.0000,  0.0000,  0.0000,  // Diagonal walls P,I,D
-    56.0,                      // Start wall break mm left
-    64.0,                      // Start wall break mm right
+    52.0,                      // Start wall break mm left
+    58.0,                      // Start wall break mm right
     1.0,                       // Enable wall break correction
     40.0,                      // Max linear acceleration jerk
     40.0,                      // Max linear brake jerk
@@ -346,8 +346,8 @@ const GeneralParams general_params_search_medium = {
     0.0100,  0.0000,  0.0000,  // Wall P,I,D
     1.6000,  0.0020,  0.0000,  // Linear velocity P,I,D
     0.0000,  0.0000,  0.0000,  // Diagonal walls P,I,D
-    56.0,                      // Start wall break mm left
-    64.0,                      // Start wall break mm right
+    52.0,                      // Start wall break mm left
+    58.0,                      // Start wall break mm right
     1.0,                       // Enable wall break correction
     40.0,                      // Max linear acceleration jerk
     40.0,                      // Max linear brake jerk
@@ -369,8 +369,8 @@ const GeneralParams general_params_search_fast = {
     0.0150,  0.0000,  0.0000,  // Wall P,I,D
     1.9000,  0.0020,  0.0000,  // Linear velocity P,I,D
     0.0000,  0.0000,  0.0000,  // Diagonal walls P,I,D
-    56.0,                      // Start wall break mm left
-    64.0,                      // Start wall break mm right
+    52.0,                      // Start wall break mm left
+    58.0,                      // Start wall break mm right
     1.0,                       // Enable wall break correction
     40.0,                      // Max linear acceleration jerk
     40.0,                      // Max linear brake jerk
@@ -392,8 +392,8 @@ const GeneralParams general_params_slow = {
     0.0130,  0.0000,  0.0000,  // Wall P,I,D
     2.5000,  0.0100,  25.0000, // Linear velocity P,I,D
     0.0090,  0.0000,  0.0000,  // Diagonal walls P,I,D
-    56.0,                      // Start wall break mm left
-    64.0,                      // Start wall break mm right
+    52.0,                      // Start wall break mm left
+    58.0,                      // Start wall break mm right
     1.0,                       // Enable wall break correction
     40.0,                      // Max linear acceleration jerk
     40.0,                      // Max linear brake jerk
@@ -415,8 +415,8 @@ const GeneralParams general_params_medium = {
     0.040,  0.0000, 0.0000,  // Wall P,I,D
     2.500,  0.0100, 0.0000, // Linear velocity P,I,D
     0.030,  0.0000, 0.0040, // Diagonal walls P,I,D
-    56.0,                   // Start wall break mm left
-    64.0,                   // Start wall break mm right
+    52.0,                   // Start wall break mm left
+    58.0,                   // Start wall break mm right
     1.0,                    // Enable wall break correction
     625.0,                  // Max linear acceleration jerk
     625.0,                  // Max linear brake jerk
@@ -438,8 +438,8 @@ const GeneralParams general_params_fast = {
     0.045,  0.0000, 0.0000,  // Wall P,I,D
     2.500,  0.0100, 0.0000, // Linear velocity P,I,D
     0.032,  0.0000, 0.0000, // Diagonal walls P,I,D
-    56.0,                   // Start wall break mm left
-    64.0,                   // Start wall break mm right
+    52.0,                   // Start wall break mm left
+    58.0,                   // Start wall break mm right
     1.0,                    // Enable wall break correction
     625.0,                  // Max linear acceleration jerk
     625.0,                  // Max linear brake jerk
@@ -461,8 +461,8 @@ const GeneralParams general_params_super = {
     0.048,  0.0000, 0.0000, // Wall P,I,D
     2.500,  0.0100, 0.0000, // Linear velocity P,I,D
     0.032,  0.0000, 0.0000, // Diagonal walls P,I,D
-    56.0,                   // Start wall break mm left
-    64.0,                   // Start wall break mm right
+    52.0,                   // Start wall break mm left
+    58.0,                   // Start wall break mm right
     1.0,                    // Enable wall break correction
     1650.0,                  // Max linear acceleration jerk
     1650.0,                  // Max linear brake jerk
