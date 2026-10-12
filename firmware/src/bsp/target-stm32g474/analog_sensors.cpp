@@ -414,6 +414,8 @@ bool ir_diagonal_control_valid(SensingDirection direction) {
 }
 
 SensingStatus ir_get_sensing_status() {
+// #define USE_CLOSEST_MATCH_PATTERN
+#ifdef USE_CLOSEST_MATCH_PATTERN
     SensingPattern current_pattern;
     current_pattern.FL = ir_distance_mm(FRONT_LEFT);
     current_pattern.FR = ir_distance_mm(FRONT_RIGHT);
@@ -476,6 +478,27 @@ SensingStatus ir_get_sensing_status() {
     }
 
     return status;
+#else
+    constexpr float WALL_DETECT_TH_SIDE_MM = 230.0f;
+    constexpr float WALL_DETECT_TH_FRONT_MM = 205.0f;
+
+    SensingStatus status = {false, false, false};
+
+    if (ir_distance_mm(LEFT) < WALL_DETECT_TH_SIDE_MM) {
+        status.left_seeing = true;
+    }
+
+    if (ir_distance_mm(RIGHT) < WALL_DETECT_TH_SIDE_MM) {
+        status.right_seeing = true;
+    }
+
+    if (ir_distance_mm(FRONT_LEFT) < WALL_DETECT_TH_FRONT_MM &&
+        ir_distance_mm(FRONT_RIGHT) < WALL_DETECT_TH_FRONT_MM) {
+        status.front_seeing = true;
+    }
+
+    return status;
+#endif
 }
 
 bool ir_start_condition() {
