@@ -18,8 +18,8 @@
 static constexpr float MAX_LINEAR_SPEED_ERROR = 1.0f;
 static constexpr float MAX_ANGULAR_SPEED_ERROR = 12.0f;
 #else
-static constexpr float MAX_LINEAR_SPEED_ERROR = 0.5f;
-static constexpr float MAX_ANGULAR_SPEED_ERROR = 6.0f;
+static constexpr float MAX_LINEAR_SPEED_ERROR = 0.8f;
+static constexpr float MAX_ANGULAR_SPEED_ERROR = 10.0f;
 #endif
 
 static constexpr float max_battery_voltage = 12.6;
@@ -146,7 +146,7 @@ void Control::update() {
             ((linear_speed_error > MAX_LINEAR_SPEED_ERROR) || (angular_speed_error_raw > MAX_ANGULAR_SPEED_ERROR));
 
         if (wall_pid_enabled) {
-            const float max_wall_ang_accel = (params.fan_speed > 0) ? 800.0f : 150.0f; // rad/s^2
+            const float max_wall_ang_accel = (params.fan_speed > 0) ? 500.0f : 150.0f; // rad/s^2
             const float max_step = max_wall_ang_accel / Config::CONTROL_FREQUENCY_HZ;
 
             target_angular_speed_rad_s += walls_pid.calculate(0.0f, bsp::analog_sensors::ir_side_wall_error());
