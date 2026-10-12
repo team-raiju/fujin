@@ -170,6 +170,8 @@ static float ir_distance_history[4][3];
 static bool ir_slope_initialized[4];
 static bool wall_confirmed[4] = {false, false, false, false};
 static float wall_dist_accumulated_mm[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+static float sensor_r_slope_max_th = 90.0f;
+static float sensor_l_slope_max_th = 90.0f;
 static int32_t ir_raw_readings_on[4];
 static int32_t ir_raw_readings_off[4];
 static uint32_t battery_reading;
@@ -270,14 +272,14 @@ bool ir_reading_wall(SensingDirection direction) {
     switch (direction) {
     case SensingDirection::RIGHT:
         return ir_distances[direction] < services::Config::ir_wall_detect_th_right &&
-               std::fabs(ir_slope[direction]) < services::Config::sensor_r_slope_max_th;
+               std::fabs(ir_slope[direction]) < sensor_r_slope_max_th;
     case SensingDirection::FRONT_LEFT:
         return ir_distances[direction] < FRONT_SENSOR_SEEING_DIST_MM;
     case SensingDirection::FRONT_RIGHT:
         return ir_distances[direction] < FRONT_SENSOR_SEEING_DIST_MM;
     case SensingDirection::LEFT:
         return ir_distances[direction] < services::Config::ir_wall_detect_th_left &&
-               std::fabs(ir_slope[direction]) < services::Config::sensor_l_slope_max_th;
+               std::fabs(ir_slope[direction]) < sensor_l_slope_max_th;
     default:
         return false;
     }
@@ -295,10 +297,10 @@ bool ir_wall_break_condition(SensingDirection direction) {
     switch (direction) {
     case SensingDirection::RIGHT:
         return ir_distances[direction] > services::Config::ir_wall_detect_th_right ||
-               ir_slope[direction] > services::Config::sensor_r_slope_max_th;
+               ir_slope[direction] > sensor_r_slope_max_th;
     case SensingDirection::LEFT:
         return ir_distances[direction] > services::Config::ir_wall_detect_th_left ||
-               ir_slope[direction] > services::Config::sensor_l_slope_max_th;
+               ir_slope[direction] > sensor_l_slope_max_th;
     default:
         return false;
     }
@@ -347,6 +349,22 @@ void ir_reset_all_wall_hysteresis() {
 
 float ir_slope_value(SensingDirection direction) {
     return ir_slope[direction];
+}
+
+void set_sensor_r_slope_max_th(float th) {
+    sensor_r_slope_max_th = th;
+}
+
+void set_sensor_l_slope_max_th(float th) {
+    sensor_l_slope_max_th = th;
+}
+
+float get_sensor_r_slope_max_th() {
+    return sensor_r_slope_max_th;
+}
+
+float get_sensor_l_slope_max_th() {
+    return sensor_l_slope_max_th;
 }
 
 int32_t ir_side_wall_error() {

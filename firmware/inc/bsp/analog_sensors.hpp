@@ -72,6 +72,10 @@ void ir_update_wall_hysteresis(float delta_traveled_mm);
 void ir_reset_wall_hysteresis(SensingDirection direction);
 void ir_reset_all_wall_hysteresis();
 float ir_slope_value(SensingDirection direction);
+void set_sensor_r_slope_max_th(float th);
+void set_sensor_l_slope_max_th(float th);
+float get_sensor_r_slope_max_th();
+float get_sensor_l_slope_max_th();
 
 bool ir_start_condition();
 

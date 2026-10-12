@@ -323,8 +323,8 @@ const GeneralParams general_params_search_slow = {
     0.0100,  0.0000,  0.0000,  // Wall P,I,D
     1.6000,  0.0020,  0.0000,  // Linear velocity P,I,D
     0.0000,  0.0000,  0.0000,  // Diagonal walls P,I,D
-    52.0,                      // Start wall break mm left
-    58.0,                      // Start wall break mm right
+    48.0,                      // Start wall break mm left
+    54.0,                      // Start wall break mm right
     1.0,                       // Enable wall break correction
     40.0,                      // Max linear acceleration jerk
     40.0,                      // Max linear brake jerk
@@ -335,7 +335,9 @@ const GeneralParams general_params_search_slow = {
     0.12,                      // Angular Coulomb ff Inplace
     0.14,                      // Angular Static ff Inplace
     10.0,                      // Linear accel margin mm
-    10.0                       // Linear brake margin mm
+    10.0,                      // Linear brake margin mm
+    40.0,                      // Sensor R slope max th
+    40.0                       // Sensor L slope max th
 };
 
 const GeneralParams general_params_search_medium = {
@@ -346,8 +348,8 @@ const GeneralParams general_params_search_medium = {
     0.0100,  0.0000,  0.0000,  // Wall P,I,D
     1.6000,  0.0020,  0.0000,  // Linear velocity P,I,D
     0.0000,  0.0000,  0.0000,  // Diagonal walls P,I,D
-    52.0,                      // Start wall break mm left
-    58.0,                      // Start wall break mm right
+    48.0,                      // Start wall break mm left
+    54.0,                      // Start wall break mm right
     1.0,                       // Enable wall break correction
     40.0,                      // Max linear acceleration jerk
     40.0,                      // Max linear brake jerk
@@ -358,7 +360,9 @@ const GeneralParams general_params_search_medium = {
     0.12,                      // Angular Coulomb ff Inplace
     0.14,                      // Angular Static ff Inplace
     10.0,                      // Linear accel margin mm
-    10.0                       // Linear brake margin mm
+    10.0,                      // Linear brake margin mm
+    40.0,                     // Sensor R slope max th
+    40.0                       // Sensor L slope max th
 };
 
 const GeneralParams general_params_search_fast = {
@@ -369,8 +373,8 @@ const GeneralParams general_params_search_fast = {
     0.0150,  0.0000,  0.0000,  // Wall P,I,D
     1.9000,  0.0020,  0.0000,  // Linear velocity P,I,D
     0.0000,  0.0000,  0.0000,  // Diagonal walls P,I,D
-    52.0,                      // Start wall break mm left
-    58.0,                      // Start wall break mm right
+    48.0,                      // Start wall break mm left
+    54.0,                      // Start wall break mm right
     1.0,                       // Enable wall break correction
     40.0,                      // Max linear acceleration jerk
     40.0,                      // Max linear brake jerk
@@ -381,7 +385,9 @@ const GeneralParams general_params_search_fast = {
     0.12,                      // Angular Coulomb ff Inplace
     0.14,                      // Angular Static ff Inplace
     10.0,                      // Linear accel margin mm
-    10.0                       // Linear brake margin mm
+    10.0,                      // Linear brake margin mm
+    40.0,                     // Sensor R slope max th
+    40.0                       // Sensor L slope max th
 };
 
 const GeneralParams general_params_slow = {
@@ -392,8 +398,8 @@ const GeneralParams general_params_slow = {
     0.0130,  0.0000,  0.0000,  // Wall P,I,D
     2.5000,  0.0100,  25.0000, // Linear velocity P,I,D
     0.0090,  0.0000,  0.0000,  // Diagonal walls P,I,D
-    52.0,                      // Start wall break mm left
-    58.0,                      // Start wall break mm right
+    48.0,                      // Start wall break mm left
+    54.0,                      // Start wall break mm right
     1.0,                       // Enable wall break correction
     40.0,                      // Max linear acceleration jerk
     40.0,                      // Max linear brake jerk
@@ -404,7 +410,9 @@ const GeneralParams general_params_slow = {
     0.11,                      // Angular Coulomb ff Inplace
     0.13,                      // Angular Static ff Inplace
     10.0,                      // Linear accel margin mm
-    10.0                       // Linear brake margin mm
+    10.0,                      // Linear brake margin mm
+    40.0,                      // Sensor R slope max th
+    40.0                       // Sensor L slope max th
 };
 
 const GeneralParams general_params_medium = {
@@ -415,8 +423,8 @@ const GeneralParams general_params_medium = {
     0.040,  0.0000, 0.0000,  // Wall P,I,D
     2.500,  0.0100, 0.0000, // Linear velocity P,I,D
     0.030,  0.0000, 0.0040, // Diagonal walls P,I,D
-    52.0,                   // Start wall break mm left
-    58.0,                   // Start wall break mm right
+    48.0,                   // Start wall break mm left
+    54.0,                   // Start wall break mm right
     1.0,                    // Enable wall break correction
     625.0,                  // Max linear acceleration jerk
     625.0,                  // Max linear brake jerk
@@ -427,7 +435,9 @@ const GeneralParams general_params_medium = {
     0.0,                    // Angular Coulomb ff Inplace
     0.0,                    // Angular Static ff Inplace
     10.0,                   // Linear accel margin mm
-    10.0                    // Linear brake margin mm
+    10.0,                   // Linear brake margin mm
+    50.0,                  // Sensor R slope max th
+    50.0                    // Sensor L slope max th
 };
 
 const GeneralParams general_params_fast = {
@@ -438,8 +448,8 @@ const GeneralParams general_params_fast = {
     0.045,  0.0000, 0.0000,  // Wall P,I,D
     2.500,  0.0100, 0.0000, // Linear velocity P,I,D
     0.032,  0.0000, 0.0000, // Diagonal walls P,I,D
-    52.0,                   // Start wall break mm left
-    58.0,                   // Start wall break mm right
+    48.0,                   // Start wall break mm left
+    54.0,                   // Start wall break mm right
     1.0,                    // Enable wall break correction
     625.0,                  // Max linear acceleration jerk
     625.0,                  // Max linear brake jerk
@@ -450,7 +460,9 @@ const GeneralParams general_params_fast = {
     0.0,                    // Angular Coulomb ff Inplace
     0.0,                    // Angular Static ff Inplace
     10.0,                   // Linear accel margin mm
-    10.0                    // Linear brake margin mm
+    10.0,                   // Linear brake margin mm
+    60.0,                  // Sensor R slope max th
+    60.0                    // Sensor L slope max th
 };
 
 const GeneralParams general_params_super = {
@@ -461,19 +473,21 @@ const GeneralParams general_params_super = {
     0.048,  0.0000, 0.0000, // Wall P,I,D
     2.500,  0.0100, 0.0000, // Linear velocity P,I,D
     0.032,  0.0000, 0.0000, // Diagonal walls P,I,D
-    52.0,                   // Start wall break mm left
-    58.0,                   // Start wall break mm right
+    48.0,                   // Start wall break mm left
+    54.0,                   // Start wall break mm right
     1.0,                    // Enable wall break correction
-    1650.0,                  // Max linear acceleration jerk
-    1650.0,                  // Max linear brake jerk
+    1650.0,                 // Max linear acceleration jerk
+    1650.0,                 // Max linear brake jerk
     13.1,                   // Wheel radius mm
     0.18,                   // Coulomb ff
     0.07,                   // Angular Coulomb ff
     0.25,                   // Angular Static ff
     0.0,                    // Angular Coulomb ff Inplace
     0.0,                    // Angular Static ff Inplace
-    5.0,                   // Linear accel margin mm
-    5.0                    // Linear brake margin mm
+    5.0,                    // Linear accel margin mm
+    5.0,                    // Linear brake margin mm
+    65.0,                  // Sensor R slope max th
+    65.0                    // Sensor L slope max th
 };
 
 const std::array<TurnParams, MOVEMENT_COUNT>& get_turn_params(navigation_mode_t mode) {

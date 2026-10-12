@@ -28,7 +28,7 @@ namespace {
 constexpr float FRONT_EMERGENCY_DISTANCE_MM = 70.0f;
 constexpr float WALL_BREAK_DEBUG_DISTANCE_MM = 90.0f;
 constexpr float SEARCH_WALL_BREAK_MIN_DISTANCE_MM = 35.0f;
-constexpr float WALL_BREAK_MAX_CORRECTION_ERROR_MM = 30.0f;
+constexpr float WALL_BREAK_MAX_CORRECTION_ERROR_MM = 20.0f;
 constexpr float FORWARD_WALL_PID_DISABLE_DISTANCE_MM = 70.0f;
 constexpr float DIAGONAL_PID_START_DISTANCE_MM = 50.0f;
 constexpr uint32_t STABILIZE_FORWARD_TIME_MS = 175;
@@ -81,6 +81,8 @@ GeneralParams make_custom_general_params() {
         services::Config::angular_static_ff_inplace,
         services::Config::linear_accel_margin_mm,
         services::Config::linear_brake_margin_mm,
+        services::Config::sensor_r_slope_max_th,
+        services::Config::sensor_l_slope_max_th,
     };
 }
 
@@ -156,6 +158,8 @@ void Navigation::configure_mode(navigation_mode_t mode) {
         general_params = get_general_params(mode);
     }
     bsp::encoders::set_wheel_radius_mm(general_params.wheel_radius_mm);
+    bsp::analog_sensors::set_sensor_r_slope_max_th(general_params.sensor_r_slope_max_th);
+    bsp::analog_sensors::set_sensor_l_slope_max_th(general_params.sensor_l_slope_max_th);
 }
 
 bool Navigation::is_front_emergency() const {

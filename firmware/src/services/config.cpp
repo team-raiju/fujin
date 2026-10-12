@@ -162,6 +162,8 @@ static const std::pair<float*, bsp::eeprom::param_addresses_t> general_params_ee
     {&Config::angular_static_ff_inplace, bsp::eeprom::ADDR_ANGULAR_STATIC_FF_INPLACE},
     {&Config::linear_accel_margin_mm, bsp::eeprom::ADDR_LINEAR_ACCEL_MARGIN_MM},
     {&Config::linear_brake_margin_mm, bsp::eeprom::ADDR_LINEAR_BRAKE_MARGIN_MM},
+    {&Config::sensor_r_slope_max_th, bsp::eeprom::ADDR_SENSOR_R_SLOPE_MAX_TH},
+    {&Config::sensor_l_slope_max_th, bsp::eeprom::ADDR_SENSOR_L_SLOPE_MAX_TH},
 };
 
 static const std::map<Movement, uint16_t> turn_address_map = {
@@ -413,6 +415,10 @@ void Config::print_parameters() {
     bsp::delay_ms(5);
     std::printf("    linear_brake_margin_mm = %f,\r\n", Config::linear_brake_margin_mm);
     bsp::delay_ms(5);
+    std::printf("    sensor_r_slope_max_th = %f,\r\n", Config::sensor_r_slope_max_th);
+    bsp::delay_ms(5);
+    std::printf("    sensor_l_slope_max_th = %f,\r\n", Config::sensor_l_slope_max_th);
+    bsp::delay_ms(5);
     std::printf("};\r\n");
     bsp::delay_ms(5);
 }
@@ -563,6 +569,8 @@ int Config::load_general_preset(uint8_t preset_id) {
     Config::angular_static_ff_inplace = gp.angular_static_ff_inplace;
     Config::linear_accel_margin_mm = gp.linear_accel_margin_mm;
     Config::linear_brake_margin_mm = gp.linear_brake_margin_mm;
+    Config::sensor_r_slope_max_th = gp.sensor_r_slope_max_th;
+    Config::sensor_l_slope_max_th = gp.sensor_l_slope_max_th;
 
     save_general_params_to_eeprom();
     send_parameters();

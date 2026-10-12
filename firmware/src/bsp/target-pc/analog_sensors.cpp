@@ -135,6 +135,22 @@ float ir_slope_value(SensingDirection) {
     return 0.0f;
 }
 
+void set_sensor_r_slope_max_th(float th) {
+    (void)th;
+}
+
+void set_sensor_l_slope_max_th(float th) {
+    (void)th;
+}
+
+float get_sensor_r_slope_max_th() {
+    return 100.0f;
+}
+
+float get_sensor_l_slope_max_th() {
+    return 40.0f;
+}
+
 float ir_distance_mm(SensingDirection direction) {
     size_t idx = direction_to_amaterasu_idx(direction);
     float dist = amaterasu::get_ir_distance_mm(idx);

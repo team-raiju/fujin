@@ -67,6 +67,10 @@ void Control::init(void) {
         services::Config::angular_static_ff,
         services::Config::angular_coulomb_ff_inplace,
         services::Config::angular_static_ff_inplace,
+        services::Config::linear_accel_margin_mm,
+        services::Config::linear_brake_margin_mm,
+        services::Config::sensor_r_slope_max_th,
+        services::Config::sensor_l_slope_max_th,
     };
     reset(general_params);
 }
