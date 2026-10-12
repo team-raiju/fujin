@@ -34,8 +34,8 @@ Turn Around Inplace | 0.0               | Will not do anything after turning 180
 
 /// @section TURN_PARMS_SEARCH_SLOW
 const std::array<TurnParams, MOVEMENT_COUNT> turn_params_search_slow = make_movement_array<TurnParams, MOVEMENT_COUNT>({
-    {Movement::TURN_AROUND, {0.0, 0.0, 0.3, 150.0, 11.0, T(288), T(411), -1, T(73), T(361), 3000, 3000}},
-    {Movement::TURN_AROUND_INPLACE, {0.0, 0.0, 0.3, 150.0, 11.0, T(288), T(411), -1, T(73), T(361), 3000, 3000}},
+    {Movement::TURN_AROUND, {0.0, -80.0, 0.3, 150.0, 11.0, T(288), T(411), -1, T(73), T(361), 3000, 3000}},
+    {Movement::TURN_AROUND_INPLACE, {0.0, -80.0, 0.3, 150.0, 11.0, T(288), T(411), -1, T(73), T(361), 3000, 3000}},
     {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.00, -32.30, 0.3, 80.0, 8.0, T(196.5), T(323.0), -1, T(100.0), T(296.5), 3000, 3000}},
     {Movement::TURN_LEFT_90_SEARCH_MODE, {0.00, -32.30, 0.3, 80.0, 8.0, T(195.5), T(322.0), 1, T(100.0), T(295.5), 3000, 3000}},
 });
@@ -52,11 +52,11 @@ const std::array<ForwardParams, MOVEMENT_COUNT> forward_params_search_slow = mak
 
 /// @section TURN_PARMS_SEARCH_MEDIUM
 const std::array<TurnParams, MOVEMENT_COUNT> turn_params_search_medium = make_movement_array<TurnParams, MOVEMENT_COUNT>({
-    {Movement::TURN_AROUND, {0.00, 0.0, 0.5, 200.0, 11, T(285.5), T(380.5), -1, T(55.0), T(340.5), 5000, 5000}},
-    {Movement::TURN_AROUND_INPLACE, {0.00, 0.0, 0.5, 200.0, 11, T(284.5), T(379.5), -1, T(55.0), T(339.5), 5000, 5000}},
+    {Movement::TURN_AROUND, {0.00, -88.0, 0.5, 200.0, 11, T(286.0), T(381.0), -1, T(55.0), T(341.0), 5000, 5000}},
+    {Movement::TURN_AROUND_INPLACE, {0.00, -88.0, 0.5, 200.0, 11, T(284.5), T(379.5), -1, T(55.0), T(339.5), 5000, 5000}},
 
-    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.00, -26.27, 0.5, 250.0, 11.0, T(143.0), T(212.0), -1, T(44.0), T(187.0), 10000, 10000}},
-    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.00, -26.27, 0.5, 250.0, 11.0, T(142.0), T(211.0), 1, T(44.0), T(186.0), 10000, 10000}},
+    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.00, -26.27, 0.5, 250.0, 11.0, T(140.0), T(209.0), -1, T(44.0), T(184.0), 10000, 10000}},
+    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.00, -26.27, 0.5, 250.0, 11.0, T(140.0), T(209.0), 1, T(44.0), T(184.0), 10000, 10000}},
 });
 
 const std::array<ForwardParams, MOVEMENT_COUNT> forward_params_search_medium = make_movement_array<ForwardParams, MOVEMENT_COUNT>({
@@ -73,11 +73,11 @@ const std::array<ForwardParams, MOVEMENT_COUNT> forward_params_search_medium = m
 
 /// @section TURN_PARMS_SEARCH_FAST
 const std::array<TurnParams, MOVEMENT_COUNT> turn_params_search_fast = make_movement_array<TurnParams, MOVEMENT_COUNT>({
-    {Movement::TURN_AROUND, {0.00, 0.0, 0.75, 200.0, 11, T(285.5), T(380.5), -1, T(55.0), T(340.5), 5000, 5000}},
-    {Movement::TURN_AROUND_INPLACE, {0.00, 0.0, 0.75, 200.0, 11, T(284.5), T(379.5), -1, T(55.0), T(339.5), 5000, 5000}},
+    {Movement::TURN_AROUND, {0.00, -80.0, 0.75, 200.0, 11, T(287.5), T(382.5), -1, T(55.0), T(342.5), 5000, 5000}},
+    {Movement::TURN_AROUND_INPLACE, {0.00, -80.0, 0.75, 200.0, 11, T(284.5), T(379.5), -1, T(55.0), T(339.5), 5000, 5000}},
 
-    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.00, -13.84, 0.75, 400.0, 16.0, T(98.0), T(171.5), -1, T(40.0), T(138.0), 12000, 12000}},
-    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.00, -11.84, 0.75, 400.0, 16.0, T(98.0), T(171.5), 1, T(40.0), T(138.0), 12000, 12000}},
+    {Movement::TURN_RIGHT_90_SEARCH_MODE, {0.00, -13.84, 0.75, 400.0, 16.0, T(97.0), T(170.5), -1, T(40.0), T(137.0), 12000, 12000}},
+    {Movement::TURN_LEFT_90_SEARCH_MODE, {0.00, -11.84, 0.75, 400.0, 16.0, T(96.5), T(170.0), 1, T(40.0), T(136.5), 12000, 12000}},
 });
 
 const std::array<ForwardParams, MOVEMENT_COUNT> forward_params_search_fast = make_movement_array<ForwardParams, MOVEMENT_COUNT>({
@@ -341,15 +341,15 @@ const GeneralParams general_params_search_slow = {
 };
 
 const GeneralParams general_params_search_medium = {
-    150.0,                     // Fan speed
+    200.0,                     // Fan speed
     0.06000, 0.00030, 0.0000,  // Angular P,I,D
     0.00055, 0.00040, 0.0040,  // Angular acc ff, Angular brake ff, Angular velocity ff
     0.01500, 0.0100,  0.0550,  // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
-    0.0100,  0.0000,  0.0000,  // Wall P,I,D
+    0.0130,  0.0000,  0.0002,  // Wall P,I,D
     1.6000,  0.0020,  0.0000,  // Linear velocity P,I,D
     0.0000,  0.0000,  0.0000,  // Diagonal walls P,I,D
-    48.0,                      // Start wall break mm left
-    54.0,                      // Start wall break mm right
+    53.0,                      // Start wall break mm left
+    58.0,                      // Start wall break mm right
     1.0,                       // Enable wall break correction
     40.0,                      // Max linear acceleration jerk
     40.0,                      // Max linear brake jerk
@@ -366,15 +366,15 @@ const GeneralParams general_params_search_medium = {
 };
 
 const GeneralParams general_params_search_fast = {
-    200.0,                     // Fan speed
+    175.0,                     // Fan speed
     0.06000, 0.00030, 0.0000,  // Angular P,I,D
     0.00055, 0.00040, 0.0040,  // Angular acc ff, Angular brake ff, Angular velocity ff
     0.01500, 0.0100,  0.0550,  // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
     0.0150,  0.0000,  0.0000,  // Wall P,I,D
     1.9000,  0.0020,  0.0000,  // Linear velocity P,I,D
     0.0000,  0.0000,  0.0000,  // Diagonal walls P,I,D
-    48.0,                      // Start wall break mm left
-    54.0,                      // Start wall break mm right
+    55.0,                      // Start wall break mm left
+    58.0,                      // Start wall break mm right
     1.0,                       // Enable wall break correction
     40.0,                      // Max linear acceleration jerk
     40.0,                      // Max linear brake jerk
@@ -386,7 +386,7 @@ const GeneralParams general_params_search_fast = {
     0.14,                      // Angular Static ff Inplace
     10.0,                      // Linear accel margin mm
     10.0,                      // Linear brake margin mm
-    40.0,                     // Sensor R slope max th
+    40.0,                      // Sensor R slope max th
     40.0                       // Sensor L slope max th
 };
 

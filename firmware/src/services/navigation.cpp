@@ -37,9 +37,9 @@ constexpr float STABILIZE_VELOCITY_THRESHOLD_M_S = 0.02f;
 constexpr float MILLIMETERS_PER_METER = 1000.0f;
 constexpr uint8_t MIN_MOVEMENTS_FOR_SEAMLESS_START = 3;
 
-constexpr float MAX_TURN_90_ERROR_CORRECTION = 10.0f;
+constexpr float MAX_TURN_90_ERROR_CORRECTION = 12.0f;
 constexpr float MAX_WALL_BREAK_LATERAL_OFFSET_MM = 10.0f;
-constexpr float MAX_WALL_BREAK_LONGITUDINAL_FIX_MM = 8.0f;
+constexpr float MAX_WALL_BREAK_LONGITUDINAL_FIX_MM = 4.0f;
 
 
 bool is_search_mode(services::Navigation::navigation_mode_t mode) {
@@ -938,7 +938,8 @@ void Navigation::step_turn_stabilize_2() {
         is_finished = true;
         mini_fsm_state = MiniFSMStates::FORWARD_1;
     } else { // TURN_AROUND
-        target_travel_mm = std::abs(current_position_mm.x);
+        //target_travel_mm = std::abs(current_position_mm.x);
+        target_travel_mm = -turn_params[current_movement].end;
         mini_fsm_state = MiniFSMStates::FORWARD_2;
     }
 }

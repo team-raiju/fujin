@@ -17,8 +17,8 @@ static constexpr float ROBOT_DIST_FROM_CENTER_START_MM = 14.5;
 static constexpr float ROBOT_DIST_FROM_CENTER_START_MM_FAST = 14.5;
 static constexpr float STOP_EXTRA_TRAVEL_MM = HALF_CELL_SIZE_MM;
 #else
-static constexpr float ROBOT_DIST_FROM_CENTER_START_MM = 17.5;  // Actually 17.5 with 6mm wall, and 14.5mm with 12mm wall
-static constexpr float ROBOT_DIST_FROM_CENTER_START_MM_FAST = 17.5; // To account for slippery when fast mode this can be adjusted
+static constexpr float ROBOT_DIST_FROM_CENTER_START_MM = 14.5;  // Actually 14.5 with 6mm wall, and 14.5mm with 12mm wall
+static constexpr float ROBOT_DIST_FROM_CENTER_START_MM_FAST = 14.5; // To account for slippery when fast mode this can be adjusted
 static constexpr float STOP_EXTRA_TRAVEL_MM = 0.0;
 #endif
 
