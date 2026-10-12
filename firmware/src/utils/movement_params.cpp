@@ -366,7 +366,7 @@ const GeneralParams general_params_search_medium = {
 };
 
 const GeneralParams general_params_search_fast = {
-    150.0,                     // Fan speed
+    200.0,                     // Fan speed
     0.06000, 0.00030, 0.0000,  // Angular P,I,D
     0.00055, 0.00040, 0.0040,  // Angular acc ff, Angular brake ff, Angular velocity ff
     0.01500, 0.0100,  0.0550,  // Linear vel acc ff, Linear vel brake ff, Linear velocity ff
