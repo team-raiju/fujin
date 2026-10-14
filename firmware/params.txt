@@ -62,6 +62,28 @@ z_imu_bias = -0.4905
 normal: approx 630g
 
 ##########################
+### RoboChallenge 2026 ###
+##########################
+min_move_speed = 0.2
+ir_diagonal_control_th_fl = 240
+ir_diagonal_control_th_fr = 240
+ir_diagonal_ref_fl = 260
+ir_diagonal_ref_fr = 260
+ir_wall_dist_ref_left = 185.40
+ir_wall_dist_ref_right = 176.37
+ir_wall_detect_th_left = 240   -> Run
+ir_wall_detect_th_right = 240  -> Run
+ir_wall_detect_th_left = 210   -> Search
+ir_wall_detect_th_right = 210  -> Search
+
+right_sensor_angle_deg = 58.9
+left_sensor_angle_deg = 59.4
+z_imu_bias = -0.565
+enable_lateral_correction_90 = 1
+enable_lateral_correction_wall = 1
+
+
+##########################
 ## Calibration Test Map ##
 ##########################
 min_move_speed = 0.2
@@ -79,4 +101,4 @@ right_sensor_angle_deg = 58.9
 left_sensor_angle_deg = 59.4
 z_imu_bias = -0.55137
 enable_lateral_correction_90 = 1
-enable_lateral_correction_wall =0 
+enable_lateral_correction_wall = 0 
