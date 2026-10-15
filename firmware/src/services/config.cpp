@@ -16,52 +16,52 @@ static bool write_default = false;
 
 float Config::fan_speed = 0.0; //[0-1000]
 
-float Config::angular_kp = 0.105;
-float Config::angular_ki = 0.010;
-float Config::angular_kd = 0.0075;
-float Config::angular_acc_feed_forward_k = 0.00037;
-float Config::angular_brake_feed_forward_k = 0.00037;
-float Config::angular_vel_feed_forward_k = 0.0031;
-float Config::linear_vel_acc_feed_forward_k = 0.0;
-float Config::linear_vel_brake_feed_forward_k = 0.0;
-float Config::linear_vel_feed_forward_k = 0.0;
-float Config::max_linear_acc_jerk = 100.0;
-float Config::max_linear_brake_jerk = 100.0;
+float Config::angular_kp = 0.06;
+float Config::angular_ki = 0.00030;
+float Config::angular_kd = 0.0;
+float Config::angular_acc_feed_forward_k = 0.00055;
+float Config::angular_brake_feed_forward_k = 0.00040;
+float Config::angular_vel_feed_forward_k = 0.0040;
+float Config::linear_vel_acc_feed_forward_k = 0.01500;
+float Config::linear_vel_brake_feed_forward_k = 0.0100;
+float Config::linear_vel_feed_forward_k = 0.0550;
+float Config::max_linear_acc_jerk = 40.0;
+float Config::max_linear_brake_jerk = 40.0;
 float Config::wheel_radius_mm = 13.25;
 float Config::coulomb_ff = 0.13;
-float Config::angular_coulomb_ff = 0.0;
-float Config::angular_static_ff = 0.0;
-float Config::angular_coulomb_ff_inplace = 0.0;
-float Config::angular_static_ff_inplace = 0.0;
+float Config::angular_coulomb_ff = 0.01;
+float Config::angular_static_ff = 0.01;
+float Config::angular_coulomb_ff_inplace = 0.12;
+float Config::angular_static_ff_inplace = 0.14;
 
-float Config::wall_kp = 0.0025;
+float Config::wall_kp = 0.0100;
 float Config::wall_ki = 0.0;
-float Config::wall_kd = 0.0050;
+float Config::wall_kd = 0.0;
 
-float Config::linear_vel_kp = 8.0;
-float Config::linear_vel_ki = 0.10;
+float Config::linear_vel_kp = 1.6;
+float Config::linear_vel_ki = 0.0020;
 float Config::linear_vel_kd = 0.0;
 
-float Config::diagonal_walls_kp = 0.0025;
+float Config::diagonal_walls_kp = 0.0;
 float Config::diagonal_walls_ki = 0;
-float Config::diagonal_walls_kd = 0.0050;
+float Config::diagonal_walls_kd = 0.0;
 
 float Config::min_move_speed = 0.2; // [m/s]
 
-float Config::ir_wall_dist_ref_left = 180;   // Reference distance of when the robot is in the middle of the cell
-float Config::ir_wall_dist_ref_right = 165;  // Reference distance of when the robot is in the middle of the cell
-float Config::ir_wall_detect_th_left = 220;  // Maximum distance to the wall to still consider we are reading a wall (used on wall brake)
-float Config::ir_wall_detect_th_right = 220; // Maximum distance to the wall to still consider we are reading a wall (used on wall brake)
+float Config::ir_wall_dist_ref_left = 185.40;   // Reference distance of when the robot is in the middle of the cell
+float Config::ir_wall_dist_ref_right = 176.37;  // Reference distance of when the robot is in the middle of the cell
+float Config::ir_wall_detect_th_left = 240;  // Maximum distance to the wall to still consider we are reading a wall (used on wall brake)
+float Config::ir_wall_detect_th_right = 240; // Maximum distance to the wall to still consider we are reading a wall (used on wall brake)
 
-float Config::ir_diagonal_ref_fl = 280;      // Reference distance when the robot is not seeing on a diagonal
-float Config::ir_diagonal_ref_fr = 280;      // Reference distance when the robot is not seeing on a diagonal
-float Config::ir_diagonal_control_th_fl = 260; // Maximum distance to still enable diagonal control
-float Config::ir_diagonal_control_th_fr = 260; // Maximum distance to still enable diagonal control
+float Config::ir_diagonal_ref_fl = 260;      // Reference distance when the robot is not seeing on a diagonal
+float Config::ir_diagonal_ref_fr = 260;      // Reference distance when the robot is not seeing on a diagonal
+float Config::ir_diagonal_control_th_fl = 240; // Maximum distance to still enable diagonal control
+float Config::ir_diagonal_control_th_fr = 240; // Maximum distance to still enable diagonal control
 
-float Config::sensor_r_slope_max_th = 100.0f;
-float Config::sensor_l_slope_max_th = 40.0f;
-float Config::right_sensor_angle_deg = 56.5f;
-float Config::left_sensor_angle_deg = 56.5f;
+float Config::sensor_r_slope_max_th = 70.0f;
+float Config::sensor_l_slope_max_th = 70.0f;
+float Config::right_sensor_angle_deg = 58.9f;
+float Config::left_sensor_angle_deg = 59.4f;
 
 float Config::z_imu_bias = -0.4905;
 
