@@ -133,6 +133,10 @@ struct GeneralParams {
     float linear_brake_margin_mm;
     float sensor_r_slope_max_th;
     float sensor_l_slope_max_th;
+    float ir_wall_detect_th_left;
+    float ir_wall_detect_th_right;
+    float enable_lateral_correction_90;
+    float enable_lateral_correction_wall;
 
     GeneralParams()
         : fan_speed(0), angular_kp(0), angular_ki(0), angular_kd(0), angular_acc_feed_forward_k(0),
@@ -146,14 +150,18 @@ struct GeneralParams {
           angular_coulomb_ff(0), angular_static_ff(0),
           angular_coulomb_ff_inplace(0), angular_static_ff_inplace(0),
           linear_accel_margin_mm(10.0f), linear_brake_margin_mm(10.0f),
-          sensor_r_slope_max_th(0.0f), sensor_l_slope_max_th(0.0f) {}
+          sensor_r_slope_max_th(0.0f), sensor_l_slope_max_th(0.0f),
+          ir_wall_detect_th_left(240.0f), ir_wall_detect_th_right(240.0f),
+          enable_lateral_correction_90(1.0f), enable_lateral_correction_wall(1.0f) {}
 
     GeneralParams(float fan, float akp, float aki, float akd, float aaff, float abff, float avff, float lvaff, float lvbff, float lvff, float wkp, float wki,
                   float wkd, float lvkp, float lvki, float lvkd, float dwkp, float dwki, float dwkd, float swbcl,
                   float swbcr, float ewbc, float mlaj, float mlbj, float wr, float c_ff, float angular_c_ff, float angular_s_ff,
                   float angular_c_ff_inplace = 0.0f, float angular_s_ff_inplace = 0.0f,
                   float linear_accel_margin = 10.0f, float linear_brake_margin = 10.0f,
-                  float r_slope_max_th = 0.0f, float l_slope_max_th = 0.0f)
+                  float r_slope_max_th = 0.0f, float l_slope_max_th = 0.0f,
+                  float wall_detect_th_left = 240.0f, float wall_detect_th_right = 240.0f,
+                  float lat_corr_90 = 1.0f, float lat_corr_wall = 1.0f)
         : fan_speed(fan), angular_kp(akp), angular_ki(aki), angular_kd(akd), angular_acc_feed_forward_k(aaff),
           angular_brake_feed_forward_k(abff),
           angular_vel_feed_forward_k(avff), linear_vel_acc_feed_forward_k(lvaff), linear_vel_brake_feed_forward_k(lvbff),
@@ -166,7 +174,9 @@ struct GeneralParams {
           angular_coulomb_ff(angular_c_ff), angular_static_ff(angular_s_ff),
           angular_coulomb_ff_inplace(angular_c_ff_inplace), angular_static_ff_inplace(angular_s_ff_inplace),
           linear_accel_margin_mm(linear_accel_margin), linear_brake_margin_mm(linear_brake_margin),
-          sensor_r_slope_max_th(r_slope_max_th), sensor_l_slope_max_th(l_slope_max_th) {}
+          sensor_r_slope_max_th(r_slope_max_th), sensor_l_slope_max_th(l_slope_max_th),
+          ir_wall_detect_th_left(wall_detect_th_left), ir_wall_detect_th_right(wall_detect_th_right),
+          enable_lateral_correction_90(lat_corr_90), enable_lateral_correction_wall(lat_corr_wall) {}
 };
 
 extern const std::array<TurnParams, MOVEMENT_COUNT> turn_params_search_slow;

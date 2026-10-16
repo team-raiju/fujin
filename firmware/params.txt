@@ -62,7 +62,7 @@ z_imu_bias = -0.4905
 normal: approx 630g
 
 ##########################
-### RoboChallenge 2026 ###
+###      RCX 2026      ###
 ##########################
 min_move_speed = 0.2
 ir_diagonal_control_th_fl = 240

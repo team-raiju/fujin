@@ -337,7 +337,11 @@ const GeneralParams general_params_search_slow = {
     10.0,                      // Linear accel margin mm
     10.0,                      // Linear brake margin mm
     40.0,                      // Sensor R slope max th
-    40.0                       // Sensor L slope max th
+    40.0,                      // Sensor L slope max th
+    210.0,                     // IR wall detect threshold left
+    210.0,                     // IR wall detect threshold right
+    1.0,                       // Enable lateral correction 90
+    1.0                        // Enable lateral correction wall
 };
 
 const GeneralParams general_params_search_medium = {
@@ -361,8 +365,12 @@ const GeneralParams general_params_search_medium = {
     0.14,                      // Angular Static ff Inplace
     10.0,                      // Linear accel margin mm
     10.0,                      // Linear brake margin mm
-    40.0,                     // Sensor R slope max th
-    40.0                       // Sensor L slope max th
+    40.0,                      // Sensor R slope max th
+    40.0,                      // Sensor L slope max th
+    210.0,                     // IR wall detect threshold left
+    210.0,                     // IR wall detect threshold right
+    1.0,                       // Enable lateral correction 90
+    1.0                        // Enable lateral correction wall
 };
 
 const GeneralParams general_params_search_fast = {
@@ -387,7 +395,11 @@ const GeneralParams general_params_search_fast = {
     10.0,                      // Linear accel margin mm
     10.0,                      // Linear brake margin mm
     40.0,                      // Sensor R slope max th
-    40.0                       // Sensor L slope max th
+    40.0,                      // Sensor L slope max th
+    210.0,                     // IR wall detect threshold left
+    210.0,                     // IR wall detect threshold right
+    1.0,                       // Enable lateral correction 90
+    1.0                        // Enable lateral correction wall
 };
 
 const GeneralParams general_params_slow = {
@@ -412,7 +424,11 @@ const GeneralParams general_params_slow = {
     10.0,                      // Linear accel margin mm
     10.0,                      // Linear brake margin mm
     40.0,                      // Sensor R slope max th
-    40.0                       // Sensor L slope max th
+    40.0,                      // Sensor L slope max th
+    210.0,                     // IR wall detect threshold left
+    210.0,                     // IR wall detect threshold right
+    1.0,                       // Enable lateral correction 90
+    1.0                        // Enable lateral correction wall
 };
 
 const GeneralParams general_params_medium = {
@@ -436,8 +452,12 @@ const GeneralParams general_params_medium = {
     0.0,                    // Angular Static ff Inplace
     10.0,                   // Linear accel margin mm
     10.0,                   // Linear brake margin mm
-    60.0,                  // Sensor R slope max th
-    60.0                    // Sensor L slope max th
+    60.0,                   // Sensor R slope max th
+    60.0,                   // Sensor L slope max th
+    240.0,                  // IR wall detect threshold left
+    240.0,                  // IR wall detect threshold right
+    1.0,                    // Enable lateral correction 90
+    1.0                     // Enable lateral correction wall
 };
 
 const GeneralParams general_params_fast = {
@@ -461,8 +481,12 @@ const GeneralParams general_params_fast = {
     0.0,                    // Angular Static ff Inplace
     10.0,                   // Linear accel margin mm
     10.0,                   // Linear brake margin mm
-    60.0,                  // Sensor R slope max th
-    60.0                    // Sensor L slope max th
+    60.0,                   // Sensor R slope max th
+    60.0,                   // Sensor L slope max th
+    240.0,                  // IR wall detect threshold left
+    240.0,                  // IR wall detect threshold right
+    1.0,                    // Enable lateral correction 90
+    1.0                     // Enable lateral correction wall
 };
 
 const GeneralParams general_params_super = {
@@ -486,8 +510,12 @@ const GeneralParams general_params_super = {
     0.0,                    // Angular Static ff Inplace
     5.0,                    // Linear accel margin mm
     5.0,                    // Linear brake margin mm
-    65.0,                  // Sensor R slope max th
-    65.0                    // Sensor L slope max th
+    65.0,                   // Sensor R slope max th
+    65.0,                   // Sensor L slope max th
+    240.0,                  // IR wall detect threshold left
+    240.0,                  // IR wall detect threshold right
+    1.0,                    // Enable lateral correction 90
+    1.0                     // Enable lateral correction wall
 };
 
 const std::array<TurnParams, MOVEMENT_COUNT>& get_turn_params(navigation_mode_t mode) {

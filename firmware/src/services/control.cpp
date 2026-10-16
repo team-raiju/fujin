@@ -71,6 +71,10 @@ void Control::init(void) {
         services::Config::linear_brake_margin_mm,
         services::Config::sensor_r_slope_max_th,
         services::Config::sensor_l_slope_max_th,
+        services::Config::ir_wall_detect_th_left,
+        services::Config::ir_wall_detect_th_right,
+        services::Config::enable_lateral_correction_90,
+        services::Config::enable_lateral_correction_wall,
     };
     reset(general_params);
 }

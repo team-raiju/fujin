@@ -9,6 +9,10 @@
 namespace bsp::analog_sensors {
 
 namespace {
+
+static float ir_wall_detect_th_left = 240.0f;
+static float ir_wall_detect_th_right = 240.0f;
+
 constexpr std::array<SensingPattern, 8> default_ir_wall_patterns = {{
     {156.157f, 144.226f, 129.702f, 129.025f}, // F-L-R
     {168.937f, 146.920f, 135.949f, 192.362f}, // F-L
@@ -151,6 +155,22 @@ float get_sensor_l_slope_max_th() {
     return 40.0f;
 }
 
+void set_ir_wall_detect_th_left(float th) {
+    ir_wall_detect_th_left = th;
+}
+
+void set_ir_wall_detect_th_right(float th) {
+    ir_wall_detect_th_right = th;
+}
+
+float get_ir_wall_detect_th_left() {
+    return ir_wall_detect_th_left;
+}
+
+float get_ir_wall_detect_th_right() {
+    return ir_wall_detect_th_right;
+}
+
 float ir_distance_mm(SensingDirection direction) {
     size_t idx = direction_to_amaterasu_idx(direction);
     float dist = amaterasu::get_ir_distance_mm(idx);
@@ -168,13 +188,13 @@ bool ir_reading_wall(SensingDirection direction) {
     uint32_t val = ir_reading(direction);
     switch (direction) {
     case SensingDirection::RIGHT:
-        return val > services::Config::ir_wall_detect_th_right;
+        return val > ir_wall_detect_th_right;
     case SensingDirection::FRONT_LEFT:
         return val > services::Config::ir_wall_detect_th_front_left;
     case SensingDirection::FRONT_RIGHT:
         return val > services::Config::ir_wall_detect_th_front_right;
     case SensingDirection::LEFT:
-        return val > services::Config::ir_wall_detect_th_left;
+        return val > ir_wall_detect_th_left;
     default:
         return false;
     }

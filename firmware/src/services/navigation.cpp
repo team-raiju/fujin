@@ -83,6 +83,10 @@ GeneralParams make_custom_general_params() {
         services::Config::linear_brake_margin_mm,
         services::Config::sensor_r_slope_max_th,
         services::Config::sensor_l_slope_max_th,
+        services::Config::ir_wall_detect_th_left,
+        services::Config::ir_wall_detect_th_right,
+        services::Config::enable_lateral_correction_90,
+        services::Config::enable_lateral_correction_wall,
     };
 }
 
@@ -160,6 +164,8 @@ void Navigation::configure_mode(navigation_mode_t mode) {
     bsp::encoders::set_wheel_radius_mm(general_params.wheel_radius_mm);
     bsp::analog_sensors::set_sensor_r_slope_max_th(general_params.sensor_r_slope_max_th);
     bsp::analog_sensors::set_sensor_l_slope_max_th(general_params.sensor_l_slope_max_th);
+    bsp::analog_sensors::set_ir_wall_detect_th_left(general_params.ir_wall_detect_th_left);
+    bsp::analog_sensors::set_ir_wall_detect_th_right(general_params.ir_wall_detect_th_right);
 }
 
 bool Navigation::is_front_emergency() const {
@@ -350,7 +356,7 @@ void Navigation::apply_wall_break_correction() {
         base_offset_mm = general_params.start_wall_break_mm_left;
 
         // Left wall just broke: measure lateral displacement using opposite (Right) sensor
-        if (Config::enable_lateral_correction_wall && ir_reading_wall(SensingDirection::RIGHT)) {
+        if (general_params.enable_lateral_correction_wall && ir_reading_wall(SensingDirection::RIGHT)) {
             const float cos_theta_r = std::cos(Config::right_sensor_angle_deg * DEG_TO_RAD);
             const float tan_theta_l = std::tan(Config::left_sensor_angle_deg * DEG_TO_RAD);
 
@@ -370,7 +376,7 @@ void Navigation::apply_wall_break_correction() {
         base_offset_mm = general_params.start_wall_break_mm_right;
 
         // Right wall just broke: measure lateral displacement using opposite (Left) sensor
-        if (Config::enable_lateral_correction_wall && ir_reading_wall(SensingDirection::LEFT)) {
+        if (general_params.enable_lateral_correction_wall && ir_reading_wall(SensingDirection::LEFT)) {
             const float cos_theta_l = std::cos(Config::left_sensor_angle_deg * DEG_TO_RAD);
             const float tan_theta_r = std::tan(Config::right_sensor_angle_deg * DEG_TO_RAD);
 
@@ -841,7 +847,7 @@ void Navigation::transition_after_turn_rotation() {
     if (is_search_turn_movement()) {
         control->set_target_angular_speed(0.0f);
         float end_target = -turn_params[current_movement].end;
-        if (Config::enable_lateral_correction_90) {
+        if (general_params.enable_lateral_correction_90) {
             end_target -= turn_end_correction_mm;
             turn_end_correction_mm = 0.0f;
         }
@@ -1009,7 +1015,7 @@ void Navigation::set_movement(Direction dir) {
 
     target_travel_mm = forward_params[current_movement].target_travel_mm;
 
-    if (Config::enable_lateral_correction_90 && is_search_turn_movement()) {
+    if (general_params.enable_lateral_correction_90 && is_search_turn_movement()) {
         turn_end_correction_mm = calculate_turn_end_offset(current_movement);
     } else {
         turn_end_correction_mm = 0.0f;
@@ -1104,7 +1110,7 @@ void Navigation::set_movement(Movement movement, Movement prev_movement, Movemen
                               uint8_t next_move_count) {
     complete_prev_move_travel = -1 * turn_params[prev_movement].end;
 
-    if (Config::enable_lateral_correction_90) {
+    if (general_params.enable_lateral_correction_90) {
         if (prev_movement == Movement::TURN_LEFT_90 || prev_movement == Movement::TURN_RIGHT_90) {
             complete_prev_move_travel -= turn_end_correction_mm;
             turn_end_correction_mm = 0.0f;

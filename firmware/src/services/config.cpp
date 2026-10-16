@@ -164,6 +164,10 @@ static const std::pair<float*, bsp::eeprom::param_addresses_t> general_params_ee
     {&Config::linear_brake_margin_mm, bsp::eeprom::ADDR_LINEAR_BRAKE_MARGIN_MM},
     {&Config::sensor_r_slope_max_th, bsp::eeprom::ADDR_SENSOR_R_SLOPE_MAX_TH},
     {&Config::sensor_l_slope_max_th, bsp::eeprom::ADDR_SENSOR_L_SLOPE_MAX_TH},
+    {&Config::ir_wall_detect_th_left, bsp::eeprom::ADDR_IR_WALL_DETECT_TH_LEFT},
+    {&Config::ir_wall_detect_th_right, bsp::eeprom::ADDR_IR_WALL_DETECT_TH_RIGHT},
+    {&Config::enable_lateral_correction_90, bsp::eeprom::ADDR_ENABLE_LATERAL_CORRECTION_90},
+    {&Config::enable_lateral_correction_wall, bsp::eeprom::ADDR_ENABLE_LATERAL_CORRECTION_WALL},
 };
 
 static const std::map<Movement, uint16_t> turn_address_map = {
@@ -571,6 +575,10 @@ int Config::load_general_preset(uint8_t preset_id) {
     Config::linear_brake_margin_mm = gp.linear_brake_margin_mm;
     Config::sensor_r_slope_max_th = gp.sensor_r_slope_max_th;
     Config::sensor_l_slope_max_th = gp.sensor_l_slope_max_th;
+    Config::ir_wall_detect_th_left = gp.ir_wall_detect_th_left;
+    Config::ir_wall_detect_th_right = gp.ir_wall_detect_th_right;
+    Config::enable_lateral_correction_90 = gp.enable_lateral_correction_90;
+    Config::enable_lateral_correction_wall = gp.enable_lateral_correction_wall;
 
     save_general_params_to_eeprom();
     send_parameters();

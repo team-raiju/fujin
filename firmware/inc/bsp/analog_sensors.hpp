@@ -76,6 +76,10 @@ void set_sensor_r_slope_max_th(float th);
 void set_sensor_l_slope_max_th(float th);
 float get_sensor_r_slope_max_th();
 float get_sensor_l_slope_max_th();
+void set_ir_wall_detect_th_left(float th);
+void set_ir_wall_detect_th_right(float th);
+float get_ir_wall_detect_th_left();
+float get_ir_wall_detect_th_right();
 
 bool ir_start_condition();
 
