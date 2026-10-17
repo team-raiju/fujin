@@ -30,6 +30,7 @@ namespace fsm {
 
 static bool indicate_read = false;
 static bool full_explore = false;
+static bool explore_from_backup = false;
 
 void PreSearch::enter() {
 
@@ -139,6 +140,7 @@ SearchExploreModeSelect::SearchExploreModeSelect() {
     navigation = services::Navigation::instance();
     explore_type = EXPLORE_NORMAL;
     full_explore = false;
+    explore_from_backup = false;
 }
 
 void SearchExploreModeSelect::enter() {
@@ -152,6 +154,9 @@ State* SearchExploreModeSelect::react(ButtonPressed const& event) {
         if (explore_type == EXPLORE_NORMAL) {
             explore_type = EXPLORE_FULL;
             bsp::leds::stripe_set(bsp::leds::Color::Pink, bsp::leds::Color::Pink);
+        } else if (explore_type == EXPLORE_FULL) {
+            explore_type = EXPLORE_FULL_FROM_BACKUP;
+            bsp::leds::stripe_set(bsp::leds::Color::Yellow, bsp::leds::Color::Yellow);
         } else {
             explore_type = EXPLORE_NORMAL;
             bsp::leds::stripe_set(bsp::leds::Color::Pink, bsp::leds::Color::Black);
@@ -161,6 +166,9 @@ State* SearchExploreModeSelect::react(ButtonPressed const& event) {
 
     if (event.button == ButtonPressed::SHORT1) {
         if (explore_type == EXPLORE_NORMAL) {
+            explore_type = EXPLORE_FULL_FROM_BACKUP;
+            bsp::leds::stripe_set(bsp::leds::Color::Yellow, bsp::leds::Color::Yellow);
+        } else if (explore_type == EXPLORE_FULL_FROM_BACKUP) {
             explore_type = EXPLORE_FULL;
             bsp::leds::stripe_set(bsp::leds::Color::Pink, bsp::leds::Color::Pink);
         } else {
@@ -175,10 +183,17 @@ State* SearchExploreModeSelect::react(ButtonPressed const& event) {
         case EXPLORE_NORMAL:
             std::printf("Explore Normal\r\n");
             full_explore = false;
+            explore_from_backup = false;
             break;
         case EXPLORE_FULL:
             std::printf("Explore Full\r\n");
             full_explore = true;
+            explore_from_backup = false;
+            break;
+        case EXPLORE_FULL_FROM_BACKUP:
+            std::printf("Explore Full From Backup\r\n");
+            full_explore = true;
+            explore_from_backup = true;
             break;
         }
         return &State::get<SearchWaitStart>();
@@ -264,6 +279,22 @@ void Search::enter() {
 
     navigation->reset();
 
+    if (explore_from_backup) {
+        maze->read_maze_from_memory(true);
+        returning = true;
+        save_maze = true;
+        unvisited_target = maze->closest_unvisited(services::Maze::ORIGIN);
+        if (unvisited_target == services::Maze::ORIGIN) {
+            unvisited_target = {0, 1};
+        }
+        targets = std::span<const Point>(&unvisited_target, 1);
+    } else {
+        maze->reset();
+        returning = false;
+        save_maze = false;
+        targets = services::Maze::GOAL_POSITIONS;
+    }
+
     services::Control::instance()->start_fan();
     bsp::delay_ms(500);
 
@@ -273,12 +304,8 @@ void Search::enter() {
     soft_timer::start(1, soft_timer::CONTINUOUS);
 
     indicate_read = false;
-    maze->reset();
-    returning = false;
-    save_maze = false;
     stop_next_move = false;
     emergency = false;
-    targets = services::Maze::GOAL_POSITIONS;
 }
 
 State* Search::react(BleCommand const&) {
@@ -410,7 +437,9 @@ void Search::exit() {
     soft_timer::stop();
     if (save_maze) {
         bsp::buzzer::start();
-        maze->save_maze_to_memory(true);
+        if (!explore_from_backup) {
+            maze->save_maze_to_memory(true);
+        }
         maze->save_maze_to_memory(false);
         bsp::delay_ms(500);
         bsp::buzzer::stop();

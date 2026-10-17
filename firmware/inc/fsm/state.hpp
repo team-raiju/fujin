@@ -98,7 +98,8 @@ public:
 private:
     enum explore_type_t {
         EXPLORE_NORMAL,
-        EXPLORE_FULL
+        EXPLORE_FULL,
+        EXPLORE_FULL_FROM_BACKUP
     };
 
     explore_type_t explore_type;
