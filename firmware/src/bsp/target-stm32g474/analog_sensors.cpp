@@ -47,10 +47,12 @@ constexpr float ADC_MAX_VOLTAGE_VOLTS = 3.3f;
 
 constexpr float PWR_BATTERY_THRESHOLD_MV = 11300.0f;
 
-// This value does not give a real battery value, but to change it, means changing the control constants so we will do it later
+// This value does not give a real battery value, but to change it, means changing the control constants so we will do
+// it later
 constexpr float PWR_BAT_VOLTAGE_MULTIPLIER = 4.19f; 
 
-// This is the real multiplier measured with a multimeter. TODO: replace above value and change control constantes to be multiplied by 11.73%  = (1/(1-0,105))
+// This is the real multiplier measured with a multimeter. TODO: replace above value and change control constantes to be
+// multiplied by 11.73%  = (1/(1-0,105))
 constexpr float PWR_BAT_VOLTAGE_MULTIPLIER_REAL = 4.63f; 
 
 constexpr float IR_EMA_ALPHA = 0.5f;
@@ -60,10 +62,10 @@ constexpr float START_SENSOR_DIST_MM = 150.0f;
 constexpr float FRONT_SENSOR_SEEING_DIST_MM = 160.0f;
 
 constexpr IrCalibParams default_ir_calib_params[4] = {
-    {3970.258981f, 434.914686f, 108.274530f},  // RIGHT
-    {5906.861078f, 706.272927f, 267.342336f},  // FRONT_LEFT
-    {3934.811769f, 439.237611f, -12.466576f},  // FRONT_RIGHT
-    {3715.954588f, 407.345898f, 40.763487f},   // LEFT
+    {3970.258981f, 434.914686f, 108.274530f}, // RIGHT
+    {5906.861078f, 706.272927f, 267.342336f}, // FRONT_LEFT
+    {3934.811769f, 439.237611f, -12.466576f}, // FRONT_RIGHT
+    {3715.954588f, 407.345898f, 40.763487f},  // LEFT
 };
 
 static IrCalibParams ir_calib_params[4] = {
@@ -172,6 +174,8 @@ static bool wall_confirmed[4] = {false, false, false, false};
 static float wall_dist_accumulated_mm[4] = {0.0f, 0.0f, 0.0f, 0.0f};
 static float sensor_r_slope_max_th = 90.0f;
 static float sensor_l_slope_max_th = 90.0f;
+static float ir_wall_detect_th_left = 240.0f;
+static float ir_wall_detect_th_right = 240.0f;
 static int32_t ir_raw_readings_on[4];
 static int32_t ir_raw_readings_off[4];
 static uint32_t battery_reading;
@@ -271,14 +275,14 @@ uint32_t ir_raw_reading(SensingDirection direction) {
 bool ir_reading_wall(SensingDirection direction) {
     switch (direction) {
     case SensingDirection::RIGHT:
-        return ir_distances[direction] < services::Config::ir_wall_detect_th_right &&
+        return ir_distances[direction] < ir_wall_detect_th_right &&
                std::fabs(ir_slope[direction]) < sensor_r_slope_max_th;
     case SensingDirection::FRONT_LEFT:
         return ir_distances[direction] < FRONT_SENSOR_SEEING_DIST_MM;
     case SensingDirection::FRONT_RIGHT:
         return ir_distances[direction] < FRONT_SENSOR_SEEING_DIST_MM;
     case SensingDirection::LEFT:
-        return ir_distances[direction] < services::Config::ir_wall_detect_th_left &&
+        return ir_distances[direction] < ir_wall_detect_th_left &&
                std::fabs(ir_slope[direction]) < sensor_l_slope_max_th;
     default:
         return false;
@@ -296,10 +300,10 @@ bool ir_is_wall_confirmed(SensingDirection direction) {
 bool ir_wall_break_condition(SensingDirection direction) {
     switch (direction) {
     case SensingDirection::RIGHT:
-        return ir_distances[direction] > services::Config::ir_wall_detect_th_right ||
+        return ir_distances[direction] > ir_wall_detect_th_right ||
                ir_slope[direction] > sensor_r_slope_max_th;
     case SensingDirection::LEFT:
-        return ir_distances[direction] > services::Config::ir_wall_detect_th_left ||
+        return ir_distances[direction] > ir_wall_detect_th_left ||
                ir_slope[direction] > sensor_l_slope_max_th;
     default:
         return false;
@@ -365,6 +369,22 @@ float get_sensor_r_slope_max_th() {
 
 float get_sensor_l_slope_max_th() {
     return sensor_l_slope_max_th;
+}
+
+void set_ir_wall_detect_th_left(float th) {
+    ir_wall_detect_th_left = th;
+}
+
+void set_ir_wall_detect_th_right(float th) {
+    ir_wall_detect_th_right = th;
+}
+
+float get_ir_wall_detect_th_left() {
+    return ir_wall_detect_th_left;
+}
+
+float get_ir_wall_detect_th_right() {
+    return ir_wall_detect_th_right;
 }
 
 int32_t ir_side_wall_error() {
@@ -492,8 +512,7 @@ SensingStatus ir_get_sensing_status() {
         status.right_seeing = true;
     }
 
-    if (ir_distance_mm(FRONT_LEFT) < WALL_DETECT_TH_FRONT_MM &&
-        ir_distance_mm(FRONT_RIGHT) < WALL_DETECT_TH_FRONT_MM) {
+    if (ir_distance_mm(FRONT_LEFT) < WALL_DETECT_TH_FRONT_MM && ir_distance_mm(FRONT_RIGHT) < WALL_DETECT_TH_FRONT_MM) {
         status.front_seeing = true;
     }
 
